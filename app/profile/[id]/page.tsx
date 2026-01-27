@@ -6,13 +6,14 @@ import { ProfileCard } from '@/components/profile/profile-card'
 import { Button } from '@/components/ui/button'
 import { Home, Loader2 } from 'lucide-react'
 import Link from 'next/link'
-import { Profile } from '@/types/database'
+import { Profile, Verification } from '@/types/database'
 
 export default function PublicProfilePage() {
   const params = useParams()
   const id = params.id as string
 
   const [profile, setProfile] = useState<Profile | null>(null)
+  const [verification, setVerification] = useState<Verification | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
 
@@ -26,6 +27,7 @@ export default function PublicProfilePage() {
         }
         const data = await response.json()
         setProfile(data.profile)
+        setVerification(data.verification || null)
       } catch (err) {
         console.error('Failed to load profile:', err)
         setError(true)
@@ -85,7 +87,7 @@ export default function PublicProfilePage() {
             <h1 className="text-2xl font-bold">{profile.name}님의 프로필</h1>
           </div>
 
-          <ProfileCard profile={profile} />
+          <ProfileCard profile={profile} verification={verification} />
 
           <div className="bg-blue-50 p-4 rounded-lg text-center">
             <p className="text-sm text-blue-800">

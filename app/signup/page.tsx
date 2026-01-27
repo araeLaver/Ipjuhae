@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Home, Loader2 } from 'lucide-react'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { Home, Loader2, User, Building } from 'lucide-react'
 
 export default function SignupPage() {
   const router = useRouter()
@@ -17,6 +18,7 @@ export default function SignupPage() {
     email: '',
     password: '',
     confirmPassword: '',
+    userType: 'tenant' as 'tenant' | 'landlord',
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -43,6 +45,7 @@ export default function SignupPage() {
         body: JSON.stringify({
           email: formData.email,
           password: formData.password,
+          userType: formData.userType,
         }),
       })
 
@@ -52,7 +55,12 @@ export default function SignupPage() {
         throw new Error(data.error || '회원가입에 실패했습니다')
       }
 
-      router.push('/onboarding/basic')
+      // 사용자 타입에 따라 다른 페이지로 이동
+      if (formData.userType === 'landlord') {
+        router.push('/landlord/onboarding')
+      } else {
+        router.push('/onboarding/basic')
+      }
       router.refresh()
     } catch (err) {
       setError((err as Error).message)
@@ -128,6 +136,40 @@ export default function SignupPage() {
                   placeholder="비밀번호 재입력"
                   required
                 />
+              </div>
+
+              <div className="space-y-3">
+                <Label>회원 유형</Label>
+                <RadioGroup
+                  value={formData.userType}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({ ...prev, userType: value as 'tenant' | 'landlord' }))
+                  }
+                  className="grid grid-cols-2 gap-4"
+                >
+                  <div>
+                    <RadioGroupItem value="tenant" id="tenant" className="peer sr-only" />
+                    <Label
+                      htmlFor="tenant"
+                      className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
+                    >
+                      <User className="mb-3 h-6 w-6" />
+                      <span className="font-medium">세입자</span>
+                      <span className="text-xs text-muted-foreground">집을 구하고 있어요</span>
+                    </Label>
+                  </div>
+                  <div>
+                    <RadioGroupItem value="landlord" id="landlord" className="peer sr-only" />
+                    <Label
+                      htmlFor="landlord"
+                      className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
+                    >
+                      <Building className="mb-3 h-6 w-6" />
+                      <span className="font-medium">집주인</span>
+                      <span className="text-xs text-muted-foreground">세입자를 찾고 있어요</span>
+                    </Label>
+                  </div>
+                </RadioGroup>
               </div>
 
               <Button type="submit" className="w-full" disabled={isLoading}>

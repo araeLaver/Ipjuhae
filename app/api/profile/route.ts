@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
-import { Profile } from '@/types/database'
+import { Profile, Verification, ReferenceResponse } from '@/types/database'
+import { calculateTrustScore } from '@/lib/trust-score'
 
-// GET: 내 프로필 조회
+// GET: 내 프로필 조회 (동적 신뢰점수 포함)
 export async function GET() {
   try {
     const user = await getCurrentUser()
@@ -16,7 +17,43 @@ export async function GET() {
       [user.id]
     )
 
-    return NextResponse.json({ profile })
+    // 인증 정보 조회
+    const verification = await queryOne<Verification>(
+      'SELECT * FROM verifications WHERE user_id = $1',
+      [user.id]
+    )
+
+    // 완료된 레퍼런스 응답 조회
+    const referenceResponses = await query<ReferenceResponse>(
+      `SELECT rr.* FROM reference_responses rr
+       JOIN landlord_references lr ON rr.reference_id = lr.id
+       WHERE lr.user_id = $1 AND lr.status = 'completed'`,
+      [user.id]
+    )
+
+    // 동적 신뢰점수 계산
+    let dynamicProfile = profile
+    if (profile) {
+      const scoreBreakdown = calculateTrustScore({
+        profile,
+        verification,
+        referenceResponses,
+      })
+      dynamicProfile = {
+        ...profile,
+        trust_score: scoreBreakdown.total,
+      }
+    }
+
+    return NextResponse.json({
+      profile: dynamicProfile,
+      verification,
+      trustScoreBreakdown: profile ? calculateTrustScore({
+        profile,
+        verification,
+        referenceResponses,
+      }) : null,
+    })
   } catch (error) {
     console.error('Get profile error:', error)
     return NextResponse.json({ error: '프로필 조회 중 오류가 발생했습니다' }, { status: 500 })

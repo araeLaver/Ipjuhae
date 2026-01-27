@@ -1,6 +1,7 @@
-import { Profile } from '@/types/database'
+import { Profile, Verification } from '@/types/database'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { VerificationBadges } from '@/components/verification/verification-badge'
 import {
   User,
   Users,
@@ -14,9 +15,10 @@ import {
 
 interface ProfileCardProps {
   profile: Profile
+  verification?: Verification | null
 }
 
-export function ProfileCard({ profile }: ProfileCardProps) {
+export function ProfileCard({ profile, verification }: ProfileCardProps) {
   const getTrustScoreColor = (score: number) => {
     if (score >= 80) return 'bg-green-500'
     if (score >= 50) return 'bg-yellow-500'
@@ -100,6 +102,14 @@ export function ProfileCard({ profile }: ProfileCardProps) {
             {profile.smoking ? '흡연' : '비흡연'}
           </Badge>
         </div>
+
+        {/* Verification Badges */}
+        {verification && (
+          <div className="space-y-2">
+            <h3 className="font-semibold text-sm text-muted-foreground">인증 정보</h3>
+            <VerificationBadges verification={verification} />
+          </div>
+        )}
 
         {/* Lifestyle Info */}
         <div className="space-y-3">

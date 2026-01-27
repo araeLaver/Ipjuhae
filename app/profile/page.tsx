@@ -5,13 +5,14 @@ import { useRouter } from 'next/navigation'
 import { ProfileCard } from '@/components/profile/profile-card'
 import { ShareButton } from '@/components/profile/share-button'
 import { Button } from '@/components/ui/button'
-import { Home, LogOut, Edit, Loader2 } from 'lucide-react'
+import { Home, LogOut, Edit, Loader2, Shield, Users } from 'lucide-react'
 import Link from 'next/link'
-import { Profile } from '@/types/database'
+import { Profile, Verification } from '@/types/database'
 
 export default function ProfilePage() {
   const router = useRouter()
   const [profile, setProfile] = useState<Profile | null>(null)
+  const [verification, setVerification] = useState<Verification | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -30,6 +31,7 @@ export default function ProfilePage() {
         }
 
         setProfile(data.profile)
+        setVerification(data.verification || null)
       } catch (error) {
         console.error('Failed to load profile:', error)
       } finally {
@@ -83,9 +85,27 @@ export default function ProfilePage() {
         <div className="max-w-md mx-auto space-y-6">
           <h1 className="text-2xl font-bold text-center">내 프로필</h1>
 
-          <ProfileCard profile={profile} />
+          <ProfileCard profile={profile} verification={verification} />
 
           <ShareButton profileId={profile.id} />
+
+          {/* 인증 및 레퍼런스 관리 */}
+          <div className="space-y-3">
+            <Link href="/profile/verification">
+              <Button variant="outline" className="w-full justify-start">
+                <Shield className="h-4 w-4 mr-2" />
+                인증 관리
+                <span className="ml-auto text-sm text-muted-foreground">신뢰점수 높이기</span>
+              </Button>
+            </Link>
+            <Link href="/profile/reference">
+              <Button variant="outline" className="w-full justify-start">
+                <Users className="h-4 w-4 mr-2" />
+                레퍼런스 관리
+                <span className="ml-auto text-sm text-muted-foreground">이전 집주인 평가</span>
+              </Button>
+            </Link>
+          </div>
 
           <div className="pt-4">
             <Link href="/onboarding/basic">

@@ -5,7 +5,7 @@ import { User } from '@/types/database'
 
 export async function POST(request: Request) {
   try {
-    const { email, password } = await request.json()
+    const { email, password, userType } = await request.json()
 
     if (!email || !password) {
       return NextResponse.json(
@@ -13,6 +13,9 @@ export async function POST(request: Request) {
         { status: 400 }
       )
     }
+
+    // 유효한 user_type 확인
+    const validUserType = userType === 'landlord' ? 'landlord' : 'tenant'
 
     // 이메일 중복 체크
     const existingUser = await queryOne<User>(
@@ -30,17 +33,17 @@ export async function POST(request: Request) {
     // 비밀번호 해시
     const passwordHash = await hashPassword(password)
 
-    // 사용자 생성
+    // 사용자 생성 (user_type 포함)
     const [user] = await query<User>(
-      'INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING *',
-      [email, passwordHash]
+      'INSERT INTO users (email, password_hash, user_type) VALUES ($1, $2, $3) RETURNING *',
+      [email, passwordHash, validUserType]
     )
 
     // 토큰 생성 및 쿠키 설정
     const token = generateToken(user.id)
     await setAuthCookie(token)
 
-    return NextResponse.json({ success: true, userId: user.id })
+    return NextResponse.json({ success: true, userId: user.id, userType: validUserType })
   } catch (error) {
     console.error('Signup error:', error)
     return NextResponse.json(
