@@ -1,6 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
+import { Check } from 'lucide-react'
 
 interface ProgressBarProps {
   currentStep: number
@@ -22,32 +23,41 @@ export function ProgressBar({ currentStep, totalSteps }: ProgressBarProps) {
             <div className="flex flex-col items-center">
               <div
                 className={cn(
-                  'w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-colors',
-                  currentStep >= step.number
-                    ? 'bg-primary text-white'
-                    : 'bg-gray-200 text-gray-500'
+                  'w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-300',
+                  currentStep > step.number
+                    ? 'bg-primary text-primary-foreground'
+                    : currentStep === step.number
+                    ? 'bg-primary text-primary-foreground ring-4 ring-primary/20'
+                    : 'bg-muted text-muted-foreground'
                 )}
               >
-                {step.number}
+                {currentStep > step.number ? (
+                  <Check className="h-5 w-5" />
+                ) : (
+                  step.number
+                )}
               </div>
               <span
                 className={cn(
-                  'text-xs mt-1',
+                  'text-xs mt-2 transition-colors',
                   currentStep >= step.number
                     ? 'text-primary font-medium'
-                    : 'text-gray-500'
+                    : 'text-muted-foreground'
                 )}
               >
                 {step.label}
               </span>
             </div>
             {index < steps.length - 1 && (
-              <div
-                className={cn(
-                  'w-16 md:w-24 h-1 mx-2 transition-colors',
-                  currentStep > step.number ? 'bg-primary' : 'bg-gray-200'
-                )}
-              />
+              <div className="relative w-16 md:w-24 h-1 mx-2">
+                <div className="absolute inset-0 bg-muted rounded-full" />
+                <div
+                  className={cn(
+                    'absolute inset-y-0 left-0 bg-primary rounded-full transition-all duration-500',
+                    currentStep > step.number ? 'w-full' : 'w-0'
+                  )}
+                />
+              </div>
             )}
           </div>
         ))}

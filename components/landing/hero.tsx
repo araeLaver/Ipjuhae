@@ -1,87 +1,109 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { Home, Shield, Share2, FileText } from 'lucide-react'
+import { Home, Shield, Share2, FileText, Star, CheckCircle, User } from 'lucide-react'
 import Link from 'next/link'
+import { motion } from 'framer-motion'
 
 export function Hero() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
-      <div className="container mx-auto px-4 py-16">
-        {/* Header */}
-        <header className="flex items-center justify-between mb-16">
-          <div className="flex items-center gap-2">
-            <Home className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold">입주해</span>
-          </div>
-          <div className="flex gap-2">
-            <Link href="/login">
-              <Button variant="ghost">로그인</Button>
-            </Link>
-            <Link href="/signup">
-              <Button>회원가입</Button>
-            </Link>
-          </div>
-        </header>
+    <section className="relative overflow-hidden">
+      {/* Background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-teal-50 via-emerald-50/50 to-white" />
+      <div
+        className="absolute inset-0 opacity-[0.03]"
+        style={{
+          backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)',
+          backgroundSize: '24px 24px',
+        }}
+      />
 
-        {/* Hero Section */}
-        <div className="max-w-3xl mx-auto text-center mb-16">
-          <h1 className="text-4xl md:text-5xl font-bold mb-6 text-gray-900">
-            좋은 세입자임을
-            <br />
-            <span className="text-primary">증명하세요</span>
-          </h1>
-          <p className="text-xl text-gray-600 mb-8">
-            나만의 세입자 프로필을 만들어 집주인에게 신뢰를 전달하세요.
-            <br />
-            간단한 프로필 생성만으로 원하는 집을 구할 확률을 높여보세요.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/signup">
-              <Button size="lg" className="w-full sm:w-auto">
-                무료로 시작하기
-              </Button>
-            </Link>
-          </div>
-        </div>
+      <div className="relative container mx-auto px-4 py-20 md:py-28">
+        <div className="grid md:grid-cols-2 gap-12 items-center">
+          {/* Left: Text */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight text-gray-900">
+              좋은 세입자임을
+              <br />
+              <span className="text-primary">증명하세요</span>
+            </h1>
+            <p className="mt-6 text-lg text-gray-600 leading-relaxed max-w-lg">
+              나만의 세입자 프로필을 만들어 집주인에게 신뢰를 전달하세요.
+              간단한 프로필 생성만으로 원하는 집을 구할 확률을 높여보세요.
+            </p>
+            <div className="mt-8 flex flex-col sm:flex-row gap-3">
+              <Link href="/signup">
+                <Button size="xl" className="w-full sm:w-auto">
+                  무료로 시작하기
+                </Button>
+              </Link>
+              <Link href="/signup?type=landlord">
+                <Button variant="outline" size="xl" className="w-full sm:w-auto">
+                  집주인으로 가입
+                </Button>
+              </Link>
+            </div>
+          </motion.div>
 
-        {/* Features */}
-        <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-          <FeatureCard
-            icon={<Shield className="h-10 w-10 text-primary" />}
-            title="신뢰 프로필"
-            description="나이대, 가구형태, 라이프스타일 등 집주인이 궁금해하는 정보를 체계적으로 정리"
-          />
-          <FeatureCard
-            icon={<FileText className="h-10 w-10 text-primary" />}
-            title="자기소개서"
-            description="집주인에게 전달할 자기소개서를 작성하여 나만의 매력을 어필하세요"
-          />
-          <FeatureCard
-            icon={<Share2 className="h-10 w-10 text-primary" />}
-            title="간편 공유"
-            description="완성된 프로필을 링크 하나로 집주인에게 전달, 채팅이나 문자로 쉽게 공유"
-          />
+          {/* Right: Mock Profile Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="hidden md:block"
+          >
+            <div className="relative">
+              {/* Floating badge */}
+              <motion.div
+                className="absolute -top-4 -right-4 bg-white rounded-xl shadow-elevated px-4 py-3 flex items-center gap-2 z-10"
+                animate={{ y: [0, -8, 0] }}
+                transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+              >
+                <CheckCircle className="h-5 w-5 text-primary" />
+                <span className="text-sm font-semibold">신뢰점수 85점</span>
+              </motion.div>
+
+              {/* Card */}
+              <div className="bg-white rounded-2xl shadow-elevated p-6 border border-gray-100">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
+                    <User className="h-7 w-7 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-lg">김민수</p>
+                    <p className="text-sm text-muted-foreground">30대 | 1인 가구</p>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Shield className="h-4 w-4 text-green-500" />
+                    <span className="text-sm">재직 인증 완료</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Shield className="h-4 w-4 text-green-500" />
+                    <span className="text-sm">소득 인증 완료</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Star className="h-4 w-4 text-amber-500" />
+                    <span className="text-sm">이전 집주인 추천 1건</span>
+                  </div>
+                </div>
+
+                <div className="mt-6 pt-4 border-t">
+                  <p className="text-sm text-gray-600 italic">
+                    &ldquo;조용하고 깔끔한 생활을 선호하는 직장인입니다.&rdquo;
+                  </p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
         </div>
       </div>
-    </div>
-  )
-}
-
-function FeatureCard({
-  icon,
-  title,
-  description,
-}: {
-  icon: React.ReactNode
-  title: string
-  description: string
-}) {
-  return (
-    <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-100">
-      <div className="mb-4">{icon}</div>
-      <h3 className="text-lg font-semibold mb-2">{title}</h3>
-      <p className="text-gray-600 text-sm">{description}</p>
-    </div>
+    </section>
   )
 }

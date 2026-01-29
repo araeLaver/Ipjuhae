@@ -43,11 +43,32 @@ const config: Config = {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
+        success: {
+          DEFAULT: 'hsl(var(--success))',
+          foreground: 'hsl(var(--success-foreground))',
+        },
+        warning: {
+          DEFAULT: 'hsl(var(--warning))',
+          foreground: 'hsl(var(--warning-foreground))',
+        },
       },
       borderRadius: {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
+      },
+      boxShadow: {
+        soft: '0 2px 8px -2px rgba(0, 0, 0, 0.08)',
+        card: '0 4px 16px -4px rgba(0, 0, 0, 0.1)',
+        elevated: '0 8px 30px -8px rgba(0, 0, 0, 0.15)',
+      },
+      animation: {
+        'fade-in': 'fade-in 0.5s ease-out forwards',
+        'slide-up': 'slide-up 0.5s ease-out forwards',
+        'scale-in': 'scale-in 0.3s ease-out forwards',
+      },
+      fontFamily: {
+        sans: ['Inter', 'Noto Sans KR', 'system-ui', 'sans-serif'],
       },
     },
   },

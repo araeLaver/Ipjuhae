@@ -7,12 +7,13 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Home, Loader2 } from 'lucide-react'
+import { Header } from '@/components/layout/header'
+import { Home } from 'lucide-react'
+import { toast } from 'sonner'
 
 export default function LoginPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState('')
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -21,7 +22,6 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    setError('')
 
     try {
       const response = await fetch('/api/auth/login', {
@@ -36,28 +36,22 @@ export default function LoginPage() {
         throw new Error(data.error || '로그인에 실패했습니다')
       }
 
+      toast.success('로그인 성공!')
       router.push('/profile')
       router.refresh()
     } catch (err) {
-      setError((err as Error).message)
+      toast.error((err as Error).message)
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <header className="bg-white border-b">
-        <div className="container mx-auto px-4 py-4">
-          <Link href="/" className="flex items-center gap-2 w-fit">
-            <Home className="h-6 w-6 text-primary" />
-            <span className="text-xl font-bold">입주해</span>
-          </Link>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gray-50/50 flex flex-col">
+      <Header />
 
-      <main className="flex-1 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
+      <main className="flex-1 flex items-center justify-center p-4 animate-fade-in">
+        <Card className="w-full max-w-md shadow-card">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">로그인</CardTitle>
             <CardDescription>
@@ -66,12 +60,6 @@ export default function LoginPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <div className="p-3 text-sm text-red-600 bg-red-50 rounded-md">
-                  {error}
-                </div>
-              )}
-
               <div className="space-y-2">
                 <Label htmlFor="email">이메일</Label>
                 <Input
@@ -100,12 +88,8 @@ export default function LoginPage() {
                 />
               </div>
 
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  '로그인'
-                )}
+              <Button type="submit" className="w-full" loading={isLoading}>
+                로그인
               </Button>
 
               <p className="text-center text-sm text-muted-foreground">

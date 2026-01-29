@@ -4,10 +4,15 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ProfileCard } from '@/components/profile/profile-card'
 import { ShareButton } from '@/components/profile/share-button'
+import { TrustScoreChart } from '@/components/profile/trust-score-chart'
 import { Button } from '@/components/ui/button'
-import { Home, LogOut, Edit, Loader2, Shield, Users } from 'lucide-react'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { PageContainer } from '@/components/layout/page-container'
+import { Edit, Shield, Users } from 'lucide-react'
 import Link from 'next/link'
 import { Profile, Verification } from '@/types/database'
+import { calculateTrustScore } from '@/lib/trust-score'
 
 export default function ProfilePage() {
   const router = useRouter()
@@ -41,82 +46,71 @@ export default function ProfilePage() {
     loadProfile()
   }, [router])
 
-  const handleLogout = async () => {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' })
-      router.push('/')
-    } catch (error) {
-      console.error('Logout failed:', error)
-    }
-  }
-
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
+      <PageContainer maxWidth="sm">
+        <div className="space-y-6">
+          <Skeleton className="h-8 w-32 mx-auto" />
+          <Skeleton className="h-64 w-full rounded-xl" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+      </PageContainer>
     )
   }
 
-  if (!profile) {
-    return null
-  }
+  if (!profile) return null
+
+  const scoreBreakdown = calculateTrustScore({ profile, verification })
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2">
-              <Home className="h-6 w-6 text-primary" />
-              <span className="text-xl font-bold">입주해</span>
-            </Link>
-            <Button variant="ghost" size="sm" onClick={handleLogout}>
-              <LogOut className="h-4 w-4 mr-2" />
-              로그아웃
+    <PageContainer maxWidth="sm">
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold text-center">내 프로필</h1>
+
+        {/* Trust Score */}
+        <Card className="shadow-card">
+          <CardHeader>
+            <CardTitle className="text-base">신뢰점수</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <TrustScoreChart
+              total={scoreBreakdown.total}
+              breakdown={scoreBreakdown}
+            />
+          </CardContent>
+        </Card>
+
+        <ProfileCard profile={profile} verification={verification} />
+
+        <ShareButton profileId={profile.id} />
+
+        <div className="space-y-3">
+          <Link href="/profile/verification">
+            <Button variant="outline" className="w-full justify-start">
+              <Shield className="h-4 w-4 mr-2" />
+              인증 관리
+              <span className="ml-auto text-sm text-muted-foreground">신뢰점수 높이기</span>
             </Button>
-          </div>
+          </Link>
+          <Link href="/profile/reference">
+            <Button variant="outline" className="w-full justify-start">
+              <Users className="h-4 w-4 mr-2" />
+              레퍼런스 관리
+              <span className="ml-auto text-sm text-muted-foreground">이전 집주인 평가</span>
+            </Button>
+          </Link>
         </div>
-      </header>
 
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        <div className="max-w-md mx-auto space-y-6">
-          <h1 className="text-2xl font-bold text-center">내 프로필</h1>
-
-          <ProfileCard profile={profile} verification={verification} />
-
-          <ShareButton profileId={profile.id} />
-
-          {/* 인증 및 레퍼런스 관리 */}
-          <div className="space-y-3">
-            <Link href="/profile/verification">
-              <Button variant="outline" className="w-full justify-start">
-                <Shield className="h-4 w-4 mr-2" />
-                인증 관리
-                <span className="ml-auto text-sm text-muted-foreground">신뢰점수 높이기</span>
-              </Button>
-            </Link>
-            <Link href="/profile/reference">
-              <Button variant="outline" className="w-full justify-start">
-                <Users className="h-4 w-4 mr-2" />
-                레퍼런스 관리
-                <span className="ml-auto text-sm text-muted-foreground">이전 집주인 평가</span>
-              </Button>
-            </Link>
-          </div>
-
-          <div className="pt-4">
-            <Link href="/onboarding/basic">
-              <Button variant="outline" className="w-full">
-                <Edit className="h-4 w-4 mr-2" />
-                프로필 수정하기
-              </Button>
-            </Link>
-          </div>
+        <div className="pt-4">
+          <Link href="/onboarding/basic">
+            <Button variant="outline" className="w-full">
+              <Edit className="h-4 w-4 mr-2" />
+              프로필 수정하기
+            </Button>
+          </Link>
         </div>
-      </main>
-    </div>
+      </div>
+    </PageContainer>
   )
 }

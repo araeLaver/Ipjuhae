@@ -6,9 +6,11 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
+import { Skeleton } from '@/components/ui/skeleton'
 import { ProgressBar } from '@/components/onboarding/progress-bar'
-import { Loader2, Check } from 'lucide-react'
+import { Check } from 'lucide-react'
 import { Profile } from '@/types/database'
+import { toast } from 'sonner'
 
 export default function CompletePage() {
   const router = useRouter()
@@ -60,10 +62,10 @@ export default function CompletePage() {
         throw new Error('저장에 실패했습니다')
       }
 
+      toast.success('프로필이 완성되었습니다!')
       router.push('/profile')
     } catch (error) {
-      console.error('Error completing profile:', error)
-      alert('저장 중 오류가 발생했습니다.')
+      toast.error('저장 중 오류가 발생했습니다.')
     } finally {
       setIsSaving(false)
     }
@@ -71,17 +73,22 @@ export default function CompletePage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-[50vh]">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="space-y-8 animate-fade-in">
+        <ProgressBar currentStep={3} totalSteps={3} />
+        <div className="max-w-lg mx-auto space-y-4">
+          <Skeleton className="h-8 w-48 mx-auto" />
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-10 w-full" />
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-fade-in">
       <ProgressBar currentStep={3} totalSteps={3} />
 
-      <Card className="max-w-lg mx-auto">
+      <Card className="max-w-lg mx-auto shadow-card">
         <CardHeader>
           <CardTitle className="text-center">자기소개서 작성</CardTitle>
         </CardHeader>
@@ -101,8 +108,8 @@ export default function CompletePage() {
             </p>
           </div>
 
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <p className="text-sm text-blue-800">
+          <div className="bg-primary/5 p-4 rounded-lg border border-primary/10">
+            <p className="text-sm text-primary/80">
               자기소개서는 나중에 프로필에서 수정할 수 있습니다.
               <br />
               지금 작성하지 않아도 프로필을 완성할 수 있어요.
@@ -120,17 +127,11 @@ export default function CompletePage() {
             </Button>
             <Button
               onClick={handleComplete}
-              disabled={isSaving}
+              loading={isSaving}
               className="flex-1"
             >
-              {isSaving ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <>
-                  <Check className="h-4 w-4 mr-2" />
-                  프로필 완성
-                </>
-              )}
+              <Check className="h-4 w-4 mr-2" />
+              프로필 완성
             </Button>
           </div>
         </CardContent>

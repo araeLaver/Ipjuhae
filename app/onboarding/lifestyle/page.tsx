@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ProgressBar } from '@/components/onboarding/progress-bar'
 import { LifestyleForm } from '@/components/onboarding/lifestyle-form'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Profile } from '@/types/database'
-import { Loader2 } from 'lucide-react'
 
 export default function LifestylePage() {
   const router = useRouter()
@@ -22,7 +22,6 @@ export default function LifestylePage() {
         }
         const data = await response.json()
 
-        // 기본 정보가 없으면 첫 단계로
         if (!data.profile?.name) {
           router.push('/onboarding/basic')
           return
@@ -40,14 +39,20 @@ export default function LifestylePage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-[50vh]">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="space-y-8 animate-fade-in">
+        <ProgressBar currentStep={2} totalSteps={3} />
+        <div className="max-w-lg mx-auto space-y-4">
+          <Skeleton className="h-8 w-48 mx-auto" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-fade-in">
       <ProgressBar currentStep={2} totalSteps={3} />
       <LifestyleForm
         initialData={
