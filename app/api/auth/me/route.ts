@@ -12,6 +12,9 @@ export async function GET() {
         id: user.id,
         email: user.email,
         userType: user.user_type,
+        auth_provider: user.auth_provider,
+        phone_verified: user.phone_verified,
+        profile_image: user.profile_image,
       },
     })
   } catch {

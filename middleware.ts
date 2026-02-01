@@ -1,22 +1,56 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
+function isTokenValid(token: string): boolean {
+  try {
+    const parts = token.split('.')
+    if (parts.length !== 3) return false
+
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')))
+    if (!payload.exp) return false
+
+    return payload.exp * 1000 > Date.now()
+  } catch {
+    return false
+  }
+}
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+  const token = request.cookies.get('auth_token')?.value
+  const hasValidToken = token ? isTokenValid(token) : false
 
-  // 인증이 필요한 세입자 라우트
-  const tenantProtectedRoutes = ['/profile', '/onboarding']
-
-  // 인증이 필요한 집주인 라우트
-  const landlordProtectedRoutes = ['/landlord']
-
-  // 레퍼런스 설문 페이지는 인증 불필요 (public)
-  if (pathname.startsWith('/reference/survey')) {
+  // Public routes — always pass through
+  if (
+    pathname.startsWith('/reference/survey') ||
+    pathname.startsWith('/terms') ||
+    pathname.startsWith('/privacy') ||
+    pathname.startsWith('/api')
+  ) {
     return NextResponse.next()
   }
 
-  // 인증 확인은 각 API 라우트와 페이지 컴포넌트에서 처리
-  // 여기서는 기본적인 라우팅만 처리
+  // Protected routes — redirect to login if no valid token
+  const protectedPrefixes = ['/profile', '/onboarding', '/landlord', '/verify-phone']
+  const isProtected = protectedPrefixes.some((p) => pathname.startsWith(p))
+
+  if (isProtected && !hasValidToken) {
+    const loginUrl = request.nextUrl.clone()
+    loginUrl.pathname = '/login'
+    loginUrl.searchParams.set('redirect', pathname)
+    return NextResponse.redirect(loginUrl)
+  }
+
+  // Auth pages — redirect to profile if already logged in
+  const authPages = ['/login', '/signup']
+  const isAuthPage = authPages.some((p) => pathname === p)
+
+  if (isAuthPage && hasValidToken) {
+    const profileUrl = request.nextUrl.clone()
+    profileUrl.pathname = '/profile'
+    return NextResponse.redirect(profileUrl)
+  }
+
   return NextResponse.next()
 }
 

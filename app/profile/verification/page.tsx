@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { VerificationCard } from '@/components/verification/verification-card'
+import { VerificationCardWithUpload } from '@/components/verification/verification-card-with-upload'
 import { PageContainer } from '@/components/layout/page-container'
 import { Shield } from 'lucide-react'
 import { Verification } from '@/types/database'
@@ -107,17 +107,17 @@ export default function VerificationPage() {
         </Card>
 
         <div className="space-y-4">
-          <VerificationCard
+          <VerificationCardWithUpload
             type="employment"
             verification={verification}
             onVerified={handleVerified}
           />
-          <VerificationCard
+          <VerificationCardWithUpload
             type="income"
             verification={verification}
             onVerified={handleVerified}
           />
-          <VerificationCard
+          <VerificationCardWithUpload
             type="credit"
             verification={verification}
             onVerified={handleVerified}

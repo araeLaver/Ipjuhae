@@ -11,6 +11,7 @@ import { ProgressBar } from '@/components/onboarding/progress-bar'
 import { Check } from 'lucide-react'
 import { Profile } from '@/types/database'
 import { toast } from 'sonner'
+import { AiIntroGenerator } from '@/components/profile/ai-intro-generator'
 
 export default function CompletePage() {
   const router = useRouter()
@@ -94,7 +95,10 @@ export default function CompletePage() {
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="intro">집주인에게 보낼 자기소개서 (선택)</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="intro">집주인에게 보낼 자기소개서 (선택)</Label>
+              <AiIntroGenerator onGenerated={(text) => setIntro(text)} />
+            </div>
             <Textarea
               id="intro"
               value={intro}

@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { PageContainer } from '@/components/layout/page-container'
 import { Edit, Shield, Users } from 'lucide-react'
+import { AccountStatus } from '@/components/profile/account-status'
 import Link from 'next/link'
 import { Profile, Verification } from '@/types/database'
 import { calculateTrustScore } from '@/lib/trust-score'
@@ -67,6 +68,8 @@ export default function ProfilePage() {
     <PageContainer maxWidth="sm">
       <div className="space-y-6">
         <h1 className="text-2xl font-bold text-center">내 프로필</h1>
+
+        <AccountStatus />
 
         {/* Trust Score */}
         <Card className="shadow-card">
