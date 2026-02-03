@@ -5,12 +5,45 @@ export type StayTime = '아침' | '저녁' | '주말만' | '거의없음'
 export type Duration = '6개월' | '1년' | '2년' | '장기'
 export type NoiseLevel = '조용' | '보통' | '활발'
 
+export type AuthProvider = 'kakao' | 'naver' | 'google'
+export type DocumentType = 'employment' | 'income' | 'credit'
+export type DocumentStatus = 'pending' | 'processing' | 'approved' | 'rejected'
+
 export interface User {
   id: string
   email: string
-  password_hash: string
+  password_hash: string | null
   name: string | null
   user_type: 'tenant' | 'landlord'
+  auth_provider: AuthProvider | null
+  auth_provider_id: string | null
+  profile_image: string | null
+  phone_number: string | null
+  phone_verified: boolean
+  terms_agreed_at: Date | null
+  privacy_agreed_at: Date | null
+  marketing_agreed_at: Date | null
+  created_at: Date
+  updated_at: Date
+}
+
+export interface PhoneVerification {
+  id: string
+  phone_number: string
+  code: string
+  verified: boolean
+  expires_at: Date
+  created_at: Date
+}
+
+export interface VerificationDocument {
+  id: string
+  user_id: string
+  document_type: DocumentType
+  file_name: string
+  file_url: string | null
+  status: DocumentStatus
+  reject_reason: string | null
   created_at: Date
   updated_at: Date
 }

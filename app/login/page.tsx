@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Header } from '@/components/layout/header'
 import { Home } from 'lucide-react'
 import { toast } from 'sonner'
+import { SocialLoginButtons } from '@/components/auth/social-login-buttons'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -91,6 +92,8 @@ export default function LoginPage() {
               <Button type="submit" className="w-full" loading={isLoading}>
                 로그인
               </Button>
+
+              <SocialLoginButtons mode="login" />
 
               <p className="text-center text-sm text-muted-foreground">
                 계정이 없으신가요?{' '}

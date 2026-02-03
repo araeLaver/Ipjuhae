@@ -3,12 +3,29 @@ import { query, queryOne } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
 import { Verification } from '@/types/database'
 
-// POST: 신용 인증 (Mock - 등급 1-3 무작위)
-export async function POST() {
+// POST: 신용 인증 (Mock - 등급 1-3 무작위) - 직접 또는 서류 업로드
+export async function POST(request: Request) {
   try {
     const user = await getCurrentUser()
     if (!user) {
       return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 })
+    }
+
+    const body = await request.json().catch(() => ({}))
+    const { documentId } = body
+
+    // 서류 기반 인증
+    if (documentId) {
+      const doc = await queryOne<{ id: string; status: string }>(
+        "SELECT id, status FROM verification_documents WHERE id = $1 AND user_id = $2 AND document_type = 'credit'",
+        [documentId, user.id]
+      )
+      if (!doc) {
+        return NextResponse.json({ error: '서류를 찾을 수 없습니다' }, { status: 404 })
+      }
+      if (doc.status !== 'approved') {
+        return NextResponse.json({ error: '서류가 아직 승인되지 않았습니다', status: doc.status }, { status: 400 })
+      }
     }
 
     // 기존 인증 레코드 확인/생성

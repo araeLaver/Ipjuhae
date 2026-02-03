@@ -11,6 +11,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Header } from '@/components/layout/header'
 import { User, Building } from 'lucide-react'
 import { toast } from 'sonner'
+import { SocialLoginButtons } from '@/components/auth/social-login-buttons'
+import { TermsConsent } from '@/components/auth/terms-consent'
 
 export default function SignupPage() {
   const router = useRouter()
@@ -21,6 +23,9 @@ export default function SignupPage() {
     confirmPassword: '',
     userType: 'tenant' as 'tenant' | 'landlord',
   })
+  const [termsAgreed, setTermsAgreed] = useState(false)
+  const [privacyAgreed, setPrivacyAgreed] = useState(false)
+  const [marketingAgreed, setMarketingAgreed] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   const validate = () => {
@@ -30,6 +35,12 @@ export default function SignupPage() {
     }
     if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = '비밀번호가 일치하지 않습니다'
+    }
+    if (!termsAgreed) {
+      newErrors.terms = '이용약관에 동의해주세요'
+    }
+    if (!privacyAgreed) {
+      newErrors.privacy = '개인정보처리방침에 동의해주세요'
     }
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -49,6 +60,9 @@ export default function SignupPage() {
           email: formData.email,
           password: formData.password,
           userType: formData.userType,
+          termsAgreed,
+          privacyAgreed,
+          marketingAgreed,
         }),
       })
 
@@ -167,9 +181,23 @@ export default function SignupPage() {
                 </RadioGroup>
               </div>
 
+              <TermsConsent
+                termsAgreed={termsAgreed}
+                privacyAgreed={privacyAgreed}
+                marketingAgreed={marketingAgreed}
+                onTermsChange={setTermsAgreed}
+                onPrivacyChange={setPrivacyAgreed}
+                onMarketingChange={setMarketingAgreed}
+              />
+              {(errors.terms || errors.privacy) && (
+                <p className="text-xs text-destructive">{errors.terms || errors.privacy}</p>
+              )}
+
               <Button type="submit" className="w-full" loading={isLoading}>
                 가입하기
               </Button>
+
+              <SocialLoginButtons mode="signup" />
 
               <p className="text-center text-sm text-muted-foreground">
                 이미 계정이 있으신가요?{' '}
