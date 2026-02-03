@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
-import { query, queryOne } from '@/lib/db'
+import { query, queryOne, transaction } from '@/lib/db'
 import { LandlordReference, Profile, ReferenceResponse } from '@/types/database'
+import { referenceSurveySchema } from '@/lib/validations'
 
 interface RouteParams {
   params: Promise<{ token: string }>
@@ -11,7 +12,7 @@ export async function GET(request: Request, { params }: RouteParams) {
   try {
     const { token } = await params
 
-    const reference = await queryOne<LandlordReference>(
+    const reference = await queryOne<LandlordReference & { tenant_name?: string }>(
       `SELECT lr.*, p.name as tenant_name
        FROM landlord_references lr
        LEFT JOIN profiles p ON lr.user_id = p.user_id
@@ -23,17 +24,14 @@ export async function GET(request: Request, { params }: RouteParams) {
       return NextResponse.json({ error: '유효하지 않은 링크입니다' }, { status: 404 })
     }
 
-    // 만료 확인
     if (reference.token_expires_at && new Date(reference.token_expires_at) < new Date()) {
       return NextResponse.json({ error: '링크가 만료되었습니다' }, { status: 400 })
     }
 
-    // 이미 완료됨
     if (reference.status === 'completed') {
       return NextResponse.json({ error: '이미 설문이 완료되었습니다' }, { status: 400 })
     }
 
-    // 세입자 프로필 조회
     const profile = await queryOne<Profile>(
       'SELECT * FROM profiles WHERE user_id = $1',
       [reference.user_id]
@@ -64,57 +62,43 @@ export async function POST(request: Request, { params }: RouteParams) {
       return NextResponse.json({ error: '유효하지 않은 링크입니다' }, { status: 404 })
     }
 
-    // 만료 확인
     if (reference.token_expires_at && new Date(reference.token_expires_at) < new Date()) {
       return NextResponse.json({ error: '링크가 만료되었습니다' }, { status: 400 })
     }
 
-    // 이미 완료됨
     if (reference.status === 'completed') {
       return NextResponse.json({ error: '이미 설문이 완료되었습니다' }, { status: 400 })
     }
 
-    const {
-      rentPayment,
-      propertyCondition,
-      neighborIssues,
-      checkoutCondition,
-      wouldRecommend,
-      comment,
-    } = await request.json()
-
-    // 유효성 검사
-    const scores = [rentPayment, propertyCondition, neighborIssues, checkoutCondition]
-    for (const score of scores) {
-      if (typeof score !== 'number' || score < 1 || score > 5) {
-        return NextResponse.json({ error: '모든 항목에 1-5점으로 평가해주세요' }, { status: 400 })
-      }
+    const body = await request.json()
+    const parsed = referenceSurveySchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message || '입력값이 올바르지 않습니다' },
+        { status: 400 }
+      )
     }
 
-    if (typeof wouldRecommend !== 'boolean') {
-      return NextResponse.json({ error: '추천 여부를 선택해주세요' }, { status: 400 })
-    }
+    const { rentPayment, propertyCondition, neighborIssues, checkoutCondition, wouldRecommend, comment } = parsed.data
 
-    // 전체 평균 계산
     const avgScore = (rentPayment + propertyCondition + neighborIssues + checkoutCondition) / 4
     let overallRating = 'neutral'
     if (avgScore >= 4) overallRating = 'positive'
     else if (avgScore < 2.5) overallRating = 'negative'
 
-    // 설문 응답 저장
-    await query<ReferenceResponse>(
-      `INSERT INTO reference_responses
-        (reference_id, rent_payment, property_condition, neighbor_issues, checkout_condition, would_recommend, comment, overall_rating)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       RETURNING *`,
-      [reference.id, rentPayment, propertyCondition, neighborIssues, checkoutCondition, wouldRecommend, comment, overallRating]
-    )
-
-    // 레퍼런스 상태 업데이트
-    await query(
-      `UPDATE landlord_references SET status = 'completed', completed_at = NOW() WHERE id = $1`,
-      [reference.id]
-    )
+    // 트랜잭션으로 응답 저장 + 상태 업데이트를 원자적으로 처리
+    await transaction(async (client) => {
+      await client.query(
+        `INSERT INTO reference_responses
+          (reference_id, rent_payment, property_condition, neighbor_issues, checkout_condition, would_recommend, comment, overall_rating)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [reference.id, rentPayment, propertyCondition, neighborIssues, checkoutCondition, wouldRecommend, comment || null, overallRating]
+      )
+      await client.query(
+        `UPDATE landlord_references SET status = 'completed', completed_at = NOW() WHERE id = $1`,
+        [reference.id]
+      )
+    })
 
     return NextResponse.json({
       message: '설문이 완료되었습니다. 감사합니다!',

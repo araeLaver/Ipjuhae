@@ -67,7 +67,7 @@ export function TrustScoreChart({ total, breakdown }: TrustScoreChartProps) {
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">{cat.label}</span>
                 <span className="font-medium">
-                  {value >= 0 ? value : value}
+                  {Math.max(0, value)}
                   <span className="text-muted-foreground">/{cat.max}</span>
                 </span>
               </div>

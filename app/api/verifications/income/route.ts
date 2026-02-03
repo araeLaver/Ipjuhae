@@ -2,8 +2,7 @@ import { NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
 import { Verification } from '@/types/database'
-
-const VALID_INCOME_RANGES = ['3000만원 미만', '3000-5000만원', '5000-7000만원', '7000만원 이상']
+import { incomeSchema } from '@/lib/validations'
 
 // POST: 소득 인증 (Mock)
 export async function POST(request: Request) {
@@ -13,13 +12,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 })
     }
 
-    const { incomeRange } = await request.json()
-
-    if (!incomeRange || !VALID_INCOME_RANGES.includes(incomeRange)) {
-      return NextResponse.json({ error: '유효한 소득 구간을 선택해주세요' }, { status: 400 })
+    const body = await request.json()
+    const parsed = incomeSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: '유효한 소득 구간을 선택해주세요' },
+        { status: 400 }
+      )
     }
 
-    // 기존 인증 레코드 확인/생성
+    const { incomeRange } = parsed.data
+
     let verification = await queryOne<Verification>(
       'SELECT * FROM verifications WHERE user_id = $1',
       [user.id]
@@ -33,7 +36,6 @@ export async function POST(request: Request) {
       verification = created
     }
 
-    // 소득 인증 업데이트
     const [updated] = await query<Verification>(
       `UPDATE verifications SET
         income_verified = TRUE,

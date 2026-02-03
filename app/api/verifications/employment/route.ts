@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
 import { Verification } from '@/types/database'
+import { employmentSchema } from '@/lib/validations'
 
 // POST: 재직 인증 (Mock)
 export async function POST(request: Request) {
@@ -11,13 +12,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 })
     }
 
-    const { company } = await request.json()
-
-    if (!company || company.trim().length < 2) {
-      return NextResponse.json({ error: '회사명을 입력해주세요' }, { status: 400 })
+    const body = await request.json()
+    const parsed = employmentSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message || '회사명을 입력해주세요' },
+        { status: 400 }
+      )
     }
 
-    // 기존 인증 레코드 확인/생성
+    const { company } = parsed.data
+
     let verification = await queryOne<Verification>(
       'SELECT * FROM verifications WHERE user_id = $1',
       [user.id]
@@ -31,7 +36,6 @@ export async function POST(request: Request) {
       verification = created
     }
 
-    // 재직 인증 업데이트
     const [updated] = await query<Verification>(
       `UPDATE verifications SET
         employment_verified = TRUE,

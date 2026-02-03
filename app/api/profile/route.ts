@@ -3,6 +3,7 @@ import { query, queryOne } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
 import { Profile, Verification, ReferenceResponse } from '@/types/database'
 import { calculateTrustScore } from '@/lib/trust-score'
+import { profileSchema } from '@/lib/validations'
 
 // GET: 내 프로필 조회 (동적 신뢰점수 포함)
 export async function GET() {
@@ -17,13 +18,11 @@ export async function GET() {
       [user.id]
     )
 
-    // 인증 정보 조회
     const verification = await queryOne<Verification>(
       'SELECT * FROM verifications WHERE user_id = $1',
       [user.id]
     )
 
-    // 완료된 레퍼런스 응답 조회
     const referenceResponses = await query<ReferenceResponse>(
       `SELECT rr.* FROM reference_responses rr
        JOIN landlord_references lr ON rr.reference_id = lr.id
@@ -31,8 +30,8 @@ export async function GET() {
       [user.id]
     )
 
-    // 동적 신뢰점수 계산
     let dynamicProfile = profile
+    let trustScoreBreakdown = null
     if (profile) {
       const scoreBreakdown = calculateTrustScore({
         profile,
@@ -43,16 +42,13 @@ export async function GET() {
         ...profile,
         trust_score: scoreBreakdown.total,
       }
+      trustScoreBreakdown = scoreBreakdown
     }
 
     return NextResponse.json({
       profile: dynamicProfile,
       verification,
-      trustScoreBreakdown: profile ? calculateTrustScore({
-        profile,
-        verification,
-        referenceResponses,
-      }) : null,
+      trustScoreBreakdown,
     })
   } catch (error) {
     console.error('Get profile error:', error)
@@ -69,21 +65,19 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
-    const {
-      name,
-      age_range,
-      family_type,
-      pets,
-      smoking,
-      stay_time,
-      duration,
-      noise_level,
-      bio,
-      intro,
-      is_complete,
-    } = body
+    const parsed = profileSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message || '입력값이 올바르지 않습니다' },
+        { status: 400 }
+      )
+    }
 
-    // 기존 프로필 확인
+    const {
+      name, age_range, family_type, pets, smoking,
+      stay_time, duration, noise_level, bio, intro, is_complete,
+    } = parsed.data
+
     const existingProfile = await queryOne<Profile>(
       'SELECT id FROM profiles WHERE user_id = $1',
       [user.id]
@@ -92,7 +86,6 @@ export async function POST(request: Request) {
     let profile: Profile
 
     if (existingProfile) {
-      // 업데이트
       const [updated] = await query<Profile>(
         `UPDATE profiles SET
           name = COALESCE($1, name),
@@ -112,12 +105,11 @@ export async function POST(request: Request) {
       )
       profile = updated
     } else {
-      // 생성
       const [created] = await query<Profile>(
         `INSERT INTO profiles (user_id, name, age_range, family_type, pets, smoking, stay_time, duration, noise_level, bio, intro, is_complete)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         RETURNING *`,
-        [user.id, name, age_range, family_type, pets || ['없음'], smoking || false, stay_time, duration, noise_level, bio, intro, is_complete || false]
+        [user.id, name, age_range, family_type, pets || ['없음'], smoking ?? false, stay_time, duration, noise_level, bio, intro, is_complete ?? false]
       )
       profile = created
     }

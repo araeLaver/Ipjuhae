@@ -3,6 +3,7 @@ import { query, queryOne } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
 import { User, Profile, Verification } from '@/types/database'
 import { calculateTrustScore } from '@/lib/trust-score'
+import { tenantFilterSchema } from '@/lib/validations'
 
 // GET: 세입자 목록 조회 (필터, 페이지네이션)
 export async function GET(request: Request) {
@@ -12,7 +13,6 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 })
     }
 
-    // 사용자 타입 확인
     const fullUser = await queryOne<User>(
       'SELECT * FROM users WHERE id = $1',
       [user.id]
@@ -23,18 +23,26 @@ export async function GET(request: Request) {
     }
 
     const { searchParams } = new URL(request.url)
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '10')
+    const parsed = tenantFilterSchema.safeParse({
+      page: searchParams.get('page') || undefined,
+      limit: searchParams.get('limit') || undefined,
+      ageRange: searchParams.get('ageRange') || undefined,
+      familyType: searchParams.get('familyType') || undefined,
+      minScore: searchParams.get('minScore') || undefined,
+      smoking: searchParams.get('smoking') || undefined,
+    })
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message || '잘못된 필터 값입니다' },
+        { status: 400 }
+      )
+    }
+
+    const { page, limit, ageRange, familyType, minScore, smoking } = parsed.data
     const offset = (page - 1) * limit
 
-    // 필터 파라미터
-    const ageRange = searchParams.get('ageRange')
-    const familyType = searchParams.get('familyType')
-    const minScore = searchParams.get('minScore')
-    const smoking = searchParams.get('smoking')
-
-    // 조건 빌드
-    let conditions = ['p.is_complete = TRUE']
+    const conditions = ['p.is_complete = TRUE']
     const params: (string | number | boolean)[] = []
     let paramIndex = 1
 
@@ -50,21 +58,20 @@ export async function GET(request: Request) {
       paramIndex++
     }
 
-    if (minScore) {
+    if (minScore !== undefined) {
       conditions.push(`p.trust_score >= $${paramIndex}`)
-      params.push(parseInt(minScore))
+      params.push(minScore)
       paramIndex++
     }
 
-    if (smoking !== null && smoking !== undefined) {
+    if (smoking !== undefined) {
       conditions.push(`p.smoking = $${paramIndex}`)
       params.push(smoking === 'true')
       paramIndex++
     }
 
-    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
+    const whereClause = `WHERE ${conditions.join(' AND ')}`
 
-    // 프로필 조회
     const profiles = await query<Profile & { verification?: Verification }>(
       `SELECT p.*, v.*
        FROM profiles p
@@ -75,20 +82,15 @@ export async function GET(request: Request) {
       [...params, limit, offset]
     )
 
-    // 전체 개수
     const [countResult] = await query<{ count: string }>(
       `SELECT COUNT(*) as count FROM profiles p ${whereClause}`,
       params
     )
     const totalCount = parseInt(countResult?.count || '0')
 
-    // 동적 신뢰점수 계산 적용
     const enrichedProfiles = profiles.map((p) => {
       const verification = p.verification || null
-      const scoreBreakdown = calculateTrustScore({
-        profile: p,
-        verification,
-      })
+      const scoreBreakdown = calculateTrustScore({ profile: p, verification })
       return {
         ...p,
         trust_score: scoreBreakdown.total,

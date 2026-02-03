@@ -11,10 +11,8 @@ export async function GET() {
       user: {
         id: user.id,
         email: user.email,
+        name: user.name,
         userType: user.user_type,
-        auth_provider: user.auth_provider,
-        phone_verified: user.phone_verified,
-        profile_image: user.profile_image,
       },
     })
   } catch {

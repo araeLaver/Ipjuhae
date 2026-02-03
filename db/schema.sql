@@ -1,9 +1,10 @@
 -- 입주해 (Ipjuhae) 데이터베이스 스키마
 -- PostgreSQL
 
--- 기존 테이블 삭제 (개발용)
-DROP TABLE IF EXISTS profiles CASCADE;
-DROP TABLE IF EXISTS users CASCADE;
+-- ⚠️ 주의: 아래 DROP 문은 개발 환경 초기화 전용입니다.
+-- 프로덕션에서는 마이그레이션 도구(Prisma, Drizzle 등)를 사용하세요.
+-- DROP TABLE IF EXISTS profiles CASCADE;
+-- DROP TABLE IF EXISTS users CASCADE;
 
 -- 사용자 테이블
 CREATE TABLE users (
@@ -31,7 +32,7 @@ CREATE TABLE profiles (
   stay_time VARCHAR(20),            -- '아침', '저녁', '주말만', '거의없음'
   duration VARCHAR(20),             -- '6개월', '1년', '2년', '장기'
   noise_level VARCHAR(20),          -- '조용', '보통', '활발'
-  bio TEXT,                         -- 자유 한마디 (100자)
+  bio VARCHAR(200),                  -- 자유 한마디 (100자 권장, 최대 200자)
 
   -- 자기소개서 (사용자 직접 작성)
   intro TEXT,
@@ -88,7 +89,7 @@ CREATE TABLE IF NOT EXISTS verifications (
   income_range VARCHAR(50),
   income_verified_at TIMESTAMPTZ,
   credit_verified BOOLEAN DEFAULT FALSE,
-  credit_grade INT,
+  credit_grade INT CHECK (credit_grade BETWEEN 1 AND 3),
   credit_verified_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -102,7 +103,7 @@ CREATE TABLE IF NOT EXISTS landlord_references (
   landlord_phone VARCHAR(20) NOT NULL,
   landlord_email VARCHAR(255),
   status VARCHAR(20) DEFAULT 'pending',
-  verification_token VARCHAR(100) UNIQUE,
+  verification_token VARCHAR(128) UNIQUE,
   token_expires_at TIMESTAMPTZ,
   request_sent_at TIMESTAMPTZ,
   completed_at TIMESTAMPTZ,
@@ -118,7 +119,7 @@ CREATE TABLE IF NOT EXISTS reference_responses (
   neighbor_issues INT CHECK (neighbor_issues BETWEEN 1 AND 5),
   checkout_condition INT CHECK (checkout_condition BETWEEN 1 AND 5),
   would_recommend BOOLEAN,
-  comment TEXT,
+  comment VARCHAR(500),
   overall_rating VARCHAR(20),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -150,6 +151,13 @@ CREATE INDEX IF NOT EXISTS idx_references_user_id ON landlord_references(user_id
 CREATE INDEX IF NOT EXISTS idx_references_token ON landlord_references(verification_token);
 CREATE INDEX IF NOT EXISTS idx_landlord_profiles_user_id ON landlord_profiles(user_id);
 CREATE INDEX IF NOT EXISTS idx_profile_views_landlord_id ON profile_views(landlord_id);
+
+-- 추가 성능 인덱스
+CREATE INDEX IF NOT EXISTS idx_profiles_trust_score ON profiles(trust_score DESC);
+CREATE INDEX IF NOT EXISTS idx_profiles_age_range ON profiles(age_range) WHERE is_complete = TRUE;
+CREATE INDEX IF NOT EXISTS idx_references_status ON landlord_references(status);
+CREATE INDEX IF NOT EXISTS idx_references_expires ON landlord_references(token_expires_at) WHERE status = 'sent';
+CREATE INDEX IF NOT EXISTS idx_reference_responses_ref_id ON reference_responses(reference_id);
 
 -- verifications 테이블 트리거
 CREATE TRIGGER update_verifications_updated_at

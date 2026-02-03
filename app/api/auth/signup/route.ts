@@ -2,22 +2,31 @@ import { NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
 import { hashPassword, generateToken, setAuthCookie } from '@/lib/auth'
 import { User } from '@/types/database'
+import { signupSchema } from '@/lib/validations'
+import { authRateLimit, getClientIp } from '@/lib/rate-limit'
 
 export async function POST(request: Request) {
   try {
-    const { email, password, userType } = await request.json()
-
-    if (!email || !password) {
+    const ip = getClientIp(request)
+    const rl = authRateLimit(ip)
+    if (!rl.success) {
       return NextResponse.json(
-        { error: '이메일과 비밀번호를 입력해주세요' },
+        { error: '요청이 너무 많습니다. 잠시 후 다시 시도해주세요' },
+        { status: 429, headers: { 'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)) } }
+      )
+    }
+
+    const body = await request.json()
+    const parsed = signupSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message || '입력값이 올바르지 않습니다' },
         { status: 400 }
       )
     }
 
-    // 유효한 user_type 확인
-    const validUserType = userType === 'landlord' ? 'landlord' : 'tenant'
+    const { email, password, userType } = parsed.data
 
-    // 이메일 중복 체크
     const existingUser = await queryOne<User>(
       'SELECT id FROM users WHERE email = $1',
       [email]
@@ -30,20 +39,17 @@ export async function POST(request: Request) {
       )
     }
 
-    // 비밀번호 해시
     const passwordHash = await hashPassword(password)
 
-    // 사용자 생성 (user_type 포함)
     const [user] = await query<User>(
       'INSERT INTO users (email, password_hash, user_type) VALUES ($1, $2, $3) RETURNING *',
-      [email, passwordHash, validUserType]
+      [email, passwordHash, userType]
     )
 
-    // 토큰 생성 및 쿠키 설정
     const token = generateToken(user.id)
     await setAuthCookie(token)
 
-    return NextResponse.json({ success: true, userId: user.id, userType: validUserType })
+    return NextResponse.json({ success: true, userId: user.id, userType })
   } catch (error) {
     console.error('Signup error:', error)
     return NextResponse.json(

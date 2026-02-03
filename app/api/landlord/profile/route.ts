@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
 import { LandlordProfile, User } from '@/types/database'
+import { landlordProfileSchema } from '@/lib/validations'
 
 // GET: 집주인 프로필 조회
 export async function GET() {
@@ -11,7 +12,6 @@ export async function GET() {
       return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 })
     }
 
-    // 사용자 타입 확인
     const fullUser = await queryOne<User>(
       'SELECT * FROM users WHERE id = $1',
       [user.id]
@@ -41,13 +41,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 })
     }
 
-    const { name, phone, propertyCount, propertyRegions } = await request.json()
-
-    if (!name) {
-      return NextResponse.json({ error: '이름을 입력해주세요' }, { status: 400 })
+    const body = await request.json()
+    const parsed = landlordProfileSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message || '입력값이 올바르지 않습니다' },
+        { status: 400 }
+      )
     }
 
-    // 기존 프로필 확인
+    const { name, phone, propertyCount, propertyRegions } = parsed.data
+
     const existingProfile = await queryOne<LandlordProfile>(
       'SELECT id FROM landlord_profiles WHERE user_id = $1',
       [user.id]
@@ -56,7 +60,6 @@ export async function POST(request: Request) {
     let profile: LandlordProfile
 
     if (existingProfile) {
-      // 업데이트
       const [updated] = await query<LandlordProfile>(
         `UPDATE landlord_profiles SET
           name = COALESCE($1, name),
@@ -69,12 +72,11 @@ export async function POST(request: Request) {
       )
       profile = updated
     } else {
-      // 생성
       const [created] = await query<LandlordProfile>(
         `INSERT INTO landlord_profiles (user_id, name, phone, property_count, property_regions)
         VALUES ($1, $2, $3, $4, $5)
         RETURNING *`,
-        [user.id, name, phone, propertyCount || 0, propertyRegions || []]
+        [user.id, name, phone, propertyCount ?? 0, propertyRegions ?? []]
       )
       profile = created
     }

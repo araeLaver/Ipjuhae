@@ -2,19 +2,31 @@ import { NextResponse } from 'next/server'
 import { queryOne } from '@/lib/db'
 import { verifyPassword, generateToken, setAuthCookie } from '@/lib/auth'
 import { User } from '@/types/database'
+import { loginSchema } from '@/lib/validations'
+import { authRateLimit, getClientIp } from '@/lib/rate-limit'
 
 export async function POST(request: Request) {
   try {
-    const { email, password } = await request.json()
-
-    if (!email || !password) {
+    const ip = getClientIp(request)
+    const rl = authRateLimit(ip)
+    if (!rl.success) {
       return NextResponse.json(
-        { error: '이메일과 비밀번호를 입력해주세요' },
+        { error: '요청이 너무 많습니다. 잠시 후 다시 시도해주세요' },
+        { status: 429, headers: { 'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)) } }
+      )
+    }
+
+    const body = await request.json()
+    const parsed = loginSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message || '입력값이 올바르지 않습니다' },
         { status: 400 }
       )
     }
 
-    // 사용자 조회
+    const { email, password } = parsed.data
+
     const user = await queryOne<User>(
       'SELECT * FROM users WHERE email = $1',
       [email]
@@ -27,7 +39,6 @@ export async function POST(request: Request) {
       )
     }
 
-    // 비밀번호 확인
     const isValid = await verifyPassword(password, user.password_hash)
 
     if (!isValid) {
@@ -37,7 +48,6 @@ export async function POST(request: Request) {
       )
     }
 
-    // 토큰 생성 및 쿠키 설정
     const token = generateToken(user.id)
     await setAuthCookie(token)
 
