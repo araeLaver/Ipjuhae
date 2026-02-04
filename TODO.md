@@ -42,7 +42,7 @@
 ### 파일 업로드
 - [x] 인증 서류 실제 파일 저장소 연동 (lib/storage.ts - S3/R2 지원)
 - [x] 프로필 이미지 업로드 기능 (uploadProfileImage)
-- [ ] 이미지 리사이징/최적화
+- [x] 이미지 리사이징/최적화 (lib/image.ts - sharp, WebP 변환, 썸네일)
 
 ### 인증 API
 - [ ] 재직/소득/신용 인증 실제 API 연동 (Mock → 실서비스)

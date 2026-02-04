@@ -11,6 +11,7 @@
 
 import { logger } from './logger'
 import crypto from 'crypto'
+import { optimizeProfileImage, optimizeDocumentImage, validateImage } from './image'
 
 interface UploadResult {
   success: boolean
@@ -147,7 +148,7 @@ export async function uploadFile(options: UploadOptions): Promise<UploadResult> 
 }
 
 /**
- * 인증 서류 업로드
+ * 인증 서류 업로드 (이미지인 경우 자동 최적화)
  */
 export async function uploadVerificationDocument(
   userId: string,
@@ -156,6 +157,43 @@ export async function uploadVerificationDocument(
   fileName: string,
   contentType: string
 ): Promise<UploadResult> {
+  // 이미지인 경우 최적화 적용
+  if (contentType.startsWith('image/')) {
+    const buffer = file instanceof Blob
+      ? Buffer.from(await file.arrayBuffer())
+      : file
+
+    // 이미지 유효성 검사
+    const validation = await validateImage(buffer, {
+      maxSize: 20 * 1024 * 1024, // 서류는 20MB까지 허용
+    })
+    if (!validation.valid) {
+      return { success: false, error: validation.error }
+    }
+
+    // 서류 이미지 최적화 (최대 1920px, JPEG)
+    const optimized = await optimizeDocumentImage(buffer)
+    if (!optimized.success || !optimized.buffer) {
+      return { success: false, error: optimized.error || '이미지 최적화 실패' }
+    }
+
+    logger.info('서류 이미지 최적화 완료', {
+      originalSize: buffer.length,
+      optimizedSize: optimized.size,
+      documentType,
+    })
+
+    const optimizedFileName = fileName.replace(/\.[^.]+$/, '.jpg')
+
+    return uploadFile({
+      file: optimized.buffer,
+      fileName: optimizedFileName,
+      contentType: 'image/jpeg',
+      folder: `verifications/${userId}/${documentType}`,
+    })
+  }
+
+  // PDF 등 다른 파일 형식은 그대로 업로드
   return uploadFile({
     file,
     fileName,
@@ -165,7 +203,7 @@ export async function uploadVerificationDocument(
 }
 
 /**
- * 프로필 이미지 업로드
+ * 프로필 이미지 업로드 (자동 최적화)
  */
 export async function uploadProfileImage(
   userId: string,
@@ -178,16 +216,41 @@ export async function uploadProfileImage(
     return { success: false, error: '이미지 파일만 업로드 가능합니다' }
   }
 
-  // 파일 크기 제한 (5MB)
-  const size = file instanceof Blob ? file.size : file.length
-  if (size > 5 * 1024 * 1024) {
-    return { success: false, error: '파일 크기는 5MB 이하여야 합니다' }
+  // Buffer로 변환
+  const buffer = file instanceof Blob
+    ? Buffer.from(await file.arrayBuffer())
+    : file
+
+  // 파일 크기 제한 (10MB, 최적화 전)
+  if (buffer.length > 10 * 1024 * 1024) {
+    return { success: false, error: '파일 크기는 10MB 이하여야 합니다' }
   }
 
+  // 이미지 유효성 검사
+  const validation = await validateImage(buffer)
+  if (!validation.valid) {
+    return { success: false, error: validation.error }
+  }
+
+  // 이미지 최적화 (400x400 WebP)
+  const optimized = await optimizeProfileImage(buffer)
+  if (!optimized.success || !optimized.buffer) {
+    return { success: false, error: optimized.error || '이미지 최적화 실패' }
+  }
+
+  logger.info('프로필 이미지 최적화 완료', {
+    originalSize: buffer.length,
+    optimizedSize: optimized.size,
+    reduction: `${Math.round((1 - (optimized.size || 0) / buffer.length) * 100)}%`,
+  })
+
+  // 파일명을 .webp로 변경
+  const optimizedFileName = fileName.replace(/\.[^.]+$/, '.webp')
+
   return uploadFile({
-    file,
-    fileName,
-    contentType,
+    file: optimized.buffer,
+    fileName: optimizedFileName,
+    contentType: 'image/webp',
     folder: `profiles/${userId}`,
   })
 }
