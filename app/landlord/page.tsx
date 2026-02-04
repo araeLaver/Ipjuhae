@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PageContainer } from '@/components/layout/page-container'
-import { Users, Building, ArrowRight } from 'lucide-react'
+import { Users, Building, ArrowRight, BarChart3 } from 'lucide-react'
 import { LandlordProfile } from '@/types/database'
 import { toast } from 'sonner'
 
@@ -109,6 +109,27 @@ export default function LandlordDashboard() {
                       <h3 className="font-semibold">세입자 찾기</h3>
                       <p className="text-sm text-muted-foreground">
                         인증된 세입자 프로필을 검색하세요
+                      </p>
+                    </div>
+                  </div>
+                  <ArrowRight className="h-5 w-5 text-muted-foreground" />
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/landlord/stats">
+            <Card className="shadow-soft hover:shadow-card transition-shadow cursor-pointer">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-green-100 rounded-lg">
+                      <BarChart3 className="h-6 w-6 text-green-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">통계 및 분석</h3>
+                      <p className="text-sm text-muted-foreground">
+                        매물 현황과 활동을 확인하세요
                       </p>
                     </div>
                   </div>
