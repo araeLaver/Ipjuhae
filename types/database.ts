@@ -138,3 +138,46 @@ export interface ProfileView {
   profile_id: string
   viewed_at: Date
 }
+
+// 매물 유형
+export type PropertyType = 'apartment' | 'villa' | 'officetel' | 'oneroom' | 'house' | 'other'
+
+// 매물 상태
+export type PropertyStatus = 'available' | 'reserved' | 'rented' | 'hidden'
+
+// 매물
+export interface Property {
+  id: string
+  landlord_id: string
+  title: string
+  description: string | null
+  address: string
+  address_detail: string | null
+  region: string | null
+  deposit: number
+  monthly_rent: number
+  maintenance_fee: number
+  property_type: PropertyType
+  room_count: number
+  bathroom_count: number
+  floor: number | null
+  total_floor: number | null
+  area_sqm: number | null
+  options: string[]
+  status: PropertyStatus
+  available_from: string | null
+  view_count: number
+  created_at: Date
+  updated_at: Date
+}
+
+// 매물 이미지
+export interface PropertyImage {
+  id: string
+  property_id: string
+  image_url: string
+  thumbnail_url: string | null
+  sort_order: number
+  is_main: boolean
+  created_at: Date
+}
