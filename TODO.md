@@ -45,8 +45,8 @@
 - [x] 이미지 리사이징/최적화 (lib/image.ts - sharp, WebP 변환, 썸네일)
 
 ### 인증 API
-- [ ] 재직/소득/신용 인증 실제 API 연동 (Mock → 실서비스)
-- [ ] 집주인 본인인증 시스템
+- [x] 재직/소득/신용 인증 실제 API 연동 (lib/verification.ts - CODEF 지원)
+- [x] 집주인 본인인증 시스템 (NICE 연동 준비)
 
 ---
 

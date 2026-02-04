@@ -2,8 +2,10 @@ import { NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
 import { Verification } from '@/types/database'
+import { verifyCredit, getVerificationProvider } from '@/lib/verification'
+import { logger } from '@/lib/logger'
 
-// POST: 신용 인증 (Mock - 등급 1-3 무작위) - 직접 또는 서류 업로드
+// POST: 신용 인증
 export async function POST(request: Request) {
   try {
     const user = await getCurrentUser()
@@ -14,7 +16,7 @@ export async function POST(request: Request) {
     const body = await request.json().catch(() => ({}))
     const { documentId } = body
 
-    // 서류 기반 인증
+    // 서류 기반 인증 (문서 승인 확인)
     if (documentId) {
       const doc = await queryOne<{ id: string; status: string }>(
         "SELECT id, status FROM verification_documents WHERE id = $1 AND user_id = $2 AND document_type = 'credit'",
@@ -24,8 +26,43 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: '서류를 찾을 수 없습니다' }, { status: 404 })
       }
       if (doc.status !== 'approved') {
-        return NextResponse.json({ error: '서류가 아직 승인되지 않았습니다', status: doc.status }, { status: 400 })
+        return NextResponse.json(
+          { error: '서류가 아직 승인되지 않았습니다', status: doc.status },
+          { status: 400 }
+        )
       }
+    }
+
+    // 실서비스 연동 시 본인인증 정보 필요
+    const provider = getVerificationProvider()
+    let userIdentity: { name: string; birthDate: string; phoneNumber: string } | undefined
+
+    if (provider !== 'mock') {
+      const profile = await queryOne<{ name: string; birth_date: string; phone: string }>(
+        'SELECT name, birth_date, phone FROM profiles WHERE user_id = $1',
+        [user.id]
+      )
+
+      if (!profile?.phone) {
+        return NextResponse.json(
+          { error: '신용 인증을 위해 먼저 휴대폰 인증을 완료해주세요' },
+          { status: 400 }
+        )
+      }
+
+      userIdentity = {
+        name: profile.name,
+        birthDate: profile.birth_date,
+        phoneNumber: profile.phone,
+      }
+    }
+
+    // 신용 인증 실행
+    const result = await verifyCredit(userIdentity)
+
+    if (!result.success) {
+      logger.warn('신용 인증 실패', { userId: user.id, error: result.error })
+      return NextResponse.json({ error: result.error }, { status: 400 })
     }
 
     // 기존 인증 레코드 확인/생성
@@ -42,9 +79,6 @@ export async function POST(request: Request) {
       verification = created
     }
 
-    // 무작위 신용 등급 생성 (1-3)
-    const creditGrade = Math.floor(Math.random() * 3) + 1
-
     // 신용 인증 업데이트
     const [updated] = await query<Verification>(
       `UPDATE verifications SET
@@ -53,21 +87,27 @@ export async function POST(request: Request) {
         credit_verified_at = NOW()
       WHERE user_id = $2
       RETURNING *`,
-      [creditGrade, user.id]
+      [result.data?.creditGrade, user.id]
     )
 
-    const gradeLabels: Record<number, string> = {
-      1: '최우량',
-      2: '양호',
-      3: '보통'
-    }
+    logger.info('신용 인증 완료', {
+      userId: user.id,
+      creditGrade: result.data?.creditGrade,
+      gradeLabel: result.data?.gradeLabel,
+    })
 
     return NextResponse.json({
       verification: updated,
-      message: `신용 인증이 완료되었습니다. 등급: ${gradeLabels[creditGrade]}`
+      message: `신용 인증이 완료되었습니다. 등급: ${result.data?.gradeLabel}`,
+      creditInfo: {
+        grade: result.data?.creditGrade,
+        label: result.data?.gradeLabel,
+        score: result.data?.creditScore,
+      },
+      provider,
     })
   } catch (error) {
-    console.error('Credit verification error:', error)
+    logger.error('신용 인증 오류', { error })
     return NextResponse.json({ error: '신용 인증 중 오류가 발생했습니다' }, { status: 500 })
   }
 }
