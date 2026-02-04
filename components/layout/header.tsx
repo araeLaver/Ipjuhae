@@ -28,12 +28,14 @@ export function Header({ user }: HeaderProps) {
         { href: '/landlord', label: '대시보드' },
         { href: '/landlord/tenants', label: '세입자 찾기' },
         { href: '/landlord/favorites', label: '즐겨찾기' },
+        { href: '/landlord/messages', label: '메시지' },
       ]
     : user
     ? [
         { href: '/profile', label: '내 프로필' },
         { href: '/profile/verification', label: '인증 관리' },
         { href: '/profile/reference', label: '레퍼런스' },
+        { href: '/messages', label: '메시지' },
       ]
     : []
 

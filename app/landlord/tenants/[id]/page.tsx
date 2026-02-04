@@ -10,6 +10,7 @@ import { TrustScoreChart } from '@/components/profile/trust-score-chart'
 import { PageContainer } from '@/components/layout/page-container'
 import { AlertCircle, Star, ThumbsUp, ThumbsDown, ArrowLeft } from 'lucide-react'
 import { FavoriteButton } from '@/components/landlord/favorite-button'
+import { StartConversationButton } from '@/components/messages/start-conversation-button'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { Profile, Verification, ReferenceResponse } from '@/types/database'
@@ -105,7 +106,14 @@ export default function TenantDetailPage() {
             </Button>
           </Link>
           {tenantUserId && (
-            <FavoriteButton tenantId={tenantUserId} />
+            <div className="flex items-center gap-2">
+              <StartConversationButton
+                targetUserId={tenantUserId}
+                variant="outline"
+                size="sm"
+              />
+              <FavoriteButton tenantId={tenantUserId} />
+            </div>
           )}
         </div>
 
