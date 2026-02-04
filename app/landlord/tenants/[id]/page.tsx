@@ -8,7 +8,10 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { ProfileCard } from '@/components/profile/profile-card'
 import { TrustScoreChart } from '@/components/profile/trust-score-chart'
 import { PageContainer } from '@/components/layout/page-container'
-import { AlertCircle, Star, ThumbsUp, ThumbsDown } from 'lucide-react'
+import { AlertCircle, Star, ThumbsUp, ThumbsDown, ArrowLeft } from 'lucide-react'
+import { FavoriteButton } from '@/components/landlord/favorite-button'
+import { Button } from '@/components/ui/button'
+import Link from 'next/link'
 import { Profile, Verification, ReferenceResponse } from '@/types/database'
 import { toast } from 'sonner'
 
@@ -30,6 +33,7 @@ export default function TenantDetailPage() {
   const [verification, setVerification] = useState<Verification | null>(null)
   const [referenceResponses, setReferenceResponses] = useState<ReferenceResponse[]>([])
   const [scoreBreakdown, setScoreBreakdown] = useState<TrustScoreBreakdown | null>(null)
+  const [tenantUserId, setTenantUserId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -57,6 +61,7 @@ export default function TenantDetailPage() {
       setVerification(data.verification)
       setReferenceResponses(data.referenceResponses || [])
       setScoreBreakdown(data.trustScoreBreakdown)
+      setTenantUserId(data.profile?.user_id || null)
     } catch (err) {
       toast.error((err as Error).message)
     } finally {
@@ -91,6 +96,19 @@ export default function TenantDetailPage() {
   return (
     <PageContainer maxWidth="md">
       <div className="space-y-6">
+        {/* Header with back button and favorite */}
+        <div className="flex items-center justify-between">
+          <Link href="/landlord/tenants">
+            <Button variant="ghost" size="sm">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              목록으로
+            </Button>
+          </Link>
+          {tenantUserId && (
+            <FavoriteButton tenantId={tenantUserId} />
+          )}
+        </div>
+
         <ProfileCard profile={profile} verification={verification} />
 
         {scoreBreakdown && (

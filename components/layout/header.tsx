@@ -27,6 +27,7 @@ export function Header({ user }: HeaderProps) {
     ? [
         { href: '/landlord', label: '대시보드' },
         { href: '/landlord/tenants', label: '세입자 찾기' },
+        { href: '/landlord/favorites', label: '즐겨찾기' },
       ]
     : user
     ? [

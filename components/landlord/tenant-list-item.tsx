@@ -4,15 +4,19 @@ import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { VerificationBadges } from '@/components/verification/verification-badge'
+import { FavoriteButton } from '@/components/landlord/favorite-button'
 import { Profile, Verification } from '@/types/database'
-import { Shield, Users, PawPrint, Cigarette, ChevronRight } from 'lucide-react'
-import { getTrustScoreColor, getTrustScoreLabel } from '@/lib/trust-score'
+import { Shield, PawPrint, Cigarette, ChevronRight } from 'lucide-react'
+import { getTrustScoreColor } from '@/lib/trust-score'
 
 interface TenantListItemProps {
-  profile: Profile & { verification?: Verification | null }
+  profile: Profile & { verification?: Verification | null; user_id?: string }
+  showFavorite?: boolean
 }
 
-export function TenantListItem({ profile }: TenantListItemProps) {
+export function TenantListItem({ profile, showFavorite = true }: TenantListItemProps) {
+  const tenantUserId = profile.user_id
+
   return (
     <Link href={`/landlord/tenants/${profile.id}`}>
       <Card className="hover:shadow-md transition-shadow cursor-pointer">
@@ -57,7 +61,12 @@ export function TenantListItem({ profile }: TenantListItemProps) {
               </div>
             </div>
 
-            <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            <div className="flex items-center gap-2">
+              {showFavorite && tenantUserId && (
+                <FavoriteButton tenantId={tenantUserId} variant="icon" />
+              )}
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </div>
           </div>
         </CardContent>
       </Card>
