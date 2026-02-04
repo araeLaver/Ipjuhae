@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { query, queryOne, transaction } from '@/lib/db'
 import { LandlordReference, Profile, ReferenceResponse } from '@/types/database'
 import { referenceSurveySchema } from '@/lib/validations'
+import { apiRateLimit, getClientIp } from '@/lib/rate-limit'
+import { sanitizeUserInput } from '@/lib/sanitize'
 
 interface RouteParams {
   params: Promise<{ token: string }>
@@ -10,6 +12,15 @@ interface RouteParams {
 // GET: 토큰 유효성 확인
 export async function GET(request: Request, { params }: RouteParams) {
   try {
+    const ip = getClientIp(request)
+    const rl = apiRateLimit(ip)
+    if (!rl.success) {
+      return NextResponse.json(
+        { error: '요청이 너무 많습니다. 잠시 후 다시 시도해주세요' },
+        { status: 429, headers: { 'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)) } }
+      )
+    }
+
     const { token } = await params
 
     const reference = await queryOne<LandlordReference & { tenant_name?: string }>(
@@ -51,6 +62,15 @@ export async function GET(request: Request, { params }: RouteParams) {
 // POST: 설문 응답 제출
 export async function POST(request: Request, { params }: RouteParams) {
   try {
+    const ip = getClientIp(request)
+    const rl = apiRateLimit(ip)
+    if (!rl.success) {
+      return NextResponse.json(
+        { error: '요청이 너무 많습니다. 잠시 후 다시 시도해주세요' },
+        { status: 429, headers: { 'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)) } }
+      )
+    }
+
     const { token } = await params
 
     const reference = await queryOne<LandlordReference>(
@@ -81,6 +101,9 @@ export async function POST(request: Request, { params }: RouteParams) {
 
     const { rentPayment, propertyCondition, neighborIssues, checkoutCondition, wouldRecommend, comment } = parsed.data
 
+    // XSS 방지를 위한 comment sanitization
+    const sanitizedComment = comment ? sanitizeUserInput(comment) : null
+
     const avgScore = (rentPayment + propertyCondition + neighborIssues + checkoutCondition) / 4
     let overallRating = 'neutral'
     if (avgScore >= 4) overallRating = 'positive'
@@ -92,7 +115,7 @@ export async function POST(request: Request, { params }: RouteParams) {
         `INSERT INTO reference_responses
           (reference_id, rent_payment, property_condition, neighbor_issues, checkout_condition, would_recommend, comment, overall_rating)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-        [reference.id, rentPayment, propertyCondition, neighborIssues, checkoutCondition, wouldRecommend, comment || null, overallRating]
+        [reference.id, rentPayment, propertyCondition, neighborIssues, checkoutCondition, wouldRecommend, sanitizedComment, overallRating]
       )
       await client.query(
         `UPDATE landlord_references SET status = 'completed', completed_at = NOW() WHERE id = $1`,

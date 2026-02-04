@@ -3,8 +3,7 @@ type LogLevel = 'info' | 'warn' | 'error'
 interface LogEntry {
   level: LogLevel
   message: string
-  context?: string
-  error?: unknown
+  meta?: Record<string, unknown>
   timestamp: string
 }
 
@@ -20,29 +19,31 @@ function formatError(error: unknown): Record<string, unknown> | undefined {
   return { raw: String(error) }
 }
 
-function log(level: LogLevel, message: string, context?: string, error?: unknown) {
+function log(level: LogLevel, message: string, meta?: Record<string, unknown>) {
   const entry: LogEntry = {
     level,
     message,
-    context,
+    meta,
     timestamp: new Date().toISOString(),
   }
 
-  const errorDetails = formatError(error)
+  // meta에 error가 있으면 포맷팅
+  if (meta?.error) {
+    entry.meta = { ...meta, error: formatError(meta.error) }
+  }
 
   if (process.env.NODE_ENV === 'production') {
     // 프로덕션: 구조화된 JSON 로그 (Sentry/Datadog 등 연동 가능)
-    console[level](JSON.stringify({ ...entry, error: errorDetails }))
+    console[level](JSON.stringify(entry))
   } else {
     // 개발: 가독성 좋은 포맷
-    const prefix = `[${level.toUpperCase()}] ${context ? `[${context}] ` : ''}`
-    console[level](`${prefix}${message}`)
-    if (errorDetails) console[level](errorDetails)
+    const prefix = `[${level.toUpperCase()}]`
+    console[level](`${prefix} ${message}`, meta || '')
   }
 }
 
 export const logger = {
-  info: (message: string, context?: string) => log('info', message, context),
-  warn: (message: string, context?: string, error?: unknown) => log('warn', message, context, error),
-  error: (message: string, context?: string, error?: unknown) => log('error', message, context, error),
+  info: (message: string, meta?: Record<string, unknown>) => log('info', message, meta),
+  warn: (message: string, meta?: Record<string, unknown>) => log('warn', message, meta),
+  error: (message: string, meta?: Record<string, unknown>) => log('error', message, meta),
 }
