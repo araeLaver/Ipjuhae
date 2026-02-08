@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { ProfileCard } from '@/components/profile/profile-card'
 import { ShareButton } from '@/components/profile/share-button'
 import { TrustScoreChart } from '@/components/profile/trust-score-chart'
+import { ProfileImageUpload } from '@/components/profile/profile-image-upload'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -19,6 +20,7 @@ export default function ProfilePage() {
   const router = useRouter()
   const [profile, setProfile] = useState<Profile | null>(null)
   const [verification, setVerification] = useState<Verification | null>(null)
+  const [profileImage, setProfileImage] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -38,6 +40,7 @@ export default function ProfilePage() {
 
         setProfile(data.profile)
         setVerification(data.verification || null)
+        setProfileImage(data.profileImage || null)
       } catch (error) {
         console.error('Failed to load profile:', error)
       } finally {
@@ -71,6 +74,17 @@ export default function ProfilePage() {
 
         <AccountStatus />
 
+        {/* Profile Image Upload */}
+        <Card className="shadow-card">
+          <CardContent className="pt-6">
+            <ProfileImageUpload
+              name={profile.name}
+              imageUrl={profileImage}
+              onImageChange={setProfileImage}
+            />
+          </CardContent>
+        </Card>
+
         {/* Trust Score */}
         <Card className="shadow-card">
           <CardHeader>
@@ -84,7 +98,7 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        <ProfileCard profile={profile} verification={verification} />
+        <ProfileCard profile={profile} verification={verification} profileImage={profileImage} />
 
         <ShareButton profileId={profile.id} />
 

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
-import { Profile, Verification, ReferenceResponse } from '@/types/database'
+import { Profile, Verification, ReferenceResponse, User } from '@/types/database'
 import { calculateTrustScore } from '@/lib/trust-score'
 import { profileSchema } from '@/lib/validations'
 import { sanitizeUserInput } from '@/lib/sanitize'
@@ -13,6 +13,12 @@ export async function GET() {
     if (!user) {
       return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 })
     }
+
+    // 프로필 이미지 조회
+    const userRecord = await queryOne<User>(
+      'SELECT profile_image FROM users WHERE id = $1',
+      [user.id]
+    )
 
     const profile = await queryOne<Profile>(
       'SELECT * FROM profiles WHERE user_id = $1',
@@ -50,6 +56,7 @@ export async function GET() {
       profile: dynamicProfile,
       verification,
       trustScoreBreakdown,
+      profileImage: userRecord?.profile_image || null,
     })
   } catch (error) {
     console.error('Get profile error:', error)

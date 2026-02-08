@@ -2,8 +2,8 @@ import { Profile, Verification } from '@/types/database'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { VerificationBadges } from '@/components/verification/verification-badge'
+import { Avatar } from '@/components/ui/avatar'
 import {
-  User,
   Users,
   PawPrint,
   Cigarette,
@@ -16,9 +16,10 @@ import {
 interface ProfileCardProps {
   profile: Profile
   verification?: Verification | null
+  profileImage?: string | null
 }
 
-export function ProfileCard({ profile, verification }: ProfileCardProps) {
+export function ProfileCard({ profile, verification, profileImage }: ProfileCardProps) {
   const getTrustScoreColor = (score: number) => {
     if (score >= 80) return 'bg-green-500'
     if (score >= 50) return 'bg-yellow-500'
@@ -65,9 +66,17 @@ export function ProfileCard({ profile, verification }: ProfileCardProps) {
       {/* Header with Trust Score */}
       <CardHeader className="bg-gradient-to-r from-primary to-blue-600 text-white pb-8">
         <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold">{profile.name}</h2>
-            <p className="text-blue-100">{profile.age_range} · {profile.family_type}</p>
+          <div className="flex items-center gap-4">
+            <Avatar
+              name={profile.name}
+              imageUrl={profileImage}
+              size="lg"
+              className="border-2 border-white/30"
+            />
+            <div>
+              <h2 className="text-2xl font-bold">{profile.name}</h2>
+              <p className="text-blue-100">{profile.age_range} · {profile.family_type}</p>
+            </div>
           </div>
           <div className="text-center">
             <div className={`w-16 h-16 rounded-full ${getTrustScoreColor(profile.trust_score)} flex items-center justify-center`}>
