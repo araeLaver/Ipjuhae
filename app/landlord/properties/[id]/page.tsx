@@ -304,7 +304,7 @@ export default function PropertyDetailPage() {
                       {!image.is_main && (
                         <button
                           onClick={() => handleSetMainImage(image.id)}
-                          className="p-1.5 bg-white rounded-full shadow hover:bg-gray-100"
+                          className="p-1.5 bg-card rounded-full shadow hover:bg-muted"
                           title="대표 이미지로 설정"
                         >
                           <Star className="h-4 w-4" />
@@ -312,7 +312,7 @@ export default function PropertyDetailPage() {
                       )}
                       <button
                         onClick={() => handleImageDelete(image.id)}
-                        className="p-1.5 bg-white rounded-full shadow hover:bg-red-50"
+                        className="p-1.5 bg-card rounded-full shadow hover:bg-red-50 dark:hover:bg-red-950/30"
                         title="삭제"
                       >
                         <X className="h-4 w-4 text-red-500" />

@@ -64,8 +64,8 @@ export default function LandlordOnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <header className="bg-white border-b">
+    <div className="min-h-screen bg-muted/50 dark:bg-background flex flex-col">
+      <header className="bg-background border-b">
         <div className="container mx-auto px-4 py-4">
           <Link href="/" className="flex items-center gap-2 w-fit">
             <Home className="h-6 w-6 text-primary" />
@@ -88,7 +88,7 @@ export default function LandlordOnboardingPage() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
-                <div className="p-3 text-sm text-red-600 bg-red-50 rounded-md">
+                <div className="p-3 text-sm text-red-600 bg-red-50 dark:bg-red-950/30 dark:text-red-400 rounded-md">
                   {error}
                 </div>
               )}
@@ -156,13 +156,13 @@ export default function LandlordOnboardingPage() {
                     {regions.map((region) => (
                       <span
                         key={region}
-                        className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 rounded-full text-sm"
+                        className="inline-flex items-center gap-1 px-3 py-1 bg-muted rounded-full text-sm"
                       >
                         {region}
                         <button
                           type="button"
                           onClick={() => handleRemoveRegion(region)}
-                          className="text-gray-500 hover:text-gray-700"
+                          className="text-muted-foreground hover:text-foreground"
                         >
                           <X className="h-3 w-3" />
                         </button>

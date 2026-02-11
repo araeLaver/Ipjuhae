@@ -46,7 +46,7 @@ export default function PublicProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50/50 flex flex-col">
+      <div className="min-h-screen bg-muted/50 dark:bg-background flex flex-col">
         <Header />
         <main className="flex-1 container mx-auto px-4 py-8 max-w-md animate-fade-in">
           <div className="space-y-6">
@@ -61,7 +61,7 @@ export default function PublicProfilePage() {
 
   if (error || !profile) {
     return (
-      <div className="min-h-screen bg-gray-50/50 flex flex-col">
+      <div className="min-h-screen bg-muted/50 dark:bg-background flex flex-col">
         <Header />
         <main className="flex-1 flex items-center justify-center">
           <EmptyState

@@ -34,7 +34,7 @@ export function TermsConsent({
           type="checkbox"
           checked={allAgreed}
           onChange={(e) => handleAllChange(e.target.checked)}
-          className="rounded border-gray-300 text-primary focus:ring-primary h-4 w-4"
+          className="rounded border-input text-primary focus:ring-primary h-4 w-4"
         />
         전체 동의
       </label>
@@ -45,7 +45,7 @@ export function TermsConsent({
             type="checkbox"
             checked={termsAgreed}
             onChange={(e) => onTermsChange(e.target.checked)}
-            className="rounded border-gray-300 text-primary focus:ring-primary h-4 w-4"
+            className="rounded border-input text-primary focus:ring-primary h-4 w-4"
           />
           <span>
             <span className="text-destructive">[필수]</span>{' '}
@@ -61,7 +61,7 @@ export function TermsConsent({
             type="checkbox"
             checked={privacyAgreed}
             onChange={(e) => onPrivacyChange(e.target.checked)}
-            className="rounded border-gray-300 text-primary focus:ring-primary h-4 w-4"
+            className="rounded border-input text-primary focus:ring-primary h-4 w-4"
           />
           <span>
             <span className="text-destructive">[필수]</span>{' '}
@@ -77,7 +77,7 @@ export function TermsConsent({
             type="checkbox"
             checked={marketingAgreed}
             onChange={(e) => onMarketingChange(e.target.checked)}
-            className="rounded border-gray-300 text-primary focus:ring-primary h-4 w-4"
+            className="rounded border-input text-primary focus:ring-primary h-4 w-4"
           />
           <span>
             <span className="text-muted-foreground">[선택]</span> 마케팅 정보 수신에 동의합니다

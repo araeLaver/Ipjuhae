@@ -123,8 +123,8 @@ export default function LandlordDashboard() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="p-3 bg-green-100 rounded-lg">
-                      <BarChart3 className="h-6 w-6 text-green-600" />
+                    <div className="p-3 bg-green-100 dark:bg-green-900/50 rounded-lg">
+                      <BarChart3 className="h-6 w-6 text-green-600 dark:text-green-400" />
                     </div>
                     <div>
                       <h3 className="font-semibold">통계 및 분석</h3>

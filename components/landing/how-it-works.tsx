@@ -22,7 +22,7 @@ const steps = [
 
 export function HowItWorks() {
   return (
-    <section className="py-20 bg-gray-50/50">
+    <section className="py-20 bg-muted/50">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold">어떻게 사용하나요?</h2>

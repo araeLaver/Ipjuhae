@@ -61,8 +61,8 @@ function RatingSelector({
           onClick={() => onChange(rating)}
           className={`p-2 rounded-lg border transition-colors ${
             value >= rating
-              ? 'bg-yellow-100 border-yellow-300 text-yellow-600'
-              : 'bg-gray-50 border-gray-200 text-gray-400 hover:bg-gray-100'
+              ? 'bg-yellow-100 border-yellow-300 text-yellow-600 dark:bg-yellow-900/30 dark:border-yellow-700 dark:text-yellow-400'
+              : 'bg-muted/50 border-border text-muted-foreground hover:bg-muted'
           }`}
         >
           <Star className={`h-5 w-5 ${value >= rating ? 'fill-yellow-500' : ''}`} />
@@ -128,7 +128,7 @@ export function ReferenceSurvey({ tenantName, onSubmit }: ReferenceSurveyProps) 
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
-            <div className="p-3 text-sm text-red-600 bg-red-50 rounded-md">
+            <div className="p-3 text-sm text-red-600 bg-red-50 dark:bg-red-950/30 dark:text-red-400 rounded-md">
               {error}
             </div>
           )}

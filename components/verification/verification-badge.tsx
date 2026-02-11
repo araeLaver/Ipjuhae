@@ -43,7 +43,7 @@ export function VerificationBadge({ type, verification, showLabel = true }: Veri
   if (!isVerified) return null
 
   return (
-    <Badge variant="secondary" className="flex items-center gap-1 bg-green-100 text-green-700 border-green-200">
+    <Badge variant="secondary" className="flex items-center gap-1 bg-green-100 text-green-700 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-800">
       <CheckCircle className="h-3 w-3" />
       {showLabel && <span>{config.verifiedLabel}</span>}
       {!showLabel && <Icon className="h-3 w-3" />}

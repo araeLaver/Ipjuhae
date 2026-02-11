@@ -104,29 +104,29 @@ export function VerificationCard({ type, verification, onVerified }: Verificatio
   }
 
   return (
-    <Card className={isVerified ? 'border-green-200 bg-green-50' : ''}>
+    <Card className={isVerified ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/30' : ''}>
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-lg ${isVerified ? 'bg-green-100' : 'bg-gray-100'}`}>
-              <Icon className={`h-5 w-5 ${isVerified ? 'text-green-600' : 'text-gray-600'}`} />
+            <div className={`p-2 rounded-lg ${isVerified ? 'bg-green-100 dark:bg-green-900/50' : 'bg-muted'}`}>
+              <Icon className={`h-5 w-5 ${isVerified ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`} />
             </div>
             <div>
               <CardTitle className="text-lg flex items-center gap-2">
                 {config.title}
-                {isVerified && <CheckCircle className="h-4 w-4 text-green-600" />}
+                {isVerified && <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />}
               </CardTitle>
               <CardDescription>{config.description}</CardDescription>
             </div>
           </div>
-          <span className={`text-sm font-medium ${isVerified ? 'text-green-600' : 'text-muted-foreground'}`}>
+          <span className={`text-sm font-medium ${isVerified ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>
             {config.points}
           </span>
         </div>
       </CardHeader>
       <CardContent>
         {isVerified ? (
-          <div className="text-sm text-green-700">
+          <div className="text-sm text-green-700 dark:text-green-300">
             {type === 'employment' && verification?.employment_company && (
               <p>인증된 회사: {verification.employment_company}</p>
             )}

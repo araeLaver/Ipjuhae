@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Avatar } from '@/components/ui/avatar'
 import { DropdownMenu, DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import { MobileNav } from './mobile-nav'
+import { ThemeToggle } from './theme-toggle'
 
 interface HeaderProps {
   user?: { email: string; userType: 'tenant' | 'landlord' } | null
@@ -66,6 +67,7 @@ export function Header({ user }: HeaderProps) {
           </div>
 
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             {user ? (
               <>
                 <div className="hidden md:block">

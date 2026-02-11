@@ -34,7 +34,7 @@ export function PageContainer({ children, maxWidth = 'lg', className }: PageCont
   }
 
   return (
-    <div className="min-h-screen bg-gray-50/50 flex flex-col">
+    <div className="min-h-screen bg-muted/50 dark:bg-background flex flex-col">
       <Header user={user} />
       <main className={cn(
         'flex-1 container mx-auto px-4 py-8 animate-fade-in',

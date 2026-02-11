@@ -2,7 +2,7 @@ import { Header } from '@/components/layout/header'
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen bg-gray-50/50 flex flex-col">
+    <div className="min-h-screen bg-muted/50 dark:bg-background flex flex-col">
       <Header />
       <main className="flex-1 max-w-3xl mx-auto p-6 animate-fade-in">
         <h1 className="text-2xl font-bold mb-6">개인정보처리방침</h1>

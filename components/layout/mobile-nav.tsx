@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { Sheet } from '@/components/ui/sheet'
 import { Home, LogOut } from 'lucide-react'
 import { Avatar } from '@/components/ui/avatar'
+import { ThemeToggle } from './theme-toggle'
 
 interface MobileNavProps {
   open: boolean
@@ -46,6 +47,11 @@ export function MobileNav({ open, onClose, user, navLinks, onLogout }: MobileNav
             </Link>
           ))}
         </nav>
+
+        <div className="flex items-center gap-2 px-3 py-2">
+          <ThemeToggle />
+          <span className="text-sm text-muted-foreground">테마 전환</span>
+        </div>
 
         {user && (
           <button

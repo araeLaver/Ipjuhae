@@ -38,7 +38,7 @@ const features = [
 
 export function FeaturesSection() {
   return (
-    <section className="py-20 bg-white">
+    <section className="py-20 bg-background">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold">왜 입주해인가요?</h2>
@@ -52,7 +52,7 @@ export function FeaturesSection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.1 }}
-              className="group p-6 rounded-xl border border-gray-100 hover:shadow-card hover:-translate-y-1 transition-all duration-300"
+              className="group p-6 rounded-xl border border-border hover:shadow-card hover:-translate-y-1 transition-all duration-300"
             >
               <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
                 <feature.icon className="h-6 w-6 text-primary" />

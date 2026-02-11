@@ -7,8 +7,8 @@ export default function OnboardingLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b">
+    <div className="min-h-screen bg-muted/50 dark:bg-background">
+      <header className="bg-background border-b">
         <div className="container mx-auto px-4 py-4">
           <Link href="/" className="flex items-center gap-2">
             <Home className="h-6 w-6 text-primary" />

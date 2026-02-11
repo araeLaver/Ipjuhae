@@ -27,22 +27,22 @@ interface ReferenceStatusCardProps {
 const statusConfig: Record<string, { label: string; color: string; icon: React.ElementType }> = {
   pending: {
     label: '대기 중',
-    color: 'bg-gray-100 text-gray-700',
+    color: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
     icon: Clock,
   },
   sent: {
     label: '발송됨',
-    color: 'bg-blue-100 text-blue-700',
+    color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300',
     icon: Send,
   },
   completed: {
     label: '완료',
-    color: 'bg-green-100 text-green-700',
+    color: 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300',
     icon: CheckCircle,
   },
   expired: {
     label: '만료됨',
-    color: 'bg-red-100 text-red-700',
+    color: 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300',
     icon: XCircle,
   },
 }

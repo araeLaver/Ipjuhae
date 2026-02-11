@@ -9,7 +9,7 @@ export function Hero() {
   return (
     <section className="relative overflow-hidden">
       {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-teal-50 via-emerald-50/50 to-white" />
+      <div className="absolute inset-0 bg-gradient-to-br from-teal-50 via-emerald-50/50 to-white dark:from-background dark:via-background dark:to-background" />
       <div
         className="absolute inset-0 opacity-[0.03]"
         style={{
@@ -26,12 +26,12 @@ export function Hero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight text-gray-900">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight text-foreground">
               좋은 세입자임을
               <br />
               <span className="text-primary">증명하세요</span>
             </h1>
-            <p className="mt-6 text-lg text-gray-600 leading-relaxed max-w-lg">
+            <p className="mt-6 text-lg text-muted-foreground leading-relaxed max-w-lg">
               나만의 세입자 프로필을 만들어 집주인에게 신뢰를 전달하세요.
               간단한 프로필 생성만으로 원하는 집을 구할 확률을 높여보세요.
             </p>
@@ -59,7 +59,7 @@ export function Hero() {
             <div className="relative">
               {/* Floating badge */}
               <motion.div
-                className="absolute -top-4 -right-4 bg-white rounded-xl shadow-elevated px-4 py-3 flex items-center gap-2 z-10"
+                className="absolute -top-4 -right-4 bg-card rounded-xl shadow-elevated px-4 py-3 flex items-center gap-2 z-10"
                 animate={{ y: [0, -8, 0] }}
                 transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
               >
@@ -68,7 +68,7 @@ export function Hero() {
               </motion.div>
 
               {/* Card */}
-              <div className="bg-white rounded-2xl shadow-elevated p-6 border border-gray-100">
+              <div className="bg-card rounded-2xl shadow-elevated p-6 border border-border">
                 <div className="flex items-center gap-4 mb-6">
                   <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
                     <User className="h-7 w-7 text-primary" />
@@ -95,7 +95,7 @@ export function Hero() {
                 </div>
 
                 <div className="mt-6 pt-4 border-t">
-                  <p className="text-sm text-gray-600 italic">
+                  <p className="text-sm text-muted-foreground italic">
                     &ldquo;조용하고 깔끔한 생활을 선호하는 직장인입니다.&rdquo;
                   </p>
                 </div>

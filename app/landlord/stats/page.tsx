@@ -119,8 +119,8 @@ export default function LandlordStatsPage() {
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <Home className="h-5 w-5 text-green-600" />
+                <div className="p-2 bg-green-100 dark:bg-green-900/50 rounded-lg">
+                  <Home className="h-5 w-5 text-green-600 dark:text-green-400" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{summary.availableProperties}</p>
@@ -133,8 +133,8 @@ export default function LandlordStatsPage() {
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
-                <div className="p-2 bg-yellow-100 rounded-lg">
-                  <Clock className="h-5 w-5 text-yellow-600" />
+                <div className="p-2 bg-yellow-100 dark:bg-yellow-900/50 rounded-lg">
+                  <Clock className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{summary.reservedProperties}</p>
@@ -147,8 +147,8 @@ export default function LandlordStatsPage() {
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <CheckCircle2 className="h-5 w-5 text-blue-600" />
+                <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg">
+                  <CheckCircle2 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{summary.rentedProperties}</p>
@@ -168,8 +168,8 @@ export default function LandlordStatsPage() {
                   <p className="text-sm text-muted-foreground">총 조회수</p>
                   <p className="text-3xl font-bold">{summary.totalViews.toLocaleString()}</p>
                 </div>
-                <div className="p-3 bg-purple-100 rounded-full">
-                  <Eye className="h-6 w-6 text-purple-600" />
+                <div className="p-3 bg-purple-100 dark:bg-purple-900/50 rounded-full">
+                  <Eye className="h-6 w-6 text-purple-600 dark:text-purple-400" />
                 </div>
               </div>
             </CardContent>
@@ -182,7 +182,7 @@ export default function LandlordStatsPage() {
                   <p className="text-sm text-muted-foreground">즐겨찾기</p>
                   <p className="text-3xl font-bold">{summary.totalFavorites.toLocaleString()}</p>
                 </div>
-                <div className="p-3 bg-red-100 rounded-full">
+                <div className="p-3 bg-red-100 dark:bg-red-900/50 rounded-full">
                   <Heart className="h-6 w-6 text-red-500" />
                 </div>
               </div>
@@ -196,8 +196,8 @@ export default function LandlordStatsPage() {
                   <p className="text-sm text-muted-foreground">대화 ({summary.unreadMessages} 읽지 않음)</p>
                   <p className="text-3xl font-bold">{summary.totalConversations.toLocaleString()}</p>
                 </div>
-                <div className="p-3 bg-green-100 rounded-full">
-                  <MessageSquare className="h-6 w-6 text-green-600" />
+                <div className="p-3 bg-green-100 dark:bg-green-900/50 rounded-full">
+                  <MessageSquare className="h-6 w-6 text-green-600 dark:text-green-400" />
                 </div>
               </div>
             </CardContent>
