@@ -1,0 +1,40 @@
+# Koyeb deployment configuration for Rentme (임주해)
+# https://www.koyeb.com/docs/apps/deploying-from-github
+
+name: rentme
+
+services:
+  - name: web
+    type: web
+    git:
+      branch: main
+    build:
+      dockerfile: Dockerfile
+      context: .
+    ports:
+      - port: 3000
+        protocol: http
+    routes:
+      - path: /
+        port: 3000
+    health_checks:
+      - protocol: http
+        path: /api/health
+        port: 3000
+        initial_delay: 10
+        period: 10
+        timeout: 5
+        success_threshold: 1
+        failure_threshold: 3
+    env:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_APP_URL
+        value: "${KOYEB_PUBLIC_DOMAIN}"
+      - key: NEXT_PUBLIC_BASE_URL
+        value: "${KOYEB_PUBLIC_DOMAIN}"
+    scaling:
+      min: 1
+      max: 1
+    instance_types:
+      - nano
