@@ -4,11 +4,17 @@ import bcrypt from 'bcryptjs'
 import { queryOne } from './db'
 import { User } from '@/types/database'
 
-const JWT_SECRET = process.env.JWT_SECRET
-if (!JWT_SECRET && process.env.NODE_ENV === 'production') {
-  throw new Error('JWT_SECRET 환경변수가 설정되지 않았습니다')
+// Lazy init: check at request time, not module load time (avoids next build failure)
+function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('JWT_SECRET 환경변수가 설정되지 않았습니다')
+    }
+    return 'dev-only-secret-do-not-use-in-production'
+  }
+  return secret
 }
-const SECRET = JWT_SECRET || 'dev-only-secret-do-not-use-in-production'
 
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 10)
@@ -20,12 +26,12 @@ export async function verifyPassword(password: string, hash: string | null): Pro
 }
 
 export function generateToken(userId: string): string {
-  return jwt.sign({ userId }, SECRET, { expiresIn: '7d', algorithm: 'HS256' })
+  return jwt.sign({ userId }, getJwtSecret(), { expiresIn: '7d', algorithm: 'HS256' })
 }
 
 export function verifyToken(token: string): { userId: string } | null {
   try {
-    return jwt.verify(token, SECRET, { algorithms: ['HS256'] }) as { userId: string }
+    return jwt.verify(token, getJwtSecret(), { algorithms: ['HS256'] }) as { userId: string }
   } catch {
     return null
   }
