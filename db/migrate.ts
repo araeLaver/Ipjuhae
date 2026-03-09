@@ -6,6 +6,10 @@
  * 마이그레이션 순서:
  * 1. schema.sql - 기본 스키마 생성
  * 2. migration-002-social-auth.sql - 소셜 로그인, 휴대폰 인증, 서류 업로드
+ * 3. migration-003-favorites.sql - 세입자 즐겨찾기
+ * 4. migration-004-messages.sql - 대화방, 메시지
+ * 5. migration-005-properties.sql - 매물, 매물 이미지
+ * 6. migration-006-waitlist.sql - 대기자 명단
  */
 
 import { Pool } from 'pg'
@@ -28,6 +32,10 @@ const pool = new Pool({
 const migrations = [
   'schema.sql',
   'migration-002-social-auth.sql',
+  'migration-003-favorites.sql',
+  'migration-004-messages.sql',
+  'migration-005-properties.sql',
+  'migration-006-waitlist.sql',
 ]
 
 async function runMigrations() {

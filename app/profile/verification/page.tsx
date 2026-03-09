@@ -125,7 +125,7 @@ export default function VerificationPage() {
         </div>
 
         <div className="text-sm text-muted-foreground text-center">
-          <p>* 이 데모에서는 실제 인증 없이 Mock 데이터를 사용합니다.</p>
+          <p>* 인증 정보는 안전하게 암호화되어 저장됩니다.</p>
         </div>
       </div>
     </PageContainer>

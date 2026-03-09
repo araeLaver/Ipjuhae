@@ -217,7 +217,7 @@ export function VerificationCardWithUpload({ type, verification, onVerified }: V
 
                 {type === 'credit' && (
                   <p className="text-sm text-muted-foreground">
-                    버튼을 클릭하면 신용등급이 자동으로 조회됩니다. (Mock)
+                    버튼을 클릭하면 신용등급이 자동으로 조회됩니다.
                   </p>
                 )}
 

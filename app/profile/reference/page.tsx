@@ -108,15 +108,7 @@ export default function ReferencePage() {
             <Info className="h-4 w-4" />
             <AlertTitle>설문 링크가 발송되었습니다</AlertTitle>
             <AlertDescription>
-              <p className="mb-2">개발 환경에서는 아래 링크로 직접 테스트할 수 있습니다:</p>
-              <a
-                href={latestSurveyUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary underline break-all"
-              >
-                {latestSurveyUrl}
-              </a>
+              <p>이전 집주인에게 SMS/이메일로 설문 링크가 전달되었습니다. 응답이 오면 자동으로 반영됩니다.</p>
             </AlertDescription>
           </Alert>
         )}
