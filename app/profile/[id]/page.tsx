@@ -1,81 +1,81 @@
-'use client'
-
-import { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation'
+import { Metadata } from 'next'
+import { notFound } from 'next/navigation'
+import { queryOne, query } from '@/lib/db'
 import { ProfileCard } from '@/components/profile/profile-card'
 import { TrustScoreChart } from '@/components/profile/trust-score-chart'
-import { Button } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { EmptyState } from '@/components/ui/empty-state'
 import { Header } from '@/components/layout/header'
-import { Home, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
-import { Profile, Verification } from '@/types/database'
+import { Profile, Verification, ReferenceResponse } from '@/types/database'
 import { calculateTrustScore } from '@/lib/trust-score'
 
-export default function PublicProfilePage() {
-  const params = useParams()
-  const id = params.id as string
+interface Props {
+  params: Promise<{ id: string }>
+}
 
-  const [profile, setProfile] = useState<Profile | null>(null)
-  const [verification, setVerification] = useState<Verification | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(false)
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params
+  const profile = await queryOne<Profile>(
+    'SELECT * FROM profiles WHERE id = $1 AND is_complete = true',
+    [id]
+  )
 
-  useEffect(() => {
-    async function loadProfile() {
-      try {
-        const response = await fetch(`/api/profile/${id}`)
-        if (!response.ok) {
-          setError(true)
-          return
-        }
-        const data = await response.json()
-        setProfile(data.profile)
-        setVerification(data.verification || null)
-      } catch (err) {
-        console.error('Failed to load profile:', err)
-        setError(true)
-      } finally {
-        setLoading(false)
-      }
+  if (!profile) {
+    return {
+      title: '프로필을 찾을 수 없습니다',
+      robots: { index: false },
     }
-    loadProfile()
-  }, [id])
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-muted/50 dark:bg-background flex flex-col">
-        <Header />
-        <main className="flex-1 container mx-auto px-4 py-8 max-w-md animate-fade-in">
-          <div className="space-y-6">
-            <Skeleton className="h-6 w-32 mx-auto" />
-            <Skeleton className="h-8 w-48 mx-auto" />
-            <Skeleton className="h-64 w-full rounded-xl" />
-          </div>
-        </main>
-      </div>
-    )
   }
 
-  if (error || !profile) {
-    return (
-      <div className="min-h-screen bg-muted/50 dark:bg-background flex flex-col">
-        <Header />
-        <main className="flex-1 flex items-center justify-center">
-          <EmptyState
-            icon={<AlertCircle className="h-12 w-12" />}
-            title="프로필을 찾을 수 없습니다"
-            description="존재하지 않거나 공개되지 않은 프로필입니다."
-            action={{ label: '홈으로 돌아가기', onClick: () => window.location.href = '/' }}
-          />
-        </main>
-      </div>
-    )
+  const title = `${profile.name}님의 세입자 프로필`
+  const description = profile.bio
+    ? `${profile.name} · ${profile.age_range} · ${profile.bio.slice(0, 80)}`
+    : `${profile.name}님의 세입자 프로필을 입주해에서 확인하세요.`
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title: `${title} | 입주해`,
+      description,
+      type: 'profile',
+      images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: title }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+    },
+  }
+}
+
+export default async function PublicProfilePage({ params }: Props) {
+  const { id } = await params
+
+  const profile = await queryOne<Profile>(
+    'SELECT * FROM profiles WHERE id = $1 AND is_complete = true',
+    [id]
+  )
+
+  if (!profile) {
+    notFound()
   }
 
-  const scoreBreakdown = calculateTrustScore({ profile, verification })
+  const [verification, referenceResponses] = await Promise.all([
+    queryOne<Verification>(
+      'SELECT * FROM verifications WHERE user_id = $1',
+      [profile.user_id]
+    ),
+    query<ReferenceResponse>(
+      `SELECT rr.* FROM reference_responses rr
+       JOIN landlord_references lr ON rr.reference_id = lr.id
+       WHERE lr.user_id = $1 AND lr.status = 'completed'`,
+      [profile.user_id]
+    ),
+  ])
+
+  const scoreBreakdown = calculateTrustScore({ profile, verification, referenceResponses })
+  const profileWithScore = { ...profile, trust_score: scoreBreakdown.total }
 
   return (
     <div className="min-h-screen bg-gray-50/50 flex flex-col">
@@ -100,7 +100,7 @@ export default function PublicProfilePage() {
             </CardContent>
           </Card>
 
-          <ProfileCard profile={profile} verification={verification} />
+          <ProfileCard profile={profileWithScore} verification={verification} />
 
           <div className="bg-primary/5 p-4 rounded-lg text-center border border-primary/10">
             <p className="text-sm text-primary/80">
