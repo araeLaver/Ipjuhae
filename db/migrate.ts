@@ -17,6 +17,7 @@ import fs from 'fs'
 import path from 'path'
 
 const DATABASE_URL = process.env.DATABASE_URL
+const DB_SCHEMA = process.env.DB_SCHEMA || 'ipjuhae'
 
 if (!DATABASE_URL) {
   console.error('ERROR: DATABASE_URL 환경변수가 설정되지 않았습니다.')
@@ -26,7 +27,7 @@ if (!DATABASE_URL) {
 
 const pool = new Pool({
   connectionString: DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  ssl: DATABASE_URL.includes('localhost') ? false : { rejectUnauthorized: false },
 })
 
 const migrations = [
@@ -42,7 +43,13 @@ async function runMigrations() {
   const client = await pool.connect()
 
   try {
-    console.log('🚀 마이그레이션 시작...\n')
+    console.log(`🚀 마이그레이션 시작... (스키마: ${DB_SCHEMA})\n`)
+
+    // ipjuhae 스키마 생성 및 search_path 설정
+    await client.query(`CREATE SCHEMA IF NOT EXISTS ${DB_SCHEMA}`)
+    await client.query(`SET search_path TO ${DB_SCHEMA}, public`)
+
+    console.log(`✅ 스키마 '${DB_SCHEMA}' 준비 완료\n`)
 
     // 마이그레이션 추적 테이블 생성
     await client.query(`

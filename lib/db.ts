@@ -1,6 +1,7 @@
 import { Pool, PoolClient } from 'pg'
 
 const isProduction = process.env.NODE_ENV === 'production'
+const DB_SCHEMA = process.env.DB_SCHEMA || 'ipjuhae'
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -11,6 +12,11 @@ const pool = new Pool({
   idleTimeoutMillis: 30_000,
   connectionTimeoutMillis: 5_000,
   statement_timeout: 10_000,
+})
+
+// 커넥션마다 search_path를 ipjuhae 스키마로 설정
+pool.on('connect', (client) => {
+  client.query(`SET search_path TO ${DB_SCHEMA}, public`)
 })
 
 export default pool

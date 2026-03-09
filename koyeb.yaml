@@ -1,7 +1,7 @@
-# Koyeb deployment configuration for Rentme (임주해)
+# Koyeb deployment configuration for 입주해 (Ipjuhae)
 # https://www.koyeb.com/docs/apps/deploying-from-github
 
-name: rentme
+name: ipjuhae
 
 services:
   - name: web
@@ -21,8 +21,8 @@ services:
       - protocol: http
         path: /api/health
         port: 3000
-        initial_delay: 10
-        period: 10
+        initial_delay: 15
+        period: 30
         timeout: 5
         success_threshold: 1
         failure_threshold: 3
@@ -30,9 +30,12 @@ services:
       - key: NODE_ENV
         value: production
       - key: NEXT_PUBLIC_APP_URL
-        value: "${KOYEB_PUBLIC_DOMAIN}"
+        value: "https://ipjuhae.com"
       - key: NEXT_PUBLIC_BASE_URL
-        value: "${KOYEB_PUBLIC_DOMAIN}"
+        value: "https://ipjuhae.com"
+      - key: DB_SCHEMA
+        value: ipjuhae
+      # DATABASE_URL, JWT_SECRET 등은 Koyeb 대시보드에서 Secret으로 설정
     scaling:
       min: 1
       max: 1
