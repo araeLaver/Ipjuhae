@@ -30,9 +30,9 @@ services:
       - key: NODE_ENV
         value: production
       - key: NEXT_PUBLIC_APP_URL
-        value: "https://ipjuhae.com"
+        value: "https://www.ipjuhae.com"
       - key: NEXT_PUBLIC_BASE_URL
-        value: "https://ipjuhae.com"
+        value: "https://www.ipjuhae.com"
       - key: DB_SCHEMA
         value: ipjuhae
       # DATABASE_URL, JWT_SECRET 등은 Koyeb 대시보드에서 Secret으로 설정
