@@ -1,4 +1,19 @@
+import type { Metadata } from 'next'
 import { Header } from '@/components/layout/header'
+
+export const metadata: Metadata = {
+  title: '개인정보처리방침',
+  description: '임주해(Rentme)의 개인정보처리방침을 확인하세요. 세입자 프로필 기반 부동산 매칭 플랫폼 임주해가 수집·이용하는 개인정보와 보호 정책을 안내합니다.',
+  openGraph: {
+    title: '개인정보처리방침 | 임주해',
+    description: '임주해(Rentme)의 개인정보처리방침을 확인하세요.',
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: '임주해 개인정보처리방침' }],
+  },
+  robots: {
+    index: false,
+    follow: false,
+  },
+}
 
 export default function PrivacyPage() {
   return (
