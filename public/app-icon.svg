@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1EB896"/>
+      <stop offset="100%" style="stop-color:#148F72"/>
+    </linearGradient>
+    <linearGradient id="house" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFFFFF"/>
+      <stop offset="100%" style="stop-color:#F0FDF9"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#0D5C4A" flood-opacity="0.3"/>
+    </filter>
+    <filter id="innerShadow" x="-5%" y="-5%" width="115%" height="115%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0D5C4A" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+
+  <!-- Background rounded square -->
+  <rect width="512" height="512" rx="112" ry="112" fill="url(#bg)"/>
+
+  <!-- Subtle inner border -->
+  <rect x="8" y="8" width="496" height="496" rx="108" ry="108" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="2"/>
+
+  <!-- House shape with shadow -->
+  <g filter="url(#shadow)">
+    <!-- Roof -->
+    <path d="M256 108 L380 210 L380 390 Q380 400 370 400 L142 400 Q132 400 132 390 L132 210 Z"
+          fill="url(#house)" opacity="0.95"/>
+  </g>
+
+  <!-- Door -->
+  <rect x="222" y="296" width="68" height="104" rx="8" fill="#1EB896" opacity="0.9"/>
+
+  <!-- Door handle -->
+  <circle cx="278" cy="352" r="5" fill="white" opacity="0.8"/>
+
+  <!-- Window left -->
+  <rect x="156" y="232" width="52" height="44" rx="6" fill="#1EB896" opacity="0.25"/>
+  <line x1="182" y1="232" x2="182" y2="276" stroke="white" stroke-width="2" opacity="0.6"/>
+  <line x1="156" y1="254" x2="208" y2="254" stroke="white" stroke-width="2" opacity="0.6"/>
+
+  <!-- Window right -->
+  <rect x="304" y="232" width="52" height="44" rx="6" fill="#1EB896" opacity="0.25"/>
+  <line x1="330" y1="232" x2="330" y2="276" stroke="white" stroke-width="2" opacity="0.6"/>
+  <line x1="304" y1="254" x2="356" y2="254" stroke="white" stroke-width="2" opacity="0.6"/>
+
+  <!-- Trust checkmark badge -->
+  <g filter="url(#innerShadow)">
+    <circle cx="370" cy="150" r="52" fill="white"/>
+    <circle cx="370" cy="150" r="44" fill="#1EB896"/>
+    <!-- Checkmark -->
+    <path d="M348 150 L362 164 L392 134" fill="none" stroke="white" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>
