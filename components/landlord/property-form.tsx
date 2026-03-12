@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Loader2, Save, Plus, X, Building } from 'lucide-react'
 import { Property, PropertyType, PropertyStatus } from '@/types/database'
 import { toast } from 'sonner'
+import { AddressSearch } from '@/components/ui/address-search'
 
 const PROPERTY_TYPES: { value: PropertyType; label: string }[] = [
   { value: 'apartment', label: '아파트' },
@@ -202,12 +203,17 @@ export function PropertyForm({ property, onSuccess }: PropertyFormProps) {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="address">주소 *</Label>
-            <Input
-              id="address"
+            <Label>주소 *</Label>
+            <AddressSearch
               value={formData.address}
-              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-              placeholder="서울시 강남구 역삼동 123-45"
+              onChange={(address, region) =>
+                setFormData({
+                  ...formData,
+                  address,
+                  ...(region ? { region } : {}),
+                })
+              }
+              placeholder="주소를 검색하세요"
               required
             />
           </div>
@@ -228,7 +234,9 @@ export function PropertyForm({ property, onSuccess }: PropertyFormProps) {
                 id="region"
                 value={formData.region}
                 onChange={(e) => setFormData({ ...formData, region: e.target.value })}
-                placeholder="서울시 강남구"
+                placeholder="자동 입력됩니다"
+                readOnly
+                className="bg-muted/50"
               />
             </div>
           </div>
