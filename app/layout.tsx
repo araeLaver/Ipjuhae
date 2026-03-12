@@ -1,10 +1,10 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Noto_Sans_KR } from 'next/font/google'
 import { ThemeProvider } from 'next-themes'
 import { Toaster } from '@/components/ui/toast'
 import './globals.css'
 
-const inter = Inter({ subsets: ['latin'] })
+const notoSansKR = Noto_Sans_KR({ subsets: ['latin'], weight: ['400', '500', '700'], display: 'swap' })
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://ipjuhae.com'
 
@@ -15,26 +15,14 @@ export const metadata: Metadata = {
     template: '%s | 임주해',
   },
   description: '세입자 프로필을 생성하고 집주인에게 신뢰를 전달하세요. 전월세 구하기의 새로운 방법.',
-  keywords: [
-    '세입자', '임대', '프로필', '자기소개서', '집주인', '입주',
-    '전월세', '부동산 매칭', '임대차', '입주 자기소개서', '세입자 매칭',
-    '세입자 프로필', '임대 신뢰점수', '임주해', 'Rentme',
-  ],
+  keywords: ['렌트미', '세입자 프로필', '임대차 매칭', '전세 구하기', '월세 매칭', '부동산 매칭', '역방향 매칭', '집주인 선택', '임대인 매칭', '세입자 신뢰점수'],
   openGraph: {
-    type: 'website',
+    title: '렌트미 - 세입자 프로필 기반 임대차 매칭',
+    description: '세입자가 먼저 프로필을 만들고, 집주인이 선택하는 역방향 부동산 매칭 플랫폼',
+    url: 'https://rentme.kr',
+    siteName: '렌트미',
     locale: 'ko_KR',
-    url: '/',
-    siteName: '임주해 (Rentme)',
-    title: '임주해 - 세입자 프로필 기반 부동산 매칭',
-    description: '세입자 프로필을 만들고 집주인에게 먼저 어필하세요. 전월세 구하기의 새로운 방법.',
-    images: [
-      {
-        url: '/opengraph-image',
-        width: 1200,
-        height: 630,
-        alt: '임주해 - 세입자 프로필 기반 부동산 매칭 플랫폼',
-      },
-    ],
+    type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
@@ -55,7 +43,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ko" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className={notoSansKR.className}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <main className="min-h-screen">
             {children}
