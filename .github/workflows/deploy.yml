@@ -1,0 +1,67 @@
+name: Deploy — Koyeb
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deploy target'
+        required: false
+        default: 'production'
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false  # 배포는 취소하지 않음
+
+jobs:
+  deploy:
+    name: Deploy to Koyeb
+    runs-on: ubuntu-latest
+    needs: []   # ci.yml과 독립적으로 실행 (CI는 별도 workflow)
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Koyeb CLI
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/koyeb/koyeb-cli/master/install.sh | bash
+          echo "$HOME/.koyeb/bin" >> $GITHUB_PATH
+
+      - name: Deploy to Koyeb
+        env:
+          KOYEB_TOKEN: ${{ secrets.KOYEB_TOKEN }}
+        run: |
+          koyeb app deploy ipjuhae \
+            --service web \
+            --git-branch main \
+            --wait \
+            --timeout 300
+
+      - name: Verify deployment
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+        run: |
+          echo "⏳ Waiting 15s for health check..."
+          sleep 15
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$APP_URL/api/health")
+          echo "Health check HTTP status: $STATUS"
+          if [ "$STATUS" = "200" ]; then
+            echo "✅ Deployment successful — $APP_URL is healthy"
+          else
+            echo "⚠️  Health check returned $STATUS — check Koyeb dashboard"
+            exit 1
+          fi
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "❌ Deployment failed. Check GitHub Actions logs."
+          # Slack webhook 알림 추가 가능:
+          # curl -X POST "${{ secrets.SLACK_WEBHOOK_URL }}" \
+          #   -H "Content-Type: application/json" \
+          #   -d '{"text":"❌ Rentme 배포 실패. GitHub Actions 확인 요망."}'

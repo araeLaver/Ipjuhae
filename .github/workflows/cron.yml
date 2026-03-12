@@ -1,0 +1,31 @@
+name: Cron — 레퍼런스 만료 처리
+
+on:
+  schedule:
+    # 매일 KST 00:05 (UTC 15:05)
+    - cron: '5 15 * * *'
+  workflow_dispatch: # 수동 실행 허용
+
+jobs:
+  expire-references:
+    name: Expire stale references
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Call cron endpoint
+        run: |
+          STATUS=$(curl -s -o /tmp/cron_response.json -w "%{http_code}" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.APP_URL }}/api/cron/references")
+
+          cat /tmp/cron_response.json
+          echo "HTTP Status: $STATUS"
+
+          if [ "$STATUS" != "200" ]; then
+            echo "❌ Cron failed with status $STATUS"
+            exit 1
+          fi
+
+          PROCESSED=$(cat /tmp/cron_response.json | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('processed', 0))")
+          echo "✅ Processed: $PROCESSED expired references"

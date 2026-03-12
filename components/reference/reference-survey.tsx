@@ -11,6 +11,8 @@ import { Loader2, Star, ThumbsUp, ThumbsDown } from 'lucide-react'
 interface ReferenceSurveyProps {
   tenantName: string
   onSubmit: (data: SurveyData) => Promise<void>
+  defaultValues?: Partial<SurveyData>
+  submitLabel?: string
 }
 
 export interface SurveyData {
@@ -72,16 +74,16 @@ function RatingSelector({
   )
 }
 
-export function ReferenceSurvey({ tenantName, onSubmit }: ReferenceSurveyProps) {
+export function ReferenceSurvey({ tenantName, onSubmit, defaultValues, submitLabel = '제출하기' }: ReferenceSurveyProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [formData, setFormData] = useState<SurveyData>({
-    rentPayment: 0,
-    propertyCondition: 0,
-    neighborIssues: 0,
-    checkoutCondition: 0,
-    wouldRecommend: true,
-    comment: '',
+    rentPayment: defaultValues?.rentPayment ?? 0,
+    propertyCondition: defaultValues?.propertyCondition ?? 0,
+    neighborIssues: defaultValues?.neighborIssues ?? 0,
+    checkoutCondition: defaultValues?.checkoutCondition ?? 0,
+    wouldRecommend: defaultValues?.wouldRecommend ?? true,
+    comment: defaultValues?.comment ?? '',
   })
 
   const handleRatingChange = (id: string, value: number) => {
@@ -190,7 +192,7 @@ export function ReferenceSurvey({ tenantName, onSubmit }: ReferenceSurveyProps) 
             {isLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              '제출하기'
+              submitLabel
             )}
           </Button>
         </form>
