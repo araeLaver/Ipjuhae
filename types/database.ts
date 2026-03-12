@@ -14,7 +14,7 @@ export interface User {
   email: string
   password_hash: string | null
   name: string | null
-  user_type: 'tenant' | 'landlord'
+  user_type: 'tenant' | 'landlord' | 'admin'
   auth_provider: AuthProvider | null
   auth_provider_id: string | null
   profile_image: string | null
@@ -68,7 +68,31 @@ export interface Profile {
 }
 
 // 사용자 타입
-export type UserType = 'tenant' | 'landlord'
+export type UserType = 'tenant' | 'landlord' | 'admin'
+
+export interface VerificationDocument {
+  id: string
+  user_id: string
+  document_type: DocumentType
+  file_name: string
+  file_url: string | null
+  status: DocumentStatus
+  reject_reason: string | null
+  reviewed_by: string | null
+  reviewed_at: Date | null
+  created_at: Date
+  updated_at: Date
+}
+
+export interface AdminLog {
+  id: string
+  admin_id: string | null
+  action: string
+  target_type: 'user' | 'document' | 'profile'
+  target_id: string
+  detail: Record<string, unknown> | null
+  created_at: Date
+}
 
 // 인증 정보
 export interface Verification {
