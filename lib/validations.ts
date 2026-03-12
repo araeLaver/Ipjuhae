@@ -83,11 +83,38 @@ export const landlordProfileSchema = z.object({
   propertyRegions: z.array(z.string().max(50)).max(20).optional(),
 })
 
+// Helper: URLSearchParams multi-value array → string[]
+function parseStringArray(val: unknown): string[] {
+  if (Array.isArray(val)) return val.filter((v) => typeof v === 'string' && v !== '')
+  if (typeof val === 'string' && val !== '') return [val]
+  return []
+}
+
+export const SORT_OPTIONS = ['trust_desc', 'created_desc', 'reference_desc', 'verified_desc'] as const
+export type SortOption = (typeof SORT_OPTIONS)[number]
+
 export const tenantFilterSchema = z.object({
-  page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(100).default(10),
-  ageRange: z.enum(AGE_RANGES).optional(),
-  familyType: z.enum(FAMILY_TYPES).optional(),
-  minScore: z.coerce.number().int().min(0).max(120).optional(),
+  // cursor-based pagination
+  cursor: z.string().optional(),
+  limit: z.coerce.number().int().min(1).max(48).default(12),
+
+  // array filters (multiselect)
+  region: z.preprocess(parseStringArray, z.array(z.string())).optional(),
+  family_type: z.preprocess(parseStringArray, z.array(z.enum(FAMILY_TYPES))).optional(),
+  pets: z.preprocess(parseStringArray, z.array(z.enum(PETS))).optional(),
+  noise_level: z.preprocess(parseStringArray, z.array(z.enum(NOISE_LEVELS))).optional(),
+  duration: z.preprocess(parseStringArray, z.array(z.enum(DURATIONS))).optional(),
+  verified: z.preprocess(parseStringArray, z.array(z.enum(['employment', 'income', 'credit']))).optional(),
+
+  // scalar filters
   smoking: z.enum(['true', 'false']).optional(),
+  has_reference: z.enum(['true', 'false']).optional(),
+  trust_min: z.coerce.number().int().min(0).max(120).optional(),
+  trust_max: z.coerce.number().int().min(0).max(120).optional(),
+
+  // sort
+  sort: z.enum(SORT_OPTIONS).optional().default('trust_desc'),
+
+  // legacy page-based (kept for backward compat, ignored when cursor present)
+  page: z.coerce.number().int().min(1).default(1),
 })
