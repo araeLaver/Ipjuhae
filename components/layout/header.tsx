@@ -9,6 +9,7 @@ import { Avatar } from '@/components/ui/avatar'
 import { DropdownMenu, DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import { MobileNav } from './mobile-nav'
 import { ThemeToggle } from './theme-toggle'
+import { NotificationCenter } from '@/components/notifications/notification-center'
 
 interface HeaderProps {
   user?: { email: string; userType: 'tenant' | 'landlord' } | null
@@ -70,6 +71,9 @@ export function Header({ user }: HeaderProps) {
             <ThemeToggle />
             {user ? (
               <>
+                {/* 알림 센터 */}
+                <NotificationCenter />
+
                 <div className="hidden md:block">
                   <DropdownMenu
                     trigger={
