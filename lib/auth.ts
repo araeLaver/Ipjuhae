@@ -25,13 +25,13 @@ export async function verifyPassword(password: string, hash: string | null): Pro
   return bcrypt.compare(password, hash)
 }
 
-export function generateToken(userId: string): string {
-  return jwt.sign({ userId }, getJwtSecret(), { expiresIn: '7d', algorithm: 'HS256' })
+export function generateToken(userId: string, userType?: string): string {
+  return jwt.sign({ userId, userType }, getJwtSecret(), { expiresIn: '7d', algorithm: 'HS256' })
 }
 
-export function verifyToken(token: string): { userId: string } | null {
+export function verifyToken(token: string): { userId: string; userType?: string } | null {
   try {
-    return jwt.verify(token, getJwtSecret(), { algorithms: ['HS256'] }) as { userId: string }
+    return jwt.verify(token, getJwtSecret(), { algorithms: ['HS256'] }) as { userId: string; userType?: string }
   } catch {
     return null
   }

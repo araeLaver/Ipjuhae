@@ -22,6 +22,9 @@ interface PropertyListRow {
   created_at: string
   main_image_url: string | null
   landlord_name: string | null
+  is_featured: boolean
+  featured_until: string | null
+  boost_score: number
 }
 
 const ALLOWED_SORT = ['created_at', 'deposit', 'monthly_rent', 'view_count'] as const
@@ -121,13 +124,16 @@ export async function GET(request: Request) {
         p.available_from,
         p.view_count,
         p.created_at,
+        p.is_featured,
+        p.featured_until,
+        p.boost_score,
         pi.image_url as main_image_url,
         lp.name as landlord_name
       FROM properties p
       LEFT JOIN property_images pi ON pi.property_id = p.id AND pi.is_main = TRUE
       LEFT JOIN profiles lp ON lp.user_id = p.landlord_id
       ${whereClause}
-      ORDER BY p.${sort} ${order}
+      ORDER BY p.is_featured DESC, p.boost_score DESC, p.${sort} ${order}
       LIMIT $${limitIdx}`,
       values
     )
@@ -157,6 +163,8 @@ export async function GET(request: Request) {
         createdAt: p.created_at,
         mainImageUrl: p.main_image_url,
         landlordName: p.landlord_name,
+        isFeatured: p.is_featured,
+        featuredUntil: p.featured_until,
       })),
       nextCursor,
       hasMore,

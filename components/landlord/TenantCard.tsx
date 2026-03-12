@@ -7,6 +7,7 @@ import { Progress } from '@/components/ui/progress'
 import { Shield, PawPrint, Cigarette, Star, CheckCircle } from 'lucide-react'
 import { TenantCard as TenantCardType } from '@/hooks/useTenantSearch'
 import { getTrustScoreColor } from '@/lib/trust-score'
+import { FavoriteButton } from '@/components/landlord/favorite-button'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -67,10 +68,15 @@ export function TenantCard({ tenant }: TenantCardProps) {
               </div>
             </div>
 
-            {/* Trust score chip */}
-            <div className="text-right flex-shrink-0">
-              <span className="text-lg font-bold">{tenant.trust_score}</span>
-              <p className="text-xs text-muted-foreground">{getTrustScoreLabel(tenant.trust_score)}</p>
+            {/* Trust score chip + favorite */}
+            <div className="flex items-start gap-2 flex-shrink-0">
+              <div className="text-right">
+                <span className="text-lg font-bold">{tenant.trust_score}</span>
+                <p className="text-xs text-muted-foreground">{getTrustScoreLabel(tenant.trust_score)}</p>
+              </div>
+              <div onClick={(e) => e.preventDefault()}>
+                <FavoriteButton tenantId={tenant.user_id} variant="icon" />
+              </div>
             </div>
           </div>
 

@@ -38,7 +38,15 @@ export default function LoginPage() {
       }
 
       toast.success('로그인 성공!')
-      router.push('/profile')
+      // user_type별 리다이렉트
+      const userType = data.user?.user_type
+      if (userType === 'landlord') {
+        router.push('/landlord')
+      } else if (userType === 'admin') {
+        router.push('/admin')
+      } else {
+        router.push('/profile')
+      }
       router.refresh()
     } catch (err) {
       toast.error((err as Error).message)

@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/ui/empty-state'
 import { PageContainer } from '@/components/layout/page-container'
-import { Building, Plus, MapPin, Home, ChevronRight } from 'lucide-react'
+import { Building, Plus, MapPin, Home, ChevronRight, Star } from 'lucide-react'
 import { Property } from '@/types/database'
 import { toast } from 'sonner'
 
@@ -38,12 +38,38 @@ const STATUS_VARIANTS: Record<string, 'default' | 'secondary' | 'outline'> = {
 
 interface PropertyWithImage extends Property {
   main_image_url?: string
+  is_featured?: boolean
+  featured_until?: string | null
 }
 
 export default function PropertiesPage() {
   const router = useRouter()
   const [properties, setProperties] = useState<PropertyWithImage[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [featuringId, setFeaturingId] = useState<string | null>(null)
+
+  const handleToggleFeature = async (e: React.MouseEvent, propertyId: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setFeaturingId(propertyId)
+    try {
+      const res = await fetch(`/api/landlord/properties/${propertyId}/feature`, { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      toast.success(data.message)
+      setProperties(prev =>
+        prev.map(p =>
+          p.id === propertyId
+            ? { ...p, is_featured: data.is_featured, featured_until: data.featured_until ?? null }
+            : p
+        )
+      )
+    } catch (err) {
+      toast.error((err as Error).message)
+    } finally {
+      setFeaturingId(null)
+    }
+  }
 
   useEffect(() => {
     fetchProperties()
@@ -150,18 +176,37 @@ export default function PropertiesPage() {
                       {/* 정보 */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <div className="flex items-center gap-2 mb-1">
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
                               <Badge variant={STATUS_VARIANTS[property.status]}>
                                 {STATUS_LABELS[property.status]}
                               </Badge>
+                              {property.is_featured && (
+                                <Badge className="bg-yellow-500 text-white gap-1 text-xs">
+                                  <Star className="h-2.5 w-2.5 fill-white" />피처드
+                                </Badge>
+                              )}
                               <span className="text-xs text-muted-foreground">
                                 {PROPERTY_TYPE_LABELS[property.property_type]}
                               </span>
                             </div>
                             <h3 className="font-semibold truncate">{property.title}</h3>
                           </div>
-                          <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            <button
+                              onClick={(e) => handleToggleFeature(e, property.id)}
+                              disabled={featuringId === property.id}
+                              title={property.is_featured ? '피처드 해제' : '피처드 등록 (7일)'}
+                              className={`p-1.5 rounded-full transition-colors ${
+                                property.is_featured
+                                  ? 'text-yellow-500 hover:text-yellow-600'
+                                  : 'text-muted-foreground hover:text-yellow-500'
+                              } disabled:opacity-50`}
+                            >
+                              <Star className={`h-4 w-4 ${property.is_featured ? 'fill-current' : ''}`} />
+                            </button>
+                            <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                          </div>
                         </div>
 
                         <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">

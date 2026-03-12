@@ -46,7 +46,7 @@ export async function POST(request: Request) {
       [email, passwordHash, userType]
     )
 
-    const token = generateToken(user.id)
+    const token = generateToken(user.id, userType)
     await setAuthCookie(token)
 
     return NextResponse.json({ success: true, userId: user.id, userType })

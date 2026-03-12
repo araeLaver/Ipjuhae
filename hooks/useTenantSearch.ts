@@ -8,6 +8,7 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 
 export interface TenantCard {
   profile_id: string
+  user_id: string
   name: string
   age_range: string
   family_type: string
