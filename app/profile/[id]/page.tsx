@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (!profile) {
     return {
-      title: '프로필을 찾을 수 없습니다',
+      title: '프로필을 찾을 수 없습니다 | 렌트미',
       robots: { index: false },
     }
   }
@@ -36,7 +36,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title,
     description,
     openGraph: {
-      title: `${title} | 입주해`,
+      title: `${title} | 렌트미`,
       description,
       type: 'profile',
       images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: title }],
