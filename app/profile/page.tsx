@@ -120,7 +120,7 @@ export default function ProfilePage() {
         </div>
 
         <div className="pt-4">
-          <Link href="/onboarding/basic">
+          <Link href="/profile/edit">
             <Button variant="outline" className="w-full">
               <Edit className="h-4 w-4 mr-2" />
               프로필 수정하기
