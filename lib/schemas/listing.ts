@@ -24,7 +24,12 @@ export const createListingSchema = z.object({
     .nullable()
     .optional(),
   photo_urls: z
-    .array(z.string().url('올바른 URL 형식이 아닙니다'))
+    .array(
+      z.string().refine(
+        (s) => s.startsWith('data:') || s.startsWith('http://') || s.startsWith('https://'),
+        '올바른 이미지 URL 또는 data URI가 아닙니다',
+      )
+    )
     .max(5, '사진은 최대 5장까지 업로드할 수 있습니다')
     .optional()
     .default([]),
