@@ -15,6 +15,7 @@ export type EventName =
 export interface TrackClientOptions {
   sessionId?: string
   properties?: Record<string, unknown>
+  [key: string]: unknown
 }
 
 /**
