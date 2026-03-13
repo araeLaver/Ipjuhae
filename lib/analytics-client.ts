@@ -8,7 +8,10 @@ export type EventName =
   | 'page_view'
   | 'user_signup'
   | 'profile_complete'
+  | 'profile_submitted'
   | 'listing_created'
+  | 'listing_submitted'
+  | 'match_generated'
   | 'match_viewed'
   | 'listing_viewed'
 

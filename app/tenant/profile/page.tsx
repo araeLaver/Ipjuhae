@@ -139,6 +139,11 @@ export default function TenantProfilePage() {
       }
 
       track('profile_complete', { section: 'tenant_profile' })
+      track('profile_submitted', {
+        timestamp: new Date().toISOString(),
+        has_pets: form.has_pets,
+        has_move_in_date: !!form.move_in_date,
+      })
       toast.success('프로필이 저장되었습니다')
     } catch (error) {
       const message = error instanceof Error ? error.message : '저장 중 오류가 발생했습니다'

@@ -4,6 +4,7 @@ import { getCurrentUser } from '@/lib/auth'
 import { TenantProfile } from '@/types/database'
 import { tenantProfileSchema } from '@/lib/validations'
 import { sanitizeUserInput } from '@/lib/sanitize'
+import { trackServer } from '@/lib/analytics'
 
 // GET: 임차인 프로필 조회
 export async function GET() {
@@ -76,6 +77,12 @@ export async function PUT(request: Request) {
       )
       profile = created
     }
+
+    await trackServer('profile_submitted', {
+      userId: String(user.id),
+      timestamp: new Date().toISOString(),
+      is_update: !!existing,
+    })
 
     return NextResponse.json({ profile })
   } catch (error) {

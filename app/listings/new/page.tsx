@@ -147,6 +147,13 @@ export default function NewListingPage() {
         deposit: payload.deposit,
         photo_count: payload.photo_urls.length,
       })
+      trackEvent('listing_submitted', {
+        listing_id: data.listing?.id,
+        timestamp: new Date().toISOString(),
+        monthly_rent: payload.monthly_rent,
+        deposit: payload.deposit,
+        photo_count: payload.photo_urls.length,
+      })
 
       router.push(`/listings/${data.listing.id}`)
     } catch (err) {
