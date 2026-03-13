@@ -19,7 +19,6 @@ export interface MatchItem {
     budget: number
     region: number
     moveIn: number
-    pet: number
   }
 }
 
@@ -67,12 +66,7 @@ function ScoreBreakdown({ breakdown }: { breakdown: MatchItem['breakdown'] }) {
       <span
         className={`rounded px-1.5 py-0.5 ${breakdown.moveIn > 0 ? 'bg-purple-50 text-purple-700' : 'bg-gray-100 text-gray-500'}`}
       >
-        입주일 {breakdown.moveIn}/20
-      </span>
-      <span
-        className={`rounded px-1.5 py-0.5 ${breakdown.pet > 0 ? 'bg-orange-50 text-orange-700' : 'bg-gray-100 text-gray-500'}`}
-      >
-        반려동물 {breakdown.pet}/10
+        입주일 {breakdown.moveIn}/30
       </span>
     </div>
   )

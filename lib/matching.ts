@@ -21,28 +21,26 @@ export interface ScoredListing {
   breakdown: {
     budget: number  // max 40
     region: number  // max 30
-    moveIn: number  // max 20
-    pet: number     // max 10
+    moveIn: number  // max 30
   }
 }
 
 /**
  * Pure function: no DB calls.
  *
- * Scoring:
+ * Scoring (total 100 pts):
  *   Budget (40 pts): monthly_rent within [budget_min * 0.9, budget_max * 1.1]
  *   Region (30 pts): listing.address includes any preferred_district
- *   Date   (20 pts): |available_from - move_in_date| <= 7 days; full pts if either is null
- *   Pet    (10 pts): tenant !has_pets OR listing pet_allowed != false
+ *   Date   (30 pts): |available_from - move_in_date| <= 7 days; full pts if either is null
  */
 export function matchScore(profile: MatchTenantProfile, listing: MatchListing): ScoredListing {
-  // Budget: 40pts
+  // Budget: 40pts — within ±10% of tenant's range
   const lowerBound = profile.budget_min * 0.9
   const upperBound = profile.budget_max * 1.1
   const budget =
     listing.monthly_rent >= lowerBound && listing.monthly_rent <= upperBound ? 40 : 0
 
-  // Region: 30pts
+  // Region: 30pts — address matches any preferred district
   let region = 0
   if (profile.preferred_districts.length > 0) {
     for (const district of profile.preferred_districts) {
@@ -53,28 +51,19 @@ export function matchScore(profile: MatchTenantProfile, listing: MatchListing): 
     }
   }
 
-  // Move-in date: 20pts (was 30)
-  let moveIn = 20 // default: full points when either date is null
+  // Move-in date: 30pts — within 7 days or either date null
+  let moveIn = 30 // default: full points when either date is null
   if (profile.move_in_date !== null && profile.move_in_date !== undefined && listing.available_from !== null) {
     const tenantDate = new Date(profile.move_in_date).getTime()
     const listingDate = new Date(listing.available_from).getTime()
     const diffDays = Math.abs(tenantDate - listingDate) / (1000 * 60 * 60 * 24)
-    moveIn = diffDays <= 7 ? 20 : 0
-  }
-
-  // Pet: 10pts
-  // tenant has no pets → always compatible
-  // pet_allowed null/unknown → give benefit of doubt
-  // tenant has pets AND pet_allowed === false → 0pts
-  let pet = 10
-  if (profile.has_pets && listing.pet_allowed === false) {
-    pet = 0
+    moveIn = diffDays <= 7 ? 30 : 0
   }
 
   return {
     listing,
-    score: budget + region + moveIn + pet,
-    breakdown: { budget, region, moveIn, pet },
+    score: budget + region + moveIn,
+    breakdown: { budget, region, moveIn },
   }
 }
 

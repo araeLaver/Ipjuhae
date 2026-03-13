@@ -104,15 +104,7 @@ export function MatchListRow({ item, rank, isLast }: MatchListRowProps) {
               breakdown.moveIn > 0 ? 'bg-purple-50 text-purple-700' : 'bg-gray-100 text-gray-400',
             )}
           >
-            입주일 {breakdown.moveIn}/20
-          </span>
-          <span
-            className={cn(
-              'text-[10px] rounded px-1 py-0.5',
-              breakdown.pet > 0 ? 'bg-orange-50 text-orange-700' : 'bg-gray-100 text-gray-400',
-            )}
-          >
-            반려동물 {breakdown.pet}/10
+            입주일 {breakdown.moveIn}/30
           </span>
         </div>
       </div>
