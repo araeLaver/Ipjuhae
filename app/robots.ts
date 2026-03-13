@@ -5,10 +5,10 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: '*',
-        allow: ['/', '/profile/', '/search/'],
-        disallow: ['/api/', '/admin/', '/_next/'],
+        allow: '/',
+        disallow: ['/admin/', '/api/'],
       },
     ],
-    sitemap: 'https://rentme.kr/sitemap.xml',
+    sitemap: 'https://www.ipjuhae.com/sitemap.xml',
   }
 }
