@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase'
 import { queryOne, query } from '@/lib/db'
 import { generateToken, setAuthCookie } from '@/lib/auth'
+import { trackServer } from '@/lib/analytics'
 import { User } from '@/types/database'
 
 export async function GET(request: NextRequest) {
@@ -36,7 +37,7 @@ export async function GET(request: NextRequest) {
       isNewUser = true
       const rows = await query<User>(
         `INSERT INTO users (email, user_type, auth_provider)
-         VALUES ($1, 'tenant', 'kakao')
+         VALUES ($1, 'tenant', 'magic_link')
          RETURNING *`,
         [email]
       )
@@ -47,8 +48,12 @@ export async function GET(request: NextRequest) {
     const token = generateToken(user.id, user.user_type)
     await setAuthCookie(token)
 
-    // Redirect: new users → onboarding, existing users → profile
+    // Track user_signup for new users
     if (isNewUser) {
+      await trackServer('user_signup', {
+        userId: user.id,
+        properties: { method: 'magic_link', email },
+      })
       return NextResponse.redirect(new URL('/onboarding', origin))
     }
 
