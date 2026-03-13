@@ -17,6 +17,7 @@ export type EventName =
   | 'listing_submitted'
   | 'match_generated'
   | 'match_viewed'
+  | 'match_view_toggle'
   | 'listing_viewed'
 
 export interface TrackClientOptions {
