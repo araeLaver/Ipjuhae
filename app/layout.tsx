@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { Noto_Sans_KR } from 'next/font/google'
 import { ThemeProvider } from 'next-themes'
 import { Toaster } from '@/components/ui/toast'
-import { PageViewTracker } from '@/components/PageViewTracker'
+import { PageViewTracker } from '@/components/analytics/PageViewTracker'
 import './globals.css'
 
 const notoSansKR = Noto_Sans_KR({ subsets: ['latin'], weight: ['400', '500', '700'], display: 'swap' })

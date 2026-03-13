@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { mockListings } from '@/lib/mock-listings'
 import { ListingGallery } from '@/components/listings/ListingGallery'
 import { FavoriteButton } from '@/components/listings/FavoriteButton'
+import { ListingViewTracker } from '@/components/listings/ListingViewTracker'
 import { PageContainer } from '@/components/layout/page-container'
 import { Badge } from '@/components/ui/badge'
 import { MapPin, Layers, Maximize2, CalendarDays } from 'lucide-react'
@@ -56,6 +57,7 @@ export default async function ListingDetailPage({
 
   return (
     <PageContainer maxWidth="lg">
+      <ListingViewTracker listingId={id} />
       <div className="space-y-6">
         {/* Gallery */}
         <ListingGallery photoUrls={listing.photo_urls} address={listing.address} />
