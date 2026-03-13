@@ -1,5 +1,7 @@
 import { query } from './db'
 
+const isDev = process.env.NODE_ENV === 'development'
+
 export type EventName =
   | 'page_view'
   | 'user_signup'
@@ -21,12 +23,18 @@ export interface TrackOptions {
 
 /**
  * Server-side track: saves event directly to DB.
+ * In dev mode, also logs to console for easy debugging.
  * Never throws — analytics must not block main flow.
  */
 export async function trackServer(event: EventName, options: TrackOptions = {}): Promise<void> {
   try {
     const { userId, sessionId, properties, ...extraProps } = options
     const mergedProps = { ...(properties ?? {}), ...extraProps }
+
+    if (isDev) {
+      console.log(`[analytics:server] ${event}`, { userId, ...mergedProps })
+    }
+
     await query(
       `INSERT INTO analytics_events (event_name, properties, user_id, session_id)
        VALUES ($1, $2, $3, $4)`,
