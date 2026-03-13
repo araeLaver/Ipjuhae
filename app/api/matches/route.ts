@@ -1,25 +1,18 @@
 import { NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
 import { query, queryOne } from '@/lib/db'
-import { matchListings, TenantProfile, Listing } from '@/lib/matching'
+import { matchListings, MatchListing } from '@/lib/matching'
+import { TenantProfile } from '@/types/database'
 import { logger } from '@/lib/logger'
 
-interface TenantPreferenceRow {
-  budget_min: number
-  budget_max: number
-  preferred_region: string
-  move_in_date: string | null
-}
-
-interface PropertyRow {
+interface ListingRow {
   id: number
-  monthly_rent: number
+  monthly_rent: string
   address: string
   available_from: string | null
-  title: string
-  region: string | null
-  deposit: number
-  property_type: string
+  deposit: string
+  area_sqm: string | null
+  floor: number | null
 }
 
 export async function GET() {
@@ -29,76 +22,46 @@ export async function GET() {
       return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 })
     }
 
-    // 세입자 매칭 선호도 조회 (tenant_preferences 테이블이 없으면 profiles에서 fallback)
-    const preference = await queryOne<TenantPreferenceRow>(
-      `SELECT
-        COALESCE(tp.budget_min, 0)           AS budget_min,
-        COALESCE(tp.budget_max, 9999999)     AS budget_max,
-        COALESCE(tp.preferred_region, '')    AS preferred_region,
-        tp.move_in_date
-      FROM tenant_preferences tp
-      WHERE tp.user_id = $1`,
+    const profile = await queryOne<TenantProfile>(
+      'SELECT * FROM tenant_profiles WHERE user_id = $1',
       [user.id]
     )
 
-    if (!preference) {
+    if (!profile) {
       return NextResponse.json(
-        { error: '매칭 선호도가 설정되지 않았습니다. 선호도를 먼저 입력해주세요.' },
-        { status: 404 }
+        { error: '임차인 프로필을 먼저 작성해주세요', matches: [] },
+        { status: 200 }
       )
     }
 
-    const tenantProfile: TenantProfile = {
-      budget_min: Number(preference.budget_min),
-      budget_max: Number(preference.budget_max),
-      preferred_region: preference.preferred_region,
-      move_in_date: preference.move_in_date,
-    }
-
-    // 이용 가능한 매물 전체 조회
-    const rows = await query<PropertyRow>(
-      `SELECT
-        id,
-        monthly_rent,
-        address,
-        available_from,
-        title,
-        region,
-        deposit,
-        property_type
-      FROM properties
-      WHERE status = 'available'`
+    const rows = await query<ListingRow>(
+      `SELECT id, monthly_rent, deposit, address, area_sqm, floor, available_from
+       FROM listings
+       ORDER BY created_at DESC
+       LIMIT 200`
     )
 
-    const listings: Listing[] = rows.map((row) => ({
-      id: Number(row.id),
-      monthly_rent: Number(row.monthly_rent),
-      address: row.address,
-      available_from: row.available_from,
-      title: row.title,
-      region: row.region,
-      deposit: Number(row.deposit),
-      property_type: row.property_type,
+    const listings: MatchListing[] = rows.map((r) => ({
+      id: r.id,
+      monthly_rent: parseInt(String(r.monthly_rent)),
+      address: r.address,
+      available_from: r.available_from,
+      deposit: parseInt(String(r.deposit)),
+      area_sqm: r.area_sqm ? parseFloat(String(r.area_sqm)) : null,
+      floor: r.floor,
     }))
 
-    const results = matchListings(tenantProfile, listings)
+    const matches = matchListings(
+      {
+        budget_min: profile.budget_min,
+        budget_max: profile.budget_max,
+        preferred_districts: profile.preferred_districts,
+        move_in_date: profile.move_in_date,
+      },
+      listings
+    )
 
-    // 매칭된 매물의 상세 정보를 함께 반환
-    const listingMap = new Map(listings.map((l) => [l.id, l]))
-
-    const matches = results.map((r) => {
-      const listing = listingMap.get(r.listing_id)
-      return {
-        ...r,
-        listing,
-      }
-    })
-
-    return NextResponse.json({
-      matches,
-      total: matches.length,
-      profile: tenantProfile,
-    })
+    return NextResponse.json({ matches, total: matches.length })
   } catch (error) {
     logger.error('매칭 조회 오류', { error })
     return NextResponse.json({ error: '매칭 조회 중 오류가 발생했습니다' }, { status: 500 })
