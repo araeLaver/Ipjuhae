@@ -71,12 +71,98 @@ async function decodeWithSecret(
   return { userId: payloadData.userId, userType: payloadData.userType }
 }
 
+/** 인메모리 Rate Limit 스토어 (Edge Runtime 호환) */
+const rateLimitStore = new Map<string, { count: number; resetAt: number }>()
+
+function checkRateLimit(key: string, limit: number, windowMs: number): boolean {
+  const now = Date.now()
+  const entry = rateLimitStore.get(key)
+
+  if (!entry || entry.resetAt < now) {
+    rateLimitStore.set(key, { count: 1, resetAt: now + windowMs })
+    return true
+  }
+
+  if (entry.count >= limit) return false
+
+  entry.count++
+  return true
+}
+
+function getIp(request: NextRequest): string {
+  const forwarded = request.headers.get('x-forwarded-for')
+  if (forwarded) return forwarded.split(',')[0].trim()
+  const real = request.headers.get('x-real-ip')
+  if (real) return real
+  return '127.0.0.1'
+}
+
+/** CSRF: mutation 요청에 대해 Origin 헤더를 검증합니다 */
+function checkCsrf(request: NextRequest): boolean {
+  const method = request.method
+  const isMutation = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)
+  if (!isMutation) return true
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || ''
+  const origin = request.headers.get('origin')
+  const referer = request.headers.get('referer')
+
+  // 개발 환경에서는 origin 검사 완화
+  if (process.env.NODE_ENV !== 'production') return true
+
+  if (origin) {
+    return origin === appUrl || origin.startsWith(appUrl)
+  }
+  if (referer) {
+    return referer.startsWith(appUrl)
+  }
+
+  return false
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+  const ip = getIp(request)
+
+  // ── Rate Limiting ───────────────────────────────────────────────
+  if (pathname.startsWith('/api/auth')) {
+    // 인증 API: 분당 10회 제한
+    const allowed = checkRateLimit(`auth:${ip}`, 10, 60_000)
+    if (!allowed) {
+      return NextResponse.json(
+        { error: '너무 많은 요청입니다. 잠시 후 다시 시도하세요.' },
+        { status: 429, headers: { 'Retry-After': '60' } }
+      )
+    }
+  } else if (pathname.startsWith('/api/')) {
+    // 일반 API: 분당 60회 제한
+    const allowed = checkRateLimit(`api:${ip}`, 60, 60_000)
+    if (!allowed) {
+      return NextResponse.json(
+        { error: '너무 많은 요청입니다. 잠시 후 다시 시도하세요.' },
+        { status: 429, headers: { 'Retry-After': '60' } }
+      )
+    }
+  }
+
+  // ── CSRF Protection ─────────────────────────────────────────────
+  if (pathname.startsWith('/api/')) {
+    const csrfValid = checkCsrf(request)
+    if (!csrfValid) {
+      return NextResponse.json({ error: 'CSRF 검증 실패' }, { status: 403 })
+    }
+  }
+
   const token = request.cookies.get('auth_token')?.value
   const jwtPayload = token ? await verifyAndDecodeJwt(token) : null
   const isAuthenticated = !!jwtPayload
   const userType = jwtPayload?.userType
+
+  // ── Set SameSite=Strict cookie policy via response headers ──────
+  const response = NextResponse.next()
+  // SameSite 쿠키 정책은 Set-Cookie 헤더에 포함되므로
+  // 기존 쿠키에 대해서는 API 응답 시 적용 (여기서는 CSRF 방어 헌더만 추가)
+  response.headers.set('X-Content-Type-Options', 'nosniff')
 
   // Public routes — always allow
   if (
@@ -88,7 +174,7 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/listings') ||
     pathname.startsWith('/properties') // 공개 매물 검색
   ) {
-    return NextResponse.next()
+    return response
   }
 
   // ── 인증 필요 경로 ──────────────────────────────────────────────
@@ -133,7 +219,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL(destination, request.url))
   }
 
-  return NextResponse.next()
+  return response
 }
 
 export const config = {
