@@ -1,162 +1,41 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback, Suspense } from 'react'
 import { PageContainer } from '@/components/layout/page-container'
-import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { MapPin, Home, Calendar, Star } from 'lucide-react'
+import { EmptyState } from '@/components/ui/empty-state'
+import { MatchCard, type MatchItem } from '@/components/matches/MatchCard'
+import { MatchListRow } from '@/components/matches/MatchList'
+import {
+  LayoutGrid,
+  List,
+  Home,
+  ChevronLeft,
+  ChevronRight,
+  RefreshCw,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import { trackEvent } from '@/lib/analytics-client'
 
-interface MatchListing {
-  id: number
-  monthly_rent: number
-  address: string
-  available_from: string | null
-  title?: string
-  region?: string | null
-  deposit?: number
-  property_type?: string
-}
+// ──────────────────────────────────────────────
+// Constants
+// ──────────────────────────────────────────────
+const PAGE_SIZE = 10
+const VIEW_MODE_KEY = 'matches:viewMode'
 
-interface MatchItem {
-  listing_id: number
-  score: number
-  budget_score: number
-  region_score: number
-  date_score: number
-  listing?: MatchListing
-}
+type ViewMode = 'card' | 'list'
 
 interface MatchesResponse {
   matches: MatchItem[]
   total: number
 }
 
-function formatPrice(amount: number): string {
-  if (amount >= 100_000_000) {
-    const uk = Math.floor(amount / 100_000_000)
-    const man = Math.floor((amount % 100_000_000) / 10_000)
-    return man > 0 ? `${uk}억 ${man}만` : `${uk}억`
-  }
-  if (amount >= 10_000) return `${Math.floor(amount / 10_000)}만`
-  return `${amount}`
-}
-
-function ScoreBadge({ score }: { score: number }) {
-  const colorClass =
-    score >= 90
-      ? 'bg-green-100 text-green-800 border-green-200'
-      : score >= 70
-        ? 'bg-blue-100 text-blue-800 border-blue-200'
-        : 'bg-yellow-100 text-yellow-800 border-yellow-200'
-
-  return (
-    <span
-      className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${colorClass}`}
-    >
-      <Star className="h-3 w-3" />
-      {score}점
-    </span>
-  )
-}
-
-function ScoreBreakdown({
-  budget_score,
-  region_score,
-  date_score,
-}: {
-  budget_score: number
-  region_score: number
-  date_score: number
-}) {
-  return (
-    <div className="mt-2 flex flex-wrap gap-1.5 text-xs text-muted-foreground">
-      <span
-        className={`rounded px-1.5 py-0.5 ${budget_score > 0 ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'}`}
-      >
-        예산 {budget_score}/40
-      </span>
-      <span
-        className={`rounded px-1.5 py-0.5 ${region_score > 0 ? 'bg-blue-50 text-blue-700' : 'bg-gray-100 text-gray-500'}`}
-      >
-        지역 {region_score}/40
-      </span>
-      <span
-        className={`rounded px-1.5 py-0.5 ${date_score > 0 ? 'bg-purple-50 text-purple-700' : 'bg-gray-100 text-gray-500'}`}
-      >
-        입주일 {date_score}/20
-      </span>
-    </div>
-  )
-}
-
-function MatchCard({ item }: { item: MatchItem }) {
-  const listing = item.listing
-  if (!listing) return null
-
-  return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 mb-1">
-              <h3 className="font-semibold text-sm truncate">
-                {listing.title ?? `매물 #${listing.id}`}
-              </h3>
-              <ScoreBadge score={item.score} />
-            </div>
-
-            <div className="flex items-center gap-1 text-sm text-muted-foreground mb-0.5">
-              <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
-              <span className="truncate">{listing.address}</span>
-            </div>
-
-            {listing.available_from && (
-              <div className="flex items-center gap-1 text-sm text-muted-foreground mb-0.5">
-                <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
-                <span>
-                  입주가능:{' '}
-                  {new Date(listing.available_from).toLocaleDateString('ko-KR', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  })}
-                </span>
-              </div>
-            )}
-
-            {listing.property_type && (
-              <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                <Home className="h-3.5 w-3.5 flex-shrink-0" />
-                <span>{listing.property_type}</span>
-              </div>
-            )}
-
-            <ScoreBreakdown
-              budget_score={item.budget_score}
-              region_score={item.region_score}
-              date_score={item.date_score}
-            />
-          </div>
-
-          <div className="text-right flex-shrink-0">
-            {listing.deposit !== undefined && listing.deposit > 0 && (
-              <p className="text-xs text-muted-foreground">
-                보증금 {formatPrice(listing.deposit)}
-              </p>
-            )}
-            <p className="font-bold text-base">
-              월 {formatPrice(listing.monthly_rent)}
-            </p>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
-
+// ──────────────────────────────────────────────
+// Skeleton loaders
+// ──────────────────────────────────────────────
 function SkeletonCard() {
   return (
     <Card>
@@ -166,89 +45,332 @@ function SkeletonCard() {
             <Skeleton className="h-4 w-3/4" />
             <Skeleton className="h-3 w-1/2" />
             <Skeleton className="h-3 w-2/3" />
+            <div className="flex gap-1 pt-1">
+              <Skeleton className="h-4 w-16 rounded-full" />
+              <Skeleton className="h-4 w-16 rounded-full" />
+              <Skeleton className="h-4 w-16 rounded-full" />
+            </div>
           </div>
-          <Skeleton className="h-10 w-20" />
+          <Skeleton className="h-12 w-20" />
         </div>
       </CardContent>
     </Card>
   )
 }
 
-export default function MatchesPage() {
+function SkeletonListRow() {
+  return (
+    <div className="flex items-center gap-3 px-4 py-3 border-b">
+      <Skeleton className="h-4 w-4 rounded" />
+      <div className="flex-1 space-y-1.5">
+        <Skeleton className="h-3.5 w-48" />
+        <Skeleton className="h-3 w-32" />
+        <div className="flex gap-1">
+          <Skeleton className="h-3 w-14 rounded" />
+          <Skeleton className="h-3 w-14 rounded" />
+        </div>
+      </div>
+      <Skeleton className="h-8 w-16" />
+    </div>
+  )
+}
+
+function SkeletonList({ mode }: { mode: ViewMode }) {
+  if (mode === 'card') {
+    return (
+      <div className="space-y-3">
+        {Array.from({ length: PAGE_SIZE }).map((_, i) => (
+          <SkeletonCard key={i} />
+        ))}
+      </div>
+    )
+  }
+  return (
+    <Card>
+      {Array.from({ length: PAGE_SIZE }).map((_, i) => (
+        <SkeletonListRow key={i} />
+      ))}
+    </Card>
+  )
+}
+
+// ──────────────────────────────────────────────
+// Pagination controls
+// ──────────────────────────────────────────────
+interface PaginationProps {
+  page: number
+  totalPages: number
+  onPrev: () => void
+  onNext: () => void
+}
+
+function Pagination({ page, totalPages, onPrev, onNext }: PaginationProps) {
+  if (totalPages <= 1) return null
+
+  return (
+    <div className="flex items-center justify-center gap-3 mt-6">
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={onPrev}
+        disabled={page === 1}
+        aria-label="이전 페이지"
+      >
+        <ChevronLeft className="h-4 w-4" />
+        이전
+      </Button>
+      <span className="text-sm text-muted-foreground">
+        {page} / {totalPages}
+      </span>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={onNext}
+        disabled={page === totalPages}
+        aria-label="다음 페이지"
+      >
+        다음
+        <ChevronRight className="h-4 w-4" />
+      </Button>
+    </div>
+  )
+}
+
+// ──────────────────────────────────────────────
+// View toggle button group
+// ──────────────────────────────────────────────
+interface ViewToggleProps {
+  mode: ViewMode
+  onChange: (mode: ViewMode) => void
+}
+
+function ViewToggle({ mode, onChange }: ViewToggleProps) {
+  return (
+    <div className="flex items-center rounded-md border bg-muted/40 p-0.5 gap-0.5">
+      <button
+        onClick={() => onChange('card')}
+        aria-label="카드 뷰"
+        className={`inline-flex items-center gap-1.5 rounded px-2.5 py-1.5 text-xs font-medium transition-colors ${
+          mode === 'card'
+            ? 'bg-background shadow-sm text-foreground'
+            : 'text-muted-foreground hover:text-foreground'
+        }`}
+      >
+        <LayoutGrid className="h-3.5 w-3.5" />
+        카드
+      </button>
+      <button
+        onClick={() => onChange('list')}
+        aria-label="리스트 뷰"
+        className={`inline-flex items-center gap-1.5 rounded px-2.5 py-1.5 text-xs font-medium transition-colors ${
+          mode === 'list'
+            ? 'bg-background shadow-sm text-foreground'
+            : 'text-muted-foreground hover:text-foreground'
+        }`}
+      >
+        <List className="h-3.5 w-3.5" />
+        리스트
+      </button>
+    </div>
+  )
+}
+
+// ──────────────────────────────────────────────
+// Main page (inner — wrapped by Suspense)
+// ──────────────────────────────────────────────
+function MatchesContent() {
+  // View mode — read from localStorage with SSR guard
+  const [viewMode, setViewMode] = useState<ViewMode>('card')
   const [data, setData] = useState<MatchesResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [page, setPage] = useState(1)
 
+  // Hydrate viewMode from localStorage after mount
   useEffect(() => {
-    async function loadMatches() {
-      try {
-        setIsLoading(true)
-        const res = await fetch('/api/matches')
-        if (!res.ok) {
-          const json = await res.json().catch(() => ({}))
-          throw new Error(json.error ?? `오류가 발생했습니다 (${res.status})`)
-        }
-        const json: MatchesResponse = await res.json()
-        setData(json)
-        trackEvent('match_viewed', { total: json.total })
-      } catch (err) {
-        const message = err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다'
-        setError(message)
-        toast.error(message)
-      } finally {
-        setIsLoading(false)
-      }
+    const saved = localStorage.getItem(VIEW_MODE_KEY)
+    if (saved === 'card' || saved === 'list') {
+      setViewMode(saved)
     }
-
-    loadMatches()
   }, [])
 
+  const handleViewMode = useCallback((mode: ViewMode) => {
+    setViewMode(mode)
+    localStorage.setItem(VIEW_MODE_KEY, mode)
+    trackEvent('match_view_toggle', { mode })
+  }, [])
+
+  const loadMatches = useCallback(async () => {
+    try {
+      setIsLoading(true)
+      setError(null)
+      const res = await fetch('/api/matches')
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}))
+        throw new Error(json.error ?? `오류가 발생했습니다 (${res.status})`)
+      }
+      const json: MatchesResponse = await res.json()
+      setData(json)
+      setPage(1)
+      trackEvent('match_viewed', { total: json.total })
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다'
+      setError(message)
+      toast.error(message)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    loadMatches()
+  }, [loadMatches])
+
+  // Pagination
+  const totalItems = data?.matches.length ?? 0
+  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE))
+  const paginatedItems = data?.matches.slice(
+    (page - 1) * PAGE_SIZE,
+    page * PAGE_SIZE,
+  ) ?? []
+
+  const handlePrev = () => setPage((p) => Math.max(1, p - 1))
+  const handleNext = () => setPage((p) => Math.min(totalPages, p + 1))
+
+  // ── Render ──
   return (
-    <PageContainer>
-      <div className="max-w-2xl mx-auto py-8 px-4">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold">매칭 결과</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            예산·지역·입주일 기준으로 맞춤 매물을 찾아드립니다.
-          </p>
-        </div>
+    <div className="max-w-2xl mx-auto py-8 px-4">
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold">매칭 결과</h1>
+        <p className="text-muted-foreground mt-1 text-sm">
+          예산·지역·입주일·반려동물 기준으로 맞춤 매물을 찾아드립니다.
+        </p>
+      </div>
 
-        {isLoading && (
-          <div className="space-y-3">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <SkeletonCard key={i} />
-            ))}
-          </div>
-        )}
+      {/* Loading state */}
+      {isLoading && <SkeletonList mode={viewMode} />}
 
-        {!isLoading && error && (
+      {/* Error state */}
+      {!isLoading && error && (
+        <div className="space-y-4">
           <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive">
             {error}
           </div>
-        )}
+          <Button variant="outline" size="sm" onClick={loadMatches}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            다시 시도
+          </Button>
+        </div>
+      )}
 
-        {!isLoading && !error && data && (
-          <>
-            <div className="mb-4 flex items-center gap-2">
+      {/* Results */}
+      {!isLoading && !error && data && (
+        <>
+          {/* Toolbar: count badge + view toggle */}
+          <div className="mb-4 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
               <Badge variant="secondary">{data.total}건 매칭</Badge>
+              {totalPages > 1 && (
+                <span className="text-xs text-muted-foreground">
+                  ({page}/{totalPages} 페이지)
+                </span>
+              )}
             </div>
+            {data.matches.length > 0 && (
+              <ViewToggle mode={viewMode} onChange={handleViewMode} />
+            )}
+          </div>
 
-            {data.matches.length === 0 ? (
-              <div className="rounded-lg border bg-muted/30 p-8 text-center text-muted-foreground">
-                <Home className="mx-auto mb-3 h-10 w-10 opacity-40" />
-                <p className="font-medium">조건에 맞는 매물이 없습니다</p>
-                <p className="text-sm mt-1">선호도 설정을 조정해보세요.</p>
-              </div>
-            ) : (
+          {/* Empty state */}
+          {data.matches.length === 0 ? (
+            <EmptyState
+              icon={<Home className="h-12 w-12" />}
+              title="조건에 맞는 매물이 없습니다"
+              description="선호 지역, 예산, 입주 예정일을 조정하면 더 많은 매물을 찾을 수 있어요."
+            />
+          ) : viewMode === 'card' ? (
+            /* Card view */
+            <>
               <div className="space-y-3">
-                {data.matches.map((item) => (
-                  <MatchCard key={item.listing_id} item={item} />
+                {paginatedItems.map((item, idx) => (
+                  <MatchCard
+                    key={item.listing.id}
+                    item={item}
+                    rank={(page - 1) * PAGE_SIZE + idx + 1}
+                  />
                 ))}
               </div>
-            )}
-          </>
-        )}
-      </div>
+              <Pagination
+                page={page}
+                totalPages={totalPages}
+                onPrev={handlePrev}
+                onNext={handleNext}
+              />
+            </>
+          ) : (
+            /* List view */
+            <>
+              <Card className="divide-y overflow-hidden">
+                {paginatedItems.map((item, idx) => (
+                  <MatchListRow
+                    key={item.listing.id}
+                    item={item}
+                    rank={(page - 1) * PAGE_SIZE + idx + 1}
+                    isLast={idx === paginatedItems.length - 1}
+                  />
+                ))}
+              </Card>
+              <Pagination
+                page={page}
+                totalPages={totalPages}
+                onPrev={handlePrev}
+                onNext={handleNext}
+              />
+            </>
+          )}
+        </>
+      )}
+    </div>
+  )
+}
+
+// ──────────────────────────────────────────────
+// Page export — wrapped in Suspense for faster
+// perceived render (skeleton shown immediately)
+// ──────────────────────────────────────────────
+export default function MatchesPage() {
+  return (
+    <PageContainer>
+      <Suspense
+        fallback={
+          <div className="max-w-2xl mx-auto py-8 px-4">
+            <div className="mb-6">
+              <Skeleton className="h-8 w-32 mb-2" />
+              <Skeleton className="h-4 w-64" />
+            </div>
+            <div className="space-y-3">
+              {Array.from({ length: PAGE_SIZE }).map((_, i) => (
+                <Card key={i}>
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 space-y-2">
+                        <Skeleton className="h-4 w-3/4" />
+                        <Skeleton className="h-3 w-1/2" />
+                        <Skeleton className="h-3 w-2/3" />
+                      </div>
+                      <Skeleton className="h-10 w-20" />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        }
+      >
+        <MatchesContent />
+      </Suspense>
     </PageContainer>
   )
 }
