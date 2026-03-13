@@ -75,6 +75,36 @@ export const incomeSchema = z.object({
   incomeRange: z.enum(VALID_INCOME_RANGES),
 })
 
+// ===== Tenant Profile (임차인 프로필 MVP) =====
+export const SEOUL_DISTRICTS = [
+  '강남구', '강동구', '강북구', '강서구', '관악구', '광진구', '구로구', '금천구',
+  '노원구', '도봉구', '동대문구', '동작구', '마포구', '서대문구', '서초구', '성동구',
+  '성북구', '송파구', '양천구', '영등포구', '용산구', '은평구', '종로구', '중구', '중랑구',
+] as const
+
+export const tenantProfileSchema = z.object({
+  budget_min: z.number({ required_error: '최소 예산을 입력해주세요' })
+    .int('예산은 정수로 입력해주세요')
+    .min(0, '예산은 0 이상이어야 합니다')
+    .max(100000, '예산이 너무 큽니다'),
+  budget_max: z.number({ required_error: '최대 예산을 입력해주세요' })
+    .int('예산은 정수로 입력해주세요')
+    .min(0, '예산은 0 이상이어야 합니다')
+    .max(100000, '예산이 너무 큽니다'),
+  preferred_districts: z.array(z.string().max(20))
+    .min(1, '선호 지역을 최소 1개 선택해주세요')
+    .max(5, '선호 지역은 최대 5개까지 선택 가능합니다'),
+  move_in_date: z.string({ required_error: '입주 희망일을 입력해주세요' })
+    .regex(/^\d{4}-\d{2}-\d{2}$/, '날짜 형식이 올바르지 않습니다 (YYYY-MM-DD)'),
+  has_pets: z.boolean({ required_error: '반려동물 여부를 선택해주세요' }),
+  workplace: z.string().max(100, '직장은 100자 이하로 입력해주세요').optional().nullable(),
+}).refine((data) => data.budget_max >= data.budget_min, {
+  message: '최대 예산은 최소 예산 이상이어야 합니다',
+  path: ['budget_max'],
+})
+
+export type TenantProfileInput = z.infer<typeof tenantProfileSchema>
+
 // ===== Landlord =====
 export const landlordProfileSchema = z.object({
   name: z.string().min(1, '이름을 입력해주세요').max(100),
