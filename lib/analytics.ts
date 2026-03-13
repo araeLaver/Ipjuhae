@@ -9,7 +9,7 @@ export type EventName =
   | 'listing_viewed'
 
 export interface TrackOptions {
-  userId?: number
+  userId?: string
   sessionId?: string
   properties?: Record<string, unknown>
 }

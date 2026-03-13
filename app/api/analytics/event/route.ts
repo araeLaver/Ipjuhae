@@ -28,7 +28,7 @@ export async function POST(request: Request) {
     }
 
     // Auth is optional for analytics
-    let userId: number | undefined
+    let userId: string | undefined
     try {
       const user = await getCurrentUser()
       if (user?.id) userId = user.id
