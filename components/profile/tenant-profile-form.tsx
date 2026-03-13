@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { TenantProfile } from '@/types/database'
 import { SEOUL_DISTRICTS, TenantProfileInput } from '@/lib/validations'
 import { cn } from '@/lib/utils'
+import { trackEvent } from '@/lib/analytics'
 
 interface TenantProfileFormProps {
   initialData?: TenantProfile | null
@@ -136,6 +137,12 @@ export function TenantProfileForm({ initialData, onSaved }: TenantProfileFormPro
       }
 
       const json = await response.json()
+      trackEvent('profile_complete', {
+        budget_min: data.budget_min,
+        budget_max: data.budget_max,
+        region_count: data.preferred_districts.length,
+        has_pets: data.has_pets,
+      })
       toast.success('임차인 프로필이 저장되었습니다')
       onSaved?.(json.profile)
     } catch (err) {
