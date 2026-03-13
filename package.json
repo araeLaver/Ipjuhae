@@ -21,6 +21,7 @@
     "@radix-ui/react-radio-group": "^1.2.2",
     "@radix-ui/react-select": "^2.1.4",
     "@sentry/nextjs": "^10.38.0",
+    "@supabase/supabase-js": "^2.99.1",
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/pg": "^8.16.0",

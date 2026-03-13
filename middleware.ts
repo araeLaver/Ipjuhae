@@ -84,6 +84,8 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/terms') ||
     pathname.startsWith('/privacy') ||
     pathname.startsWith('/api') ||
+    pathname.startsWith('/auth/callback') ||
+    pathname.startsWith('/listings') ||
     pathname.startsWith('/properties') // 공개 매물 검색
   ) {
     return NextResponse.next()
