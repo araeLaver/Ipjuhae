@@ -216,6 +216,67 @@ export async function sendReferenceRequestEmail(
 }
 
 /**
+ * Magic Link 로그인 이메일
+ * - SMTP_HOST 환경변수가 있으면 nodemailer SMTP 발송
+ * - 없으면 콘솔에 URL 출력 (개발 환경 fallback)
+ */
+export async function sendMagicLink(email: string, token: string, baseUrl: string): Promise<void> {
+  const magicLinkUrl = `${baseUrl}/api/auth/magic-link?token=${token}`
+
+  if (process.env.SMTP_HOST) {
+    let nodemailer: typeof import('nodemailer')
+    try {
+      nodemailer = await import('nodemailer')
+    } catch {
+      logger.error('nodemailer가 설치되지 않음 — npm install nodemailer 실행 필요')
+      throw new Error('이메일 서비스를 사용할 수 없습니다')
+    }
+
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT ?? 587),
+      secure: Number(process.env.SMTP_PORT ?? 587) === 465,
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    })
+
+    await transporter.sendMail({
+      from: process.env.SMTP_FROM ?? process.env.SMTP_USER,
+      to: email,
+      subject: '[입주해] 로그인 링크',
+      text: `아래 링크를 클릭하면 자동으로 로그인됩니다 (15분 내 사용):\n\n${magicLinkUrl}`,
+      html: `
+        <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
+          <h2 style="color: #111827;">입주해 로그인</h2>
+          <p style="color: #374151;">아래 버튼을 클릭하면 자동으로 로그인됩니다.</p>
+          <p style="color: #6b7280; font-size: 14px;">이 링크는 15분 동안 유효하며, 한 번만 사용할 수 있습니다.</p>
+          <a
+            href="${magicLinkUrl}"
+            style="display:inline-block;margin-top:16px;padding:12px 24px;background-color:#2563eb;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;"
+          >
+            로그인하기
+          </a>
+          <p style="margin-top:24px;color:#9ca3af;font-size:12px;">
+            이 이메일을 요청하지 않으셨다면 무시하셔도 됩니다.
+          </p>
+        </div>
+      `,
+    })
+
+    logger.info('Magic Link 이메일 발송 성공', { to: email })
+  } else {
+    // 개발 환경: 콘솔에 출력
+    logger.info('=== Magic Link (개발 환경 — SMTP 미설정) ===')
+    logger.info(`받는 사람: ${email}`)
+    logger.info(`Magic Link URL: ${magicLinkUrl}`)
+    logger.info('============================================')
+    console.log('\n🔗 Magic Link URL:', magicLinkUrl, '\n')
+  }
+}
+
+/**
  * 서류 승인/반려 알림 이메일
  */
 export async function sendDocumentStatusEmail(
