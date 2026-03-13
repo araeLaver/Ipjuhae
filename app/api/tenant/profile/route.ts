@@ -84,6 +84,18 @@ export async function PUT(request: Request) {
       is_update: !!existing,
     })
 
+    // Track profile_complete for analytics baseline (#27/#31)
+    await trackServer('profile_complete', {
+      userId: String(user.id),
+      properties: {
+        budget_min,
+        budget_max,
+        region_count: preferred_districts.length,
+        has_pets,
+        is_update: !!existing,
+      },
+    })
+
     return NextResponse.json({ profile })
   } catch (error) {
     console.error('Save tenant profile error:', error)
