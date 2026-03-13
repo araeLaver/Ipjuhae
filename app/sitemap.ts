@@ -1,6 +1,7 @@
 import { MetadataRoute } from 'next'
+import { query } from '@/lib/db'
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://rentme.kr'
 
   const staticRoutes: MetadataRoute.Sitemap = [
@@ -10,5 +11,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${baseUrl}/auth/signin`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.5 },
   ]
 
-  return staticRoutes
+  try {
+    const profiles = await query<{ id: string; updated_at: string }>(
+      'SELECT id, updated_at FROM profiles WHERE is_complete = true',
+    )
+    const profileRoutes: MetadataRoute.Sitemap = profiles.map((p) => ({
+      url: `${baseUrl}/profile/${p.id}`,
+      lastModified: new Date(p.updated_at),
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
+    }))
+    return [...staticRoutes, ...profileRoutes]
+  } catch {
+    return staticRoutes
+  }
 }

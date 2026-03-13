@@ -23,8 +23,7 @@ interface AddressSearchProps {
 
 declare global {
   interface Window {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    daum: any
+    daum: any // Kakao Daum postcode SDK (no type definitions available)
   }
 }
 
