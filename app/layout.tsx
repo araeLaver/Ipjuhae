@@ -23,6 +23,14 @@ export const metadata: Metadata = {
     siteName: '렌트미',
     locale: 'ko_KR',
     type: 'website',
+    images: [
+      {
+        url: '/opengraph-image',
+        width: 1200,
+        height: 630,
+        alt: '렌트미 - 세입자 프로필 기반 임대차 매칭 플랫폼',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
