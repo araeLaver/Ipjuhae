@@ -8,19 +8,50 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Header } from '@/components/layout/header'
-import { Home } from 'lucide-react'
+import { Mail } from 'lucide-react'
 import { toast } from 'sonner'
 import { SocialLoginButtons } from '@/components/auth/social-login-buttons'
+import { createBrowserClient } from '@/lib/supabase'
 
 export default function LoginPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
+  const [isMagicLinkSent, setIsMagicLinkSent] = useState(false)
+  const [mode, setMode] = useState<'password' | 'magic'>('magic')
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   })
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleMagicLink = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!formData.email) {
+      toast.error('이메일을 입력해주세요')
+      return
+    }
+    setIsLoading(true)
+
+    try {
+      const supabase = createBrowserClient()
+      const { error } = await supabase.auth.signInWithOtp({
+        email: formData.email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      })
+
+      if (error) throw error
+
+      setIsMagicLinkSent(true)
+      toast.success('매직 링크가 이메일로 전송되었습니다!')
+    } catch (err) {
+      toast.error((err as Error).message || '매직 링크 전송에 실패했습니다')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
 
@@ -38,7 +69,6 @@ export default function LoginPage() {
       }
 
       toast.success('로그인 성공!')
-      // user_type별 리다이렉트
       const userType = data.user?.user_type
       if (userType === 'landlord') {
         router.push('/landlord')
@@ -55,6 +85,38 @@ export default function LoginPage() {
     }
   }
 
+  if (isMagicLinkSent) {
+    return (
+      <div className="min-h-screen bg-muted/50 dark:bg-background flex flex-col">
+        <Header />
+        <main className="flex-1 flex items-center justify-center p-4 animate-fade-in">
+          <Card className="w-full max-w-md shadow-card">
+            <CardHeader className="text-center">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                <Mail className="h-6 w-6 text-primary" />
+              </div>
+              <CardTitle className="text-2xl">이메일을 확인하세요</CardTitle>
+              <CardDescription>
+                <span className="font-medium text-foreground">{formData.email}</span>
+                <br />
+                로 매직 링크를 보냈습니다. 이메일의 링크를 클릭하여 로그인하세요.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => setIsMagicLinkSent(false)}
+              >
+                다른 이메일로 시도
+              </Button>
+            </CardContent>
+          </Card>
+        </main>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-muted/50 dark:bg-background flex flex-col">
       <Header />
@@ -64,52 +126,123 @@ export default function LoginPage() {
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">로그인</CardTitle>
             <CardDescription>
-              이메일과 비밀번호로 로그인하세요
+              {mode === 'magic'
+                ? '이메일로 매직 링크를 받아 간편하게 로그인하세요'
+                : '이메일과 비밀번호로 로그인하세요'}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">이메일</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, email: e.target.value }))
-                  }
-                  placeholder="example@email.com"
-                  required
-                />
-              </div>
+            {mode === 'magic' ? (
+              <form onSubmit={handleMagicLink} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">이메일</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, email: e.target.value }))
+                    }
+                    placeholder="example@email.com"
+                    required
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password">비밀번호</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, password: e.target.value }))
-                  }
-                  placeholder="비밀번호 입력"
-                  required
-                />
-              </div>
+                <Button type="submit" className="w-full" loading={isLoading}>
+                  <Mail className="mr-2 h-4 w-4" />
+                  매직 링크 전송
+                </Button>
 
-              <Button type="submit" className="w-full" loading={isLoading}>
-                로그인
-              </Button>
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-card px-2 text-muted-foreground">또는</span>
+                  </div>
+                </div>
 
-              <SocialLoginButtons mode="login" />
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => setMode('password')}
+                >
+                  비밀번호로 로그인
+                </Button>
 
-              <p className="text-center text-sm text-muted-foreground">
-                계정이 없으신가요?{' '}
-                <Link href="/signup" className="text-primary hover:underline">
-                  회원가입
-                </Link>
-              </p>
-            </form>
+                <SocialLoginButtons mode="login" />
+
+                <p className="text-center text-sm text-muted-foreground">
+                  계정이 없으신가요?{' '}
+                  <Link href="/signup" className="text-primary hover:underline">
+                    회원가입
+                  </Link>
+                </p>
+              </form>
+            ) : (
+              <form onSubmit={handlePasswordLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">이메일</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, email: e.target.value }))
+                    }
+                    placeholder="example@email.com"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="password">비밀번호</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={formData.password}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, password: e.target.value }))
+                    }
+                    placeholder="비밀번호 입력"
+                    required
+                  />
+                </div>
+
+                <Button type="submit" className="w-full" loading={isLoading}>
+                  로그인
+                </Button>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-card px-2 text-muted-foreground">또는</span>
+                  </div>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => setMode('magic')}
+                >
+                  <Mail className="mr-2 h-4 w-4" />
+                  매직 링크로 로그인
+                </Button>
+
+                <SocialLoginButtons mode="login" />
+
+                <p className="text-center text-sm text-muted-foreground">
+                  계정이 없으신가요?{' '}
+                  <Link href="/signup" className="text-primary hover:underline">
+                    회원가입
+                  </Link>
+                </p>
+              </form>
+            )}
           </CardContent>
         </Card>
       </main>
