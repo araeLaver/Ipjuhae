@@ -15,9 +15,10 @@ const PLAN_MAX_FEATURED: Record<string, number> = {
  */
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: propertyId } = await params
     const user = await getCurrentUser()
     if (!user) return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 })
     if (user.user_type !== 'landlord') {
@@ -27,7 +28,7 @@ export async function POST(
     // 매물 소유 확인
     const property = await queryOne<{ id: string; is_featured: boolean }>(
       'SELECT id, is_featured FROM properties WHERE id = $1 AND landlord_id = $2',
-      [params.id, user.id]
+      [propertyId, user.id]
     )
 
     if (!property) {
@@ -50,7 +51,7 @@ export async function POST(
       // 피처드 해제
       await query(
         'UPDATE properties SET is_featured = false, featured_until = NULL WHERE id = $1',
-        [params.id]
+        [propertyId]
       )
       return NextResponse.json({ is_featured: false, message: '피처드가 해제되었습니다' })
     } else {
@@ -80,10 +81,10 @@ export async function POST(
 
       await query(
         'UPDATE properties SET is_featured = true, featured_until = $1, boost_score = 100 WHERE id = $2',
-        [featuredUntil.toISOString(), params.id]
+        [featuredUntil.toISOString(), propertyId]
       )
 
-      logger.info('매물 피처드 등록', { landlordId: user.id, propertyId: params.id, plan })
+      logger.info('매물 피처드 등록', { landlordId: user.id, propertyId, plan })
 
       return NextResponse.json({
         is_featured: true,
