@@ -195,6 +195,20 @@ export interface Property {
   updated_at: Date
 }
 
+// 임차인 프로필 (MVP)
+export interface TenantProfile {
+  id: string
+  user_id: string
+  budget_min: number
+  budget_max: number
+  preferred_districts: string[]
+  move_in_date: string
+  has_pets: boolean
+  workplace: string | null
+  created_at: Date
+  updated_at: Date
+}
+
 // 매물 이미지
 export interface PropertyImage {
   id: string
