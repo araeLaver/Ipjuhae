@@ -5,6 +5,8 @@ import { matchListings, MatchListing } from '@/lib/matching'
 import { TenantProfile } from '@/types/database'
 import { logger } from '@/lib/logger'
 
+const MATCH_LIMIT = 10
+
 interface ListingRow {
   id: number
   monthly_rent: string
@@ -13,6 +15,7 @@ interface ListingRow {
   deposit: string
   area_sqm: string | null
   floor: number | null
+  pet_allowed: boolean | null
 }
 
 export async function GET() {
@@ -35,8 +38,10 @@ export async function GET() {
     }
 
     const rows = await query<ListingRow>(
-      `SELECT id, monthly_rent, deposit, address, area_sqm, floor, available_from
+      `SELECT id, monthly_rent, deposit, address, area_sqm, floor, available_from,
+              COALESCE(pet_allowed, NULL) AS pet_allowed
        FROM listings
+       WHERE status = 'available'
        ORDER BY created_at DESC
        LIMIT 200`
     )
@@ -49,6 +54,7 @@ export async function GET() {
       deposit: parseInt(String(r.deposit)),
       area_sqm: r.area_sqm ? parseFloat(String(r.area_sqm)) : null,
       floor: r.floor,
+      pet_allowed: r.pet_allowed,
     }))
 
     const matches = matchListings(
@@ -57,8 +63,10 @@ export async function GET() {
         budget_max: profile.budget_max,
         preferred_districts: profile.preferred_districts,
         move_in_date: profile.move_in_date,
+        has_pets: profile.has_pets,
       },
-      listings
+      listings,
+      MATCH_LIMIT,
     )
 
     return NextResponse.json({ matches, total: matches.length })
