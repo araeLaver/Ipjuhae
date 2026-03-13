@@ -2,15 +2,15 @@ import { z } from 'zod'
 
 export const createListingSchema = z.object({
   monthly_rent: z
-    .number({ required_error: '월세를 입력해주세요' })
+    .number({ error: '월세를 입력해주세요' })
     .int('월세는 정수 만원 단위로 입력해주세요')
     .min(1, '월세는 1만원 이상이어야 합니다'),
   deposit: z
-    .number({ required_error: '보증금을 입력해주세요' })
+    .number({ error: '보증금을 입력해주세요' })
     .int('보증금은 정수 만원 단위로 입력해주세요')
     .min(0, '보증금은 0 이상이어야 합니다'),
   address: z
-    .string({ required_error: '주소를 입력해주세요' })
+    .string({ error: '주소를 입력해주세요' })
     .min(1, '주소를 입력해주세요')
     .max(300, '주소는 300자 이내로 입력해주세요'),
   area_sqm: z
