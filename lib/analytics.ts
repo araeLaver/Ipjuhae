@@ -12,6 +12,8 @@ export interface TrackOptions {
   userId?: string
   sessionId?: string
   properties?: Record<string, unknown>
+  // Allow arbitrary flat properties as a shorthand for `properties`
+  [key: string]: unknown
 }
 
 /**
@@ -20,11 +22,12 @@ export interface TrackOptions {
  */
 export async function trackServer(event: EventName, options: TrackOptions = {}): Promise<void> {
   try {
-    const { userId, sessionId, properties = {} } = options
+    const { userId, sessionId, properties, ...extraProps } = options
+    const mergedProps = { ...(properties ?? {}), ...extraProps }
     await query(
       `INSERT INTO analytics_events (event_name, properties, user_id, session_id)
        VALUES ($1, $2, $3, $4)`,
-      [event, JSON.stringify(properties), userId ?? null, sessionId ?? null]
+      [event, JSON.stringify(mergedProps), userId ?? null, sessionId ?? null]
     )
   } catch (err) {
     console.error('[analytics:trackServer] failed to track event', event, err)
@@ -37,10 +40,11 @@ export async function trackServer(event: EventName, options: TrackOptions = {}):
  */
 export function track(event: EventName, options: TrackOptions = {}): void {
   try {
-    const { sessionId, properties = {} } = options
+    const { sessionId, properties, userId: _uid, ...extraProps } = options
+    const mergedProps = { ...(properties ?? {}), ...extraProps }
     const body = JSON.stringify({
       event_name: event,
-      properties,
+      properties: mergedProps,
       session_id: sessionId,
     })
     // Use sendBeacon when available for reliability on page unload

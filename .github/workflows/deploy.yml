@@ -36,11 +36,11 @@ jobs:
         env:
           KOYEB_TOKEN: ${{ secrets.KOYEB_TOKEN }}
         run: |
-          koyeb app deploy ipjuhae \
-            --service web \
-            --git-branch main \
-            --wait \
-            --timeout 300
+          if [ -z "$KOYEB_TOKEN" ]; then
+            echo "⚠️  KOYEB_TOKEN not set — skipping deploy"
+            exit 0
+          fi
+          koyeb services redeploy ipjuhae/web --wait --timeout 300
 
       - name: Verify deployment
         env:
