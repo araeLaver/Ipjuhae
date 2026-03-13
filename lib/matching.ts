@@ -1,11 +1,11 @@
-export interface TenantProfile {
+export interface MatchTenantProfile {
   budget_min: number
   budget_max: number
-  preferred_region: string
+  preferred_districts: string[]
   move_in_date: string | null // ISO date
 }
 
-export interface Listing {
+export interface MatchListing {
   id: number
   monthly_rent: number
   address: string
@@ -13,12 +13,14 @@ export interface Listing {
   [key: string]: unknown
 }
 
-export interface MatchResult {
-  listing_id: number
+export interface ScoredListing {
+  listing: MatchListing
   score: number // 0-100
-  budget_score: number
-  region_score: number
-  date_score: number
+  breakdown: {
+    budget: number  // max 40
+    region: number  // max 30
+    moveIn: number  // max 30
+  }
 }
 
 /**
@@ -26,50 +28,50 @@ export interface MatchResult {
  *
  * Scoring:
  *   Budget (40 pts): monthly_rent within [budget_min * 0.9, budget_max * 1.1]
- *   Region (40 pts): listing.address includes profile.preferred_region
- *   Date   (20 pts): |available_from - move_in_date| <= 7 days
- *                    Full points also when either date is null.
+ *   Region (30 pts): listing.address includes any preferred_district
+ *   Date   (30 pts): |available_from - move_in_date| <= 7 days
+ *                    Full points when either date is null.
  */
-export function matchScore(profile: TenantProfile, listing: Listing): MatchResult {
+export function matchScore(profile: MatchTenantProfile, listing: MatchListing): ScoredListing {
   // --- Budget score (40 pts) ---
   const lowerBound = profile.budget_min * 0.9
   const upperBound = profile.budget_max * 1.1
-  const budget_score =
+  const budget =
     listing.monthly_rent >= lowerBound && listing.monthly_rent <= upperBound ? 40 : 0
 
-  // --- Region score (40 pts) ---
-  const region_score =
-    profile.preferred_region.length > 0 &&
-    listing.address.includes(profile.preferred_region)
-      ? 40
-      : 0
+  // --- Region score (30 pts) ---
+  let region = 0
+  if (profile.preferred_districts.length > 0) {
+    for (const district of profile.preferred_districts) {
+      if (listing.address.includes(district)) {
+        region = 30
+        break
+      }
+    }
+  }
 
-  // --- Date score (20 pts) ---
-  let date_score = 20 // default: full points when either date is null
+  // --- Date score (30 pts) ---
+  let moveIn = 30 // default: full points when either date is null
   if (profile.move_in_date !== null && listing.available_from !== null) {
     const tenantDate = new Date(profile.move_in_date).getTime()
     const listingDate = new Date(listing.available_from).getTime()
     const diffDays = Math.abs(tenantDate - listingDate) / (1000 * 60 * 60 * 24)
-    date_score = diffDays <= 7 ? 20 : 0
+    moveIn = diffDays <= 7 ? 30 : 0
   }
 
-  const score = budget_score + region_score + date_score
-
   return {
-    listing_id: listing.id,
-    score,
-    budget_score,
-    region_score,
-    date_score,
+    listing,
+    score: budget + region + moveIn,
+    breakdown: { budget, region, moveIn },
   }
 }
 
 /**
- * Filter listings with score >= 60, sorted descending by score.
+ * Match tenant profile against listings.
+ * Returns all scored listings sorted by score descending.
  */
-export function matchListings(profile: TenantProfile, listings: Listing[]): MatchResult[] {
+export function matchListings(profile: MatchTenantProfile, listings: MatchListing[]): ScoredListing[] {
   return listings
     .map((listing) => matchScore(profile, listing))
-    .filter((result) => result.score >= 60)
     .sort((a, b) => b.score - a.score)
 }
