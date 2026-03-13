@@ -1,4 +1,5 @@
 import { query } from '@/lib/db'
+import TodayStats from './TodayStats'
 
 interface SummaryRow {
   total_users: string
@@ -53,6 +54,9 @@ export default async function AdminDashboard() {
   return (
     <div>
       <h1 className="text-2xl font-bold text-gray-900 mb-6">대시보드</h1>
+
+      {/* 오늘자 신규 카운트 (Issue #73) */}
+      <TodayStats />
 
       {/* Stats Cards */}
       <div className="grid grid-cols-3 gap-4 mb-8">
