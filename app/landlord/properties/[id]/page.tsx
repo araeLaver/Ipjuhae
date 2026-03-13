@@ -10,7 +10,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { PageContainer } from '@/components/layout/page-container'
 import { PropertyForm } from '@/components/landlord/property-form'
 import {
-  ArrowLeft, Pencil, Trash2, Image as ImageIcon, Plus, X, Star, Loader2
+  ArrowLeft, Pencil, Trash2, Image as ImageIcon, Plus, X, Star, Loader2,
+  ChevronLeft, ChevronRight
 } from 'lucide-react'
 import { Property, PropertyImage } from '@/types/database'
 import { toast } from 'sonner'
@@ -157,6 +158,40 @@ export default function PropertyDetailPage() {
       toast.success('대표 이미지가 변경되었습니다')
     } catch (err) {
       toast.error((err as Error).message)
+    }
+  }
+
+  const handleMoveImage = async (imageId: string, direction: 'left' | 'right') => {
+    const idx = images.findIndex(img => img.id === imageId)
+    if (idx === -1) return
+    const newIdx = direction === 'left' ? idx - 1 : idx + 1
+    if (newIdx < 0 || newIdx >= images.length) return
+
+    // 낙관적 UI 업데이트
+    const newImages = [...images]
+    const temp = newImages[idx]
+    newImages[idx] = newImages[newIdx]
+    newImages[newIdx] = temp
+    setImages(newImages)
+
+    try {
+      // 두 이미지의 sort_order 교환
+      await Promise.all([
+        fetch(`/api/landlord/properties/${propertyId}/images`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imageId, sortOrder: newIdx }),
+        }),
+        fetch(`/api/landlord/properties/${propertyId}/images`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imageId: newImages[idx].id, sortOrder: idx }),
+        }),
+      ])
+    } catch {
+      // 실패 시 롤백
+      setImages(images)
+      toast.error('순서 변경에 실패했습니다')
     }
   }
 
