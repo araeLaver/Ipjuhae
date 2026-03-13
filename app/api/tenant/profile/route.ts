@@ -1,61 +1,35 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { queryOne, query } from '@/lib/db'
-import { getCurrentUser, verifyToken } from '@/lib/auth'
-import { tenantProfileSchema } from '@/lib/schemas/tenant-profile'
+import { NextResponse } from 'next/server'
+import { query, queryOne } from '@/lib/db'
+import { getCurrentUser } from '@/lib/auth'
+import { TenantProfile } from '@/types/database'
+import { tenantProfileSchema } from '@/lib/validations'
+import { sanitizeUserInput } from '@/lib/sanitize'
 
-interface TenantProfile {
-  id: number
-  user_id: number
-  budget_min: number
-  budget_max: number
-  preferred_region: string
-  move_in_date: string | null
-  has_pets: boolean
-  job_title: string | null
-  company_name: string | null
-  created_at: Date
-  updated_at: Date
-}
-
-async function getAuthenticatedUserId(request: NextRequest): Promise<string | null> {
-  // Check Authorization header first (Bearer token)
-  const authHeader = request.headers.get('authorization')
-  if (authHeader?.startsWith('Bearer ')) {
-    const token = authHeader.slice(7)
-    const payload = verifyToken(token)
-    if (payload) return payload.userId
-  }
-
-  // Fall back to cookie-based auth
-  const user = await getCurrentUser()
-  if (user) return user.id
-
-  return null
-}
-
-export async function GET(request: NextRequest) {
+// GET: 임차인 프로필 조회
+export async function GET() {
   try {
-    const userId = await getAuthenticatedUserId(request)
-    if (!userId) {
+    const user = await getCurrentUser()
+    if (!user) {
       return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 })
     }
 
     const profile = await queryOne<TenantProfile>(
       'SELECT * FROM tenant_profiles WHERE user_id = $1',
-      [userId]
+      [user.id]
     )
 
-    return NextResponse.json({ profile: profile ?? null })
+    return NextResponse.json({ profile })
   } catch (error) {
-    console.error('GET /api/tenant/profile error:', error)
+    console.error('Get tenant profile error:', error)
     return NextResponse.json({ error: '프로필 조회 중 오류가 발생했습니다' }, { status: 500 })
   }
 }
 
-export async function PUT(request: NextRequest) {
+// PUT: 임차인 프로필 생성/업데이트
+export async function PUT(request: Request) {
   try {
-    const userId = await getAuthenticatedUserId(request)
-    if (!userId) {
+    const user = await getCurrentUser()
+    if (!user) {
       return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 })
     }
 
@@ -68,45 +42,44 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    const {
-      budget_min,
-      budget_max,
-      preferred_region,
-      move_in_date,
-      has_pets,
-      job_title,
-      company_name,
-    } = parsed.data
+    const { budget_min, budget_max, preferred_districts, move_in_date, has_pets, workplace } = parsed.data
 
-    const [profile] = await query<TenantProfile>(
-      `INSERT INTO tenant_profiles
-        (user_id, budget_min, budget_max, preferred_region, move_in_date, has_pets, job_title, company_name, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
-       ON CONFLICT (user_id) DO UPDATE SET
-        budget_min = EXCLUDED.budget_min,
-        budget_max = EXCLUDED.budget_max,
-        preferred_region = EXCLUDED.preferred_region,
-        move_in_date = EXCLUDED.move_in_date,
-        has_pets = EXCLUDED.has_pets,
-        job_title = EXCLUDED.job_title,
-        company_name = EXCLUDED.company_name,
-        updated_at = NOW()
-       RETURNING *`,
-      [
-        userId,
-        budget_min,
-        budget_max,
-        preferred_region,
-        move_in_date ?? null,
-        has_pets,
-        job_title ?? null,
-        company_name ?? null,
-      ]
+    const sanitizedWorkplace = workplace ? sanitizeUserInput(workplace) : null
+
+    const existing = await queryOne<TenantProfile>(
+      'SELECT id FROM tenant_profiles WHERE user_id = $1',
+      [user.id]
     )
+
+    let profile: TenantProfile
+
+    if (existing) {
+      const [updated] = await query<TenantProfile>(
+        `UPDATE tenant_profiles SET
+          budget_min = $1,
+          budget_max = $2,
+          preferred_districts = $3,
+          move_in_date = $4,
+          has_pets = $5,
+          workplace = $6
+        WHERE user_id = $7
+        RETURNING *`,
+        [budget_min, budget_max, preferred_districts, move_in_date, has_pets, sanitizedWorkplace, user.id]
+      )
+      profile = updated
+    } else {
+      const [created] = await query<TenantProfile>(
+        `INSERT INTO tenant_profiles (user_id, budget_min, budget_max, preferred_districts, move_in_date, has_pets, workplace)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        RETURNING *`,
+        [user.id, budget_min, budget_max, preferred_districts, move_in_date, has_pets, sanitizedWorkplace]
+      )
+      profile = created
+    }
 
     return NextResponse.json({ profile })
   } catch (error) {
-    console.error('PUT /api/tenant/profile error:', error)
+    console.error('Save tenant profile error:', error)
     return NextResponse.json({ error: '프로필 저장 중 오류가 발생했습니다' }, { status: 500 })
   }
 }
