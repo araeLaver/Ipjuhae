@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -13,8 +13,23 @@ import { toast } from 'sonner'
 import { SocialLoginButtons } from '@/components/auth/social-login-buttons'
 import { createBrowserClient } from '@/lib/supabase'
 
+const ERROR_MESSAGES: Record<string, string> = {
+  missing_code: '인증 코드가 없습니다. 다시 시도해주세요.',
+  auth_failed: '인증에 실패했습니다. 매직 링크가 만료되었을 수 있습니다.',
+  server_error: '서버 오류가 발생했습니다. 다시 시도해주세요.',
+}
+
 export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginContent />
+    </Suspense>
+  )
+}
+
+function LoginContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
   const [isMagicLinkSent, setIsMagicLinkSent] = useState(false)
   const [mode, setMode] = useState<'password' | 'magic'>('magic')
@@ -22,6 +37,13 @@ export default function LoginPage() {
     email: '',
     password: '',
   })
+
+  useEffect(() => {
+    const error = searchParams.get('error')
+    if (error && ERROR_MESSAGES[error]) {
+      toast.error(ERROR_MESSAGES[error])
+    }
+  }, [searchParams])
 
   const handleMagicLink = async (e: React.FormEvent) => {
     e.preventDefault()
