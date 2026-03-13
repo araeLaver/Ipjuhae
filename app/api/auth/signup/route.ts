@@ -4,6 +4,7 @@ import { hashPassword, generateToken, setAuthCookie } from '@/lib/auth'
 import { User } from '@/types/database'
 import { signupSchema } from '@/lib/validations'
 import { authRateLimit, getClientIp } from '@/lib/rate-limit'
+import { trackEvent } from '@/lib/analytics'
 
 export async function POST(request: Request) {
   try {
@@ -48,6 +49,8 @@ export async function POST(request: Request) {
 
     const token = generateToken(user.id, userType)
     await setAuthCookie(token)
+
+    trackEvent('user_signup', { user_id: user.id, user_type: userType })
 
     return NextResponse.json({ success: true, userId: user.id, userType })
   } catch (error) {

@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { MapPin, Home, Calendar, Star } from 'lucide-react'
 import { toast } from 'sonner'
+import { trackEvent } from '@/lib/analytics-client'
 
 interface MatchListing {
   id: number
@@ -189,6 +190,7 @@ export default function MatchesPage() {
         }
         const json: MatchesResponse = await res.json()
         setData(json)
+        trackEvent('match_viewed', { total: json.total })
       } catch (err) {
         const message = err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다'
         setError(message)

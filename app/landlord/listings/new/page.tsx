@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { trackEvent } from '@/lib/analytics-client'
 
 const MAX_PHOTOS = 5
 
@@ -141,6 +142,11 @@ export default function NewListingPage() {
       }
 
       // success → redirect to listings
+      trackEvent('listing_created', {
+        monthly_rent: Number(form.monthly_rent),
+        deposit: Number(form.deposit),
+        photo_count: previews.length,
+      })
       router.push('/listings')
     } catch (err) {
       console.error(err)

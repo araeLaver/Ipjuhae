@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { TenantProfile } from '@/types/database'
 import { SEOUL_DISTRICTS, TenantProfileInput } from '@/lib/validations'
 import { cn } from '@/lib/utils'
-import { trackEvent } from '@/lib/analytics'
+import { trackEvent } from '@/lib/analytics-client'
 
 interface TenantProfileFormProps {
   initialData?: TenantProfile | null
