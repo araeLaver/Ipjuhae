@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { usePathname } from 'next/navigation'
-import { trackEvent } from '@/lib/analytics'
+import { trackEvent } from '@/lib/analytics-client'
 
 export function PageViewTracker() {
   const pathname = usePathname()

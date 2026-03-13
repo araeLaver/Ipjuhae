@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { MapPin, Home, Calendar, Star } from 'lucide-react'
 import { toast } from 'sonner'
-import { trackEvent } from '@/lib/analytics'
+import { trackEvent } from '@/lib/analytics-client'
 
 interface MatchListing {
   id: number
