@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { verifyToken } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { createListingSchema, type Listing } from '@/lib/schemas/listing'
+import { trackServer } from '@/lib/analytics'
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -83,6 +84,14 @@ export async function POST(request: Request) {
         available_from ?? null,
       ]
     )
+
+    await trackServer('listing_submitted', {
+      userId: String(authResult.id),
+      timestamp: new Date().toISOString(),
+      listing_id: rows[0].id,
+      monthly_rent: monthly_rent,
+      deposit: deposit,
+    })
 
     return NextResponse.json({ listing: rows[0] }, { status: 201 })
   } catch (error) {

@@ -4,6 +4,7 @@ import { query, queryOne } from '@/lib/db'
 import { matchListings, MatchListing } from '@/lib/matching'
 import { TenantProfile } from '@/types/database'
 import { logger } from '@/lib/logger'
+import { trackServer } from '@/lib/analytics'
 
 const MATCH_LIMIT = 10
 
@@ -68,6 +69,13 @@ export async function GET() {
       listings,
       MATCH_LIMIT,
     )
+
+    await trackServer('match_generated', {
+      userId: String(user.id),
+      timestamp: new Date().toISOString(),
+      match_count: matches.length,
+      candidate_count: listings.length,
+    })
 
     return NextResponse.json({ matches, total: matches.length })
   } catch (error) {
