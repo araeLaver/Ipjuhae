@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Loader2, Save, Plus, X, Building } from 'lucide-react'
+import { Loader2, Save, Plus, X, Camera, AlertCircle } from 'lucide-react'
 import { Property, PropertyType, PropertyStatus } from '@/types/database'
 import { toast } from 'sonner'
 import { AddressSearch } from '@/components/ui/address-search'
@@ -27,6 +27,18 @@ const DEFAULT_OPTIONS = [
   '전자레인지', 'TV', '침대', '옷장', '책상',
   '신발장', '빌트인', '베란다', '주차가능',
 ]
+
+interface UploadedPhoto {
+  /** client-side preview URL (from URL.createObjectURL) */
+  previewUrl: string
+  /** File object to upload */
+  file: File
+  /** after upload, the remote URL */
+  remoteUrl?: string
+  /** upload progress state */
+  status: 'pending' | 'uploading' | 'done' | 'error'
+  error?: string
+}
 
 interface PropertyFormProps {
   property?: Property
@@ -56,6 +68,9 @@ export function PropertyForm({ property, onSuccess }: PropertyFormProps) {
   })
   const [options, setOptions] = useState<string[]>(property?.options || [])
   const [newOption, setNewOption] = useState('')
+  const [photos, setPhotos] = useState<UploadedPhoto[]>([])
+  const [photoError, setPhotoError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleAddOption = (option: string) => {
     if (option.trim() && !options.includes(option.trim())) {
@@ -68,13 +83,118 @@ export function PropertyForm({ property, onSuccess }: PropertyFormProps) {
     setOptions(options.filter(o => o !== option))
   }
 
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    if (files.length === 0) return
+
+    const newPhotos: UploadedPhoto[] = files.map(file => ({
+      previewUrl: URL.createObjectURL(file),
+      file,
+      status: 'pending',
+    }))
+
+    setPhotos(prev => [...prev, ...newPhotos])
+    setPhotoError(null)
+
+    // Reset file input so same file can be re-selected if removed
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  const handleRemovePhoto = (index: number) => {
+    setPhotos(prev => {
+      const updated = [...prev]
+      // Revoke object URL to prevent memory leak
+      URL.revokeObjectURL(updated[index].previewUrl)
+      updated.splice(index, 1)
+      return updated
+    })
+  }
+
+  const uploadPhotosForProperty = async (propertyId: string): Promise<boolean> => {
+    let allSuccess = true
+
+    for (let i = 0; i < photos.length; i++) {
+      const photo = photos[i]
+      if (photo.status === 'done') continue
+
+      setPhotos(prev =>
+        prev.map((p, idx) => idx === i ? { ...p, status: 'uploading' } : p)
+      )
+
+      const fd = new FormData()
+      fd.append('image', photo.file)
+      fd.append('propertyId', propertyId)
+      fd.append('sortOrder', String(i))
+      fd.append('isMain', i === 0 ? 'true' : 'false')
+
+      try {
+        const res = await fetch('/api/landlord/properties/images', {
+          method: 'POST',
+          body: fd,
+        })
+        const data = await res.json()
+
+        if (!res.ok) {
+          setPhotos(prev =>
+            prev.map((p, idx) =>
+              idx === i ? { ...p, status: 'error', error: data.error } : p
+            )
+          )
+          allSuccess = false
+        } else {
+          setPhotos(prev =>
+            prev.map((p, idx) =>
+              idx === i ? { ...p, status: 'done', remoteUrl: data.url } : p
+            )
+          )
+        }
+      } catch {
+        setPhotos(prev =>
+          prev.map((p, idx) =>
+            idx === i ? { ...p, status: 'error', error: '네트워크 오류' } : p
+          )
+        )
+        allSuccess = false
+      }
+    }
+
+    return allSuccess
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // 사진 최소 1장 검증 (신규 등록 시)
+    if (!property && photos.length === 0) {
+      setPhotoError('사진을 최소 1장 이상 업로드해주세요')
+      // 사진 섹션으로 스크롤
+      document.getElementById('photo-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      return
+    }
+
+    // 필수 필드 검증
+    if (!formData.address) {
+      toast.error('주소를 입력해주세요')
+      return
+    }
+    if (!formData.deposit || parseInt(formData.deposit) < 0) {
+      toast.error('보증금을 입력해주세요')
+      return
+    }
+    if (!formData.monthlyRent || parseInt(formData.monthlyRent) < 0) {
+      toast.error('월세를 입력해주세요')
+      return
+    }
+    if (!formData.availableFrom) {
+      toast.error('입주 가능일을 입력해주세요')
+      return
+    }
+
     setIsSaving(true)
 
     try {
       const payload = {
-        title: formData.title,
+        title: formData.title || formData.address,
         description: formData.description || undefined,
         address: formData.address,
         addressDetail: formData.addressDetail || undefined,
@@ -109,15 +229,29 @@ export function PropertyForm({ property, onSuccess }: PropertyFormProps) {
         throw new Error(data.error)
       }
 
-      toast.success(property ? '매물이 수정되었습니다' : '매물이 등록되었습니다')
+      const savedProperty: Property = data.property
+
+      // 신규 등록 시 사진 업로드
+      if (!property && photos.length > 0) {
+        toast.loading('사진 업로드 중...', { id: 'photo-upload' })
+        const uploadSuccess = await uploadPhotosForProperty(savedProperty.id)
+
+        if (uploadSuccess) {
+          toast.success('매물이 등록되었습니다', { id: 'photo-upload' })
+        } else {
+          toast.warning('매물은 등록되었으나 일부 사진 업로드에 실패했습니다', { id: 'photo-upload' })
+        }
+      } else {
+        toast.success(property ? '매물이 수정되었습니다' : '매물이 등록되었습니다')
+      }
 
       if (onSuccess) {
-        onSuccess(data.property)
+        onSuccess(savedProperty)
       } else {
-        router.push(`/landlord/properties/${data.property.id}`)
+        router.push(`/landlord/properties/${savedProperty.id}`)
       }
     } catch (err) {
-      toast.error((err as Error).message)
+      toast.error((err as Error).message || '매물 등록에 실패했습니다')
     } finally {
       setIsSaving(false)
     }
@@ -125,6 +259,95 @@ export function PropertyForm({ property, onSuccess }: PropertyFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* 사진 업로드 - 신규 등록 시만 표시 */}
+      {!property && (
+        <Card id="photo-section">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Camera className="h-4 w-4" />
+              매물 사진 <span className="text-destructive">*</span>
+            </CardTitle>
+            <CardDescription>사진을 최소 1장 이상 업로드해주세요 (최대 10MB / 장)</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* 사진 미리보기 그리드 */}
+            <div className="grid grid-cols-3 gap-3">
+              {photos.map((photo, index) => (
+                <div
+                  key={photo.previewUrl}
+                  className="relative aspect-square rounded-lg overflow-hidden border bg-muted"
+                >
+                  <img
+                    src={photo.previewUrl}
+                    alt={`매물 사진 ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                  {/* 업로드 상태 오버레이 */}
+                  {photo.status === 'uploading' && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                      <Loader2 className="h-6 w-6 text-white animate-spin" />
+                    </div>
+                  )}
+                  {photo.status === 'error' && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-destructive/20">
+                      <AlertCircle className="h-6 w-6 text-destructive" />
+                    </div>
+                  )}
+                  {/* 첫 번째 사진 표시 (대표 사진) */}
+                  {index === 0 && (
+                    <span className="absolute bottom-1 left-1 text-xs bg-primary text-primary-foreground px-1.5 py-0.5 rounded">
+                      대표
+                    </span>
+                  )}
+                  {/* 삭제 버튼 */}
+                  {photo.status !== 'uploading' && (
+                    <button
+                      type="button"
+                      onClick={() => handleRemovePhoto(index)}
+                      className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-0.5 hover:bg-black/70"
+                      aria-label="사진 삭제"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
+              ))}
+
+              {/* 사진 추가 버튼 */}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="aspect-square rounded-lg border-2 border-dashed border-muted-foreground/30 flex flex-col items-center justify-center gap-1 text-muted-foreground hover:border-primary/50 hover:text-primary transition-colors"
+              >
+                <Camera className="h-6 w-6" />
+                <span className="text-xs">사진 추가</span>
+              </button>
+            </div>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={handlePhotoSelect}
+            />
+
+            {/* 사진 오류 메시지 */}
+            {photoError && (
+              <p className="text-sm text-destructive flex items-center gap-1">
+                <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                {photoError}
+              </p>
+            )}
+
+            <p className="text-xs text-muted-foreground">
+              • JPG, PNG, WebP 형식 지원 • 파일당 최대 10MB • 첫 번째 사진이 대표 이미지로 사용됩니다
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       {/* 기본 정보 */}
       <Card>
         <CardHeader>
@@ -132,13 +355,12 @@ export function PropertyForm({ property, onSuccess }: PropertyFormProps) {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="title">매물명 *</Label>
+            <Label htmlFor="title">매물명</Label>
             <Input
               id="title"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              placeholder="예: 신축 풀옵션 원룸"
-              required
+              placeholder="예: 신축 풀옵션 원룸 (비워두면 주소로 자동 설정)"
             />
           </div>
 
@@ -203,7 +425,9 @@ export function PropertyForm({ property, onSuccess }: PropertyFormProps) {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label>주소 *</Label>
+            <Label>
+              주소 <span className="text-destructive">*</span>
+            </Label>
             <AddressSearch
               value={formData.address}
               onChange={(address, region) =>
@@ -216,6 +440,9 @@ export function PropertyForm({ property, onSuccess }: PropertyFormProps) {
               placeholder="주소를 검색하세요"
               required
             />
+            {!formData.address && (
+              <p className="text-xs text-muted-foreground">필수 항목입니다</p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -251,7 +478,9 @@ export function PropertyForm({ property, onSuccess }: PropertyFormProps) {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="deposit">보증금 *</Label>
+              <Label htmlFor="deposit">
+                보증금 <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="deposit"
                 type="number"
@@ -265,11 +494,13 @@ export function PropertyForm({ property, onSuccess }: PropertyFormProps) {
               <p className="text-xs text-muted-foreground">
                 {formData.deposit && parseInt(formData.deposit) > 0
                   ? `${(parseInt(formData.deposit) / 10000).toLocaleString()}만원`
-                  : ''}
+                  : '필수 항목입니다'}
               </p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="monthlyRent">월세 *</Label>
+              <Label htmlFor="monthlyRent">
+                월세 <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="monthlyRent"
                 type="number"
@@ -283,7 +514,7 @@ export function PropertyForm({ property, onSuccess }: PropertyFormProps) {
               <p className="text-xs text-muted-foreground">
                 {formData.monthlyRent && parseInt(formData.monthlyRent) > 0
                   ? `${(parseInt(formData.monthlyRent) / 10000).toLocaleString()}만원`
-                  : ''}
+                  : '필수 항목입니다'}
               </p>
             </div>
           </div>
@@ -369,13 +600,19 @@ export function PropertyForm({ property, onSuccess }: PropertyFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="availableFrom">입주 가능일</Label>
+            <Label htmlFor="availableFrom">
+              입주 가능일 <span className="text-destructive">*</span>
+            </Label>
             <Input
               id="availableFrom"
               type="date"
               value={formData.availableFrom}
               onChange={(e) => setFormData({ ...formData, availableFrom: e.target.value })}
+              required
             />
+            {!formData.availableFrom && (
+              <p className="text-xs text-muted-foreground">필수 항목입니다</p>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -453,8 +690,20 @@ export function PropertyForm({ property, onSuccess }: PropertyFormProps) {
         </CardContent>
       </Card>
 
+      {/* 신규 등록 시 사진 미첨부 경고 */}
+      {!property && photos.length === 0 && (
+        <div className="flex items-start gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+          <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+          <span>사진을 최소 1장 이상 업로드해야 매물을 등록할 수 있습니다</span>
+        </div>
+      )}
+
       {/* 저장 버튼 */}
-      <Button type="submit" className="w-full" disabled={isSaving}>
+      <Button
+        type="submit"
+        className="w-full"
+        disabled={isSaving || (!property && photos.length === 0)}
+      >
         {isSaving ? (
           <Loader2 className="h-4 w-4 animate-spin" />
         ) : (
