@@ -1,4 +1,8 @@
-import { query } from './db'
+/**
+ * Client-side analytics only — no DB imports.
+ * Import this in client components/hooks.
+ * For server-side tracking, use lib/analytics.ts → trackServer.
+ */
 
 export type EventName =
   | 'page_view'
@@ -8,34 +12,16 @@ export type EventName =
   | 'match_viewed'
   | 'listing_viewed'
 
-export interface TrackOptions {
-  userId?: string
+export interface TrackClientOptions {
   sessionId?: string
   properties?: Record<string, unknown>
-}
-
-/**
- * Server-side track: saves event directly to DB.
- * Never throws — analytics must not block main flow.
- */
-export async function trackServer(event: EventName, options: TrackOptions = {}): Promise<void> {
-  try {
-    const { userId, sessionId, properties = {} } = options
-    await query(
-      `INSERT INTO analytics_events (event_name, properties, user_id, session_id)
-       VALUES ($1, $2, $3, $4)`,
-      [event, JSON.stringify(properties), userId ?? null, sessionId ?? null]
-    )
-  } catch (err) {
-    console.error('[analytics:trackServer] failed to track event', event, err)
-  }
 }
 
 /**
  * Client-side track: fire-and-forget POST to /api/analytics/event.
  * Never throws — analytics must not block main flow.
  */
-export function track(event: EventName, options: TrackOptions = {}): void {
+export function track(event: EventName, options: TrackClientOptions = {}): void {
   try {
     const { sessionId, properties = {} } = options
     const body = JSON.stringify({
@@ -43,7 +29,6 @@ export function track(event: EventName, options: TrackOptions = {}): void {
       properties,
       session_id: sessionId,
     })
-    // Use sendBeacon when available for reliability on page unload
     if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
       const blob = new Blob([body], { type: 'application/json' })
       navigator.sendBeacon('/api/analytics/event', blob)
@@ -61,6 +46,3 @@ export function track(event: EventName, options: TrackOptions = {}): void {
     console.error('[analytics:track] failed to track event', event, err)
   }
 }
-
-/** @deprecated Use track instead */
-export const trackEvent = track
