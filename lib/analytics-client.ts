@@ -46,3 +46,6 @@ export function track(event: EventName, options: TrackClientOptions = {}): void 
     console.error('[analytics:track] failed to track event', event, err)
   }
 }
+
+/** @deprecated Use track instead */
+export const trackEvent = track
