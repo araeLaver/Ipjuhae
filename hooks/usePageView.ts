@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { usePathname } from 'next/navigation'
-import { track } from '@/lib/analytics'
+import { track } from '@/lib/analytics-client'
 
 export function usePageView(): void {
   const pathname = usePathname()
