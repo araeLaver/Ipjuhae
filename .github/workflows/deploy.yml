@@ -46,7 +46,7 @@ jobs:
             echo "⚠️  KOYEB_TOKEN not set — skipping deploy"
             exit 0
           fi
-          koyeb services redeploy ipjuhae/web --wait
+          koyeb services redeploy crude-zorina/ipjuhae --wait
 
       - name: Verify deployment
         env:
