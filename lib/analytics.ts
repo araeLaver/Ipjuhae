@@ -12,6 +12,7 @@ export type EventName =
   | 'match_generated'
   | 'match_viewed'
   | 'listing_viewed'
+  | 'match_view_toggle'
 
 export interface TrackOptions {
   userId?: string
