@@ -79,6 +79,3 @@ export function track(event: EventName, options: TrackOptions = {}): void {
 
 /** @deprecated Use track instead */
 export const trackEvent = track
-
-// INTENTIONAL TYPE ERROR FOR CI CHAIN TEST — auto-fix-ci should fix this
-const testBrokenType: EventName = 'invalid_event_name_for_test'
