@@ -1,8 +1,6 @@
 name: Auto Merge
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
   check_suite:
     types: [completed]
 
@@ -11,7 +9,6 @@ jobs:
     name: Auto Merge auto/* PRs
     runs-on: ubuntu-latest
     if: >-
-      github.event_name == 'check_suite' &&
       github.event.check_suite.conclusion == 'success' &&
       startsWith(github.event.check_suite.head_branch, 'auto/')
     permissions:
@@ -36,19 +33,3 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: gh pr merge --squash "${{ steps.find-pr.outputs.pr_url }}"
-
-  auto-merge-labeled:
-    name: Auto Merge labeled PRs
-    runs-on: ubuntu-latest
-    if: >-
-      github.event_name == 'pull_request' &&
-      startsWith(github.head_ref, 'auto/')
-    permissions:
-      contents: write
-      pull-requests: write
-    steps:
-      - name: Enable auto-merge
-        env:
-          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
-          PR_URL: ${{ github.event.pull_request.html_url }}
-        run: gh pr merge --auto --squash "$PR_URL"
