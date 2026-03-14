@@ -22,6 +22,7 @@ import { GET, POST } from '@/app/api/references/route'
 import { query, queryOne } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
 import { sendReferenceRequestSMS } from '@/lib/sms'
+import type { User } from '@/types/database'
 
 function makeRequest(body: Record<string, unknown>): Request {
   return new Request('http://localhost:3000/api/references', {
@@ -45,7 +46,7 @@ describe('GET /api/references', () => {
   })
 
   it('레퍼런스 목록 반환', async () => {
-    vi.mocked(getCurrentUser).mockResolvedValue({ id: 'user-1', email: 'test@example.com' })
+    vi.mocked(getCurrentUser).mockResolvedValue({ id: 'user-1', email: 'test@example.com' } as unknown as User)
     const mockRefs = [
       { id: 'ref-1', landlord_name: '박집주', status: 'completed' },
       { id: 'ref-2', landlord_name: '이건물', status: 'pending' },
@@ -76,7 +77,7 @@ describe('POST /api/references', () => {
   })
 
   it('레퍼런스 요청 성공 — SMS 발송', async () => {
-    vi.mocked(getCurrentUser).mockResolvedValue({ id: 'user-1', email: 'test@example.com' })
+    vi.mocked(getCurrentUser).mockResolvedValue({ id: 'user-1', email: 'test@example.com' } as unknown as User)
     vi.mocked(queryOne)
       .mockResolvedValueOnce(null)  // no duplicate request
       .mockResolvedValueOnce({ name: '김민수' })  // user profile for name
@@ -107,7 +108,7 @@ describe('POST /api/references', () => {
   })
 
   it('중복 요청 방지 — 같은 번호로 pending 요청 존재', async () => {
-    vi.mocked(getCurrentUser).mockResolvedValue({ id: 'user-1', email: 'test@example.com' })
+    vi.mocked(getCurrentUser).mockResolvedValue({ id: 'user-1', email: 'test@example.com' } as unknown as User)
     vi.mocked(queryOne).mockResolvedValueOnce({ id: 'existing-ref', status: 'pending' })
 
     const res = await POST(makeRequest({
@@ -120,7 +121,7 @@ describe('POST /api/references', () => {
   })
 
   it('전화번호 누락 → 400', async () => {
-    vi.mocked(getCurrentUser).mockResolvedValue({ id: 'user-1', email: 'test@example.com' })
+    vi.mocked(getCurrentUser).mockResolvedValue({ id: 'user-1', email: 'test@example.com' } as unknown as User)
 
     const res = await POST(makeRequest({ landlordName: '박집주' }))
 
@@ -128,7 +129,7 @@ describe('POST /api/references', () => {
   })
 
   it('토큰 생성 — 64자 hex', async () => {
-    vi.mocked(getCurrentUser).mockResolvedValue({ id: 'user-1', email: 'test@example.com' })
+    vi.mocked(getCurrentUser).mockResolvedValue({ id: 'user-1', email: 'test@example.com' } as unknown as User)
     vi.mocked(queryOne)
       .mockResolvedValueOnce(null)
       .mockResolvedValueOnce({ name: '테스트' })

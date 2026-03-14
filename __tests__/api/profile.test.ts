@@ -17,6 +17,7 @@ vi.mock('@/lib/auth', () => ({
 import { GET, POST } from '@/app/api/profile/route'
 import { query, queryOne } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
+import type { User } from '@/types/database'
 
 function makeRequest(body: Record<string, unknown>): Request {
   return new Request('http://localhost:3000/api/profile', {
@@ -42,7 +43,7 @@ describe('GET /api/profile', () => {
   })
 
   it('프로필 없는 유저 → profile: null 반환', async () => {
-    vi.mocked(getCurrentUser).mockResolvedValue({ id: 'user-1', email: 'test@example.com' })
+    vi.mocked(getCurrentUser).mockResolvedValue({ id: 'user-1', email: 'test@example.com' } as unknown as User)
     vi.mocked(queryOne)
       .mockResolvedValueOnce({ profile_image: null }) // user record
       .mockResolvedValueOnce(null) // profile
@@ -58,7 +59,7 @@ describe('GET /api/profile', () => {
   })
 
   it('프로필 있는 유저 → 동적 신뢰점수 포함 반환', async () => {
-    vi.mocked(getCurrentUser).mockResolvedValue({ id: 'user-1', email: 'test@example.com' })
+    vi.mocked(getCurrentUser).mockResolvedValue({ id: 'user-1', email: 'test@example.com' } as unknown as User)
     const mockProfile = {
       id: 'prof-1',
       user_id: 'user-1',
@@ -105,7 +106,7 @@ describe('POST /api/profile', () => {
   })
 
   it('신규 프로필 생성', async () => {
-    vi.mocked(getCurrentUser).mockResolvedValue({ id: 'user-1', email: 'test@example.com' })
+    vi.mocked(getCurrentUser).mockResolvedValue({ id: 'user-1', email: 'test@example.com' } as unknown as User)
     vi.mocked(queryOne).mockResolvedValue(null) // no existing profile
     const created = { id: 'prof-1', user_id: 'user-1', name: '김민수', is_complete: false }
     vi.mocked(query).mockResolvedValue([created])
@@ -126,7 +127,7 @@ describe('POST /api/profile', () => {
   })
 
   it('기존 프로필 업데이트', async () => {
-    vi.mocked(getCurrentUser).mockResolvedValue({ id: 'user-1', email: 'test@example.com' })
+    vi.mocked(getCurrentUser).mockResolvedValue({ id: 'user-1', email: 'test@example.com' } as unknown as User)
     vi.mocked(queryOne).mockResolvedValue({ id: 'prof-1' }) // existing profile
     const updated = { id: 'prof-1', user_id: 'user-1', name: '김민수 수정', is_complete: true }
     vi.mocked(query).mockResolvedValue([updated])
@@ -143,7 +144,7 @@ describe('POST /api/profile', () => {
   })
 
   it('XSS 방지 — HTML 태그 제거', async () => {
-    vi.mocked(getCurrentUser).mockResolvedValue({ id: 'user-1', email: 'test@example.com' })
+    vi.mocked(getCurrentUser).mockResolvedValue({ id: 'user-1', email: 'test@example.com' } as unknown as User)
     vi.mocked(queryOne).mockResolvedValue(null) // new profile
     vi.mocked(query).mockResolvedValue([{ id: 'prof-1', name: 'test' }])
 
