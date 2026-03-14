@@ -46,22 +46,26 @@ jobs:
             echo "⚠️  KOYEB_TOKEN not set — skipping deploy"
             exit 0
           fi
-          koyeb services redeploy crude-zorina/ipjuhae --wait
+          koyeb services redeploy crude-zorina/ipjuhae
+          echo "Redeploy triggered successfully"
 
       - name: Verify deployment
         env:
           APP_URL: ${{ secrets.APP_URL }}
         run: |
-          echo "⏳ Waiting 15s for health check..."
-          sleep 15
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$APP_URL/api/health")
-          echo "Health check HTTP status: $STATUS"
-          if [ "$STATUS" = "200" ]; then
-            echo "✅ Deployment successful — $APP_URL is healthy"
-          else
-            echo "⚠️  Health check returned $STATUS — check Koyeb dashboard"
-            exit 1
-          fi
+          echo "Waiting 90s for Koyeb deployment..."
+          sleep 90
+          for i in 1 2 3; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$APP_URL/api/health")
+            echo "Health check attempt $i: HTTP $STATUS"
+            if [ "$STATUS" = "200" ]; then
+              echo "Deployment verified — $APP_URL is healthy"
+              exit 0
+            fi
+            sleep 30
+          done
+          echo "Health check failed after 3 attempts — check Koyeb dashboard"
+          exit 1
 
       - name: Notify on failure
         if: failure()
