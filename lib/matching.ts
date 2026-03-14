@@ -288,7 +288,18 @@ export function matchScore(profile: MatchTenantProfile, listing: MatchListing): 
 
   // ── Final score ──────────────────────────────────────────────────────────────
   const rawScore = budget + credit + moveIn + lifestyle + employment
-  const score = Math.min(100, Math.max(0, rawScore))
+  let score = Math.min(100, Math.max(0, rawScore))
+
+  // Hard caps for critical failures:
+  // 1. Extreme budget overshoot (rent > budget_max * 1.2) → score < 30
+  if (listing.monthly_rent > profile.budget_max * 1.2) {
+    score = Math.min(score, 29)
+  }
+  // 2. Any dealbreaker → F grade (score < 45)
+  if (dealbreakers.length > 0) {
+    score = Math.min(score, 44)
+  }
+
   const grade = scoreToGrade(score)
 
   return {
