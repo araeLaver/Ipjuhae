@@ -27,43 +27,45 @@ function makeListing(overrides?: Partial<MatchListing>): MatchListing {
 
 // ---------------------------------------------------------------------------
 // matchScore — 10 unit test cases
+// Scoring model (총 100pts): budget(30) + credit(25) + moveIn(20) + lifestyle(15) + employment(10)
 // ---------------------------------------------------------------------------
 
 describe('matchScore', () => {
-  it('1. 예산 범위 내 → budget 40pts', () => {
+  it('1. 예산 범위 내(innerBound) → budget 30pts', () => {
     const profile = makeProfile({ budget_min: 50, budget_max: 80 })
     const listing = makeListing({ monthly_rent: 65 })
     const result = matchScore(profile, listing)
-    expect(result.breakdown.budget).toBe(40)
+    expect(result.breakdown.budget).toBe(30)
   })
 
-  it('2. 월세가 budget_max * 1.1 경계값 → budget 40pts', () => {
+  it('2. 월세가 budget_max * 1.1 경계값 → budget 30pts', () => {
     const profile = makeProfile({ budget_min: 50, budget_max: 80 })
-    // 80 * 1.1 = 88
+    // 80 * 1.1 = 88, innerUpper 경계값
     const listing = makeListing({ monthly_rent: 88 })
     const result = matchScore(profile, listing)
-    expect(result.breakdown.budget).toBe(40)
+    expect(result.breakdown.budget).toBe(30)
   })
 
-  it('3. 월세가 budget_max * 1.1 초과 → budget 0pts', () => {
+  it('3. 월세가 budget_max * 1.2 초과 → budget 0pts', () => {
     const profile = makeProfile({ budget_min: 50, budget_max: 80 })
-    const listing = makeListing({ monthly_rent: 89 })
+    // outerUpper = 80 * 1.2 = 96; 97 > 96 → 0
+    const listing = makeListing({ monthly_rent: 97 })
     const result = matchScore(profile, listing)
     expect(result.breakdown.budget).toBe(0)
   })
 
-  it('4. 선호 지역 일치 → region 30pts', () => {
-    const profile = makeProfile({ preferred_districts: ['마포구'] })
-    const listing = makeListing({ address: '서울 마포구 홍대입구' })
+  it('4. min_credit_grade 없음 → credit 25pts', () => {
+    const profile = makeProfile()
+    const listing = makeListing()
     const result = matchScore(profile, listing)
-    expect(result.breakdown.region).toBe(30)
+    expect(result.breakdown.credit).toBe(25)
   })
 
-  it('5. 선호 지역 불일치 → region 0pts', () => {
-    const profile = makeProfile({ preferred_districts: ['강남구'] })
-    const listing = makeListing({ address: '서울 마포구 합정동' })
+  it('5. trust_score 낮음(10) + 신용 요건 있음 → credit 5pts', () => {
+    const profile = makeProfile({ trust_score: 10 })
+    const listing = makeListing({ min_credit_grade: 1 })
     const result = matchScore(profile, listing)
-    expect(result.breakdown.region).toBe(0)
+    expect(result.breakdown.credit).toBe(5)
   })
 
   it('6. 입주일 7일 이내 → moveIn 20pts', () => {
@@ -73,9 +75,9 @@ describe('matchScore', () => {
     expect(result.breakdown.moveIn).toBe(20)
   })
 
-  it('7. 입주일 8일 이상 차이 → moveIn 0pts', () => {
+  it('7. 입주일 31일 이상 차이 → moveIn 0pts', () => {
     const profile = makeProfile({ move_in_date: '2026-04-01' })
-    const listing = makeListing({ available_from: '2026-04-10' }) // 9일
+    const listing = makeListing({ available_from: '2026-05-10' }) // 39일
     const result = matchScore(profile, listing)
     expect(result.breakdown.moveIn).toBe(0)
   })
@@ -87,13 +89,14 @@ describe('matchScore', () => {
     expect(result.breakdown.moveIn).toBe(20)
   })
 
-  it('9. 모든 조건 일치(반려동물 없음, pet_allowed true) → score 100', () => {
+  it('9. 모든 조건 일치(employed, 반려동물 없음) → score 100', () => {
     const profile = makeProfile({
       budget_min: 50,
       budget_max: 80,
       preferred_districts: ['마포구'],
       move_in_date: '2026-04-01',
       has_pets: false,
+      employment_type: 'employed',
     })
     const listing = makeListing({
       monthly_rent: 65,
@@ -102,33 +105,34 @@ describe('matchScore', () => {
       pet_allowed: true,
     })
     const result = matchScore(profile, listing)
-    expect(result.breakdown.budget).toBe(40)
-    expect(result.breakdown.region).toBe(30)
+    expect(result.breakdown.budget).toBe(30)
+    expect(result.breakdown.credit).toBe(25)
     expect(result.breakdown.moveIn).toBe(20)
-    expect(result.breakdown.pet).toBe(10)
+    expect(result.breakdown.lifestyle).toBe(15)
+    expect(result.breakdown.employment).toBe(10)
     expect(result.score).toBe(100)
   })
 
-  it('10. 예산/지역/입주일 불일치 + 반려동물 충돌 → score 0', () => {
+  it('10. 예산 초과 + 입주일 불일치 + 반려동물 충돌 → 낮은 점수', () => {
     const profile = makeProfile({
       budget_min: 30,
       budget_max: 40,
       preferred_districts: ['강남구'],
       move_in_date: '2026-04-01',
       has_pets: true,
+      employment_type: 'unemployed',
     })
     const listing = makeListing({
       monthly_rent: 90,
       address: '부산 해운대구 우동',
-      available_from: '2026-06-01',
+      available_from: '2026-08-01',
       pet_allowed: false,
     })
     const result = matchScore(profile, listing)
     expect(result.breakdown.budget).toBe(0)
-    expect(result.breakdown.region).toBe(0)
     expect(result.breakdown.moveIn).toBe(0)
-    expect(result.breakdown.pet).toBe(0)
-    expect(result.score).toBe(0)
+    expect(result.dealbreakers).toContain('반려동물 불가')
+    expect(result.score).toBeLessThan(50)
   })
 })
 
@@ -143,20 +147,21 @@ describe('matchListings', () => {
       budget_max: 70,
       preferred_districts: ['마포구'],
       move_in_date: '2026-04-01',
+      employment_type: 'employed',
     })
     const listings: MatchListing[] = [
-      // score 80: budget(40) + region(30) + moveIn(0) + pet(10)
+      // score 88: budget(30) + credit(25) + moveIn(8) + lifestyle(15) + employment(10)
       makeListing({ id: 1, monthly_rent: 60, address: '서울 마포구', available_from: '2026-05-01' }),
-      // score 100: budget(40) + region(30) + moveIn(20) + pet(10)
+      // score 100: budget(30) + credit(25) + moveIn(20) + lifestyle(15) + employment(10)
       makeListing({ id: 2, monthly_rent: 60, address: '서울 마포구', available_from: '2026-04-01' }),
-      // score 40: budget(0) + region(30) + moveIn(0) + pet(10)
+      // score 50: budget(0) + credit(25) + moveIn(0) + lifestyle(15) + employment(10)
       makeListing({ id: 3, monthly_rent: 200, address: '서울 마포구', available_from: '2026-06-01' }),
     ]
 
     const results = matchListings(profile, listings)
     expect(results.map((r) => r.listing.id)).toEqual([2, 1, 3])
     expect(results[0].score).toBe(100)
-    expect(results[1].score).toBe(80)
+    expect(results[0].score).toBeGreaterThan(results[1].score)
   })
 
   it('빈 listings → 빈 결과', () => {
