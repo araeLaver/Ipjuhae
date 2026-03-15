@@ -27,6 +27,38 @@ export async function POST(request: Request) {
     }
 
     const { email, password, userType } = parsed.data
+    const inviteToken = body.inviteToken as string | undefined
+
+    // 베타 모드 체크: 초대 토큰 필요
+    const betaConfig = await queryOne<{ value: string }>(
+      `SELECT value FROM beta_config WHERE key = 'beta_enabled'`
+    )
+    const isBetaMode = betaConfig?.value === 'true'
+
+    if (isBetaMode) {
+      if (!inviteToken) {
+        return NextResponse.json(
+          { error: '현재 베타 기간입니다. 초대 링크를 통해 가입해 주세요.' },
+          { status: 403 }
+        )
+      }
+      const invite = await queryOne<{ id: number; email: string; signed_up_at: string | null }>(
+        `SELECT id, email, signed_up_at FROM waitlist WHERE invite_token = $1`,
+        [inviteToken]
+      )
+      if (!invite) {
+        return NextResponse.json(
+          { error: '유효하지 않은 초대 토큰입니다.' },
+          { status: 403 }
+        )
+      }
+      if (invite.signed_up_at) {
+        return NextResponse.json(
+          { error: '이미 사용된 초대 토큰입니다.' },
+          { status: 403 }
+        )
+      }
+    }
 
     const existingUser = await queryOne<User>(
       'SELECT id FROM users WHERE email = $1',
@@ -47,10 +79,18 @@ export async function POST(request: Request) {
       [email, passwordHash, userType]
     )
 
+    // 초대 토큰 사용 처리
+    if (inviteToken) {
+      await query(
+        `UPDATE waitlist SET signed_up_at = NOW() WHERE invite_token = $1`,
+        [inviteToken]
+      ).catch(() => {}) // non-blocking
+    }
+
     const token = generateToken(user.id, userType)
     await setAuthCookie(token)
 
-    trackEvent('user_signup', { user_id: user.id, user_type: userType })
+    trackEvent('user_signup', { user_id: user.id, user_type: userType, source: inviteToken ? 'beta_invite' : 'direct' })
 
     return NextResponse.json({ success: true, userId: user.id, userType })
   } catch (error) {
