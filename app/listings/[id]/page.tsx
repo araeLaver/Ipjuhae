@@ -37,9 +37,15 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const { id } = await params
   const listing = await getListing(id)
   if (!listing) return { title: '매물을 찾을 수 없습니다 | 입주해' }
+  const desc = listing.description ?? `${listing.address} 매물 상세 정보`
   return {
     title: `${listing.address} | 입주해`,
-    description: listing.description ?? `${listing.address} 매물 상세 정보`,
+    description: desc,
+    openGraph: {
+      title: `${listing.address} | 임주해`,
+      description: desc,
+      images: [{ url: '/og-image.png', width: 1200, height: 630, alt: `${listing.address} 매물` }],
+    },
   }
 }
 

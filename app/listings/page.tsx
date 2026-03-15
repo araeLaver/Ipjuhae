@@ -23,7 +23,12 @@ async function getListings() {
 
 export const metadata = {
   title: '매물 리스트 | 입주해',
-  description: '다양한 매물을 카드형으로 확인하세요.',
+  description: '임주해에서 다양한 전세/월세 매물을 카드형으로 확인하세요. 세입자 프로필 기반 매칭으로 원하는 집을 빠르게 찾아보세요.',
+  openGraph: {
+    title: '매물 리스트 | 임주해',
+    description: '임주해에서 다양한 전세/월세 매물을 카드형으로 확인하세요.',
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: '임주해 매물 리스트' }],
+  },
 }
 
 export default async function ListingsPage() {
