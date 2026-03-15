@@ -4,6 +4,7 @@ import { LandlordReference, Profile, ReferenceResponse } from '@/types/database'
 import { referenceSurveySchema } from '@/lib/validations'
 import { apiRateLimit, getClientIp } from '@/lib/rate-limit'
 import { sanitizeUserInput } from '@/lib/sanitize'
+import { notifyReferenceCompleted } from '@/lib/notifications'
 
 interface RouteParams {
   params: Promise<{ token: string }>
@@ -141,6 +142,13 @@ export async function POST(request: Request, { params }: RouteParams) {
         [reference.id]
       )
     })
+
+    // 세입자에게 레퍼런스 완료 알림 (비동기)
+    notifyReferenceCompleted({
+      toUserId: reference.user_id,
+      landlordName: reference.landlord_name || '집주인',
+      referenceId: reference.id,
+    }).catch(() => {})
 
     return NextResponse.json({ message: '설문이 완료되었습니다. 감사합니다!' })
   } catch (error) {

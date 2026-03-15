@@ -4,6 +4,7 @@ import { verifyToken } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { z } from 'zod'
 import { sanitizeUserInput } from '@/lib/sanitize'
+import { notifyNewMessage } from '@/lib/notifications'
 
 // 메시지 전송 스키마
 const sendMessageSchema = z.object({
@@ -136,10 +137,6 @@ export async function GET(
   }
 }
 
-interface ConversationCheckRow {
-  id: string
-}
-
 // POST /api/messages/conversations/[id] - 메시지 전송
 export async function POST(
   request: Request,
@@ -159,16 +156,21 @@ export async function POST(
       return NextResponse.json({ error: '유효하지 않은 토큰입니다' }, { status: 401 })
     }
 
-    // 대화방 접근 권한 확인
-    const conversationResult = await query<ConversationCheckRow>(
-      `SELECT id FROM conversations
-       WHERE id = $1 AND (landlord_id = $2 OR tenant_id = $2)`,
+    // 대화방 접근 권한 확인 + 상대방 정보
+    const conversationResult = await query<ConversationRow>(
+      `SELECT c.*, lp.name as landlord_name, tp.name as tenant_name
+       FROM conversations c
+       LEFT JOIN profiles lp ON c.landlord_id = lp.user_id
+       LEFT JOIN profiles tp ON c.tenant_id = tp.user_id
+       WHERE c.id = $1 AND (c.landlord_id = $2 OR c.tenant_id = $2)`,
       [conversationId, payload.userId]
     )
 
     if (conversationResult.length === 0) {
       return NextResponse.json({ error: '대화방을 찾을 수 없습니다' }, { status: 404 })
     }
+
+    const conversation = conversationResult[0]
 
     const body = await request.json()
     const validation = sendMessageSchema.safeParse(body)
@@ -197,6 +199,17 @@ export async function POST(
     )
 
     const message = messageResult[0]
+
+    // 상대방에게 알림 발송 (비동기)
+    const isLandlord = conversation.landlord_id === payload.userId
+    const recipientId = isLandlord ? conversation.tenant_id : conversation.landlord_id
+    const senderName = isLandlord ? (conversation.landlord_name || '집주인') : (conversation.tenant_name || '세입자')
+    notifyNewMessage({
+      toUserId: recipientId,
+      fromName: senderName,
+      conversationId,
+      preview: sanitizedContent,
+    }).catch(() => {})
 
     return NextResponse.json({
       message: {

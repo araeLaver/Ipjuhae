@@ -1,8 +1,11 @@
 /**
  * 알림 생성 유틸리티
  * 새 메시지, 레퍼런스 이벤트, 인증 이벤트 등에서 호출하여 notifications 테이블에 INSERT
+ * + 사용자 설정에 따라 이메일 발송
  */
-import { query } from './db'
+import { query, queryOne } from './db'
+import { sendEmail } from './email'
+import { logger } from './logger'
 
 export type NotificationType =
   | 'new_message'
@@ -23,8 +26,51 @@ export interface CreateNotificationInput {
   metadata?: Record<string, unknown>
 }
 
+/** 이메일 발송이 가능한 알림 타입 */
+const EMAIL_ELIGIBLE_TYPES: NotificationType[] = [
+  'new_message',
+  'reference_request',
+  'reference_completed',
+  'verification_approved',
+  'verification_rejected',
+]
+
 /**
- * 단일 알림 생성
+ * 사용자의 알림 이메일 수신 설정 확인
+ */
+async function isEmailEnabled(userId: string, type: NotificationType): Promise<boolean> {
+  if (!EMAIL_ELIGIBLE_TYPES.includes(type)) return false
+  const pref = await queryOne<{ email_enabled: boolean }>(
+    'SELECT email_enabled FROM notification_preferences WHERE user_id = $1 AND notification_type = $2',
+    [userId, type]
+  )
+  // 설정이 없으면 기본 활성화 (opt-out 방식)
+  return pref ? pref.email_enabled : true
+}
+
+/**
+ * 알림 이메일 HTML 생성
+ */
+function buildNotificationEmailHtml(title: string, body: string, link?: string): string {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+  const fullLink = link ? `${baseUrl}${link}` : baseUrl
+  return `
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #2563eb;">${title}</h2>
+      <p>${body}</p>
+      <a href="${fullLink}"
+         style="display: inline-block; background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; margin-top: 16px;">
+        확인하기
+      </a>
+      <p style="margin-top: 24px; color: #999; font-size: 12px;">
+        이메일 수신을 원치 않으시면 <a href="${baseUrl}/settings/notifications">알림 설정</a>에서 변경할 수 있습니다.
+      </p>
+    </div>
+  `
+}
+
+/**
+ * 단일 알림 생성 + 이메일 발송 (설정에 따라)
  */
 export async function createNotification(input: CreateNotificationInput): Promise<void> {
   const { userId, type, title, body, link, metadata } = input
@@ -33,6 +79,27 @@ export async function createNotification(input: CreateNotificationInput): Promis
      VALUES ($1, $2, $3, $4, $5, $6)`,
     [userId, type, title, body, link ?? null, JSON.stringify(metadata ?? {})]
   )
+
+  // 이메일 발송 (비동기, 실패해도 알림 생성은 유지)
+  try {
+    const emailEnabled = await isEmailEnabled(userId, type)
+    if (emailEnabled) {
+      const user = await queryOne<{ email: string }>(
+        'SELECT email FROM users WHERE id = $1',
+        [userId]
+      )
+      if (user?.email) {
+        await sendEmail({
+          to: user.email,
+          subject: `[입주해] ${title}`,
+          html: buildNotificationEmailHtml(title, body, link),
+          text: `${title}\n\n${body}`,
+        })
+      }
+    }
+  } catch (err) {
+    logger.error('알림 이메일 발송 실패', { userId, type, error: err })
+  }
 }
 
 /**

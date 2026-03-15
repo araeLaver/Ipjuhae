@@ -3,6 +3,7 @@ import { query, queryOne } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
 import { LandlordReference, Profile } from '@/types/database'
 import { sendReferenceRequestSMS } from '@/lib/sms'
+import { sendReferenceRequestEmail } from '@/lib/email'
 import { referenceRequestSchema } from '@/lib/validations'
 import crypto from 'crypto'
 
@@ -75,11 +76,14 @@ export async function POST(request: Request) {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
     const surveyUrl = `${baseUrl}/reference/survey/${token}`
 
-    await sendReferenceRequestSMS(
-      landlordPhone,
-      profile?.name || '세입자',
-      surveyUrl
-    )
+    const tenantName = profile?.name || '세입자'
+
+    await sendReferenceRequestSMS(landlordPhone, tenantName, surveyUrl)
+
+    // 이메일이 있으면 이메일도 발송
+    if (landlordEmail) {
+      sendReferenceRequestEmail(landlordEmail, tenantName, surveyUrl).catch(() => {})
+    }
 
     const response: Record<string, unknown> = {
       reference,
