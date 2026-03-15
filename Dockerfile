@@ -34,6 +34,17 @@ COPY --from=builder /app/public ./public
 RUN mkdir .next && chown nextjs:nodejs .next
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# Custom server with Socket.IO support
+COPY --from=builder --chown=nextjs:nodejs /app/server.js ./server.js
+# Socket.IO must be available in runner (not traced by standalone)
+COPY --from=builder /app/node_modules/socket.io ./node_modules/socket.io
+COPY --from=builder /app/node_modules/socket.io-adapter ./node_modules/socket.io-adapter
+COPY --from=builder /app/node_modules/socket.io-parser ./node_modules/socket.io-parser
+COPY --from=builder /app/node_modules/engine.io ./node_modules/engine.io
+COPY --from=builder /app/node_modules/engine.io-parser ./node_modules/engine.io-parser
+COPY --from=builder /app/node_modules/cors ./node_modules/cors
+COPY --from=builder /app/node_modules/ws ./node_modules/ws
+COPY --from=builder /app/node_modules/@socket.io ./node_modules/@socket.io
 USER nextjs
 EXPOSE 3000
 ENV PORT=3000

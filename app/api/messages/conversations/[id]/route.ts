@@ -211,12 +211,22 @@ export async function POST(
       preview: sanitizedContent,
     }).catch(() => {})
 
-    return NextResponse.json({
-      message: {
+    const sentMessage = { ...message, is_mine: true, sender_name: senderName }
+
+    // Socket.IO로 실시간 브로드캐스트
+    const io = (globalThis as Record<string, unknown>).io as
+      | { to: (room: string) => { emit: (event: string, data: unknown) => void } }
+      | undefined
+    if (io) {
+      // 상대방에게는 is_mine=false로 전송
+      io.to(`conversation:${conversationId}`).emit('message', {
         ...message,
-        is_mine: true,
-      },
-    })
+        is_mine: false,
+        sender_name: senderName,
+      })
+    }
+
+    return NextResponse.json({ message: sentMessage })
   } catch (error) {
     console.error('메시지 전송 오류:', error)
     return NextResponse.json({ error: '메시지 전송에 실패했습니다' }, { status: 500 })

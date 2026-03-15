@@ -11,6 +11,7 @@ import { ArrowLeft, Send, Building, User, Wifi, WifiOff } from 'lucide-react'
 import { formatMessageDate, isToday, formatDate } from '@/lib/date'
 import { toast } from 'sonner'
 import Link from 'next/link'
+import { useChatSocket } from '@/hooks/use-chat-socket'
 
 interface Message {
   id: string
@@ -40,10 +41,31 @@ export function ChatRoom({ conversationId, backPath }: ChatRoomProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [isSending, setIsSending] = useState(false)
   const [newMessage, setNewMessage] = useState('')
-  const [isConnected, setIsConnected] = useState(false)
+  const [isTyping, setIsTyping] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const eventSourceRef = useRef<EventSource | null>(null)
-  const latestTsRef = useRef<string>(new Date().toISOString())
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const handleIncomingMessage = useCallback((msg: Message) => {
+    setMessages((prev) => {
+      if (prev.some((m) => m.id === msg.id)) return prev
+      return [...prev, msg]
+    })
+  }, [])
+
+  const handleTypingStart = useCallback(() => {
+    setIsTyping(true)
+  }, [])
+
+  const handleTypingStop = useCallback(() => {
+    setIsTyping(false)
+  }, [])
+
+  const { isConnected, emitTypingStart, emitTypingStop } = useChatSocket({
+    conversationId,
+    onMessage: handleIncomingMessage,
+    onTypingStart: handleTypingStart,
+    onTypingStop: handleTypingStop,
+  })
 
   const scrollToBottom = useCallback((smooth = true) => {
     messagesEndRef.current?.scrollIntoView({ behavior: smooth ? 'smooth' : 'instant' })
@@ -63,11 +85,6 @@ export function ChatRoom({ conversationId, backPath }: ChatRoomProps) {
 
       setMessages(data.messages)
       setOtherUser(data.conversation.otherUser)
-
-      // SSE 기준 타임스탬프: 마지막 메시지 이후
-      if (data.messages.length > 0) {
-        latestTsRef.current = data.messages[data.messages.length - 1].created_at
-      }
     } catch (err) {
       toast.error((err as Error).message)
     } finally {
@@ -75,52 +92,9 @@ export function ChatRoom({ conversationId, backPath }: ChatRoomProps) {
     }
   }, [conversationId, router, backPath])
 
-  // SSE 연결
-  const connectSSE = useCallback(() => {
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close()
-    }
-
-    const since = encodeURIComponent(latestTsRef.current)
-    const es = new EventSource(
-      `/api/messages/conversations/${conversationId}/stream?since=${since}`
-    )
-    eventSourceRef.current = es
-
-    es.addEventListener('connected', () => {
-      setIsConnected(true)
-    })
-
-    es.addEventListener('message', (e) => {
-      const msg: Message = JSON.parse(e.data)
-      setMessages((prev) => {
-        // 중복 방지
-        if (prev.some((m) => m.id === msg.id)) return prev
-        return [...prev, msg]
-      })
-      latestTsRef.current = msg.created_at
-    })
-
-    es.addEventListener('ping', () => {
-      // keep-alive — no-op
-    })
-
-    es.onerror = () => {
-      setIsConnected(false)
-      es.close()
-      // 3초 후 재연결
-      setTimeout(connectSSE, 3000)
-    }
-  }, [conversationId])
-
   useEffect(() => {
-    fetchInitialMessages().then(() => {
-      connectSSE()
-    })
-    return () => {
-      eventSourceRef.current?.close()
-    }
-  }, [conversationId]) // eslint-disable-line react-hooks/exhaustive-deps
+    fetchInitialMessages()
+  }, [fetchInitialMessages])
 
   useEffect(() => {
     scrollToBottom()
@@ -132,6 +106,7 @@ export function ChatRoom({ conversationId, backPath }: ChatRoomProps) {
     setIsSending(true)
     const content = newMessage.trim()
     setNewMessage('') // 낙관적 UI — 입력창 즉시 비움
+    emitTypingStop()
 
     try {
       const response = await fetch(`/api/messages/conversations/${conversationId}`, {
@@ -143,18 +118,28 @@ export function ChatRoom({ conversationId, backPath }: ChatRoomProps) {
       const data = await response.json()
       if (!response.ok) throw new Error(data.error)
 
-      // 내가 보낸 메시지는 REST 응답으로 즉시 반영 (SSE 중복 방지됨)
+      // 내가 보낸 메시지는 REST 응답으로 즉시 반영 (WebSocket 중복 방지됨)
       setMessages((prev) => {
         if (prev.some((m) => m.id === data.message.id)) return prev
         return [...prev, data.message]
       })
-      latestTsRef.current = data.message.created_at
     } catch (err) {
       toast.error((err as Error).message)
       setNewMessage(content) // 실패 시 복원
     } finally {
       setIsSending(false)
     }
+  }
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setNewMessage(e.target.value)
+
+    // 타이핑 인디케이터
+    emitTypingStart()
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
+    typingTimeoutRef.current = setTimeout(() => {
+      emitTypingStop()
+    }, 2000)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -281,13 +266,20 @@ export function ChatRoom({ conversationId, backPath }: ChatRoomProps) {
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Typing indicator */}
+      {isTyping && otherUser && (
+        <div className="px-4 py-1 text-xs text-muted-foreground animate-pulse">
+          {otherUser.name}님이 입력 중...
+        </div>
+      )}
+
       {/* Input */}
       <Card className="mt-auto">
         <CardContent className="p-3">
           <div className="flex gap-2">
             <Textarea
               value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
+              onChange={handleInputChange}
               onKeyDown={handleKeyDown}
               placeholder="메시지를 입력하세요..."
               className="min-h-[44px] max-h-32 resize-none"
