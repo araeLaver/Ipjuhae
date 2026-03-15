@@ -19,6 +19,10 @@ import ProfileScreen from '../screens/ProfileScreen';
 import ListingDetailScreen from '../screens/ListingDetailScreen';
 import MatchesScreen from '../screens/MatchesScreen';
 import VerificationScreen from '../screens/VerificationScreen';
+import PropertiesScreen from '../screens/PropertiesScreen';
+import TenantBrowseScreen from '../screens/TenantBrowseScreen';
+import ChatRoomScreen from '../screens/ChatRoomScreen';
+import SettingsScreen from '../screens/SettingsScreen';
 
 // Types
 export type RootStackParamList = {
@@ -154,18 +158,23 @@ const AppNavigator = () => {
             />
             <Stack.Screen
               name="Properties"
-              component={PlaceholderScreen}
-              options={{ headerShown: true, headerTitle: '매물 관리', headerTintColor: '#2563EB' }}
+              component={PropertiesScreen}
+              options={{ headerShown: true, headerTitle: '매물 관리', headerBackTitle: '뒤로', headerTintColor: '#2563EB' }}
             />
             <Stack.Screen
               name="TenantBrowse"
-              component={PlaceholderScreen}
-              options={{ headerShown: true, headerTitle: '세입자 탐색', headerTintColor: '#2563EB' }}
+              component={TenantBrowseScreen}
+              options={{ headerShown: true, headerTitle: '세입자 탐색', headerBackTitle: '뒤로', headerTintColor: '#2563EB' }}
             />
             <Stack.Screen
               name="ChatRoom"
-              component={PlaceholderScreen}
-              options={{ headerShown: true, headerTitle: '대화', headerTintColor: '#2563EB' }}
+              component={ChatRoomScreen}
+              options={({ route }) => ({
+                headerShown: true,
+                headerTitle: route.params.otherUserName || '대화',
+                headerBackTitle: '뒤로',
+                headerTintColor: '#2563EB',
+              })}
             />
             <Stack.Screen
               name="ProfileEdit"
@@ -184,8 +193,8 @@ const AppNavigator = () => {
             />
             <Stack.Screen
               name="Settings"
-              component={PlaceholderScreen}
-              options={{ headerShown: true, headerTitle: '설정', headerTintColor: '#2563EB' }}
+              component={SettingsScreen}
+              options={{ headerShown: true, headerTitle: '설정', headerBackTitle: '뒤로', headerTintColor: '#2563EB' }}
             />
           </>
         ) : (
