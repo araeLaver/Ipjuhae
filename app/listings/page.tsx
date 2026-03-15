@@ -11,10 +11,13 @@ async function getListings() {
     })
     if (!res.ok) throw new Error('API error')
     const data = await res.json()
-    return data.listings as typeof mockListings
+    const listings = data.listings as typeof mockListings
+    // If DB is empty, show seeded dummy listings
+    if (listings.length === 0) return mockListings.slice(0, 5)
+    return listings
   } catch {
     // Fallback to mock data when API is unavailable
-    return mockListings
+    return mockListings.slice(0, 5)
   }
 }
 
