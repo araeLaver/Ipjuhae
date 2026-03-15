@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
 import { logger } from '@/lib/logger'
+import { isStripeEnabled } from '@/lib/stripe'
 
 interface Subscription {
   id: string
@@ -70,6 +71,7 @@ export async function GET() {
         featured:   parseInt(counts?.featured_count  || '0', 10),
       },
       plans: PLAN_LIMITS,
+      stripeEnabled: isStripeEnabled(),
     })
   } catch (error) {
     logger.error('구독 조회 오류', { error })
@@ -79,7 +81,8 @@ export async function GET() {
 
 /**
  * POST /api/landlord/subscription
- * 플랜 업그레이드 (데모: 즉시 적용, 실제 결제는 별도 구현)
+ * 플랜 변경: Stripe 설정 시 → Checkout 리다이렉트, 미설정 시 → 데모 즉시 적용
+ * 무료 플랜은 항상 즉시 적용
  */
 export async function POST(request: Request) {
   try {
@@ -94,13 +97,30 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: '유효하지 않은 플랜입니다' }, { status: 400 })
     }
 
-    // 기존 구독 비활성화
+    // 무료 플랜으로 다운그레이드는 항상 즉시 적용
+    if (plan === 'free') {
+      await query(
+        'UPDATE landlord_subscriptions SET is_active = false WHERE landlord_id = $1',
+        [user.id]
+      )
+      logger.info('무료 플랜으로 다운그레이드', { landlordId: user.id })
+      return NextResponse.json({ plan: 'free', limits: PLAN_LIMITS.free }, { status: 200 })
+    }
+
+    // Stripe가 설정되어 있으면 Checkout으로 리다이렉트 안내
+    if (isStripeEnabled()) {
+      return NextResponse.json(
+        { error: 'Stripe Checkout을 사용하세요', redirect: '/api/landlord/subscription/checkout' },
+        { status: 400 }
+      )
+    }
+
+    // Stripe 미설정: 데모 모드 (즉시 적용)
     await query(
       'UPDATE landlord_subscriptions SET is_active = false WHERE landlord_id = $1',
       [user.id]
     )
 
-    // 새 구독 생성 (30일)
     const expiresAt = new Date()
     expiresAt.setDate(expiresAt.getDate() + 30)
 
@@ -108,10 +128,10 @@ export async function POST(request: Request) {
       `INSERT INTO landlord_subscriptions (landlord_id, plan, expires_at, is_active)
        VALUES ($1, $2, $3, true)
        RETURNING *`,
-      [user.id, plan, plan === 'free' ? null : expiresAt.toISOString()]
+      [user.id, plan, expiresAt.toISOString()]
     )
 
-    logger.info('구독 플랜 변경', { landlordId: user.id, plan })
+    logger.info('구독 플랜 변경 (데모)', { landlordId: user.id, plan })
 
     return NextResponse.json({ subscription: sub, plan, limits: PLAN_LIMITS[plan] }, { status: 201 })
   } catch (error) {

@@ -23,6 +23,7 @@ export interface User {
   terms_agreed_at: Date | null
   privacy_agreed_at: Date | null
   marketing_agreed_at: Date | null
+  stripe_customer_id: string | null
   created_at: Date
   updated_at: Date
 }

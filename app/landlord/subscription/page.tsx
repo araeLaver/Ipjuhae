@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -24,6 +24,7 @@ interface SubscriptionData {
   usage: { properties: number; featured: number }
   plans: Record<string, PlanLimits>
   subscription: { expires_at: string | null } | null
+  stripeEnabled?: boolean
 }
 
 const PLAN_ICONS: Record<string, typeof Crown> = {
@@ -58,11 +59,17 @@ const PLAN_FEATURES: Record<string, string[]> = {
 
 export default function SubscriptionPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [data, setData] = useState<SubscriptionData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [upgrading, setUpgrading] = useState<string | null>(null)
 
   useEffect(() => {
+    if (searchParams.get('success') === 'true') {
+      toast.success('결제가 완료되었습니다! 구독이 활성화됩니다.')
+    } else if (searchParams.get('canceled') === 'true') {
+      toast.info('결제가 취소되었습니다.')
+    }
     fetchSubscription()
   }, [])
 
@@ -90,6 +97,22 @@ export default function SubscriptionPage() {
     setUpgrading(plan)
 
     try {
+      // 유료 플랜 + Stripe 설정 시 → Checkout
+      if (plan !== 'free' && data?.stripeEnabled) {
+        const res = await fetch('/api/landlord/subscription/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ plan }),
+        })
+        const json = await res.json()
+        if (!res.ok) throw new Error(json.error)
+        if (json.url) {
+          window.location.href = json.url
+          return
+        }
+      }
+
+      // 무료 플랜 다운그레이드 또는 데모 모드
       const res = await fetch('/api/landlord/subscription', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -98,7 +121,7 @@ export default function SubscriptionPage() {
       const json = await res.json()
       if (!res.ok) throw new Error(json.error)
 
-      toast.success(`${json.limits.label} 플랜으로 변경되었습니다!`)
+      toast.success(`${json.limits?.label || plan} 플랜으로 변경되었습니다!`)
       await fetchSubscription()
     } catch (err) {
       toast.error((err as Error).message)
@@ -247,9 +270,11 @@ export default function SubscriptionPage() {
           })}
         </div>
 
-        <p className="text-xs text-muted-foreground text-center">
-          * 현재 결제 시스템 연동 전 데모 버전입니다. 실제 요금이 청구되지 않습니다.
-        </p>
+        {!data.stripeEnabled && (
+          <p className="text-xs text-muted-foreground text-center">
+            * 현재 결제 시스템 연동 전 데모 버전입니다. 실제 요금이 청구되지 않습니다.
+          </p>
+        )}
       </div>
     </PageContainer>
   )
