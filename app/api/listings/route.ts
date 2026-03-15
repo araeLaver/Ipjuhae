@@ -85,12 +85,22 @@ export async function POST(request: Request) {
       ]
     )
 
+    await trackServer('listing_created', {
+      userId: String(authResult.id),
+      properties: {
+        listing_id: rows[0].id,
+        monthly_rent,
+        deposit,
+        photo_count: (photo_urls ?? []).length,
+      },
+    })
+
     await trackServer('listing_submitted', {
       userId: String(authResult.id),
       timestamp: new Date().toISOString(),
       listing_id: rows[0].id,
-      monthly_rent: monthly_rent,
-      deposit: deposit,
+      monthly_rent,
+      deposit,
     })
 
     return NextResponse.json({ listing: rows[0] }, { status: 201 })
