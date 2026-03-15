@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { Ratelimit } from '@upstash/ratelimit'
+import { Redis } from '@upstash/redis'
 
 /**
  * Edge Runtime에서는 jsonwebtoken을 사용할 수 없으므로
@@ -71,10 +73,31 @@ async function decodeWithSecret(
   return { userId: payloadData.userId, userType: payloadData.userType }
 }
 
-/** 인메모리 Rate Limit 스토어 (Edge Runtime 호환) */
+// ── Rate Limiting: Redis (분산) or 인메모리 (폴백) ────────────────────
+const useRedis = !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
+
+const apiLimiter = useRedis
+  ? new Ratelimit({
+      redis: Redis.fromEnv(),
+      limiter: Ratelimit.slidingWindow(60, '1 m'),
+      prefix: 'rl:api',
+      analytics: true,
+    })
+  : null
+
+const authLimiter = useRedis
+  ? new Ratelimit({
+      redis: Redis.fromEnv(),
+      limiter: Ratelimit.slidingWindow(10, '1 m'),
+      prefix: 'rl:auth',
+      analytics: true,
+    })
+  : null
+
+/** 인메모리 Rate Limit 폴백 (Redis 미설정 시) */
 const rateLimitStore = new Map<string, { count: number; resetAt: number }>()
 
-function checkRateLimit(key: string, limit: number, windowMs: number): boolean {
+function checkRateLimitLocal(key: string, limit: number, windowMs: number): boolean {
   const now = Date.now()
   const entry = rateLimitStore.get(key)
 
@@ -87,6 +110,25 @@ function checkRateLimit(key: string, limit: number, windowMs: number): boolean {
 
   entry.count++
   return true
+}
+
+async function checkRateLimit(
+  key: string,
+  isAuth: boolean
+): Promise<{ allowed: boolean; retryAfter?: number }> {
+  const limiter = isAuth ? authLimiter : apiLimiter
+  if (limiter) {
+    const { success, reset } = await limiter.limit(key)
+    if (!success) {
+      const retryAfter = Math.ceil((reset - Date.now()) / 1000)
+      return { allowed: false, retryAfter: Math.max(1, retryAfter) }
+    }
+    return { allowed: true }
+  }
+  // 인메모리 폴백
+  const limit = isAuth ? 10 : 60
+  const allowed = checkRateLimitLocal(key, limit, 60_000)
+  return { allowed, retryAfter: 60 }
 }
 
 function getIp(request: NextRequest): string {
@@ -124,23 +166,21 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   const ip = getIp(request)
 
-  // ── Rate Limiting ───────────────────────────────────────────────
+  // ── Rate Limiting (Redis 분산 or 인메모리 폴백) ─────────────────
   if (pathname.startsWith('/api/auth')) {
-    // 인증 API: 분당 10회 제한
-    const allowed = checkRateLimit(`auth:${ip}`, 10, 60_000)
+    const { allowed, retryAfter } = await checkRateLimit(`auth:${ip}`, true)
     if (!allowed) {
       return NextResponse.json(
         { error: '너무 많은 요청입니다. 잠시 후 다시 시도하세요.' },
-        { status: 429, headers: { 'Retry-After': '60' } }
+        { status: 429, headers: { 'Retry-After': String(retryAfter ?? 60) } }
       )
     }
   } else if (pathname.startsWith('/api/')) {
-    // 일반 API: 분당 60회 제한
-    const allowed = checkRateLimit(`api:${ip}`, 60, 60_000)
+    const { allowed, retryAfter } = await checkRateLimit(`api:${ip}`, false)
     if (!allowed) {
       return NextResponse.json(
         { error: '너무 많은 요청입니다. 잠시 후 다시 시도하세요.' },
-        { status: 429, headers: { 'Retry-After': '60' } }
+        { status: 429, headers: { 'Retry-After': String(retryAfter ?? 60) } }
       )
     }
   }
