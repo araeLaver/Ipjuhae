@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -57,7 +57,7 @@ const PLAN_FEATURES: Record<string, string[]> = {
   ],
 }
 
-export default function SubscriptionPage() {
+function SubscriptionContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [data, setData] = useState<SubscriptionData | null>(null)
@@ -277,5 +277,22 @@ export default function SubscriptionPage() {
         )}
       </div>
     </PageContainer>
+  )
+}
+
+export default function SubscriptionPage() {
+  return (
+    <Suspense fallback={
+      <PageContainer maxWidth="lg">
+        <div className="space-y-6">
+          <Skeleton className="h-8 w-48" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[1, 2, 3].map(i => <Skeleton key={i} className="h-80 w-full rounded-xl" />)}
+          </div>
+        </div>
+      </PageContainer>
+    }>
+      <SubscriptionContent />
+    </Suspense>
   )
 }
