@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
+import Link from 'next/link'
 
 export default function InvitePage() {
   const router = useRouter()
@@ -48,7 +49,7 @@ export default function InvitePage() {
           <p className="text-gray-600 mb-8">
             이 초대 링크가 만료되었거나 유효하지 않습니다.
           </p>
-          <a href="/" className="text-blue-600 hover:underline">홈으로 돌아가기</a>
+          <Link href="/" className="text-blue-600 hover:underline">홈으로 돌아가기</Link>
         </div>
       </div>
     )
