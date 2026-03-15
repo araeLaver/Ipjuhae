@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Header } from '@/components/layout/header'
-import { Mail } from 'lucide-react'
+import { Mail, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 import { SocialLoginButtons } from '@/components/auth/social-login-buttons'
 import { createBrowserClient } from '@/lib/supabase'
@@ -18,6 +18,8 @@ const ERROR_MESSAGES: Record<string, string> = {
   auth_failed: '인증에 실패했습니다. 매직 링크가 만료되었을 수 있습니다.',
   server_error: '서버 오류가 발생했습니다. 다시 시도해주세요.',
 }
+
+const RESEND_COOLDOWN_SEC = 60
 
 export default function LoginPage() {
   return (
@@ -33,10 +35,18 @@ function LoginContent() {
   const [isLoading, setIsLoading] = useState(false)
   const [isMagicLinkSent, setIsMagicLinkSent] = useState(false)
   const [mode, setMode] = useState<'password' | 'magic'>('magic')
+  const [cooldown, setCooldown] = useState(0)
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   })
+
+  // Resend cooldown timer
+  useEffect(() => {
+    if (cooldown <= 0) return
+    const timer = setInterval(() => setCooldown((c) => c - 1), 1000)
+    return () => clearInterval(timer)
+  }, [cooldown])
 
   useEffect(() => {
     const error = searchParams.get('error')
@@ -44,6 +54,17 @@ function LoginContent() {
       toast.error(ERROR_MESSAGES[error])
     }
   }, [searchParams])
+
+  const sendMagicLink = useCallback(async (email: string) => {
+    const supabase = createBrowserClient()
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
+    })
+    if (error) throw error
+  }, [])
 
   const handleMagicLink = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -54,20 +75,26 @@ function LoginContent() {
     setIsLoading(true)
 
     try {
-      const supabase = createBrowserClient()
-      const { error } = await supabase.auth.signInWithOtp({
-        email: formData.email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-        },
-      })
-
-      if (error) throw error
-
+      await sendMagicLink(formData.email)
       setIsMagicLinkSent(true)
+      setCooldown(RESEND_COOLDOWN_SEC)
       toast.success('매직 링크가 이메일로 전송되었습니다!')
     } catch (err) {
       toast.error((err as Error).message || '매직 링크 전송에 실패했습니다')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleResend = async () => {
+    if (cooldown > 0 || isLoading) return
+    setIsLoading(true)
+    try {
+      await sendMagicLink(formData.email)
+      setCooldown(RESEND_COOLDOWN_SEC)
+      toast.success('매직 링크를 다시 보냈습니다!')
+    } catch (err) {
+      toast.error((err as Error).message || '재전송에 실패했습니다')
     } finally {
       setIsLoading(false)
     }
@@ -124,11 +151,25 @@ function LoginContent() {
                 로 매직 링크를 보냈습니다. 이메일의 링크를 클릭하여 로그인하세요.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3">
+              <Button
+                variant="default"
+                className="w-full"
+                onClick={handleResend}
+                disabled={cooldown > 0 || isLoading}
+              >
+                <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                {cooldown > 0
+                  ? `${cooldown}초 후 재전송 가능`
+                  : '매직 링크 다시 보내기'}
+              </Button>
               <Button
                 variant="outline"
                 className="w-full"
-                onClick={() => setIsMagicLinkSent(false)}
+                onClick={() => {
+                  setIsMagicLinkSent(false)
+                  setCooldown(0)
+                }}
               >
                 다른 이메일로 시도
               </Button>

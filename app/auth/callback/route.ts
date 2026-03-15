@@ -5,11 +5,14 @@ import { generateToken, setAuthCookie } from '@/lib/auth'
 import { trackServer } from '@/lib/analytics'
 import { User } from '@/types/database'
 
+const isDev = process.env.NODE_ENV === 'development'
+
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = request.nextUrl
   const code = searchParams.get('code')
 
   if (!code) {
+    if (isDev) console.log('[auth/callback] No code parameter — redirecting to login')
     return NextResponse.redirect(new URL('/login?error=missing_code', origin))
   }
 
@@ -23,6 +26,7 @@ export async function GET(request: NextRequest) {
     }
 
     const email = data.user.email
+    if (isDev) console.log('[auth/callback] Authenticated email:', email)
 
     // Check if user already exists in local DB
     let user = await queryOne<User>(
@@ -33,7 +37,7 @@ export async function GET(request: NextRequest) {
     let isNewUser = false
 
     if (!user) {
-      // Create new user
+      // Create new user via magic link signup
       isNewUser = true
       const rows = await query<User>(
         `INSERT INTO users (email, user_type, auth_provider)
@@ -42,6 +46,7 @@ export async function GET(request: NextRequest) {
         [email]
       )
       user = rows[0]
+      if (isDev) console.log('[auth/callback] New user created:', user.id)
     }
 
     // Generate app JWT and set cookie
@@ -54,12 +59,14 @@ export async function GET(request: NextRequest) {
         userId: user.id,
         properties: { method: 'magic_link', email },
       })
+      if (isDev) console.log('[auth/callback] New user → redirecting to /onboarding')
       return NextResponse.redirect(new URL('/onboarding', origin))
     }
 
     const destination =
       user.user_type === 'landlord' ? '/landlord' :
       user.user_type === 'admin' ? '/admin' : '/profile'
+    if (isDev) console.log('[auth/callback] Existing user → redirecting to', destination)
     return NextResponse.redirect(new URL(destination, origin))
   } catch (err) {
     console.error('Auth callback error:', err)
