@@ -30,7 +30,7 @@ function ScoreChip({ score }: { score: number }) {
       )}
     >
       <Star className="h-2.5 w-2.5" />
-      {score}
+      {score}%
     </span>
   )
 }
