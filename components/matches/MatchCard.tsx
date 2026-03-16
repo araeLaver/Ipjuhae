@@ -46,7 +46,7 @@ function ScoreBadge({ score }: { score: number }) {
       className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${colorClass}`}
     >
       <Star className="h-3 w-3" />
-      {score}점
+      {score}%
     </span>
   )
 }
