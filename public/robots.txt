@@ -1,0 +1,22 @@
+User-agent: *
+Allow: /
+Allow: /listings
+Allow: /listings/*
+Allow: /profile/*
+Allow: /match
+Allow: /signup
+Allow: /login
+
+# Private pages
+Disallow: /dashboard
+Disallow: /api/
+Disallow: /profile/edit
+Disallow: /profile/verification
+Disallow: /profile/reference
+Disallow: /onboarding/
+Disallow: /landlord/
+Disallow: /messages/
+Disallow: /settings/
+Disallow: /admin/
+
+Sitemap: https://www.ipjuhae.com/sitemap.xml
