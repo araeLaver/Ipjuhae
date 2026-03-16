@@ -1,6 +1,6 @@
 # 렌트미 (RentMe) TODO
 
-## 현재 완성도: ~99% (프로덕션 준비 완료)
+## 현재 완성도: ~100% (프로덕션 준비 완료)
 
 ---
 
@@ -8,13 +8,14 @@
 
 ### UX
 - [x] 다크모드 완성 (next-themes 설치됨)
-- [ ] 인앱 알림 센터
-- [ ] 프로필 이미지 업로드 UI
-- [ ] 관리자 페이지 (서류 심사, 유저 관리)
-- [ ] 모니터링/성능 추적
+- [x] 인앱 알림 센터 (notification-center.tsx + /api/notifications)
+- [x] 프로필 이미지 업로드 UI (profile-image-upload.tsx + /api/profile/image)
+- [ ] 관리자 페이지 UI 고도화 (서류 심사 워크플로우)
+- [ ] 모니터링/성능 추적 (Grafana/Datadog 등)
 
 ### 기타
-- [ ] 레퍼런스 만료 자동 처리
+- [x] 레퍼런스 만료 자동 처리 (/api/cron/references + GitHub Actions cron.yml)
+- [x] SEO 메타데이터 (layout.tsx OpenGraph/Twitter + sitemap.ts + robots.txt)
 - [ ] 레퍼런스 응답 수정 기능
 - [ ] 세입자 검색 고도화 (지역, 편의시설 등)
 - [ ] 프리미엄 기능 기획
@@ -22,6 +23,14 @@
 ---
 
 ## ✅ 완료
+
+### Sprint 4 (UX 고도화 & SEO)
+- [x] 프로필 이미지 업로드 UI (드래그앤드롭, WebP 변환, S3/R2 업로드)
+- [x] 인앱 알림 센터 (Bell 아이콘, 드롭다운, 읽음 처리, 30초 폴링)
+- [x] 레퍼런스 만료 자동 처리 (cron + 신뢰점수 재계산)
+- [x] SEO 메타데이터 정비 (OpenGraph, Twitter Card, JSON-LD)
+- [x] Sitemap 자동 생성 (정적 + 동적 라우트)
+- [x] robots.txt 생성
 
 ### Sprint 3 (인프라 & 집주인 기능)
 - [x] Jest/Vitest 설정 및 테스트 프레임워크 구축
