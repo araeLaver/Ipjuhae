@@ -5,6 +5,7 @@ node_modules
 *.md
 .env
 .env.local
+.env.local.example
 .env.development
 .env.production
 Dockerfile
@@ -21,3 +22,23 @@ yarn-debug.log*
 yarn-error.log*
 .npm
 .cache
+
+# Test & QA (not needed in image)
+__tests__
+e2e
+vitest.config.*
+playwright.config.*
+
+# Dev-only directories
+.github
+docs
+marketing
+scripts
+migrations
+mobile
+
+# IDE & OS
+.vscode
+.idea
+*.swp
+*.swo

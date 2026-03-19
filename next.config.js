@@ -3,13 +3,30 @@ const { withSentryConfig } = require('@sentry/nextjs')
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
-  experimental: {
-    serverActions: {
-      allowedOrigins: [
-        process.env.NEXT_PUBLIC_APP_URL?.replace(/^https?:\/\//, '') || 'localhost:3000',
-      ],
-    },
+
+  // Performance
+  compress: true,
+  poweredByHeader: false,
+  reactStrictMode: true,
+
+  // External packages that must not be bundled (server-side native/CJS)
+  serverExternalPackages: ['pg', 'bcryptjs'],
+
+  // Next.js 15: serverActions moved out of experimental
+  serverActions: {
+    allowedOrigins: [
+      process.env.NEXT_PUBLIC_APP_URL?.replace(/^https?:\/\//, '') || 'localhost:3000',
+    ],
   },
+
+  // Image optimization
+  images: {
+    formats: ['image/avif', 'image/webp'],
+    remotePatterns: [
+      { protocol: 'https', hostname: '**' },
+    ],
+  },
+
   async headers() {
     return [
       {
