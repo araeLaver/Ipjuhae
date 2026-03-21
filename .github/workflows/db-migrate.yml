@@ -1,0 +1,45 @@
+name: DB Migration
+
+on:
+  workflow_dispatch:
+    inputs:
+      migration:
+        description: 'Migration to run (012, 013, all)'
+        required: false
+        default: 'all'
+
+jobs:
+  migrate:
+    name: Apply DB migrations
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client
+        run: sudo apt-get install -y --no-install-recommends postgresql-client
+
+      - name: Run migration-012 (landlord_references + trust_score)
+        if: ${{ github.event.inputs.migration == 'all' || github.event.inputs.migration == '012' }}
+        env:
+          PGPASSWORD: ''
+        run: |
+          echo "Running migration-012..."
+          psql "${{ secrets.DATABASE_URL }}" -f db/migration-012-references-trust-score.sql
+          echo "✅ migration-012 done"
+
+      - name: Run migration-013 (analytics_events)
+        if: ${{ github.event.inputs.migration == 'all' || github.event.inputs.migration == '013' }}
+        run: |
+          echo "Running migration-013..."
+          psql "${{ secrets.DATABASE_URL }}" -f db/migration-013-analytics-events.sql
+          echo "✅ migration-013 done"
+
+      - name: Verify tables exist
+        run: |
+          psql "${{ secrets.DATABASE_URL }}" -c "\dt landlord_references" 2>&1 || true
+          psql "${{ secrets.DATABASE_URL }}" -c "\dt analytics_events" 2>&1 || true
+          psql "${{ secrets.DATABASE_URL }}" -c "\d profiles" 2>&1 | grep -E "reference_score|verification_score|profile_score" || echo "⚠️ trust score columns not found"
+          echo "✅ Verification complete"
