@@ -10,7 +10,24 @@ const nextConfig = {
   reactStrictMode: true,
 
   // External packages that must not be bundled (server-side native/CJS)
-  serverExternalPackages: ['pg', 'bcryptjs'],
+  serverExternalPackages: ['pg', 'pg-connection-string', 'pgpass', 'bcryptjs'],
+
+  // Webpack: provide fallbacks for Node.js built-ins in edge/client bundles
+  // Prevents "Module not found: Can't resolve 'fs'" when pg is in import trace
+  webpack: (config, { isServer, nextRuntime }) => {
+    if (!isServer || nextRuntime === 'edge') {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        path: false,
+        net: false,
+        tls: false,
+        stream: false,
+        crypto: false,
+      }
+    }
+    return config
+  },
 
   // Next.js 15: serverActions moved out of experimental
   serverActions: {
