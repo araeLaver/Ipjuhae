@@ -1,13 +1,14 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { queryOne } from '@/lib/db'
 import { generateToken, setAuthCookie } from '@/lib/auth'
 import { exchangeCode, getProfile } from '@/lib/oauth'
 import { AuthProvider, User } from '@/types/database'
 
 const VALID_PROVIDERS: AuthProvider[] = ['kakao', 'naver', 'google']
+const STATE_COOKIE = 'oauth_state'
 
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ provider: string }> }
 ) {
   const { provider } = await params
@@ -19,10 +20,24 @@ export async function GET(
 
   const url = new URL(request.url)
   const code = url.searchParams.get('code')
+  const stateParam = url.searchParams.get('state')
   const error = url.searchParams.get('error')
 
   if (error || !code) {
     return NextResponse.redirect(`${base}/login?error=oauth_denied`)
+  }
+
+  // CSRF state 검증
+  const stateCookie = request.cookies.get(STATE_COOKIE)?.value
+  if (!stateCookie || !stateParam || stateCookie !== stateParam) {
+    const res = NextResponse.redirect(`${base}/login?error=state_mismatch`)
+    res.cookies.delete(STATE_COOKIE)
+    return res
+  }
+
+  const clearState = (res: NextResponse) => {
+    res.cookies.delete(STATE_COOKIE)
+    return res
   }
 
   try {
@@ -39,7 +54,7 @@ export async function GET(
       // 기존 유저 → 바로 로그인
       const token = generateToken(existingUser.id)
       await setAuthCookie(token)
-      return NextResponse.redirect(`${base}/profile`)
+      return clearState(NextResponse.redirect(`${base}/profile`))
     }
 
     // 이메일로 기존 계정 있는지 확인
@@ -50,8 +65,8 @@ export async function GET(
       )
 
       if (emailUser) {
-        return NextResponse.redirect(
-          `${base}/login?error=email_exists&provider=${provider}`
+        return clearState(
+          NextResponse.redirect(`${base}/login?error=email_exists&provider=${provider}`)
         )
       }
     }
@@ -65,9 +80,9 @@ export async function GET(
       ...(profile.profileImage && { profileImage: profile.profileImage }),
     })
 
-    return NextResponse.redirect(`${base}/signup/social?${signupParams.toString()}`)
+    return clearState(NextResponse.redirect(`${base}/signup/social?${signupParams.toString()}`))
   } catch (err) {
     console.error('OAuth callback error:', err)
-    return NextResponse.redirect(`${base}/login?error=oauth_failed`)
+    return clearState(NextResponse.redirect(`${base}/login?error=oauth_failed`))
   }
 }

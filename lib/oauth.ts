@@ -45,10 +45,13 @@ function getRedirectUri(provider: AuthProvider): string {
   return `${base}/api/auth/social/${provider}/callback`
 }
 
-export function getAuthorizeUrl(provider: AuthProvider): string {
+export function generateState(): string {
+  return crypto.randomUUID()
+}
+
+export function getAuthorizeUrl(provider: AuthProvider, state: string): string {
   const config = getOAuthConfig(provider)
   const redirectUri = getRedirectUri(provider)
-  const state = crypto.randomUUID()
 
   const params = new URLSearchParams({
     client_id: config.clientId,

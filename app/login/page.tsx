@@ -17,6 +17,11 @@ const ERROR_MESSAGES: Record<string, string> = {
   missing_code: '인증 코드가 없습니다. 다시 시도해주세요.',
   auth_failed: '인증에 실패했습니다. 매직 링크가 만료되었을 수 있습니다.',
   server_error: '서버 오류가 발생했습니다. 다시 시도해주세요.',
+  oauth_denied: '소셜 로그인이 취소되었습니다.',
+  oauth_failed: '소셜 로그인 중 오류가 발생했습니다. 다시 시도해주세요.',
+  invalid_provider: '지원하지 않는 로그인 방식입니다.',
+  email_exists: '이미 이메일로 가입된 계정이 있습니다. 이메일로 로그인해주세요.',
+  state_mismatch: '보안 검증에 실패했습니다. 다시 시도해주세요.',
 }
 
 const RESEND_COOLDOWN_SEC = 60
