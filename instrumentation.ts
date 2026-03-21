@@ -13,7 +13,8 @@ async function runPendingMigrations() {
   if (!process.env.DATABASE_URL) return
 
   try {
-    const { Pool } = await import('pg')
+    // webpackIgnore: prevent Next.js from bundling pg (Node.js-only native module)
+    const { Pool } = await import(/* webpackIgnore: true */ 'pg')
     const pool = new Pool({
       connectionString: process.env.DATABASE_URL,
       ssl: process.env.DATABASE_URL.includes('localhost') ? false : { rejectUnauthorized: false },
