@@ -166,6 +166,14 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   const ip = getIp(request)
 
+  // ── 잘못된 Server Action 요청 차단 (봇/스캐너 방어) ─────────────
+  if (request.headers.get('next-action')) {
+    return NextResponse.json(
+      { error: 'Server Actions are not supported' },
+      { status: 400 }
+    )
+  }
+
   // ── Rate Limiting (Redis 분산 or 인메모리 폴백) ─────────────────
   if (pathname.startsWith('/api/auth')) {
     const { allowed, retryAfter } = await checkRateLimit(`auth:${ip}`, true)

@@ -29,13 +29,6 @@ const nextConfig = {
     return config
   },
 
-  // Next.js 15: serverActions moved out of experimental
-  serverActions: {
-    allowedOrigins: [
-      process.env.NEXT_PUBLIC_APP_URL?.replace(/^https?:\/\//, '') || 'localhost:3000',
-    ],
-  },
-
   // Image optimization
   images: {
     formats: ['image/avif', 'image/webp'],
