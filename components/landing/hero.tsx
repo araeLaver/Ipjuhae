@@ -1,17 +1,27 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { Home, Shield, Share2, FileText, Star, CheckCircle, User } from 'lucide-react'
+import { Shield, Star, CheckCircle, User } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { motion } from 'framer-motion'
 
 export function Hero() {
   return (
     <section className="relative overflow-hidden">
-      {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-teal-50 via-emerald-50/50 to-white dark:from-background dark:via-background dark:to-background" />
+      {/* Background image */}
+      <Image
+        src="https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1920&q=80"
+        alt=""
+        fill
+        className="object-cover"
+        priority
+        sizes="100vw"
+      />
+      {/* Gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/85 to-white/60 dark:from-background/95 dark:via-background/85 dark:to-background/60" />
       <div
-        className="absolute inset-0 opacity-[0.03]"
+        className="absolute inset-0 opacity-[0.02]"
         style={{
           backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)',
           backgroundSize: '24px 24px',
@@ -42,7 +52,7 @@ export function Hero() {
                 </Button>
               </Link>
               <Link href="/signup?type=landlord">
-                <Button variant="outline" size="xl" className="w-full sm:w-auto">
+                <Button variant="outline" size="xl" className="w-full sm:w-auto bg-white/80 dark:bg-background/80 backdrop-blur-sm">
                   집주인으로 가입
                 </Button>
               </Link>
@@ -68,7 +78,7 @@ export function Hero() {
               </motion.div>
 
               {/* Card */}
-              <div className="bg-card rounded-2xl shadow-elevated p-6 border border-border">
+              <div className="bg-card/95 backdrop-blur-sm rounded-2xl shadow-elevated p-6 border border-border">
                 <div className="flex items-center gap-4 mb-6">
                   <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
                     <User className="h-7 w-7 text-primary" />

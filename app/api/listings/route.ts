@@ -34,7 +34,9 @@ export async function GET() {
     const listings = await query<Listing>(
       `SELECT * FROM listings ORDER BY created_at DESC`
     )
-    return NextResponse.json({ listings })
+    const response = NextResponse.json({ listings })
+    response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120')
+    return response
   } catch (error) {
     console.error('[GET /api/listings]', error)
     return NextResponse.json({ error: '매물 목록을 불러오지 못했습니다' }, { status: 500 })

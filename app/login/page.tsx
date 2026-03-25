@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -141,178 +142,207 @@ function LoginContent() {
 
   if (isMagicLinkSent) {
     return (
-      <div className="min-h-screen bg-muted/50 dark:bg-background flex flex-col">
+      <div className="min-h-screen flex flex-col">
         <Header />
-        <main className="flex-1 flex items-center justify-center p-4 animate-fade-in">
-          <Card className="w-full max-w-md shadow-card">
-            <CardHeader className="text-center">
-              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-                <Mail className="h-6 w-6 text-primary" />
-              </div>
-              <CardTitle className="text-2xl">이메일을 확인하세요</CardTitle>
-              <CardDescription>
-                <span className="font-medium text-foreground">{formData.email}</span>
-                <br />
-                로 매직 링크를 보냈습니다. 이메일의 링크를 클릭하여 로그인하세요.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Button
-                variant="default"
-                className="w-full"
-                onClick={handleResend}
-                disabled={cooldown > 0 || isLoading}
-              >
-                <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-                {cooldown > 0
-                  ? `${cooldown}초 후 재전송 가능`
-                  : '매직 링크 다시 보내기'}
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => {
-                  setIsMagicLinkSent(false)
-                  setCooldown(0)
-                }}
-              >
-                다른 이메일로 시도
-              </Button>
-            </CardContent>
-          </Card>
+        <main className="flex-1 flex animate-fade-in">
+          {/* Left: Form */}
+          <div className="flex-1 flex items-center justify-center p-4 bg-muted/50 dark:bg-background">
+            <Card className="w-full max-w-md shadow-card">
+              <CardHeader className="text-center">
+                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                  <Mail className="h-6 w-6 text-primary" />
+                </div>
+                <CardTitle className="text-2xl">이메일을 확인하세요</CardTitle>
+                <CardDescription>
+                  <span className="font-medium text-foreground">{formData.email}</span>
+                  <br />
+                  로 매직 링크를 보냈습니다. 이메일의 링크를 클릭하여 로그인하세요.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Button
+                  variant="default"
+                  className="w-full"
+                  onClick={handleResend}
+                  disabled={cooldown > 0 || isLoading}
+                >
+                  <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                  {cooldown > 0
+                    ? `${cooldown}초 후 재전송 가능`
+                    : '매직 링크 다시 보내기'}
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => {
+                    setIsMagicLinkSent(false)
+                    setCooldown(0)
+                  }}
+                >
+                  다른 이메일로 시도
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+          {/* Right: Image */}
+          <div className="hidden lg:block lg:flex-1 relative">
+            <Image
+              src="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1280&q=80"
+              alt="모던한 거실 인테리어"
+              fill
+              className="object-cover"
+              sizes="50vw"
+            />
+            <div className="absolute inset-0 bg-gradient-to-l from-transparent to-primary/10" />
+          </div>
         </main>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-muted/50 dark:bg-background flex flex-col">
+    <div className="min-h-screen flex flex-col">
       <Header />
 
-      <main className="flex-1 flex items-center justify-center p-4 animate-fade-in">
-        <Card className="w-full max-w-md shadow-card">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl">로그인</CardTitle>
-            <CardDescription>
-              {mode === 'magic'
-                ? '이메일로 매직 링크를 받아 간편하게 로그인하세요'
-                : '이메일과 비밀번호로 로그인하세요'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {mode === 'magic' ? (
-              <form onSubmit={handleMagicLink} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">이메일</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, email: e.target.value }))
-                    }
-                    placeholder="example@email.com"
-                    required
-                  />
-                </div>
-
-                <Button type="submit" className="w-full" loading={isLoading}>
-                  <Mail className="mr-2 h-4 w-4" />
-                  매직 링크 전송
-                </Button>
-
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
+      <main className="flex-1 flex animate-fade-in">
+        {/* Left: Form */}
+        <div className="flex-1 flex items-center justify-center p-4 bg-muted/50 dark:bg-background">
+          <Card className="w-full max-w-md shadow-card">
+            <CardHeader className="text-center">
+              <CardTitle className="text-2xl">로그인</CardTitle>
+              <CardDescription>
+                {mode === 'magic'
+                  ? '이메일로 매직 링크를 받아 간편하게 로그인하세요'
+                  : '이메일과 비밀번호로 로그인하세요'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {mode === 'magic' ? (
+                <form onSubmit={handleMagicLink} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">이메일</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, email: e.target.value }))
+                      }
+                      placeholder="example@email.com"
+                      required
+                    />
                   </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card px-2 text-muted-foreground">또는</span>
+
+                  <Button type="submit" className="w-full" loading={isLoading}>
+                    <Mail className="mr-2 h-4 w-4" />
+                    매직 링크 전송
+                  </Button>
+
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-card px-2 text-muted-foreground">또는</span>
+                    </div>
                   </div>
-                </div>
 
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => setMode('password')}
-                >
-                  비밀번호로 로그인
-                </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => setMode('password')}
+                  >
+                    비밀번호로 로그인
+                  </Button>
 
-                <SocialLoginButtons mode="login" />
+                  <SocialLoginButtons mode="login" />
 
-                <p className="text-center text-sm text-muted-foreground">
-                  계정이 없으신가요?{' '}
-                  <Link href="/signup" className="text-primary hover:underline">
-                    회원가입
-                  </Link>
-                </p>
-              </form>
-            ) : (
-              <form onSubmit={handlePasswordLogin} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">이메일</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, email: e.target.value }))
-                    }
-                    placeholder="example@email.com"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="password">비밀번호</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, password: e.target.value }))
-                    }
-                    placeholder="비밀번호 입력"
-                    required
-                  />
-                </div>
-
-                <Button type="submit" className="w-full" loading={isLoading}>
-                  로그인
-                </Button>
-
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
+                  <p className="text-center text-sm text-muted-foreground">
+                    계정이 없으신가요?{' '}
+                    <Link href="/signup" className="text-primary hover:underline">
+                      회원가입
+                    </Link>
+                  </p>
+                </form>
+              ) : (
+                <form onSubmit={handlePasswordLogin} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">이메일</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, email: e.target.value }))
+                      }
+                      placeholder="example@email.com"
+                      required
+                    />
                   </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card px-2 text-muted-foreground">또는</span>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="password">비밀번호</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      value={formData.password}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, password: e.target.value }))
+                      }
+                      placeholder="비밀번호 입력"
+                      required
+                    />
                   </div>
-                </div>
 
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => setMode('magic')}
-                >
-                  <Mail className="mr-2 h-4 w-4" />
-                  매직 링크로 로그인
-                </Button>
+                  <Button type="submit" className="w-full" loading={isLoading}>
+                    로그인
+                  </Button>
 
-                <SocialLoginButtons mode="login" />
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-card px-2 text-muted-foreground">또는</span>
+                    </div>
+                  </div>
 
-                <p className="text-center text-sm text-muted-foreground">
-                  계정이 없으신가요?{' '}
-                  <Link href="/signup" className="text-primary hover:underline">
-                    회원가입
-                  </Link>
-                </p>
-              </form>
-            )}
-          </CardContent>
-        </Card>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => setMode('magic')}
+                  >
+                    <Mail className="mr-2 h-4 w-4" />
+                    매직 링크로 로그인
+                  </Button>
+
+                  <SocialLoginButtons mode="login" />
+
+                  <p className="text-center text-sm text-muted-foreground">
+                    계정이 없으신가요?{' '}
+                    <Link href="/signup" className="text-primary hover:underline">
+                      회원가입
+                    </Link>
+                  </p>
+                </form>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right: Background Image */}
+        <div className="hidden lg:block lg:flex-1 relative">
+          <Image
+            src="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1280&q=80"
+            alt="모던한 거실 인테리어"
+            fill
+            className="object-cover"
+            sizes="50vw"
+          />
+          <div className="absolute inset-0 bg-gradient-to-l from-transparent to-primary/10" />
+        </div>
       </main>
     </div>
   )

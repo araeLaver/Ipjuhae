@@ -142,7 +142,7 @@ export async function GET(request: Request) {
     const properties = hasMore ? rows.slice(0, limit) : rows
     const nextCursor = hasMore ? properties[properties.length - 1][sort as keyof PropertyListRow] : null
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       properties: properties.map(p => ({
         id: p.id,
         title: p.title,
@@ -169,6 +169,8 @@ export async function GET(request: Request) {
       nextCursor,
       hasMore,
     })
+    response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120')
+    return response
   } catch (error) {
     logger.error('공개 매물 목록 조회 오류', { error })
     return NextResponse.json({ error: '매물 목록을 불러오는데 실패했습니다' }, { status: 500 })
