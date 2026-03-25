@@ -8,6 +8,7 @@ async function getListings() {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
     const res = await fetch(`${baseUrl}/api/listings`, {
       next: { revalidate: 60 },
+      signal: AbortSignal.timeout(10_000),
     })
     if (!res.ok) throw new Error('API error')
     const data = await res.json()
