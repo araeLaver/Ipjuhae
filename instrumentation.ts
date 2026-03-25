@@ -1,11 +1,5 @@
+// Sentry 비활성화: DSN 미설정 + Koyeb nano 인스턴스에서 컴파일 타임아웃 방지
+// Sentry 활성화 시 인스턴스를 small 이상으로 업그레이드 필요
 export async function register() {
-  // Sentry는 DSN이 설정된 경우에만 lazy 로드 (startup 지연 방지)
-  if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
-    if (process.env.NEXT_RUNTIME === 'nodejs') {
-      await import('./sentry.server.config')
-    }
-    if (process.env.NEXT_RUNTIME === 'edge') {
-      await import('./sentry.edge.config')
-    }
-  }
+  // noop — fast startup
 }
