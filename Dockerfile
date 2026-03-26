@@ -54,16 +54,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # Custom HTTP server (Socket.IO)
 COPY --from=builder --chown=nextjs:nodejs /app/server.js ./server.js
 
-# Socket.IO runtime deps — not auto-traced by Next.js standalone
-# (required by custom server.js at runtime)
-COPY --from=builder /app/node_modules/socket.io ./node_modules/socket.io
-COPY --from=builder /app/node_modules/socket.io-adapter ./node_modules/socket.io-adapter
-COPY --from=builder /app/node_modules/socket.io-parser ./node_modules/socket.io-parser
-COPY --from=builder /app/node_modules/engine.io ./node_modules/engine.io
-COPY --from=builder /app/node_modules/engine.io-parser ./node_modules/engine.io-parser
-COPY --from=builder /app/node_modules/cors ./node_modules/cors
-COPY --from=builder /app/node_modules/ws ./node_modules/ws
-COPY --from=builder /app/node_modules/@socket.io ./node_modules/@socket.io
+# Socket.IO + jsonwebtoken runtime deps (not auto-traced by Next.js standalone)
+# Install with all transitive dependencies to avoid missing module errors
+RUN npm install --no-save --omit=dev socket.io@4 jsonwebtoken@9 && \
+    npm cache clean --force
 
 USER nextjs
 
