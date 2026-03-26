@@ -1,15 +1,14 @@
 const { createServer } = require('http')
 const { parse } = require('url')
-const next = require('next')
+const path = require('path')
 const { Server: SocketIOServer } = require('socket.io')
 const jwt = require('jsonwebtoken')
 
-const dev = process.env.NODE_ENV !== 'production'
+process.env.NODE_ENV = 'production'
+
 const hostname = process.env.HOSTNAME || '0.0.0.0'
 const port = parseInt(process.env.PORT || '3000', 10)
-
-const app = next({ dev, hostname, port })
-const handle = app.getRequestHandler()
+const dev = process.env.NODE_ENV !== 'production'
 
 function getJwtSecret() {
   const secret = process.env.JWT_SECRET
@@ -22,10 +21,34 @@ function getJwtSecret() {
   return secret
 }
 
-app.prepare().then(() => {
+async function start() {
+  let handler
+
+  if (!dev) {
+    // Production: Use NextServer directly with pre-compiled pages (no runtime webpack)
+    const NextServer = require('next/dist/server/next-server').default
+    const conf = require('./.next/required-server-files.json')
+    const nextServer = new NextServer({
+      hostname,
+      port,
+      dir: path.join(__dirname),
+      dev: false,
+      customServer: true,
+      conf: conf.config,
+    })
+    await nextServer.prepare()
+    handler = nextServer.getRequestHandler()
+  } else {
+    // Development: Use next() API with hot reload
+    const next = require('next')
+    const app = next({ dev: true, hostname, port })
+    await app.prepare()
+    handler = app.getRequestHandler()
+  }
+
   const httpServer = createServer((req, res) => {
     const parsedUrl = parse(req.url, true)
-    handle(req, res, parsedUrl)
+    handler(req, res, parsedUrl)
   })
 
   const io = new SocketIOServer(httpServer, {
@@ -58,7 +81,6 @@ app.prepare().then(() => {
   })
 
   io.on('connection', (socket) => {
-    // 대화방 참여
     socket.on('join', (conversationId) => {
       socket.join(`conversation:${conversationId}`)
     })
@@ -67,7 +89,6 @@ app.prepare().then(() => {
       socket.leave(`conversation:${conversationId}`)
     })
 
-    // 타이핑 인디케이터
     socket.on('typing:start', (conversationId) => {
       socket.to(`conversation:${conversationId}`).emit('typing:start', {
         userId: socket.data.userId,
@@ -84,4 +105,9 @@ app.prepare().then(() => {
   httpServer.listen(port, hostname, () => {
     console.log(`> Ready on http://${hostname}:${port}`)
   })
+}
+
+start().catch((err) => {
+  console.error('Failed to start server:', err)
+  process.exit(1)
 })
