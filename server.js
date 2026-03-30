@@ -1,5 +1,4 @@
 const { createServer } = require('http')
-const { parse } = require('url')
 const path = require('path')
 const { Server: SocketIOServer } = require('socket.io')
 const jwt = require('jsonwebtoken')
@@ -33,7 +32,7 @@ async function start() {
       port,
       dir: path.join(__dirname),
       dev: false,
-      customServer: true,
+      customServer: false,
       conf: conf.config,
     })
     await nextServer.prepare()
@@ -47,8 +46,7 @@ async function start() {
   }
 
   const httpServer = createServer((req, res) => {
-    const parsedUrl = parse(req.url, true)
-    handler(req, res, parsedUrl)
+    handler(req, res)
   })
 
   const io = new SocketIOServer(httpServer, {
