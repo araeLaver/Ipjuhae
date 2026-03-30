@@ -24,19 +24,20 @@ async function start() {
   let handler
 
   if (!dev) {
-    // Production: Use NextServer directly with pre-compiled pages (no runtime webpack)
-    const NextServer = require('next/dist/server/next-server').default
+    // Production: Set standalone config so Next.js serves _next/static/* and _next/image/*
     const conf = require('./.next/required-server-files.json')
-    const nextServer = new NextServer({
+    process.env.__NEXT_PRIVATE_STANDALONE_CONFIG = JSON.stringify(conf.config)
+
+    const next = require('next')
+    const app = next({
+      dev: false,
       hostname,
       port,
       dir: path.join(__dirname),
-      dev: false,
-      customServer: false,
       conf: conf.config,
     })
-    await nextServer.prepare()
-    handler = nextServer.getRequestHandler()
+    await app.prepare()
+    handler = app.getRequestHandler()
   } else {
     // Development: Use next() API with hot reload
     const next = require('next')
