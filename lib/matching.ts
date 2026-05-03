@@ -18,7 +18,7 @@ export interface MatchTenantProfile {
 }
 
 export interface MatchListing {
-  id: number
+  id: string | number
   monthly_rent: number
   deposit?: number
   address: string

@@ -9,7 +9,7 @@ import { trackServer } from '@/lib/analytics'
 const MATCH_LIMIT = 10
 
 interface ListingRow {
-  id: number
+  id: string
   monthly_rent: string
   address: string
   available_from: string | null
@@ -41,7 +41,7 @@ export async function GET() {
     const rows = await query<ListingRow>(
       `SELECT id, monthly_rent, deposit, address, area_sqm, floor, available_from,
               COALESCE(pet_allowed, NULL) AS pet_allowed
-       FROM listings
+       FROM properties
        WHERE status = 'available'
        ORDER BY created_at DESC
        LIMIT 200`
