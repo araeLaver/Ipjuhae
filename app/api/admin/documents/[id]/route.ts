@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
 import { getAdminUser, logAdminAction } from '@/lib/admin'
+import { notifyVerificationApproved, notifyVerificationRejected } from '@/lib/notifications'
 
 interface DocRow {
   id: string
@@ -76,6 +77,12 @@ export async function PATCH(
         [doc.user_id]
       )
     }
+  }
+
+  if (newStatus === 'approved') {
+    notifyVerificationApproved({ toUserId: doc.user_id, documentType: doc.document_type }).catch(() => {})
+  } else if (newStatus === 'rejected') {
+    notifyVerificationRejected({ toUserId: doc.user_id, documentType: doc.document_type, reason: body.reject_reason }).catch(() => {})
   }
 
   await logAdminAction(admin.id, `${body.action}_document`, 'document', id, {

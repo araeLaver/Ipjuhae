@@ -5,6 +5,7 @@ import { User } from '@/types/database'
 import { signupSchema } from '@/lib/validations'
 import { authRateLimit, getClientIp } from '@/lib/rate-limit'
 import { trackEvent } from '@/lib/analytics'
+import { notifyWelcome } from '@/lib/notifications'
 
 export async function POST(request: Request) {
   try {
@@ -91,6 +92,7 @@ export async function POST(request: Request) {
     await setAuthCookie(token)
 
     trackEvent('user_signup', { user_id: user.id, user_type: userType, source: inviteToken ? 'beta_invite' : 'direct' })
+    notifyWelcome(user.id, email.split('@')[0]).catch(() => {})
 
     return NextResponse.json({ success: true, userId: user.id, userType })
   } catch (error) {
