@@ -42,7 +42,7 @@ export async function GET(
   try {
     const { id: conversationId } = await params
     const cookieStore = await cookies()
-    const token = cookieStore.get('auth-token')?.value
+    const token = cookieStore.get('auth_token')?.value
 
     if (!token) {
       return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 })
@@ -145,7 +145,7 @@ export async function POST(
   try {
     const { id: conversationId } = await params
     const cookieStore = await cookies()
-    const token = cookieStore.get('auth-token')?.value
+    const token = cookieStore.get('auth_token')?.value
 
     if (!token) {
       return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 })

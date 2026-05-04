@@ -21,7 +21,7 @@ interface UseChatSocketOptions {
 }
 
 function getAuthToken(): string | null {
-  const match = document.cookie.match(/(?:^|;\s*)auth-token=([^;]*)/)
+  const match = document.cookie.match(/(?:^|;\s*)auth_token=([^;]*)/)
   return match ? decodeURIComponent(match[1]) : null
 }
 
