@@ -6,8 +6,8 @@ import Link from 'next/link'
 
 export default function InvitePage() {
   const router = useRouter()
-  const params = useParams()
-  const token = params.token as string
+  const params = useParams<{ token: string }>()
+  const token = params.token
   const [status, setStatus] = useState<'loading' | 'valid' | 'invalid' | 'used'>('loading')
   const [email, setEmail] = useState('')
 

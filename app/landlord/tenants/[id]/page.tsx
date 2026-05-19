@@ -26,9 +26,9 @@ interface TrustScoreBreakdown {
 }
 
 export default function TenantDetailPage() {
-  const params = useParams()
+  const params = useParams<{ id: string }>()
   const router = useRouter()
-  const id = params.id as string
+  const id = params.id
 
   const [profile, setProfile] = useState<Profile | null>(null)
   const [verification, setVerification] = useState<Verification | null>(null)

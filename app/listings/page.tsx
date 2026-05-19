@@ -1,7 +1,6 @@
 import { mockListings } from '@/lib/mock-listings'
-import { ListingCard } from '@/components/listings/ListingCard'
+import { ListingSearch } from '@/components/listings/ListingSearch'
 import { PageContainer } from '@/components/layout/page-container'
-import { Building } from 'lucide-react'
 
 async function getListings() {
   try {
@@ -37,39 +36,17 @@ export default async function ListingsPage() {
 
   return (
     <PageContainer maxWidth="xl">
-      <div className="space-y-6">
-        {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold">매물 찾기</h1>
-          <p className="text-muted-foreground">원하는 조건의 매물을 카드로 확인하세요</p>
-        </div>
-
-        {/* Count */}
-        <p className="text-sm text-muted-foreground">{listings.length}개 매물</p>
-
-        {/* Grid */}
-        {listings.length === 0 ? (
-          <div
-            className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-3"
-            role="status"
-            aria-label="매물 없음"
-          >
-            <Building className="h-12 w-12" aria-hidden="true" />
-            <p className="text-lg font-medium">매물이 없습니다</p>
-            <p className="text-sm">조건을 변경하거나 나중에 다시 확인해보세요</p>
+      <div className="space-y-8">
+        <div className="rounded-lg bg-background p-6 shadow-soft">
+          <div className="max-w-3xl space-y-3">
+            <p className="text-sm font-semibold text-primary">Rentme Search</p>
+            <h1 className="text-3xl font-bold tracking-normal sm:text-4xl">매물 찾기</h1>
+            <p className="text-muted-foreground">
+              세입자 프로필과 생활 조건을 기준으로 지역, 예산, 이동 동선에 맞는 매물을 비교하세요.
+            </p>
           </div>
-        ) : (
-          <ul
-            className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-            aria-label="매물 목록"
-          >
-            {listings.map((listing) => (
-              <li key={listing.id}>
-                <ListingCard listing={listing} />
-              </li>
-            ))}
-          </ul>
-        )}
+        </div>
+        <ListingSearch listings={listings} />
       </div>
     </PageContainer>
   )

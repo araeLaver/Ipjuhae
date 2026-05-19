@@ -15,11 +15,11 @@ function SocialSignupForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  const provider = searchParams.get('provider') || ''
-  const providerId = searchParams.get('providerId') || ''
-  const email = searchParams.get('email') || ''
-  const name = searchParams.get('name') || ''
-  const profileImage = searchParams.get('profileImage') || ''
+  const provider = searchParams?.get('provider') || ''
+  const providerId = searchParams?.get('providerId') || ''
+  const email = searchParams?.get('email') || ''
+  const name = searchParams?.get('name') || ''
+  const profileImage = searchParams?.get('profileImage') || ''
 
   const [isLoading, setIsLoading] = useState(false)
   const [userType, setUserType] = useState<'tenant' | 'landlord'>('tenant')

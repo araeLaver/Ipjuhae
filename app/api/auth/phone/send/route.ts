@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { query } from '@/lib/db'
+import { sendOTP } from '@/lib/sms'
 import { PhoneVerification } from '@/types/database'
 
 export async function POST(request: Request) {
@@ -28,8 +29,13 @@ export async function POST(request: Request) {
       [phoneNumber, code, expiresAt]
     )
 
-    // Mock: 실제 SMS 발송 대신 콘솔 출력 + 응답에 코드 포함 (개발용)
-    console.log(`[Mock SMS] ${phoneNumber}: 인증번호 ${code}`)
+    const smsResult = await sendOTP(phoneNumber, code)
+    if (!smsResult.success) {
+      return NextResponse.json(
+        { error: smsResult.error || '인증번호 발송에 실패했습니다' },
+        { status: 500 }
+      )
+    }
 
     return NextResponse.json({
       success: true,

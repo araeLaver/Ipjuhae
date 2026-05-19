@@ -158,7 +158,7 @@ export async function notifyReferenceRequest(opts: {
     type: 'reference_request',
     title: `${opts.tenantName}님의 레퍼런스 요청`,
     body: '이전 세입자의 레퍼런스를 작성해주세요.',
-    link: `/reference/${opts.token}`,
+    link: `/reference/survey/${opts.token}`,
     metadata: { referenceId: opts.referenceId },
   })
 }
@@ -246,7 +246,7 @@ export async function notifyWelcome(userId: string, name: string): Promise<void>
     type: 'welcome',
     title: `환영합니다, ${name}님! 🎉`,
     body: '렌트미에 오신 걸 환영해요. 프로필을 완성하고 신뢰점수를 올려보세요.',
-    link: '/onboarding',
+    link: '/onboarding/basic',
   })
 }
 

@@ -67,9 +67,9 @@ function formatPrice(amount: number): string {
 }
 
 export default function PropertyDetailPage() {
-  const params = useParams()
+  const params = useParams<{ id: string }>()
   const router = useRouter()
-  const propertyId = params.id as string
+  const propertyId = params.id
 
   const [property, setProperty] = useState<PropertyDetail | null>(null)
   const [images, setImages] = useState<PropertyImage[]>([])

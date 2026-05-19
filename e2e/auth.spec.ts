@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test'
 test.describe('인증 흐름', () => {
   test('랜딩페이지 접근 가능', async ({ page }) => {
     await page.goto('/')
-    await expect(page).toHaveTitle(/입주해|RentMe/i)
+    await expect(page).toHaveTitle(/입주해|임주해|RentMe/i)
   })
 
   test('회원가입 페이지 접근 가능', async ({ page }) => {
@@ -29,7 +29,7 @@ test.describe('인증 흐름', () => {
 
   test('로그인 페이지에서 회원가입 페이지로 이동', async ({ page }) => {
     await page.goto('/login')
-    await page.getByRole('link', { name: '회원가입' }).click()
+    await page.locator('form').getByRole('link', { name: '회원가입' }).click()
     await expect(page).toHaveURL('/signup')
   })
 

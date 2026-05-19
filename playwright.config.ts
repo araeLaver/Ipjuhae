@@ -1,5 +1,9 @@
 import { defineConfig, devices } from '@playwright/test'
 
+const port = process.env.PLAYWRIGHT_PORT || '3102'
+const hostname = process.env.PLAYWRIGHT_HOST || '127.0.0.1'
+const e2eHostURL = process.env.PLAYWRIGHT_BASE_URL || `http://${hostname}:${port}`
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
@@ -8,7 +12,7 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: e2eHostURL,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
@@ -19,8 +23,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:3000',
+    command: `npm run dev -- --hostname ${hostname} --port ${port}`,
+    url: e2eHostURL,
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
   },

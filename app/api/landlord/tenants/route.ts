@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
-import { User, Verification } from '@/types/database'
-import { calculateTrustScore } from '@/lib/trust-score'
+import { User } from '@/types/database'
 import { tenantFilterSchema, SortOption } from '@/lib/validations'
+import { decodeTenantCursor, encodeTenantCursor } from '@/lib/tenant-search-cursor'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -11,6 +11,7 @@ import { tenantFilterSchema, SortOption } from '@/lib/validations'
 
 interface TenantCard {
   profile_id: string
+  user_id: string
   name: string
   age_range: string
   family_type: string
@@ -29,11 +30,6 @@ interface TenantCard {
   reference_count: number
   profile_image_url: string | null
   created_at: string
-}
-
-interface CursorPayload {
-  score: number
-  id: string
 }
 
 interface ProfileRow {
@@ -56,7 +52,6 @@ interface ProfileRow {
   credit_verified: boolean | null
   ref_count: string
   verified_count: string
-  verification?: Verification
 }
 
 // ---------------------------------------------------------------------------
@@ -69,15 +64,30 @@ function maskName(name: string): string {
   return name[0] + '*'.repeat(name.length - 2) + name[name.length - 1]
 }
 
-function encodeCursor(score: number, id: string): string {
-  return Buffer.from(JSON.stringify({ score, id })).toString('base64')
-}
+const REF_COUNT_EXPR = `(
+  SELECT COUNT(*) FROM landlord_references lr
+  WHERE lr.user_id = p.user_id AND lr.status = 'completed'
+)`
 
-function decodeCursor(cursor: string): CursorPayload | null {
-  try {
-    return JSON.parse(Buffer.from(cursor, 'base64').toString('utf-8')) as CursorPayload
-  } catch {
-    return null
+const VERIFIED_COUNT_EXPR = `(
+  COALESCE(v.employment_verified::int, 0) +
+  COALESCE(v.income_verified::int, 0) +
+  COALESCE(v.credit_verified::int, 0)
+)`
+
+function buildCursorCondition(sort: SortOption, paramIndex: number): string {
+  const idParam = `$${paramIndex + 1}`
+
+  switch (sort) {
+    case 'created_desc':
+      return `(p.created_at < $${paramIndex}::timestamptz OR (p.created_at = $${paramIndex}::timestamptz AND p.id > ${idParam}))`
+    case 'reference_desc':
+      return `(${REF_COUNT_EXPR} < $${paramIndex} OR (${REF_COUNT_EXPR} = $${paramIndex} AND p.id > ${idParam}))`
+    case 'verified_desc':
+      return `(${VERIFIED_COUNT_EXPR} < $${paramIndex} OR (${VERIFIED_COUNT_EXPR} = $${paramIndex} AND p.id > ${idParam}))`
+    case 'trust_desc':
+    default:
+      return `(p.trust_score < $${paramIndex} OR (p.trust_score = $${paramIndex} AND p.id > ${idParam}))`
   }
 }
 
@@ -224,16 +234,14 @@ export async function GET(request: Request) {
     )
     const totalCount = parseInt(countRow?.count ?? '0', 10)
 
-    // ---------- Cursor condition (trust_desc only; others use offset) ----------
+    // ---------- Cursor condition ----------
     const allConditions = [...baseConditions]
     const allParams: unknown[] = [...baseParams]
 
-    const cursorPayload = cursor ? decodeCursor(cursor) : null
-    if (cursorPayload && sort === 'trust_desc') {
-      allConditions.push(
-        `(p.trust_score < $${idx} OR (p.trust_score = $${idx} AND p.id > $${idx + 1}))`
-      )
-      allParams.push(cursorPayload.score, cursorPayload.id)
+    const cursorPayload = cursor ? decodeTenantCursor(cursor) : null
+    if (cursorPayload && cursorPayload.sort === sort) {
+      allConditions.push(buildCursorCondition(sort, idx))
+      allParams.push(cursorPayload.value, cursorPayload.id)
       idx += 2
     }
 
@@ -260,15 +268,8 @@ export async function GET(request: Request) {
          COALESCE(v.employment_verified, FALSE) AS employment_verified,
          COALESCE(v.income_verified, FALSE)     AS income_verified,
          COALESCE(v.credit_verified, FALSE)     AS credit_verified,
-         (
-           SELECT COUNT(*) FROM landlord_references lr
-           WHERE lr.user_id = p.user_id AND lr.status = 'completed'
-         )::text AS ref_count,
-         (
-           COALESCE(v.employment_verified::int, 0) +
-           COALESCE(v.income_verified::int, 0) +
-           COALESCE(v.credit_verified::int, 0)
-         )::text AS verified_count
+         ${REF_COUNT_EXPR}::text AS ref_count,
+         ${VERIFIED_COUNT_EXPR}::text AS verified_count
        FROM profiles p
        LEFT JOIN verifications v ON p.user_id = v.user_id
        LEFT JOIN users u ON p.user_id = u.id
@@ -280,32 +281,9 @@ export async function GET(request: Request) {
 
     // ---------- Map to TenantCard ----------
     const tenants: TenantCard[] = rows.map((row) => {
-      const profileForScore = {
-        id: row.profile_id,
-        user_id: row.user_id,
-        name: row.name,
-        age_range: row.age_range,
-        family_type: row.family_type,
-        pets: row.pets,
-        smoking: row.smoking,
-        stay_time: row.stay_time,
-        duration: row.duration,
-        noise_level: row.noise_level,
-        bio: row.bio,
-        intro: null,
-        trust_score: row.trust_score,
-        is_complete: true,
-        created_at: row.created_at,
-        updated_at: row.created_at,
-      } as import('@/types/database').Profile
-
-      const scoreResult = calculateTrustScore({
-        profile: profileForScore,
-        verification: row.verification ?? null,
-      })
-
       return {
         profile_id: row.profile_id,
+        user_id: row.user_id,
         name: maskName(row.name),
         age_range: row.age_range,
         family_type: row.family_type,
@@ -314,7 +292,7 @@ export async function GET(request: Request) {
         stay_time: row.stay_time,
         duration: row.duration,
         noise_level: row.noise_level,
-        trust_score: scoreResult.total,
+        trust_score: row.trust_score,
         bio: row.bio,
         verified: {
           employment: row.employment_verified ?? false,
@@ -331,7 +309,16 @@ export async function GET(request: Request) {
     let nextCursor: string | null = null
     if (rows.length === limit && rows.length > 0) {
       const last = rows[rows.length - 1]
-      nextCursor = encodeCursor(last.trust_score, last.profile_id)
+      const cursorValue =
+        sort === 'created_desc'
+          ? (last.created_at instanceof Date ? last.created_at.toISOString() : String(last.created_at))
+          : sort === 'reference_desc'
+            ? parseInt(last.ref_count ?? '0', 10)
+            : sort === 'verified_desc'
+              ? parseInt(last.verified_count ?? '0', 10)
+              : last.trust_score
+
+      nextCursor = encodeTenantCursor(sort, cursorValue, last.profile_id)
     }
 
     return NextResponse.json({

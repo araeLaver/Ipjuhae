@@ -20,8 +20,8 @@ interface ExistingResponse {
 }
 
 export default function SurveyPage() {
-  const params = useParams()
-  const token = params.token as string
+  const params = useParams<{ token: string }>()
+  const token = params.token
 
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')

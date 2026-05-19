@@ -70,6 +70,18 @@ async function uploadToLocal(buffer: Buffer, key: string): Promise<string> {
   return `/uploads/listings/${filename}`
 }
 
+function assertProductionStorage(): void {
+  const hasBucket = !!(process.env.AWS_BUCKET_NAME || process.env.S3_BUCKET)
+  const hasCredentials = !!(
+    (process.env.AWS_ACCESS_KEY_ID || process.env.S3_ACCESS_KEY_ID) &&
+    (process.env.AWS_SECRET_ACCESS_KEY || process.env.S3_SECRET_ACCESS_KEY)
+  )
+
+  if (process.env.NODE_ENV === 'production' && (!hasBucket || !hasCredentials)) {
+    throw new Error('운영환경에서는 매물 이미지를 위해 S3 저장소가 필수입니다.')
+  }
+}
+
 /**
  * 매물 사진 업로드
  * @param file File 객체 또는 Buffer
@@ -80,6 +92,8 @@ export async function uploadListingPhoto(
   file: File | Buffer,
   filename: string
 ): Promise<string> {
+  assertProductionStorage()
+
   const buffer =
     file instanceof Buffer ? file : Buffer.from(await (file as File).arrayBuffer())
 
@@ -100,6 +114,9 @@ export async function uploadListingPhoto(
     try {
       return await uploadToS3(buffer, key, contentType)
     } catch (err) {
+      if (process.env.NODE_ENV === 'production') {
+        throw err instanceof Error ? err : new Error('S3 업로드에 실패했습니다.')
+      }
       console.error('[upload] S3 업로드 실패, 로컬 저장소로 fallback:', err)
       return await uploadToLocal(buffer, key)
     }

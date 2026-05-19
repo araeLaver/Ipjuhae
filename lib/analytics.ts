@@ -2,6 +2,14 @@ import { query } from './db'
 
 const isDev = process.env.NODE_ENV === 'development'
 
+function shouldLogServerAnalyticsError(): boolean {
+  if (process.env.ANALYTICS_LOG_DB_ERRORS === 'true') {
+    return true
+  }
+
+  return process.env.NODE_ENV === 'production'
+}
+
 export type EventName =
   | 'page_view'
   | 'user_signup'
@@ -42,7 +50,9 @@ export async function trackServer(event: EventName, options: TrackOptions = {}):
       [event, JSON.stringify(mergedProps), userId ?? null, sessionId ?? null]
     )
   } catch (err) {
-    console.error('[analytics:trackServer] failed to track event', event, err)
+    if (shouldLogServerAnalyticsError()) {
+      console.error('[analytics:trackServer] failed to track event', event, err)
+    }
   }
 }
 

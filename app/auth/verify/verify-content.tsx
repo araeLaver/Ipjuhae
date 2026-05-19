@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 
 export default function VerifyContent() {
   const searchParams = useSearchParams()
-  const email = searchParams.get('email')
+  const email = searchParams?.get('email')
 
   return (
     <div className="min-h-screen bg-muted/50 dark:bg-background flex flex-col items-center justify-center p-4">

@@ -4,12 +4,30 @@
  * 사용법: npx tsx db/migrate.ts
  *
  * 마이그레이션 순서:
- * 1. schema.sql - 기본 스키마 생성
- * 2. migration-002-social-auth.sql - 소셜 로그인, 휴대폰 인증, 서류 업로드
- * 3. migration-003-favorites.sql - 세입자 즐겨찾기
- * 4. migration-004-messages.sql - 대화방, 메시지
- * 5. migration-005-properties.sql - 매물, 매물 이미지
- * 6. migration-006-waitlist.sql - 대기자 명단
+ *  1. schema.sql                              - 기본 스키마 생성
+ *  2. migration-002-social-auth.sql           - 소셜 로그인, 휴대폰 인증, 서류 업로드
+ *  3. migration-003-favorites.sql             - 세입자 즐겨찾기
+ *  4. migration-004-messages.sql              - 대화방, 메시지
+ *  5. migration-005-properties.sql            - 매물, 매물 이미지
+ *  6. migration-006-waitlist.sql              - 대기자 명단
+ *  7. migration-007-tenant-search.sql         - 세입자 검색 인덱스
+ *  8. migration-008-admin.sql                 - 관리자 타입 + 서류 심사
+ *  9. migration-009-notifications.sql         - 알림 시스템
+ * 10. migration-010-early-access.sql          - 얼리액세스
+ * 11. migration-010-mvp-schema-gaps.sql       - listings/구독/인증 컬럼 보강
+ * 12. migration-011-tenant-profile.sql        - 임차인 프로필
+ * 13. migration-011-reviews.sql               - 리뷰/평점
+ * 14. migration-012-references-trust-score.sql- 레퍼런스 + 신뢰점수
+ * 15. migration-012-stripe.sql                - Stripe 결제 연동
+ * 16. migration-013-analytics-events.sql      - 애널리틱스 이벤트
+ * 17. migration-013-notification-prefs.sql    - 알림 수신 설정
+ * 18. migration-014-beta-invites.sql          - 베타 초대 시스템
+ * 19. migration-014-premium.sql               - 프리미엄 기능
+ * 20. migration-015-listings.sql              - 매물 관리 강화
+ * 21. migration-015-cron-fix.sql              - Cron 작업 수정
+ * 22. migration-016-listings-pet.sql          - 매물 반려동물 허용 여부
+ * 23. migration-016-analytics.sql             - 분석 기능 보강
+ * 24. migration-020-properties-pet-allowed.sql - properties.pet_allowed + listings 데이터 통합
  */
 
 import { Pool } from 'pg'
@@ -42,17 +60,18 @@ const migrations = [
   'migration-008-admin.sql',
   'migration-009-notifications.sql',
   'migration-010-early-access.sql',
+  'migration-010-mvp-schema-gaps.sql',
   'migration-011-tenant-profile.sql',
-  'migration-015-listings.sql',
-  'migration-016-listings-pet.sql',
   'migration-011-reviews.sql',
-  'migration-012-stripe.sql',
   'migration-012-references-trust-score.sql',
+  'migration-012-stripe.sql',
   'migration-013-analytics-events.sql',
   'migration-013-notification-prefs.sql',
   'migration-014-beta-invites.sql',
   'migration-014-premium.sql',
+  'migration-015-listings.sql',
   'migration-015-cron-fix.sql',
+  'migration-016-listings-pet.sql',
   'migration-016-analytics.sql',
   'migration-020-properties-pet-allowed.sql',
 ]

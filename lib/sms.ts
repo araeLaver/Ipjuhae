@@ -20,7 +20,15 @@ interface SMSResult {
 
 type SMSProvider = 'mock' | 'nhn' | 'twilio'
 
-const SMS_PROVIDER = (process.env.SMS_PROVIDER as SMSProvider) || 'mock'
+const SMS_PROVIDER: SMSProvider = process.env.SMS_PROVIDER === 'nhn' || process.env.SMS_PROVIDER === 'twilio'
+  ? process.env.SMS_PROVIDER
+  : 'mock'
+
+function assertProductionReady(provider: SMSProvider): void {
+  if (process.env.NODE_ENV === 'production' && provider === 'mock') {
+    throw new Error('SMS_PROVIDER가 mock로 설정되어 있습니다. 운영에서는 nhn 또는 twilio 중 하나를 사용해야 합니다.')
+  }
+}
 
 /**
  * Mock SMS 발송 (개발용)
@@ -152,6 +160,8 @@ async function sendTwilioSMS(phoneNumber: string, message: string): Promise<SMSR
  * SMS 발송 (프로바이더 자동 선택)
  */
 export async function sendSMS(phoneNumber: string, message: string): Promise<SMSResult> {
+  assertProductionReady(SMS_PROVIDER)
+
   switch (SMS_PROVIDER) {
     case 'nhn':
       return sendNhnSMS(phoneNumber, message)

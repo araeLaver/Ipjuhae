@@ -59,8 +59,8 @@ export async function GET(request: NextRequest) {
         userId: user.id,
         properties: { method: 'magic_link', email },
       })
-      if (isDev) console.log('[auth/callback] New user → redirecting to /onboarding')
-      return NextResponse.redirect(new URL('/onboarding', origin))
+      if (isDev) console.log('[auth/callback] New user → redirecting to /onboarding/basic')
+      return NextResponse.redirect(new URL('/onboarding/basic', origin))
     }
 
     const destination =

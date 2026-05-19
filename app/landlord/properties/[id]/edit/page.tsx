@@ -12,9 +12,9 @@ import { Property } from '@/types/database'
 import { toast } from 'sonner'
 
 export default function EditPropertyPage() {
-  const params = useParams()
+  const params = useParams<{ id: string }>()
   const router = useRouter()
-  const propertyId = params.id as string
+  const propertyId = params.id
 
   const [property, setProperty] = useState<Property | null>(null)
   const [isLoading, setIsLoading] = useState(true)

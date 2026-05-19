@@ -65,7 +65,16 @@ interface IdentityVerificationResult extends VerificationResult {
 
 type VerificationProvider = 'mock' | 'codef' | 'nice'
 
-const VERIFICATION_PROVIDER = (process.env.VERIFICATION_PROVIDER as VerificationProvider) || 'mock'
+const VERIFICATION_PROVIDER: VerificationProvider =
+  process.env.VERIFICATION_PROVIDER === 'codef' || process.env.VERIFICATION_PROVIDER === 'nice'
+    ? process.env.VERIFICATION_PROVIDER
+    : 'mock'
+
+function assertProductionReady(provider: VerificationProvider): void {
+  if (process.env.NODE_ENV === 'production' && provider === 'mock') {
+    throw new Error('VERIFICATION_PROVIDER가 mock로 설정되어 있습니다. 운영에서는 codef 또는 nice를 사용해야 합니다.')
+  }
+}
 
 // CODEF API 엔드포인트
 const CODEF_API_BASE = process.env.CODEF_API_BASE || 'https://api.codef.io'
@@ -501,6 +510,8 @@ export async function verifyEmployment(
   companyName: string,
   userIdentity?: { name: string; birthDate: string; phoneNumber: string }
 ): Promise<EmploymentVerificationResult> {
+  assertProductionReady(VERIFICATION_PROVIDER)
+
   switch (VERIFICATION_PROVIDER) {
     case 'codef':
       if (!userIdentity) {
@@ -519,6 +530,8 @@ export async function verifyIncome(
   incomeRange: string,
   userIdentity?: { name: string; birthDate: string; phoneNumber: string }
 ): Promise<IncomeVerificationResult> {
+  assertProductionReady(VERIFICATION_PROVIDER)
+
   switch (VERIFICATION_PROVIDER) {
     case 'codef':
       if (!userIdentity) {
@@ -536,6 +549,8 @@ export async function verifyIncome(
 export async function verifyCredit(
   userIdentity?: { name: string; birthDate: string; phoneNumber: string }
 ): Promise<CreditVerificationResult> {
+  assertProductionReady(VERIFICATION_PROVIDER)
+
   switch (VERIFICATION_PROVIDER) {
     case 'codef':
       if (!userIdentity) {
@@ -555,6 +570,8 @@ export async function verifyIdentity(
   phoneNumber: string,
   birthDate: string
 ): Promise<IdentityVerificationResult> {
+  assertProductionReady(VERIFICATION_PROVIDER)
+
   switch (VERIFICATION_PROVIDER) {
     case 'nice':
       return niceIdentityVerification(name, phoneNumber, birthDate)

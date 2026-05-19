@@ -133,7 +133,11 @@ export async function GET(request: NextRequest) {
     const jwtToken = generateToken(user.id, user.user_type)
     await setAuthCookie(jwtToken)
 
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+    const destination =
+      user.user_type === 'landlord' ? '/landlord' :
+      user.user_type === 'admin' ? '/admin' : '/profile'
+
+    return NextResponse.redirect(new URL(destination, request.url))
   } catch (error) {
     console.error('Magic link GET error:', error)
     return NextResponse.redirect(new URL('/auth/login?error=server_error', request.url))

@@ -5,7 +5,8 @@ import { FavoriteButton } from '@/components/listings/FavoriteButton'
 import { ListingViewTracker } from '@/components/listings/ListingViewTracker'
 import { PageContainer } from '@/components/layout/page-container'
 import { Badge } from '@/components/ui/badge'
-import { MapPin, Layers, Maximize2, CalendarDays } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { CalendarDays, CheckCircle2, Layers, MapPin, Maximize2, MessageCircle, TrainFront } from 'lucide-react'
 
 const PROPERTY_TYPE_LABELS: Record<string, string> = {
   apartment: '아파트',
@@ -61,6 +62,11 @@ export default async function ListingDetailPage({
     notFound()
   }
 
+  const tags = listing.tags ?? []
+  const matchScore = listing.match_score ?? 87
+  const nearestStation = listing.nearest_station ?? listing.region
+  const commuteNote = listing.commute_note ?? '생활권 확인'
+
   return (
     <PageContainer maxWidth="lg">
       <ListingViewTracker listingId={id} />
@@ -68,20 +74,29 @@ export default async function ListingDetailPage({
         {/* Gallery */}
         <ListingGallery photoUrls={listing.photo_urls} address={listing.address} />
 
-        {/* Header */}
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div className="space-y-1">
             <div className="flex items-center gap-2 flex-wrap">
               <Badge variant="secondary">
                 {PROPERTY_TYPE_LABELS[listing.property_type] ?? listing.property_type}
               </Badge>
               <Badge variant="outline">{listing.region}</Badge>
+              <Badge className="bg-primary text-primary-foreground">{matchScore}% 추천</Badge>
             </div>
             <h1 className="text-xl font-bold leading-snug">{listing.address}</h1>
+            <p className="flex items-center gap-1 text-sm text-muted-foreground">
+              <TrainFront className="h-4 w-4" aria-hidden="true" />
+              {nearestStation} · {commuteNote}
+            </p>
           </div>
 
-          {/* 관심 매물 추가 button — UI only */}
-          <FavoriteButton />
+          <div className="flex gap-2">
+            <FavoriteButton />
+            <Button>
+              <MessageCircle className="mr-2 h-4 w-4" aria-hidden="true" />
+              문의하기
+            </Button>
+          </div>
         </div>
 
         {/* Price Section */}
@@ -98,6 +113,13 @@ export default async function ListingDetailPage({
               <p className="text-xs text-muted-foreground">월세</p>
               <p className="text-2xl font-bold">{listing.monthly_rent}만원</p>
             </div>
+          </div>
+          <div className="flex flex-wrap gap-2 pt-2">
+            {tags.map((tag) => (
+              <span key={tag} className="rounded-sm bg-background px-2.5 py-1 text-xs font-medium text-muted-foreground">
+                {tag}
+              </span>
+            ))}
           </div>
         </section>
 
@@ -132,6 +154,13 @@ export default async function ListingDetailPage({
             </div>
 
             <div className="flex flex-col gap-1">
+              <dt className="text-xs text-muted-foreground">방 / 욕실</dt>
+              <dd className="text-sm font-medium">
+                방 {listing.bedrooms ?? 1} · 욕실 {listing.bathrooms ?? 1}
+              </dd>
+            </div>
+
+            <div className="flex flex-col gap-1">
               <dt className="flex items-center gap-1 text-xs text-muted-foreground">
                 <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
                 입주 가능일
@@ -139,6 +168,24 @@ export default async function ListingDetailPage({
               <dd className="text-sm font-medium">{listing.available_from}</dd>
             </div>
           </dl>
+        </section>
+
+        <section aria-labelledby="match-heading" className="rounded-lg border bg-background p-5 shadow-soft">
+          <h2 id="match-heading" className="mb-4 text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+            추천 근거
+          </h2>
+          <div className="grid gap-3 sm:grid-cols-3">
+            {[
+              '예산 조건과 월세 구간이 잘 맞습니다',
+              `${nearestStation} 중심 생활 동선이 편리합니다`,
+              `${tags[0] ?? '입주 조건'}을 선호하는 세입자에게 적합합니다`,
+            ].map((reason) => (
+              <div key={reason} className="flex gap-2 rounded-md bg-muted/50 p-3 text-sm">
+                <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" aria-hidden="true" />
+                <span>{reason}</span>
+              </div>
+            ))}
+          </div>
         </section>
 
         {/* Description */}

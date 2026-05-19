@@ -30,7 +30,14 @@ interface UploadOptions {
 
 type StorageProvider = 'mock' | 's3'
 
-const STORAGE_PROVIDER = (process.env.STORAGE_PROVIDER as StorageProvider) || 'mock'
+const STORAGE_PROVIDER: StorageProvider =
+  process.env.STORAGE_PROVIDER === 's3' ? 's3' : 'mock'
+
+function assertProductionReady(provider: StorageProvider): void {
+  if (process.env.NODE_ENV === 'production' && provider === 'mock') {
+    throw new Error('STORAGE_PROVIDER가 mock로 설정되어 있습니다. 운영에서는 s3를 사용해야 합니다.')
+  }
+}
 
 /**
  * S3/R2 클라이언트 (lazy init)
@@ -140,6 +147,8 @@ async function uploadS3(options: UploadOptions): Promise<UploadResult> {
  * 파일 업로드 (프로바이더 자동 선택)
  */
 export async function uploadFile(options: UploadOptions): Promise<UploadResult> {
+  assertProductionReady(STORAGE_PROVIDER)
+
   switch (STORAGE_PROVIDER) {
     case 's3':
       return uploadS3(options)
@@ -260,6 +269,8 @@ export async function uploadProfileImage(
  * 파일 삭제
  */
 export async function deleteFile(key: string): Promise<{ success: boolean; error?: string }> {
+  assertProductionReady(STORAGE_PROVIDER)
+
   if (STORAGE_PROVIDER === 'mock') {
     logger.info('파일 삭제 (Mock)', { key })
     return { success: true }

@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { MapPin, Home } from 'lucide-react'
+import { MapPin, Home, TrainFront, Sparkles } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import type { MockListing } from '@/lib/mock-listings'
@@ -26,6 +26,8 @@ interface ListingCardProps {
 export function ListingCard({ listing }: ListingCardProps) {
   const regionLabel = listing.address.split(' ').slice(0, 2).join(' ')
   const mainPhoto = listing.photo_urls[0] ?? null
+  const tags = listing.tags ?? []
+  const matchScore = listing.match_score ?? 87
 
   return (
     <Link
@@ -51,6 +53,10 @@ export function ListingCard({ listing }: ListingCardProps) {
               <Home className="h-10 w-10 text-muted-foreground" aria-hidden="true" />
             </div>
           )}
+          <div className="absolute left-3 top-3 flex items-center gap-1 rounded-md bg-background/90 px-2 py-1 text-xs font-semibold shadow-soft">
+            <Sparkles className="h-3.5 w-3.5 text-accent" aria-hidden="true" />
+            {matchScore}% 추천
+          </div>
         </div>
 
         {/* Content */}
@@ -66,6 +72,10 @@ export function ListingCard({ listing }: ListingCardProps) {
             <MapPin className="h-3 w-3 flex-shrink-0" aria-hidden="true" />
             {regionLabel}
           </p>
+          <p className="text-xs text-muted-foreground flex items-center gap-1 line-clamp-1">
+            <TrainFront className="h-3 w-3 flex-shrink-0" aria-hidden="true" />
+            {listing.nearest_station ?? listing.region} · {listing.commute_note ?? '생활권 확인'}
+          </p>
 
           <div>
             <p className="font-bold text-primary">
@@ -74,6 +84,14 @@ export function ListingCard({ listing }: ListingCardProps) {
             <p className="text-sm text-muted-foreground">
               월세 {listing.monthly_rent}만
             </p>
+          </div>
+
+          <div className="flex flex-wrap gap-1 pt-1">
+            {tags.slice(0, 3).map((tag) => (
+              <span key={tag} className="rounded-sm bg-secondary px-2 py-1 text-xs text-secondary-foreground">
+                {tag}
+              </span>
+            ))}
           </div>
 
           <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">

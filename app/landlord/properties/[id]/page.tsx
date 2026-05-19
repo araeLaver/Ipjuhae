@@ -17,9 +17,9 @@ import { Property, PropertyImage } from '@/types/database'
 import { toast } from 'sonner'
 
 export default function PropertyDetailPage() {
-  const params = useParams()
+  const params = useParams<{ id: string }>()
   const router = useRouter()
-  const propertyId = params.id as string
+  const propertyId = params.id
 
   const [property, setProperty] = useState<Property | null>(null)
   const [images, setImages] = useState<PropertyImage[]>([])

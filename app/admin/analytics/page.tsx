@@ -1,5 +1,7 @@
 import { query } from '@/lib/db'
 
+export const dynamic = 'force-dynamic'
+
 interface EventRow {
   event_name: string
   count: string

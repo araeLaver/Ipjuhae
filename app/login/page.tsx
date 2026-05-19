@@ -55,6 +55,7 @@ function LoginContent() {
   }, [cooldown])
 
   useEffect(() => {
+    if (!searchParams) return
     const error = searchParams.get('error')
     if (error && ERROR_MESSAGES[error]) {
       toast.error(ERROR_MESSAGES[error])

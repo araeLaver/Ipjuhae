@@ -67,6 +67,7 @@ function SubscriptionContent() {
   const [upgrading, setUpgrading] = useState<string | null>(null)
 
   useEffect(() => {
+    if (!searchParams) return
     if (searchParams.get('success') === 'true') {
       toast.success('결제가 완료되었습니다! 구독이 활성화됩니다.')
     } else if (searchParams.get('canceled') === 'true') {

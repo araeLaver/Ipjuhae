@@ -5,8 +5,8 @@ import { PageContainer } from '@/components/layout/page-container'
 import { ChatRoom } from '@/components/messages/chat-room'
 
 export default function LandlordChatPage() {
-  const params = useParams()
-  const conversationId = params.id as string
+  const params = useParams<{ id: string }>()
+  const conversationId = params.id
 
   return (
     <PageContainer maxWidth="md">

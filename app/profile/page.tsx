@@ -9,6 +9,17 @@ import { ProfileImageUpload } from '@/components/profile/profile-image-upload'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 import { PageContainer } from '@/components/layout/page-container'
 import { Edit, Shield, Users } from 'lucide-react'
 import { AccountStatus } from '@/components/profile/account-status'
@@ -127,7 +138,65 @@ export default function ProfilePage() {
             </Button>
           </Link>
         </div>
+
+        <AccountDeleteSection />
       </div>
     </PageContainer>
+  )
+}
+
+function AccountDeleteSection() {
+  const router = useRouter()
+  const [open, setOpen] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function handleDelete() {
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/account/delete', { method: 'DELETE' })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setError(data.error || '계정 삭제에 실패했습니다.')
+        return
+      }
+      router.push('/login?deleted=1')
+    } catch {
+      setError('계정 삭제 중 오류가 발생했습니다.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <>
+      <AlertDialog open={open} onOpenChange={setOpen}>
+        <AlertDialogTrigger asChild>
+          <Button variant="ghost" className="w-full text-destructive hover:text-destructive hover:bg-destructive/10">
+            계정 삭제
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>정말로 계정을 삭제하시겠습니까?</AlertDialogTitle>
+            <AlertDialogDescription>
+              계정을 삭제하면 모든 프로필 정보, 인증 내역, 메시지가 영구적으로 삭제됩니다. 이 작업은 되돌릴 수 없습니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {error && <p className="text-sm text-destructive px-1">{error}</p>}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={loading}>취소</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={loading}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {loading ? '삭제 중...' : '계정 삭제'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   )
 }

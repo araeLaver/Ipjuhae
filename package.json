@@ -4,7 +4,7 @@
   "description": "세입자 프로필 플랫폼",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "NODE_ENV=production next build",
     "start": "node server.js",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
@@ -13,6 +13,9 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
+    "launch:check": "NODE_ENV=production node scripts/prelaunch-check.mjs",
+    "launch:verify": "npm run launch:check && npm run typecheck && npm run test:run && npm run build",
+    "launch:smoke": "node scripts/launch-smoke.mjs",
     "db:migrate": "npx tsx db/migrate.ts"
   },
   "dependencies": {

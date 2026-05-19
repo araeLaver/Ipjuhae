@@ -27,8 +27,16 @@ interface EmailOptions {
 
 type EmailProvider = 'mock' | 'resend' | 'sendgrid'
 
-const EMAIL_PROVIDER = (process.env.EMAIL_PROVIDER as EmailProvider) || 'mock'
+const EMAIL_PROVIDER: EmailProvider = process.env.EMAIL_PROVIDER === 'resend' || process.env.EMAIL_PROVIDER === 'sendgrid'
+  ? process.env.EMAIL_PROVIDER
+  : 'mock'
 const EMAIL_FROM = process.env.EMAIL_FROM || 'noreply@ipjuhae.com'
+
+function assertProductionReady(provider: EmailProvider): void {
+  if (process.env.NODE_ENV === 'production' && provider === 'mock') {
+    throw new Error('EMAIL_PROVIDER가 mock로 설정되어 있습니다. 운영에서는 resend 또는 sendgrid를 사용해야 합니다.')
+  }
+}
 
 /**
  * Mock 이메일 발송 (개발용)
@@ -152,6 +160,8 @@ async function sendSendGridEmail(options: EmailOptions): Promise<EmailResult> {
  * 이메일 발송 (프로바이더 자동 선택)
  */
 export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
+  assertProductionReady(EMAIL_PROVIDER)
+
   switch (EMAIL_PROVIDER) {
     case 'resend':
       return sendResendEmail(options)
@@ -266,14 +276,43 @@ export async function sendMagicLink(email: string, token: string, baseUrl: strin
     })
 
     logger.info('Magic Link 이메일 발송 성공', { to: email })
-  } else {
-    // 개발 환경: 콘솔에 출력
-    logger.info('=== Magic Link (개발 환경 — SMTP 미설정) ===')
+    return
+  }
+
+  const emailResult = await sendEmail({
+    to: email,
+    subject: '[입주해] 로그인 링크',
+    text: `아래 링크를 클릭하면 자동으로 로그인됩니다 (15분 내 사용):\n\n${magicLinkUrl}`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
+        <h2 style="color: #111827;">입주해 로그인</h2>
+        <p style="color: #374151;">아래 버튼을 클릭하면 자동으로 로그인됩니다.</p>
+        <p style="color: #6b7280; font-size: 14px;">이 링크는 15분 동안 유효하며, 한 번만 사용할 수 있습니다.</p>
+        <a
+          href="${magicLinkUrl}"
+          style="display:inline-block;margin-top:16px;padding:12px 24px;background-color:#2563eb;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;"
+        >
+          로그인하기
+        </a>
+        <p style="margin-top:24px;color:#9ca3af;font-size:12px;">
+          이 이메일을 요청하지 않으셨다면 무시하셔도 됩니다.
+        </p>
+      </div>
+    `,
+  })
+
+  if (!emailResult.success) {
+    throw new Error(emailResult.error || '이메일 발송에 실패했습니다')
+  }
+
+  logger.info('Magic Link 이메일 발송 성공', { to: email })
+  if (process.env.NODE_ENV !== 'production') {
+    logger.info('=== Magic Link URL ===')
     logger.info(`받는 사람: ${email}`)
     logger.info(`Magic Link URL: ${magicLinkUrl}`)
-    logger.info('============================================')
     console.log('\n🔗 Magic Link URL:', magicLinkUrl, '\n')
   }
+  return
 }
 
 /**

@@ -39,6 +39,7 @@ interface LifestyleFormProps {
 
 export function LifestyleForm({ initialData }: LifestyleFormProps) {
   const router = useRouter()
+  const [error, setError] = useState<string | null>(null)
 
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
@@ -71,7 +72,7 @@ export function LifestyleForm({ initialData }: LifestyleFormProps) {
       router.push('/onboarding/complete')
     } catch (error) {
       console.error('Error saving lifestyle info:', error)
-      alert('저장 중 오류가 발생했습니다.')
+      setError('저장 중 오류가 발생했습니다.')
     } finally {
       setIsLoading(false)
     }
@@ -174,6 +175,9 @@ export function LifestyleForm({ initialData }: LifestyleFormProps) {
             </p>
           </div>
 
+          {error && (
+            <p className="text-sm text-destructive text-center">{error}</p>
+          )}
           <div className="flex gap-2">
             <Button
               type="button"

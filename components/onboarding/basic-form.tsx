@@ -26,6 +26,7 @@ export function BasicForm({ initialData }: BasicFormProps) {
   const router = useRouter()
 
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     name: initialData?.name || '',
     age_range: initialData?.age_range || ('' as AgeRange),
@@ -74,7 +75,7 @@ export function BasicForm({ initialData }: BasicFormProps) {
       router.push('/onboarding/lifestyle')
     } catch (error) {
       console.error('Error saving basic info:', error)
-      alert('저장 중 오류가 발생했습니다.')
+      setError('저장 중 오류가 발생했습니다.')
     } finally {
       setIsLoading(false)
     }
@@ -191,6 +192,9 @@ export function BasicForm({ initialData }: BasicFormProps) {
             </div>
           </div>
 
+          {error && (
+            <p className="text-sm text-destructive text-center">{error}</p>
+          )}
           <Button
             type="submit"
             className="w-full"
