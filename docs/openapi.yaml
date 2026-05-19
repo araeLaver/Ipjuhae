@@ -1,0 +1,984 @@
+openapi: 3.0.3
+info:
+  title: Rentme MVP API
+  version: 0.1.0
+  description: MVP authentication, landlord property CRUD, and public property search endpoints.
+servers:
+  - url: http://localhost:3000
+    description: Local development
+tags:
+  - name: Auth
+  - name: Landlord Properties
+  - name: Public Properties
+security:
+  - cookieAuth: []
+paths:
+  /api/auth/signup:
+    post:
+      tags: [Auth]
+      summary: Create a tenant or landlord account.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignupRequest'
+      responses:
+        '200':
+          description: Account created and auth cookie set.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignupResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          description: Beta invite token is missing, invalid, or already used.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: Log in with email and password.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Logged in and auth cookie set.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /api/auth/logout:
+    post:
+      tags: [Auth]
+      summary: Clear the auth cookie.
+      responses:
+        '200':
+          description: Logged out.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+  /api/auth/social/{provider}:
+    get:
+      tags: [Auth]
+      summary: Start OAuth login for Kakao, Naver, or Google.
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/AuthProvider'
+      responses:
+        '302':
+          description: Redirects to the provider authorization URL and sets an oauth_state cookie.
+        '400':
+          description: Unsupported provider.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/auth/social/{provider}/callback:
+    get:
+      tags: [Auth]
+      summary: Complete OAuth login or redirect to social signup.
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/AuthProvider'
+        - name: code
+          in: query
+          schema:
+            type: string
+        - name: state
+          in: query
+          schema:
+            type: string
+        - name: error
+          in: query
+          schema:
+            type: string
+      responses:
+        '302':
+          description: Redirects to profile, social signup, or login with an error query parameter.
+  /api/auth/signup/social:
+    post:
+      tags: [Auth]
+      summary: Create an account after OAuth profile collection.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SocialSignupRequest'
+      responses:
+        '200':
+          description: Social account created and auth cookie set.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignupResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /api/auth/magic-link:
+    post:
+      tags: [Auth]
+      summary: Send a login magic link to an email address.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  maxLength: 255
+      responses:
+        '200':
+          description: Link email queued.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    get:
+      tags: [Auth]
+      summary: Verify a magic-link token and set the auth cookie.
+      security: []
+      parameters:
+        - name: token
+          in: query
+          schema:
+            type: string
+      responses:
+        '302':
+          description: Redirects to dashboard on success or login with an error query parameter.
+  /api/auth/phone/send:
+    post:
+      tags: [Auth]
+      summary: Send a six-digit phone verification code.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phoneNumber]
+              properties:
+                phoneNumber:
+                  type: string
+                  pattern: '^01[016789][0-9]{7,8}$'
+      responses:
+        '200':
+          description: Verification code generated.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, message]
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  code:
+                    type: string
+                    description: Returned only outside production.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /api/auth/phone/verify:
+    post:
+      tags: [Auth]
+      summary: Verify a phone code and mark the current user verified when logged in.
+      security:
+        - {}
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phoneNumber, code]
+              properties:
+                phoneNumber:
+                  type: string
+                code:
+                  type: string
+      responses:
+        '200':
+          description: Phone code verified.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, message]
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /api/auth/me:
+    get:
+      tags: [Auth]
+      summary: Return the current authenticated user.
+      responses:
+        '200':
+          description: Current user profile.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeResponse'
+        '401':
+          description: No valid session.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [user]
+                properties:
+                  user:
+                    type: object
+                    nullable: true
+        '500':
+          description: Session lookup failed.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [user]
+                properties:
+                  user:
+                    type: object
+                    nullable: true
+  /api/landlord/properties:
+    get:
+      tags: [Landlord Properties]
+      summary: List properties owned by the authenticated landlord.
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/PropertyStatus'
+      responses:
+        '200':
+          description: Paginated landlord property list.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [properties, pagination]
+                properties:
+                  properties:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/LandlordProperty'
+                  pagination:
+                    $ref: '#/components/schemas/PagePagination'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/ForbiddenLandlord'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    post:
+      tags: [Landlord Properties]
+      summary: Create a property for the authenticated landlord.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePropertyRequest'
+      responses:
+        '200':
+          description: Created property.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [property]
+                properties:
+                  property:
+                    $ref: '#/components/schemas/LandlordProperty'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/ForbiddenLandlord'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /api/landlord/properties/{id}:
+    parameters:
+      - $ref: '#/components/parameters/PropertyId'
+    get:
+      tags: [Landlord Properties]
+      summary: Get one property owned by the authenticated landlord.
+      responses:
+        '200':
+          description: Property with ordered images.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [property, images]
+                properties:
+                  property:
+                    $ref: '#/components/schemas/LandlordProperty'
+                  images:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PropertyImage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/ForbiddenLandlord'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    put:
+      tags: [Landlord Properties]
+      summary: Update one property owned by the authenticated landlord.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePropertyRequest'
+      responses:
+        '200':
+          description: Updated property.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [property]
+                properties:
+                  property:
+                    $ref: '#/components/schemas/LandlordProperty'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/ForbiddenLandlord'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    delete:
+      tags: [Landlord Properties]
+      summary: Delete one property owned by the authenticated landlord.
+      responses:
+        '200':
+          description: Deleted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/ForbiddenLandlord'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /api/properties:
+    get:
+      tags: [Public Properties]
+      summary: Search public available properties.
+      security: []
+      parameters:
+        - name: region
+          in: query
+          schema:
+            type: string
+        - name: type
+          in: query
+          schema:
+            $ref: '#/components/schemas/PropertyType'
+        - name: minDeposit
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+        - name: maxDeposit
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+        - name: minRent
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+        - name: maxRent
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+        - name: options
+          in: query
+          description: Comma-separated options list.
+          schema:
+            type: string
+            example: aircon,washer
+        - name: q
+          in: query
+          description: Case-insensitive title or address search.
+          schema:
+            type: string
+        - name: cursor
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [created_at, deposit, monthly_rent, view_count]
+            default: created_at
+        - name: order
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: Cursor-paginated available property results.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [properties, hasMore]
+                properties:
+                  properties:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PublicProperty'
+                  nextCursor:
+                    type: string
+                    nullable: true
+                  hasMore:
+                    type: boolean
+        '500':
+          $ref: '#/components/responses/ServerError'
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: auth_token
+  parameters:
+    PropertyId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    AuthProvider:
+      name: provider
+      in: path
+      required: true
+      schema:
+        type: string
+        enum: [kakao, naver, google]
+    Page:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 20
+  responses:
+    BadRequest:
+      description: Validation or malformed request error.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Missing or invalid auth cookie.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ForbiddenLandlord:
+      description: The authenticated user is not a landlord.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: The requested property does not exist or is not owned by this landlord.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    RateLimited:
+      description: Too many requests.
+      headers:
+        Retry-After:
+          schema:
+            type: string
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ServerError:
+      description: Internal server error.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+    SuccessResponse:
+      type: object
+      required: [success]
+      properties:
+        success:
+          type: boolean
+          example: true
+    UserType:
+      type: string
+      enum: [tenant, landlord]
+    SignupRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 255
+        password:
+          type: string
+          minLength: 8
+          maxLength: 100
+          description: Must include at least one letter and one number.
+        userType:
+          $ref: '#/components/schemas/UserType'
+        inviteToken:
+          type: string
+          description: Required only when beta mode is enabled.
+    SignupResponse:
+      type: object
+      required: [success, userId, userType]
+      properties:
+        success:
+          type: boolean
+        userId:
+          type: string
+          format: uuid
+        userType:
+          $ref: '#/components/schemas/UserType'
+    SocialSignupRequest:
+      type: object
+      required: [provider, providerId, termsAgreed, privacyAgreed]
+      properties:
+        provider:
+          type: string
+          enum: [kakao, naver, google]
+        providerId:
+          type: string
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        profileImage:
+          type: string
+          format: uri
+        userType:
+          $ref: '#/components/schemas/UserType'
+        termsAgreed:
+          type: boolean
+        privacyAgreed:
+          type: boolean
+        marketingAgreed:
+          type: boolean
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 255
+        password:
+          type: string
+          minLength: 1
+    LoginResponse:
+      type: object
+      required: [success, userId, user]
+      properties:
+        success:
+          type: boolean
+        userId:
+          type: string
+          format: uuid
+        user:
+          type: object
+          required: [user_type]
+          properties:
+            user_type:
+              $ref: '#/components/schemas/UserType'
+    MeResponse:
+      type: object
+      required: [user]
+      properties:
+        user:
+          type: object
+          required: [id, email, userType]
+          properties:
+            id:
+              type: string
+              format: uuid
+            email:
+              type: string
+              format: email
+            name:
+              type: string
+              nullable: true
+            userType:
+              $ref: '#/components/schemas/UserType'
+    PropertyType:
+      type: string
+      enum: [apartment, villa, officetel, oneroom, house, other]
+    PropertyStatus:
+      type: string
+      enum: [available, reserved, rented, hidden]
+    CreatePropertyRequest:
+      type: object
+      required: [title, address, deposit, monthlyRent, propertyType]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 2000
+        address:
+          type: string
+          minLength: 1
+          maxLength: 200
+        addressDetail:
+          type: string
+          maxLength: 100
+        region:
+          type: string
+          maxLength: 50
+        deposit:
+          type: number
+          minimum: 0
+        monthlyRent:
+          type: number
+          minimum: 0
+        maintenanceFee:
+          type: number
+          minimum: 0
+          default: 0
+        propertyType:
+          $ref: '#/components/schemas/PropertyType'
+        roomCount:
+          type: number
+          minimum: 1
+          default: 1
+        bathroomCount:
+          type: number
+          minimum: 1
+          default: 1
+        floor:
+          type: number
+        totalFloor:
+          type: number
+        areaSqm:
+          type: number
+          exclusiveMinimum: true
+          minimum: 0
+        options:
+          type: array
+          items:
+            type: string
+          default: []
+        availableFrom:
+          type: string
+          format: date
+    UpdatePropertyRequest:
+      type: object
+      minProperties: 1
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 2000
+        address:
+          type: string
+          minLength: 1
+          maxLength: 200
+        addressDetail:
+          type: string
+          maxLength: 100
+        region:
+          type: string
+          maxLength: 50
+        deposit:
+          type: number
+          minimum: 0
+        monthlyRent:
+          type: number
+          minimum: 0
+        maintenanceFee:
+          type: number
+          minimum: 0
+        propertyType:
+          $ref: '#/components/schemas/PropertyType'
+        roomCount:
+          type: number
+          minimum: 1
+        bathroomCount:
+          type: number
+          minimum: 1
+        floor:
+          type: number
+        totalFloor:
+          type: number
+        areaSqm:
+          type: number
+          exclusiveMinimum: true
+          minimum: 0
+        options:
+          type: array
+          items:
+            type: string
+        availableFrom:
+          type: string
+          format: date
+        status:
+          $ref: '#/components/schemas/PropertyStatus'
+    LandlordProperty:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        landlord_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        address:
+          type: string
+        address_detail:
+          type: string
+          nullable: true
+        region:
+          type: string
+          nullable: true
+        deposit:
+          type: integer
+        monthly_rent:
+          type: integer
+        maintenance_fee:
+          type: integer
+        property_type:
+          $ref: '#/components/schemas/PropertyType'
+        room_count:
+          type: integer
+        bathroom_count:
+          type: integer
+        floor:
+          type: integer
+          nullable: true
+        total_floor:
+          type: integer
+          nullable: true
+        area_sqm:
+          type: number
+          nullable: true
+        options:
+          type: array
+          items:
+            type: string
+        status:
+          $ref: '#/components/schemas/PropertyStatus'
+        available_from:
+          type: string
+          format: date
+          nullable: true
+        view_count:
+          type: integer
+        main_image_url:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    PublicProperty:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        address:
+          type: string
+        region:
+          type: string
+          nullable: true
+        deposit:
+          type: integer
+        monthlyRent:
+          type: integer
+        maintenanceFee:
+          type: integer
+        propertyType:
+          $ref: '#/components/schemas/PropertyType'
+        roomCount:
+          type: integer
+        bathroomCount:
+          type: integer
+        floor:
+          type: integer
+          nullable: true
+        totalFloor:
+          type: integer
+          nullable: true
+        areaSqm:
+          type: number
+          nullable: true
+        options:
+          type: array
+          items:
+            type: string
+        availableFrom:
+          type: string
+          format: date
+          nullable: true
+        viewCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        mainImageUrl:
+          type: string
+          nullable: true
+        landlordName:
+          type: string
+          nullable: true
+        isFeatured:
+          type: boolean
+        featuredUntil:
+          type: string
+          format: date-time
+          nullable: true
+    PropertyImage:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        property_id:
+          type: string
+          format: uuid
+        image_url:
+          type: string
+          format: uri
+        thumbnail_url:
+          type: string
+          format: uri
+          nullable: true
+        sort_order:
+          type: integer
+        is_main:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+    PagePagination:
+      type: object
+      required: [page, limit, total, totalPages]
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        totalPages:
+          type: integer
