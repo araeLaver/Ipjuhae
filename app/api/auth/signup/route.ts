@@ -94,7 +94,12 @@ export async function POST(request: Request) {
     trackEvent('user_signup', { user_id: user.id, user_type: userType, source: inviteToken ? 'beta_invite' : 'direct' })
     notifyWelcome(user.id, email.split('@')[0]).catch(() => {})
 
-    return NextResponse.json({ success: true, userId: user.id, userType })
+    return NextResponse.json({
+      success: true,
+      userId: user.id,
+      token,
+      userType
+    })
   } catch (error) {
     console.error('Signup error:', error)
     return NextResponse.json(

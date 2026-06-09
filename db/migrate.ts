@@ -32,11 +32,29 @@ const pool = new Pool({
 
 const migrations = [
   'schema.sql',
+  'migration-001-magic-link.sql',
   'migration-002-social-auth.sql',
   'migration-003-favorites.sql',
   'migration-004-messages.sql',
   'migration-005-properties.sql',
   'migration-006-waitlist.sql',
+  'migration-007-tenant-search.sql',
+  'migration-008-admin.sql',
+  'migration-009-notifications.sql',
+  'migration-010-early-access.sql',
+  'migration-011-tenant-profile.sql',
+  'migration-015-listings.sql',
+  'migration-016-listings-pet.sql',
+  'migration-011-reviews.sql',
+  'migration-012-stripe.sql',
+  'migration-012-references-trust-score.sql',
+  'migration-013-analytics-events.sql',
+  'migration-013-notification-prefs.sql',
+  'migration-014-beta-invites.sql',
+  'migration-014-premium.sql',
+  'migration-015-cron-fix.sql',
+  'migration-016-analytics.sql',
+  'migration-020-properties-pet-allowed.sql',
 ]
 
 async function runMigrations() {

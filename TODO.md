@@ -1,10 +1,17 @@
 # 렌트미 (RentMe) TODO
 
-## 현재 완성도: ~100% (프로덕션 준비 완료)
+## 현재 완성도: ~100% (인프라 안정화 및 프로덕션 준비 완료)
 
 ---
 
 ## 🟢 개선 (선택적 UX 고도화)
+
+### 인프라 & 운영 (완료 ⭐)
+- [x] DB 외부 이전 (Neon Serverless Postgres)
+- [x] 저장소 외부 이전 (Cloudflare R2 - Egress Fee 0원)
+- [x] 고성능 서버 이전 (Fly.io Tokyo 리전)
+- [x] DNS 및 보안 강화 (Cloudflare 이전 및 SSL 설정)
+- [x] 무중단 마이그레이션 완료 (www.ipjuhae.com)
 
 ### UX
 - [x] 다크모드 완성 (next-themes 설치됨)

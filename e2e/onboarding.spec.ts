@@ -50,11 +50,11 @@ test.describe('네비게이션', () => {
 
   test('개인정보처리방침 페이지 접근 가능', async ({ page }) => {
     await page.goto('/privacy')
-    await expect(page.getByText(/개인정보/)).toBeVisible()
+    await expect(page.getByRole('heading', { name: '개인정보처리방침' })).toBeVisible()
   })
 
   test('이용약관 페이지 접근 가능', async ({ page }) => {
     await page.goto('/terms')
-    await expect(page.getByText(/이용약관/)).toBeVisible()
+    await expect(page.getByRole('heading', { name: '이용약관' })).toBeVisible()
   })
 })

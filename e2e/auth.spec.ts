@@ -35,7 +35,7 @@ test.describe('인증 흐름', () => {
 
   test('회원가입 페이지에서 로그인 페이지로 이동', async ({ page }) => {
     await page.goto('/signup')
-    await page.getByRole('link', { name: '로그인' }).click()
+    await page.locator('form').getByRole('link', { name: '로그인' }).click()
     await expect(page).toHaveURL('/login')
   })
 })

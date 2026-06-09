@@ -1,0 +1,32 @@
+# fly.toml app configuration file generated for ipjuhae on 2026-06-09
+#
+# See https://fly.io/docs/reference/configuration/ for information
+
+app = "ipjuhae-production"
+primary_region = "nrt"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["app"]
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory_mb = 512
+
+[env]
+  PORT = "8000"
+  NODE_ENV = "production"
+  DB_SCHEMA = "ipjuhae"
+  STORAGE_PROVIDER = "s3"
+  S3_REGION = "auto"
+  S3_BUCKET = "ipjuhae-production"
+  S3_ENDPOINT = "https://d8552e241579bbe608445fdbd7f6a407.r2.cloudflarestorage.com"
+  NEXT_PUBLIC_APP_URL = "https://www.ipjuhae.com"
+  NEXT_PUBLIC_BASE_URL = "https://www.ipjuhae.com"

@@ -1,0 +1,193 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - main [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - link "입주해" [ref=e7] [cursor=pointer]:
+            - /url: /
+            - img [ref=e8]
+            - generic [ref=e11]: 입주해
+          - navigation
+        - generic [ref=e12]:
+          - button "테마 전환" [ref=e13] [cursor=pointer]:
+            - img [ref=e14]
+          - link "로그인" [ref=e16] [cursor=pointer]:
+            - /url: /login
+            - button "로그인" [ref=e17]
+          - link "회원가입" [ref=e18] [cursor=pointer]:
+            - /url: /signup
+            - button "회원가입" [ref=e19]
+      - generic [ref=e24]:
+        - generic [ref=e25]:
+          - heading "좋은 세입자임을 증명하세요" [level=1] [ref=e26]:
+            - text: 좋은 세입자임을
+            - text: 증명하세요
+          - paragraph [ref=e27]: 나만의 세입자 프로필을 만들어 집주인에게 신뢰를 전달하세요. 간단한 프로필 생성만으로 원하는 집을 구할 확률을 높여보세요.
+          - generic [ref=e28]:
+            - link "무료로 시작하기" [ref=e29] [cursor=pointer]:
+              - /url: /signup
+              - button "무료로 시작하기" [ref=e30]
+            - link "집주인으로 가입" [ref=e31] [cursor=pointer]:
+              - /url: /signup?type=landlord
+              - button "집주인으로 가입" [ref=e32]
+        - generic [ref=e34]:
+          - generic [ref=e35]:
+            - img [ref=e36]
+            - generic [ref=e39]: 신뢰점수 85점
+          - generic [ref=e40]:
+            - generic [ref=e41]:
+              - img [ref=e43]
+              - generic [ref=e46]:
+                - paragraph [ref=e47]: 김민수
+                - paragraph [ref=e48]: 30대 | 1인 가구
+            - generic [ref=e49]:
+              - generic [ref=e50]:
+                - img [ref=e51]
+                - generic [ref=e53]: 재직 인증 완료
+              - generic [ref=e54]:
+                - img [ref=e55]
+                - generic [ref=e57]: 소득 인증 완료
+              - generic [ref=e58]:
+                - img [ref=e59]
+                - generic [ref=e61]: 이전 집주인 추천 1건
+            - paragraph [ref=e63]: “조용하고 깔끔한 생활을 선호하는 직장인입니다.”
+      - generic [ref=e65]:
+        - generic [ref=e66]:
+          - heading "왜 입주해인가요?" [level=2] [ref=e67]
+          - paragraph [ref=e68]: 세입자와 집주인 모두를 위한 신뢰 플랫폼
+        - generic [ref=e69]:
+          - generic [ref=e70]:
+            - img [ref=e72]
+            - heading "신뢰 프로필" [level=3] [ref=e74]
+            - paragraph [ref=e75]: 나이대, 가구형태, 라이프스타일 등 집주인이 궁금해하는 정보를 체계적으로 정리
+          - generic [ref=e76]:
+            - img [ref=e78]
+            - heading "자기소개서" [level=3] [ref=e81]
+            - paragraph [ref=e82]: 집주인에게 전달할 자기소개서를 작성하여 나만의 매력을 어필하세요
+          - generic [ref=e83]:
+            - img [ref=e85]
+            - heading "간편 공유" [level=3] [ref=e91]
+            - paragraph [ref=e92]: 완성된 프로필을 링크 하나로 집주인에게 전달, 채팅이나 문자로 쉽게 공유
+          - generic [ref=e93]:
+            - img [ref=e95]
+            - heading "인증 시스템" [level=3] [ref=e97]
+            - paragraph [ref=e98]: 재직, 소득, 신용 인증으로 객관적인 신뢰도를 증명할 수 있어요
+          - generic [ref=e99]:
+            - img [ref=e101]
+            - heading "레퍼런스" [level=3] [ref=e106]
+            - paragraph [ref=e107]: 이전 집주인으로부터 추천을 받아 신뢰점수를 더 높여보세요
+          - generic [ref=e108]:
+            - img [ref=e110]
+            - heading "신뢰점수" [level=3] [ref=e112]
+            - paragraph [ref=e113]: 프로필 완성도와 인증에 기반한 점수로 신뢰도를 한눈에 보여줍니다
+      - generic [ref=e115]:
+        - generic [ref=e116]:
+          - heading "어떻게 사용하나요?" [level=2] [ref=e117]
+          - paragraph [ref=e118]: 3단계로 간단하게
+        - generic [ref=e120]:
+          - generic [ref=e122]:
+            - generic [ref=e123]: "1"
+            - heading "회원가입" [level=3] [ref=e124]
+            - paragraph [ref=e125]: 이메일로 간단하게 가입하세요. 세입자 또는 집주인으로 시작할 수 있어요.
+          - generic [ref=e128]:
+            - generic [ref=e129]: "2"
+            - heading "프로필 작성" [level=3] [ref=e130]
+            - paragraph [ref=e131]: 기본 정보와 라이프스타일을 입력하고 자기소개서를 작성하세요.
+          - generic [ref=e134]:
+            - generic [ref=e135]: "3"
+            - heading "공유하기" [level=3] [ref=e136]
+            - paragraph [ref=e137]: 완성된 프로필 링크를 집주인에게 보내 신뢰를 전달하세요.
+      - generic [ref=e140]:
+        - generic [ref=e141]:
+          - paragraph [ref=e142]: 1,200+
+          - paragraph [ref=e143]: 가입자 수
+        - generic [ref=e144]:
+          - paragraph [ref=e145]: 850+
+          - paragraph [ref=e146]: 인증 완료
+        - generic [ref=e147]:
+          - paragraph [ref=e148]: 300+
+          - paragraph [ref=e149]: 집주인 조회
+        - generic [ref=e150]:
+          - paragraph [ref=e151]: 95%
+          - paragraph [ref=e152]: 만족도
+      - generic [ref=e155]:
+        - generic [ref=e156]:
+          - img [ref=e157]
+          - text: 사전 신청
+        - heading "서비스 출시 알림 신청" [level=2] [ref=e160]
+        - paragraph [ref=e161]:
+          - text: 임주해 서비스 출시 시 가장 먼저 알림을 받으세요.
+          - text: 사전 신청자에게 3개월 프리미엄 무료 혜택을 드립니다.
+        - generic [ref=e162]:
+          - button "세입자" [ref=e163] [cursor=pointer]
+          - button "집주인" [ref=e164] [cursor=pointer]
+        - generic [ref=e165]:
+          - textbox "이메일 주소를 입력하세요" [ref=e166]
+          - button "출시 알림 받기" [disabled]
+        - paragraph [ref=e167]: 스팸 메일은 절대 보내지 않습니다. 언제든지 수신 거부 가능합니다.
+      - generic [ref=e170]:
+        - generic [ref=e171]:
+          - img [ref=e172]
+          - text: 얼리액세스 신청
+        - heading "가장 먼저 경험하세요" [level=2] [ref=e175]
+        - paragraph [ref=e176]: 얼리액세스 신청자에게 6개월 프리미엄 무료와 우선 입주 매칭 혜택을 드립니다.
+        - generic [ref=e177]:
+          - generic [ref=e178]:
+            - img
+            - textbox "이메일 주소를 입력하세요" [ref=e179]
+          - generic [ref=e180]:
+            - img
+            - combobox [ref=e181] [cursor=pointer]:
+              - option "희망 지역을 선택하세요" [disabled] [selected]
+              - option "서울"
+              - option "부산"
+              - option "인천"
+              - option "대구"
+              - option "대전"
+              - option "광주"
+              - option "울산"
+              - option "세종"
+              - option "수원"
+              - option "고양"
+              - option "용인"
+              - option "창원"
+              - option "성남"
+              - option "청주"
+              - option "부천"
+              - option "남양주"
+              - option "전주"
+              - option "화성"
+              - option "안산"
+              - option "천안"
+              - option "안양"
+              - option "포항"
+              - option "의정부"
+              - option "기타"
+            - generic:
+              - img
+          - button "얼리액세스 신청하기" [disabled]
+        - paragraph [ref=e182]: 스팸 메일은 절대 보내지 않습니다. 언제든지 수신 거부 가능합니다.
+      - generic [ref=e185]:
+        - heading "지금 바로 시작하세요" [level=2] [ref=e186]
+        - paragraph [ref=e187]: 무료로 프로필을 만들고, 원하는 집을 구할 확률을 높여보세요.
+        - link "무료 가입하기" [ref=e189] [cursor=pointer]:
+          - /url: /signup
+          - button "무료 가입하기" [ref=e190]
+      - generic [ref=e193]:
+        - generic [ref=e194]:
+          - img [ref=e195]
+          - generic [ref=e198]: 입주해
+        - generic [ref=e199]:
+          - link "로그인" [ref=e200] [cursor=pointer]:
+            - /url: /login
+          - link "회원가입" [ref=e201] [cursor=pointer]:
+            - /url: /signup
+        - paragraph [ref=e202]: © 2026 입주해. All rights reserved.
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e208] [cursor=pointer]:
+    - img [ref=e209]
+  - alert [ref=e212]
+```

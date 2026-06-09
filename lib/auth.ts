@@ -39,7 +39,13 @@ export function verifyToken(token: string): { userId: string; userType?: string 
 
 export async function getCurrentUser(): Promise<User | null> {
   const cookieStore = await cookies()
-  const token = cookieStore.get('auth_token')?.value
+  const cookieToken = cookieStore.get('auth_token')?.value
+
+  const reqHeaders = await import('next/headers').then(h => h.headers())
+  const authHeader = (await reqHeaders).get('authorization')
+  const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null
+
+  const token = bearerToken || cookieToken
 
   if (!token) return null
 

@@ -51,7 +51,12 @@ export async function POST(request: Request) {
     const token = generateToken(user.id, user.user_type)
     await setAuthCookie(token)
 
-    return NextResponse.json({ success: true, userId: user.id, user: { user_type: user.user_type } })
+    return NextResponse.json({
+      success: true,
+      userId: user.id,
+      token,
+      user: { user_type: user.user_type }
+    })
   } catch (error) {
     console.error('Login error:', error)
     return NextResponse.json(

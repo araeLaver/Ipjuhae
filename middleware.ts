@@ -201,7 +201,11 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  const token = request.cookies.get('auth_token')?.value
+  const authHeader = request.headers.get('authorization')
+  const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null
+  const cookieToken = request.cookies.get('auth_token')?.value
+  const token = bearerToken || cookieToken
+
   const jwtPayload = token ? await verifyAndDecodeJwt(token) : null
   const isAuthenticated = !!jwtPayload
   const userType = jwtPayload?.userType
