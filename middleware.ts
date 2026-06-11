@@ -145,6 +145,11 @@ function checkCsrf(request: NextRequest): boolean {
   const isMutation = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)
   if (!isMutation) return true
 
+  // 모바일 앱(Bearer 토큰 사용) API 요청은 CSRF 검증 우회
+  if (request.headers.get('authorization')?.startsWith('Bearer ')) {
+    return true
+  }
+
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || ''
   const origin = request.headers.get('origin')
   const referer = request.headers.get('referer')
