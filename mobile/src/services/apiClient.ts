@@ -4,9 +4,7 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_BASE_URL = __DEV__
-  ? 'http://10.0.2.2:3000/api'
-  : 'https://www.ipjuhae.com/api';
+const API_BASE_URL = 'https://www.ipjuhae.com/api';
 
 const TOKEN_KEY = 'auth_token';
 const REFRESH_TOKEN_KEY = 'refresh_token';
@@ -40,6 +38,7 @@ class ApiClient {
     const token = await this.getToken();
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
+      'x-mobile-client': 'true',
       ...(options.headers as Record<string, string>),
     };
 
