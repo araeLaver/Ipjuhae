@@ -1,22 +1,36 @@
 import { Pool, PoolClient } from 'pg'
 
 const isProduction = process.env.NODE_ENV === 'production'
-const DB_SCHEMA = process.env.DB_SCHEMA || 'ipjuhae'
+const DB_SCHEMA = getSafeSchemaName(process.env.DB_SCHEMA || 'ipjuhae')
+
+function getSafeSchemaName(schema: string): string {
+  if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(schema)) {
+    throw new Error('DB_SCHEMA 환경변수가 유효한 PostgreSQL 스키마명이 아닙니다')
+  }
+  return schema
+}
+
+function isLocalDatabaseUrl(databaseUrl?: string): boolean {
+  if (!databaseUrl) return false
+
+  try {
+    const hostname = new URL(databaseUrl).hostname
+    return ['localhost', '127.0.0.1', '::1', 'db'].includes(hostname)
+  } catch {
+    return databaseUrl.includes('localhost')
+  }
+}
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL?.includes('localhost')
+  ssl: isLocalDatabaseUrl(process.env.DATABASE_URL)
     ? false
     : { rejectUnauthorized: isProduction },
+  options: `-c search_path=${DB_SCHEMA},public`,
   max: 20,
   idleTimeoutMillis: 30_000,
   connectionTimeoutMillis: 5_000,
   statement_timeout: 10_000,
-})
-
-// 커넥션마다 search_path를 ipjuhae 스키마로 설정
-pool.on('connect', (client) => {
-  client.query(`SET search_path TO ${DB_SCHEMA}, public`)
 })
 
 export default pool
