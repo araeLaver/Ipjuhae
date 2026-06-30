@@ -117,7 +117,7 @@ export default function ProfilePage() {
           <Link href="/profile/verification">
             <Button variant="outline" className="w-full justify-start">
               <Shield className="h-4 w-4 mr-2" />
-              인증 관리
+              서류 업로드
               <span className="ml-auto text-sm text-muted-foreground">신뢰점수 높이기</span>
             </Button>
           </Link>

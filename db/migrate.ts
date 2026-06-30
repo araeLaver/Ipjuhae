@@ -28,6 +28,7 @@
  * 22. migration-016-listings-pet.sql          - 매물 반려동물 허용 여부
  * 23. migration-016-analytics.sql             - 분석 기능 보강
  * 24. migration-020-properties-pet-allowed.sql - properties.pet_allowed + listings 데이터 통합
+ * 25. migration-021-community.sql              - 역할별 커뮤니티 게시판
  */
 
 import { Pool } from 'pg'
@@ -35,7 +36,7 @@ import fs from 'fs'
 import path from 'path'
 
 const DATABASE_URL = process.env.DATABASE_URL
-const DB_SCHEMA = process.env.DB_SCHEMA || 'ipjuhae'
+const DB_SCHEMA = getSafeSchemaName(process.env.DB_SCHEMA || 'ipjuhae')
 
 if (!DATABASE_URL) {
   console.error('ERROR: DATABASE_URL 환경변수가 설정되지 않았습니다.')
@@ -43,9 +44,25 @@ if (!DATABASE_URL) {
   process.exit(1)
 }
 
+function getSafeSchemaName(schema: string): string {
+  if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(schema)) {
+    throw new Error('DB_SCHEMA 환경변수가 유효한 PostgreSQL 스키마명이 아닙니다')
+  }
+  return schema
+}
+
+function isLocalDatabaseUrl(databaseUrl: string): boolean {
+  try {
+    const hostname = new URL(databaseUrl).hostname
+    return ['localhost', '127.0.0.1', '::1', 'db'].includes(hostname)
+  } catch {
+    return databaseUrl.includes('localhost')
+  }
+}
+
 const pool = new Pool({
   connectionString: DATABASE_URL,
-  ssl: DATABASE_URL.includes('localhost') ? false : { rejectUnauthorized: false },
+  ssl: isLocalDatabaseUrl(DATABASE_URL) ? false : { rejectUnauthorized: false },
 })
 
 const migrations = [
@@ -74,6 +91,7 @@ const migrations = [
   'migration-016-listings-pet.sql',
   'migration-016-analytics.sql',
   'migration-020-properties-pet-allowed.sql',
+  'migration-021-community.sql',
 ]
 
 async function runMigrations() {

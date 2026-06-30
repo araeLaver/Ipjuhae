@@ -3,7 +3,7 @@ import { query, queryOne } from '@/lib/db'
 import { generateToken, setAuthCookie } from '@/lib/auth'
 import { User, AuthProvider } from '@/types/database'
 
-const VALID_PROVIDERS: AuthProvider[] = ['kakao', 'naver', 'google']
+const VALID_PROVIDERS: AuthProvider[] = ['kakao']
 
 export async function POST(request: Request) {
   try {
