@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import { AuthProvider } from '@/types/database'
+import { isSocialProviderEnabled } from '@/lib/social-providers'
 import { generateState, getAuthorizeUrl } from '@/lib/oauth'
 
-const VALID_PROVIDERS: AuthProvider[] = ['kakao']
 const STATE_COOKIE = 'oauth_state'
 const STATE_MAX_AGE = 300 // 5 minutes
 
@@ -12,7 +12,7 @@ export async function GET(
 ) {
   const { provider } = await params
 
-  if (!VALID_PROVIDERS.includes(provider as AuthProvider)) {
+  if (!isSocialProviderEnabled(provider as AuthProvider)) {
     return NextResponse.json({ error: '지원하지 않는 로그인 방식입니다' }, { status: 400 })
   }
 

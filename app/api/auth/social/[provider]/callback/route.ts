@@ -3,8 +3,8 @@ import { queryOne } from '@/lib/db'
 import { generateToken, setAuthCookie } from '@/lib/auth'
 import { exchangeCode, getProfile } from '@/lib/oauth'
 import { AuthProvider, User } from '@/types/database'
+import { isSocialProviderEnabled } from '@/lib/social-providers'
 
-const VALID_PROVIDERS: AuthProvider[] = ['kakao']
 const STATE_COOKIE = 'oauth_state'
 
 export async function GET(
@@ -14,7 +14,7 @@ export async function GET(
   const { provider } = await params
   const base = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
 
-  if (!VALID_PROVIDERS.includes(provider as AuthProvider)) {
+  if (!isSocialProviderEnabled(provider as AuthProvider)) {
     return NextResponse.redirect(`${base}/login?error=invalid_provider`)
   }
 

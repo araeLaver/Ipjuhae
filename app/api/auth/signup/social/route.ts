@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
 import { generateToken, setAuthCookie } from '@/lib/auth'
-import { User, AuthProvider } from '@/types/database'
-
-const VALID_PROVIDERS: AuthProvider[] = ['kakao']
+import { User } from '@/types/database'
+import { isSocialProviderEnabled } from '@/lib/social-providers'
 
 export async function POST(request: Request) {
   try {
@@ -19,7 +18,7 @@ export async function POST(request: Request) {
       marketingAgreed,
     } = await request.json()
 
-    if (!provider || !providerId || !VALID_PROVIDERS.includes(provider)) {
+    if (!provider || !providerId || !isSocialProviderEnabled(provider)) {
       return NextResponse.json({ error: '유효하지 않은 소셜 정보입니다' }, { status: 400 })
     }
 
