@@ -16,6 +16,7 @@
 - [ ] Supabase OAuth: set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` if Supabase OAuth login is enabled.
 - [ ] Social login: set provider credentials for each enabled provider: Kakao, Naver, Google.
 - [ ] OpenAI: set `OPENAI_API_KEY` if AI intro generation or semantic matching should be live.
+- [ ] AI Omakase: set `AI_OMAKASE_API_KEY` and `AI_OMAKASE_BASE_URL` if the startup-funded AI API stack should be live.
 - [ ] SMS: set `SMS_PROVIDER=nhn` or `twilio` plus that provider's credentials. Do not launch real phone verification with `mock`.
 - [ ] Email: set `EMAIL_PROVIDER=resend`, `sendgrid`, or SMTP credentials for magic links and reference requests.
 - [ ] Storage: set `STORAGE_PROVIDER=s3` plus bucket, endpoint, access key, secret, region, and optional public CDN URL.

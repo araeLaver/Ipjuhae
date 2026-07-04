@@ -4,7 +4,7 @@ import { generateToken, setAuthCookie } from '@/lib/auth'
 import { exchangeCode, getProfile } from '@/lib/oauth'
 import { AuthProvider, User } from '@/types/database'
 
-const VALID_PROVIDERS: AuthProvider[] = ['kakao', 'naver', 'google']
+const VALID_PROVIDERS: AuthProvider[] = ['kakao']
 const STATE_COOKIE = 'oauth_state'
 
 export async function GET(

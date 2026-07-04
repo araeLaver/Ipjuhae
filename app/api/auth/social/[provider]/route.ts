@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { AuthProvider } from '@/types/database'
 import { generateState, getAuthorizeUrl } from '@/lib/oauth'
 
-const VALID_PROVIDERS: AuthProvider[] = ['kakao', 'naver', 'google']
+const VALID_PROVIDERS: AuthProvider[] = ['kakao']
 const STATE_COOKIE = 'oauth_state'
 const STATE_MAX_AGE = 300 // 5 minutes
 

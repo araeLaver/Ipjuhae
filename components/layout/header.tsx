@@ -32,14 +32,16 @@ export function Header({ user }: HeaderProps) {
         { href: '/landlord/properties', label: '매물 관리' },
         { href: '/landlord/favorites', label: '즐겨찾기' },
         { href: '/landlord/messages', label: '메시지' },
+        { href: '/community', label: '커뮤니티' },
         { href: '/landlord/subscription', label: '구독' },
       ]
     : user
     ? [
         { href: '/profile', label: '내 프로필' },
-        { href: '/profile/verification', label: '인증 관리' },
+        { href: '/profile/verification', label: '서류 업로드' },
         { href: '/profile/reference', label: '레퍼런스' },
         { href: '/messages', label: '메시지' },
+        { href: '/community', label: '커뮤니티' },
       ]
     : []
 

@@ -55,7 +55,16 @@ export const referenceRequestSchema = z.object({
   landlordEmail: z.string().email().max(255).optional().nullable(),
 })
 
-export const referenceSurveySchema = z.object({
+export const REFERENCE_ITEM_CODES = [
+  'rent_payment',
+  'property_condition',
+  'neighbor_issues',
+  'checkout_condition',
+] as const
+
+export type ReferenceSurveyItemCode = (typeof REFERENCE_ITEM_CODES)[number]
+
+const referenceSurveyLegacySchema = z.object({
   rentPayment: z.number().int().min(1).max(5),
   propertyCondition: z.number().int().min(1).max(5),
   neighborIssues: z.number().int().min(1).max(5),
@@ -63,6 +72,140 @@ export const referenceSurveySchema = z.object({
   wouldRecommend: z.boolean(),
   comment: z.string().max(500).optional().nullable(),
 })
+
+export const referenceSurveyItemSchema = z.object({
+  itemCode: z.enum(REFERENCE_ITEM_CODES),
+  itemScore: z.number().int().min(1).max(5),
+  itemComment: z.string().max(500).optional().nullable(),
+})
+
+export const referenceSurveyItemizedSchema = z
+  .object({
+    items: z.array(referenceSurveyItemSchema).min(4).max(4),
+    wouldRecommend: z.boolean(),
+    comment: z.string().max(500).optional().nullable(),
+  })
+  .superRefine((data, ctx) => {
+    const seen = new Set<string>()
+    for (const item of data.items) {
+      if (seen.has(item.itemCode)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['items'],
+          message: 'itemCode는 중복될 수 없습니다',
+        })
+      }
+      seen.add(item.itemCode)
+    }
+
+    if (data.items.length !== REFERENCE_ITEM_CODES.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['items'],
+        message: '모든 레퍼런스 항목(월세 납부, 집 관리 상태, 이웃 문제, 퇴실 상태)이 필요합니다',
+      })
+      return
+    }
+
+    for (const item of REFERENCE_ITEM_CODES) {
+      if (!seen.has(item)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['items'],
+          message: `${item} 항목이 누락되었습니다`,
+        })
+      }
+    }
+  })
+
+export const referenceSurveySchema = z.union([referenceSurveyLegacySchema, referenceSurveyItemizedSchema])
+
+export interface ReferenceSurveyNormalizedPayload {
+  rentPayment: number
+  propertyCondition: number
+  neighborIssues: number
+  checkoutCondition: number
+  wouldRecommend: boolean
+  comment: string | null
+  items: Array<{
+    itemCode: ReferenceSurveyItemCode
+    itemScore: number
+    itemComment: string | null
+  }>
+}
+
+export function normalizeReferenceSurveyInput(
+  payload: unknown,
+): { data: ReferenceSurveyNormalizedPayload | null; error: string | null } {
+  const parsed = referenceSurveySchema.safeParse(payload)
+
+  if (!parsed.success) {
+    return {
+      data: null,
+      error: parsed.error.issues[0]?.message || '입력값이 올바르지 않습니다',
+    }
+  }
+
+  if ('rentPayment' in parsed.data) {
+    return {
+      data: {
+        rentPayment: parsed.data.rentPayment,
+        propertyCondition: parsed.data.propertyCondition,
+        neighborIssues: parsed.data.neighborIssues,
+        checkoutCondition: parsed.data.checkoutCondition,
+        wouldRecommend: parsed.data.wouldRecommend,
+        comment: parsed.data.comment ?? null,
+        items: [
+          {
+            itemCode: 'rent_payment',
+            itemScore: parsed.data.rentPayment,
+            itemComment: null,
+          },
+          {
+            itemCode: 'property_condition',
+            itemScore: parsed.data.propertyCondition,
+            itemComment: null,
+          },
+          {
+            itemCode: 'neighbor_issues',
+            itemScore: parsed.data.neighborIssues,
+            itemComment: null,
+          },
+          {
+            itemCode: 'checkout_condition',
+            itemScore: parsed.data.checkoutCondition,
+            itemComment: null,
+          },
+        ],
+      },
+      error: null,
+    }
+  }
+
+  const normalizedItems = parsed.data.items.map((item) => ({
+    itemCode: item.itemCode,
+    itemScore: item.itemScore,
+    itemComment: item.itemComment ?? null,
+  }))
+
+  const itemMap = normalizedItems.reduce((acc, item) => {
+    acc[item.itemCode] = item.itemScore
+    return acc
+  }, {} as Record<ReferenceSurveyItemCode, number>)
+
+  return {
+    data: {
+      rentPayment: itemMap.rent_payment,
+      propertyCondition: itemMap.property_condition,
+      neighborIssues: itemMap.neighbor_issues,
+      checkoutCondition: itemMap.checkout_condition,
+      wouldRecommend: parsed.data.wouldRecommend,
+      comment: parsed.data.comment ?? null,
+      items: normalizedItems,
+    },
+    error: null,
+  }
+}
 
 // ===== Verification =====
 export const employmentSchema = z.object({

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
 import { getAdminUser, logAdminAction } from '@/lib/admin'
 import { notifyVerificationApproved, notifyVerificationRejected } from '@/lib/notifications'
+import { recalculateTrustScoreForUser } from '@/lib/trust-score-recalculator'
 
 interface DocRow {
   id: string
@@ -58,31 +59,48 @@ export async function PATCH(
   )
 
   // 승인 시 verifications 테이블 업데이트
-  if (newStatus === 'approved') {
-    const typeMap: Record<string, string> = {
-      employment: 'employment_verified',
-      income: 'income_verified',
-      credit: 'credit_verified',
-    }
-    const col = typeMap[doc.document_type]
-    if (col) {
-      // upsert verifications row
-      await query(
-        `INSERT INTO verifications (user_id, ${col}, ${col.replace('verified', 'verified_at')})
-         VALUES ($1, TRUE, NOW())
-         ON CONFLICT (user_id) DO UPDATE
-           SET ${col} = TRUE,
-               ${col.replace('verified', 'verified_at')} = NOW(),
-               updated_at = NOW()`,
-        [doc.user_id]
-      )
-    }
+  const typeMap: Record<string, string> = {
+    employment: 'employment_verified',
+    income: 'income_verified',
+    credit: 'credit_verified',
+  }
+  const col = typeMap[doc.document_type]
+  const wasApproved = doc.status === 'approved'
+  const nowApproved = newStatus === 'approved'
+
+  // 승인 상태가 변경되면 verifications 테이블 반영
+  if (nowApproved && !wasApproved && col) {
+    await query(
+      `INSERT INTO verifications (user_id, ${col}, ${col.replace('verified', 'verified_at')})
+       VALUES ($1, TRUE, NOW())
+       ON CONFLICT (user_id) DO UPDATE
+         SET ${col} = TRUE,
+             ${col.replace('verified', 'verified_at')} = NOW(),
+             updated_at = NOW()`,
+      [doc.user_id],
+    )
+  }
+
+  // 승인 해제(거절/대기)로 내려온 경우 점검 데이터는 별도 비검증 처리
+  if (wasApproved && !nowApproved && col) {
+    await query(
+      `UPDATE verifications
+       SET ${col} = FALSE,
+           ${col.replace('verified', 'verified_at')} = NULL,
+           updated_at = NOW()
+       WHERE user_id = $1`,
+      [doc.user_id],
+    )
   }
 
   if (newStatus === 'approved') {
     notifyVerificationApproved({ toUserId: doc.user_id, documentType: doc.document_type }).catch(() => {})
   } else if (newStatus === 'rejected') {
     notifyVerificationRejected({ toUserId: doc.user_id, documentType: doc.document_type, reason: body.reject_reason }).catch(() => {})
+  }
+
+  if (col) {
+    recalculateTrustScoreForUser(doc.user_id).catch(() => {})
   }
 
   await logAdminAction(admin.id, `${body.action}_document`, 'document', id, {

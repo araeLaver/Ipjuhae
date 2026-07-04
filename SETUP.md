@@ -44,6 +44,7 @@ MVP 기능을 실제 서비스로 운영하려면 아래 provider 값을 mock이
 | --- | --- | --- |
 | Supabase OAuth | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `lib/supabase.ts`가 OAuth 클라이언트 생성 시 요구합니다. |
 | OpenAI | `OPENAI_API_KEY` | AI 매칭/자기소개 생성. 없으면 OpenAI 기반 보너스는 건너뜁니다. |
+| AI Omakase | `AI_OMAKASE_API_KEY`, `AI_OMAKASE_BASE_URL` | 자기소개 생성, 법률 검토 초안, Image-to-Text OCR에 사용합니다. 서비스 URL은 환경변수로만 설정합니다. |
 | SMS | `SMS_PROVIDER`, `NHN_SMS_APP_KEY`, `NHN_SMS_SECRET_KEY`, `NHN_SMS_SENDER`, `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER` | `SMS_PROVIDER=mock`은 프로덕션 전화 인증에 부적합합니다. |
 | Email | `EMAIL_PROVIDER`, `EMAIL_FROM`, `RESEND_API_KEY`, `SENDGRID_API_KEY`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` | magic link와 reference 이메일 발송 경로입니다. |
 | Storage | `STORAGE_PROVIDER`, `S3_BUCKET`, `S3_REGION`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_ENDPOINT`, `S3_PUBLIC_URL` | `STORAGE_PROVIDER=s3`일 때 업로드에 필요합니다. `AWS_*` alias도 일부 레거시 업로드 경로에서 지원됩니다. |

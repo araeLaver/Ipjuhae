@@ -1,9 +1,6 @@
 import type { Metadata } from 'next'
-import { Noto_Sans_KR } from 'next/font/google'
 import { Providers } from '@/components/providers'
 import './globals.css'
-
-const notoSansKR = Noto_Sans_KR({ subsets: ['latin'], weight: ['400', '500', '700'], display: 'swap' })
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://www.ipjuhae.com'
 
@@ -66,7 +63,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
         />
       </head>
-      <body className={notoSansKR.className}>
+      <body className="font-sans">
         <Providers>
           <main className="min-h-screen">
             {children}

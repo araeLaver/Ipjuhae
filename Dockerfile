@@ -39,6 +39,8 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
+RUN apk add --no-cache poppler-utils
+
 # Create non-root user in a single layer
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs

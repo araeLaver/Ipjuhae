@@ -1,18 +1,73 @@
-import { Profile, Verification, ReferenceResponse } from '@/types/database'
+import { Profile, Verification, ReferenceResponse, ReferenceResponseItem } from '@/types/database'
 
 interface TrustScoreInput {
   profile?: Profile | null
   verification?: Verification | null
   referenceResponses?: ReferenceResponse[]
+  referenceResponseItems?: ReferenceResponseItem[]
 }
 
-interface TrustScoreBreakdown {
+export interface TrustScoreBreakdown {
   profile: number
   employment: number
   income: number
   credit: number
   reference: number
   total: number
+}
+
+type ReferenceItemAverages = {
+  responseId: string
+  avgScore: number
+}
+
+function getReferenceItemAverages(items: ReferenceResponseItem[]): ReferenceItemAverages[] {
+  const byResponse = new Map<string, number[]>()
+
+  for (const item of items) {
+    const arr = byResponse.get(item.response_id) ?? []
+    arr.push(item.item_score)
+    byResponse.set(item.response_id, arr)
+  }
+
+  const result: ReferenceItemAverages[] = []
+  for (const [responseId, scores] of byResponse.entries()) {
+    if (!scores.length) {
+      continue
+    }
+
+    const avgScore = scores.reduce((sum, score) => sum + score, 0) / scores.length
+    result.push({ responseId, avgScore })
+  }
+
+  return result
+}
+
+function getAvgFromLegacyResponse(response: ReferenceResponse): number {
+  return (
+    response.rent_payment +
+    response.property_condition +
+    response.neighbor_issues +
+    response.checkout_condition
+  ) / 4
+}
+
+function calcReferenceScore(
+  response: ReferenceResponse,
+  itemAveragesByResponseId: Map<string, ReferenceItemAverages>,
+): number {
+  const itemAverage = itemAveragesByResponseId.get(response.id)?.avgScore
+  const avgScore = itemAverage ?? getAvgFromLegacyResponse(response)
+
+  if (response.would_recommend && avgScore >= 3.5) {
+    return 30
+  }
+
+  if (!response.would_recommend || avgScore < 2.5) {
+    return -20
+  }
+
+  return 0
 }
 
 /**
@@ -25,13 +80,21 @@ interface TrustScoreBreakdown {
  * 최대: 120점 (100점 초과 가능)
  */
 export function calculateTrustScore(input: TrustScoreInput): TrustScoreBreakdown {
-  const { profile, verification, referenceResponses = [] } = input
+  const {
+    profile,
+    verification,
+    referenceResponses = [],
+    referenceResponseItems = [],
+  } = input
 
   let profileScore = 0
   let employmentScore = 0
   let incomeScore = 0
   let creditScore = 0
   let referenceScore = 0
+  const itemAveragesByResponseId = new Map(
+    getReferenceItemAverages(referenceResponseItems).map((item) => [item.responseId, item]),
+  )
 
   // 1. 프로필 완성도 (20점)
   if (profile?.is_complete) {
@@ -69,19 +132,7 @@ export function calculateTrustScore(input: TrustScoreInput): TrustScoreBreakdown
   // 5. 레퍼런스 점수 (긍정: +30, 부정: -20)
   if (referenceResponses.length > 0) {
     for (const response of referenceResponses) {
-      // 전체 평균이 3.5 이상이고 추천이면 긍정
-      const avgScore = (
-        response.rent_payment +
-        response.property_condition +
-        response.neighbor_issues +
-        response.checkout_condition
-      ) / 4
-
-      if (response.would_recommend && avgScore >= 3.5) {
-        referenceScore += 30
-      } else if (!response.would_recommend || avgScore < 2.5) {
-        referenceScore -= 20
-      }
+      referenceScore += calcReferenceScore(response, itemAveragesByResponseId)
     }
   }
 

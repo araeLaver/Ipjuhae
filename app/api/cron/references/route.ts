@@ -12,6 +12,7 @@ import { NextResponse } from 'next/server'
 import { query } from '@/lib/db'
 import { createNotification } from '@/lib/notifications'
 import { logger } from '@/lib/logger'
+import { recalculateTrustScores } from '@/lib/trust-score-recalculator'
 
 interface ExpiredReference {
   id: string
@@ -69,38 +70,5 @@ export async function GET(request: Request) {
   } catch (error) {
     logger.error('Cron references error:', error as Record<string, unknown>)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
-
-/**
- * 신뢰점수 재계산 (만료로 인해 completed reference 수 감소 시)
- */
-async function recalculateTrustScores(userIds: string[]): Promise<void> {
-  if (userIds.length === 0) return
-
-  // 각 유저의 completed reference 수 기반으로 reference_score 재계산
-  // trust_score = (verification_score * 0.5) + (reference_score * 0.3) + (profile_score * 0.2)
-  for (const userId of userIds) {
-    try {
-      await query(
-        `UPDATE profiles p
-         SET reference_score = LEAST(
-           (SELECT COUNT(*) FROM landlord_references
-            WHERE user_id = $1 AND status = 'completed') * 20,
-           100
-         ),
-         trust_score = LEAST(
-           COALESCE(p.verification_score, 0) * 0.5 +
-           LEAST((SELECT COUNT(*) FROM landlord_references WHERE user_id = $1 AND status = 'completed') * 20, 100) * 0.3 +
-           COALESCE(p.profile_score, 0) * 0.2,
-           100
-         ),
-         updated_at = NOW()
-         WHERE p.user_id = $1`,
-        [userId]
-      )
-    } catch (err) {
-      logger.error(`Trust score recalc failed for user ${userId}:`, err as Record<string, unknown>)
-    }
   }
 }
