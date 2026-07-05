@@ -5,9 +5,9 @@ import { uploadVerificationDocument } from '@/lib/storage'
 import { ValidationValue, EvidenceRecord, VerificationDocument } from '@/types/database'
 import { extractTextFromDocument } from '@/lib/ocr-pipeline'
 import { logger } from '@/lib/logger'
+import { isUploadedFile, validateDocumentFile } from '@/lib/document-file'
 
 const VALID_TYPES = ['employment', 'income', 'credit']
-const MAX_FILE_SIZE = 20 * 1024 * 1024
 
 interface ParsePayloadResult {
   documentType: string
@@ -26,11 +26,13 @@ async function parseDocumentPayload(request: Request): Promise<ParsePayloadResul
     const documentType = String(formData.get('documentType') || '')
     const file = formData.get('file')
 
-    if (!(file instanceof File)) {
+    if (!isUploadedFile(file)) {
       return { error: '업로드할 파일이 필요합니다' }
     }
-    if (file.size > MAX_FILE_SIZE) {
-      return { error: '파일 크기는 20MB 이하여야 합니다' }
+
+    const validation = validateDocumentFile(file)
+    if ('error' in validation) {
+      return { error: validation.error }
     }
 
     return {
@@ -38,15 +40,19 @@ async function parseDocumentPayload(request: Request): Promise<ParsePayloadResul
       fileName: file.name,
       file,
       fileUrl: null,
-      contentType: file.type || 'application/octet-stream',
+      contentType: validation.contentType,
     }
   }
 
   const { documentType, fileName, fileUrl } = await request.json()
+  if (fileUrl) {
+    return { error: '파일 URL 직접 지정은 허용되지 않습니다. multipart/form-data로 파일을 업로드해주세요' }
+  }
+
   return {
     documentType,
     fileName,
-    fileUrl: fileUrl || null,
+    fileUrl: null,
     file: null,
     contentType: null,
   }
@@ -54,25 +60,6 @@ async function parseDocumentPayload(request: Request): Promise<ParsePayloadResul
 
 function safeValidationText(text: string): string {
   return text.replace(/\s+/g, ' ').trim().slice(0, 3000)
-}
-
-function createExtractionSource(documentType: string, source: 'image' | 'pdf'): ValidationValue {
-  return {
-    id: '',
-    owner_user_id: '',
-    subject_type: 'tenant',
-    subject_id: null,
-    validation_key: `${documentType}_ocr_source`,
-    validation_score: null,
-    validation_numeric: null,
-    validation_text: source,
-    validation_flag: null,
-    status: 'valid',
-    source_evidence_id: null,
-    source_comment: null,
-    created_at: new Date(),
-    updated_at: new Date(),
-  }
 }
 
 export async function POST(request: Request) {
@@ -139,8 +126,8 @@ export async function POST(request: Request) {
 
     const createdValidations: ValidationValue[] = []
 
-        if (payload.file && evidence) {
-          try {
+    if (payload.file && evidence) {
+      try {
         await query('UPDATE evidence_records SET extraction_status = $2 WHERE id = $1', [
           evidence.id,
           'ocr_pending',

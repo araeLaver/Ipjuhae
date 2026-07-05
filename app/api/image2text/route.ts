@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server'
-import { getCurrentUser } from '@/lib/auth'
+import { getAdminUser } from '@/lib/admin'
+import { isUploadedFile, validateDocumentFile } from '@/lib/document-file'
 import { extractTextFromDocument } from '@/lib/ocr-pipeline'
 
 export async function POST(request: Request) {
   try {
-    const user = await getCurrentUser()
-    if (!user) {
-      return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 })
+    const admin = await getAdminUser()
+    if (!admin) {
+      return NextResponse.json({ error: '관리자 권한이 필요합니다' }, { status: 403 })
     }
 
     const contentType = request.headers.get('content-type') || ''
@@ -21,8 +22,13 @@ export async function POST(request: Request) {
     const temperatureRaw = String(formData.get('temperature') || '0.1')
     const temperature = Number.parseFloat(temperatureRaw)
 
-    if (!(image instanceof File)) {
+    if (!isUploadedFile(image)) {
       return NextResponse.json({ error: '이미지 파일이 필요합니다' }, { status: 400 })
+    }
+
+    const validation = validateDocumentFile(image)
+    if ('error' in validation) {
+      return NextResponse.json({ error: validation.error }, { status: 400 })
     }
 
     const { text, source } = await extractTextFromDocument(image, {
