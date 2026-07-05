@@ -22,6 +22,9 @@ interface TrustScoreBreakdown {
   income: number
   credit: number
   reference: number
+  validation: number
+  disputePenalty: number
+  propertySafety: number
   total: number
 }
 

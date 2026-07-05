@@ -48,7 +48,7 @@ export async function GET(request: Request, { params }: RouteParams) {
     const reference = await queryOne<LandlordReference & { tenant_name?: string }>(
       `SELECT lr.*, p.name as tenant_name
        FROM landlord_references lr
-       LEFT JOIN profiles p ON lr.user_id = p.user_id
+       LEFT JOIN profiles p ON COALESCE(lr.subject_user_id, lr.user_id) = p.user_id
        WHERE lr.verification_token = $1`,
       [token],
     )
@@ -67,7 +67,7 @@ export async function GET(request: Request, { params }: RouteParams) {
 
     const profile = await queryOne<Profile>(
       'SELECT * FROM profiles WHERE user_id = $1',
-      [reference.user_id],
+      [reference.subject_user_id ?? reference.user_id],
     )
 
     if (reference.status === 'completed') {
@@ -195,7 +195,7 @@ export async function POST(request: Request, { params }: RouteParams) {
     recalculateTrustScoreForUser(reference.subject_user_id ?? reference.user_id).catch(() => {})
 
     notifyReferenceCompleted({
-      toUserId: reference.user_id,
+      toUserId: reference.subject_user_id ?? reference.user_id,
       landlordName: reference.landlord_name || '집주인',
       referenceId: reference.id,
     }).catch(() => {})

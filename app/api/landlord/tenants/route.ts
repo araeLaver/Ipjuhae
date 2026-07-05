@@ -66,7 +66,7 @@ function maskName(name: string): string {
 
 const REF_COUNT_EXPR = `(
   SELECT COUNT(*) FROM landlord_references lr
-  WHERE lr.user_id = p.user_id AND lr.status = 'completed'
+  WHERE COALESCE(lr.subject_user_id, lr.user_id) = p.user_id AND lr.status = 'completed'
 )`
 
 const VERIFIED_COUNT_EXPR = `(
@@ -212,7 +212,7 @@ export async function GET(request: Request) {
 
     if (has_reference === 'true') {
       baseConditions.push(
-        `(SELECT COUNT(*) FROM landlord_references lr WHERE lr.user_id = p.user_id AND lr.status = 'completed') > 0`
+        `(SELECT COUNT(*) FROM landlord_references lr WHERE COALESCE(lr.subject_user_id, lr.user_id) = p.user_id AND lr.status = 'completed') > 0`
       )
     }
 

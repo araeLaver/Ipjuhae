@@ -225,7 +225,7 @@ export interface EvidenceRecord {
   file_name: string
   file_url: string
   file_hash: string | null
-  extraction_status: 'raw_uploaded' | 'ocr_pending' | 'ocr_complete' | 'validated' | 'archived'
+  extraction_status: 'raw_uploaded' | 'ocr_pending' | 'ocr_complete' | 'ocr_failed' | 'validated' | 'archived'
   extraction_payload: Record<string, unknown> | null
   validated_payload: Record<string, unknown> | null
   reviewed_at: Date | null

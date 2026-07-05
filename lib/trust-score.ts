@@ -1,11 +1,18 @@
-import { Profile, Verification, ReferenceResponse, ReferenceResponseItem } from '@/types/database'
+import { Profile, Verification, ReferenceResponse, ReferenceResponseItem, ValidationValue } from '@/types/database'
 
-interface TrustScoreInput {
+type ReferenceDisputeStatus = 'pending' | 'reviewing' | 'resolved' | 'rejected'
+
+export interface TrustScoreInput {
   profile?: Profile | null
   verification?: Verification | null
   referenceResponses?: ReferenceResponse[]
   referenceResponseItems?: ReferenceResponseItem[]
+  validationValues?: ValidationValue[]
+  referenceDisputes?: Array<{ request_status: string }>
+  propertySafetyScore?: number | null
 }
+
+export const MAX_TRUST_SCORE = 145
 
 export interface TrustScoreBreakdown {
   profile: number
@@ -13,6 +20,9 @@ export interface TrustScoreBreakdown {
   income: number
   credit: number
   reference: number
+  validation: number
+  disputePenalty: number
+  propertySafety: number
   total: number
 }
 
@@ -70,6 +80,51 @@ function calcReferenceScore(
   return 0
 }
 
+const VALIDATION_SCORE_PER_SOURCE = 5
+const VALIDATION_SCORE_MAX = 15
+const DISPUTE_PENALTY_UNIT = 5
+const DISPUTE_PENALTY_MAX = 30
+const PROPERTY_SAFETY_MAX = 10
+
+function calculateValidationScore(validationValues: ValidationValue[] = []): number {
+  const validKeys = validationValues.filter((value) => value.status === 'valid')
+
+  const hasEmploymentProof = validKeys.some((value) => value.validation_key.startsWith('employment_ocr'))
+  const hasIncomeProof = validKeys.some((value) => value.validation_key.startsWith('income_ocr'))
+  const hasCreditProof = validKeys.some((value) => value.validation_key.startsWith('credit_ocr'))
+
+  const activeSources = Number(hasEmploymentProof) + Number(hasIncomeProof) + Number(hasCreditProof)
+  return Math.min(activeSources * VALIDATION_SCORE_PER_SOURCE, VALIDATION_SCORE_MAX)
+}
+
+function calculateDisputePenalty(
+  referenceDisputes: Array<{ request_status: string }> = [],
+): number {
+  const pendingOrReviewing = referenceDisputes.filter(
+    ({ request_status }) =>
+      request_status === ('pending' as ReferenceDisputeStatus) ||
+      request_status === ('reviewing' as ReferenceDisputeStatus),
+  ).length
+
+  if (!pendingOrReviewing) {
+    return 0
+  }
+
+  return -Math.min(pendingOrReviewing * DISPUTE_PENALTY_UNIT, DISPUTE_PENALTY_MAX)
+}
+
+function calculatePropertySafetyScore(propertySafetyScore: number | null): number {
+  if (!Number.isFinite(propertySafetyScore)) {
+    return 0
+  }
+
+  if (propertySafetyScore === null) {
+    return 0
+  }
+
+  return Math.max(0, Math.min(PROPERTY_SAFETY_MAX, Math.round(propertySafetyScore / 12)))
+}
+
 /**
  * 신뢰점수 계산
  * - 프로필 완성: 20점
@@ -85,6 +140,9 @@ export function calculateTrustScore(input: TrustScoreInput): TrustScoreBreakdown
     verification,
     referenceResponses = [],
     referenceResponseItems = [],
+    validationValues = [],
+    referenceDisputes = [],
+    propertySafetyScore = null,
   } = input
 
   let profileScore = 0
@@ -136,7 +194,26 @@ export function calculateTrustScore(input: TrustScoreInput): TrustScoreBreakdown
     }
   }
 
-  const total = Math.max(0, profileScore + employmentScore + incomeScore + creditScore + referenceScore)
+  // 6. 서류 검증값 기반 추가 점수
+  const validationScore = calculateValidationScore(validationValues)
+
+  // 7. 분쟁/정정 요청 페널티
+  const disputePenalty = calculateDisputePenalty(referenceDisputes)
+
+  // 8. 주택 안전점수 기반 보정 (공동주택/단지 기반 보정)
+  const propertySafety = calculatePropertySafetyScore(propertySafetyScore ?? null)
+
+  const total = Math.max(
+    0,
+    profileScore +
+      employmentScore +
+      incomeScore +
+      creditScore +
+      referenceScore +
+      validationScore +
+      disputePenalty +
+      propertySafety,
+  )
 
   return {
     profile: profileScore,
@@ -144,6 +221,9 @@ export function calculateTrustScore(input: TrustScoreInput): TrustScoreBreakdown
     income: incomeScore,
     credit: creditScore,
     reference: referenceScore,
+    validation: validationScore,
+    disputePenalty,
+    propertySafety,
     total,
   }
 }
@@ -152,9 +232,9 @@ export function calculateTrustScore(input: TrustScoreInput): TrustScoreBreakdown
  * 신뢰점수 레벨 반환
  */
 export function getTrustScoreLevel(score: number): 'excellent' | 'good' | 'fair' | 'low' {
-  if (score >= 80) return 'excellent'
-  if (score >= 50) return 'good'
-  if (score >= 20) return 'fair'
+  if (score >= 100) return 'excellent'
+  if (score >= 70) return 'good'
+  if (score >= 30) return 'fair'
   return 'low'
 }
 

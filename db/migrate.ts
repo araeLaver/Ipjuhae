@@ -36,7 +36,9 @@ import { Pool } from 'pg'
 import fs from 'fs'
 import path from 'path'
 
-const DATABASE_URL = process.env.DATABASE_URL
+loadLocalEnv()
+
+const DATABASE_URL = normalizeDatabaseUrl(process.env.DATABASE_URL)
 const DB_SCHEMA = getSafeSchemaName(process.env.DB_SCHEMA || 'ipjuhae')
 
 if (!DATABASE_URL) {
@@ -58,6 +60,51 @@ function isLocalDatabaseUrl(databaseUrl: string): boolean {
     return ['localhost', '127.0.0.1', '::1', 'db'].includes(hostname)
   } catch {
     return databaseUrl.includes('localhost')
+  }
+}
+
+function loadLocalEnv() {
+  for (const envFile of ['.env.local', '.env']) {
+    const filePath = path.join(process.cwd(), envFile)
+    if (!fs.existsSync(filePath)) {
+      continue
+    }
+
+    const lines = fs.readFileSync(filePath, 'utf-8').split(/\r?\n/)
+    for (const line of lines) {
+      const trimmed = line.trim()
+      if (!trimmed || trimmed.startsWith('#') || !trimmed.includes('=')) {
+        continue
+      }
+
+      const separatorIndex = trimmed.indexOf('=')
+      const key = trimmed.slice(0, separatorIndex).trim()
+      const value = trimmed.slice(separatorIndex + 1).trim().replace(/^['"]|['"]$/g, '')
+
+      if (key && process.env[key] === undefined) {
+        process.env[key] = value
+      }
+    }
+  }
+}
+
+function normalizeDatabaseUrl(databaseUrl?: string): string | undefined {
+  if (!databaseUrl) {
+    return undefined
+  }
+
+  try {
+    const url = new URL(databaseUrl)
+    const isDockerServiceHost = url.hostname === 'db'
+    const isRunningInDocker = fs.existsSync('/.dockerenv')
+
+    if (isDockerServiceHost && !isRunningInDocker) {
+      url.hostname = '127.0.0.1'
+    }
+
+    return url.toString()
+  } catch {
+    return databaseUrl
   }
 }
 
@@ -96,6 +143,22 @@ const migrations = [
   'migration-022-patent-trust-engine.sql',
 ]
 
+const migrationAliases: Record<string, string[]> = {
+  'migration-011-tenant-profile.sql': ['migration-014-tenant-profile.sql'],
+  'migration-012-stripe.sql': ['migration-015-stripe.sql'],
+  'migration-013-notification-prefs.sql': ['migration-016-notification-prefs.sql'],
+  'migration-014-beta-invites.sql': ['migration-017-beta-invites.sql'],
+  'migration-014-premium.sql': ['migration-010-mvp-schema-gaps.sql'],
+  'migration-015-listings.sql': ['migration-010-mvp-schema-gaps.sql'],
+  'migration-015-cron-fix.sql': ['migration-018-cron-references-fix.sql'],
+  'migration-016-listings-pet.sql': ['migration-010-mvp-schema-gaps.sql'],
+  'migration-016-analytics.sql': ['migration-019-analytics-events-ensure.sql'],
+}
+
+const migrationPresenceChecks: Record<string, string[]> = {
+  'migration-021-community.sql': ['community_posts', 'community_comments'],
+}
+
 async function runMigrations() {
   const client = await pool.connect()
 
@@ -118,15 +181,47 @@ async function runMigrations() {
     `)
 
     for (const migration of migrations) {
+      const equivalentNames = [migration, ...(migrationAliases[migration] || [])]
+
       // 이미 실행된 마이그레이션 확인
       const { rows } = await client.query(
-        'SELECT name FROM _migrations WHERE name = $1',
-        [migration]
+        'SELECT name FROM _migrations WHERE name = ANY($1::text[])',
+        [equivalentNames]
       )
 
       if (rows.length > 0) {
+        if (!rows.some((row) => row.name === migration)) {
+          await client.query(
+            'INSERT INTO _migrations (name) VALUES ($1) ON CONFLICT (name) DO NOTHING',
+            [migration]
+          )
+          console.log(`🔁 ${migration} - 기존 이름(${rows[0].name}) 기준으로 적용 처리`)
+        }
         console.log(`⏭️  ${migration} - 이미 실행됨, 스킵`)
         continue
+      }
+
+      const requiredTables = migrationPresenceChecks[migration]
+      if (requiredTables) {
+        const existingTables = await client.query<{ table_name: string }>(
+          `SELECT table_name
+             FROM information_schema.tables
+            WHERE table_schema = $1
+              AND table_name = ANY($2::text[])`,
+          [DB_SCHEMA, requiredTables]
+        )
+        const existingTableNames = new Set(existingTables.rows.map((row) => row.table_name))
+        const allRequiredTablesExist = requiredTables.every((tableName) => existingTableNames.has(tableName))
+
+        if (allRequiredTablesExist) {
+          await client.query(
+            'INSERT INTO _migrations (name) VALUES ($1) ON CONFLICT (name) DO NOTHING',
+            [migration]
+          )
+          console.log(`🔁 ${migration} - 기존 테이블 기준으로 적용 처리`)
+          console.log(`⏭️  ${migration} - 이미 실행됨, 스킵`)
+          continue
+        }
       }
 
       // 마이그레이션 파일 읽기

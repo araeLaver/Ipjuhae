@@ -10,6 +10,9 @@ interface TrustScoreChartProps {
     income: number
     credit: number
     reference: number
+    validation: number
+    disputePenalty: number
+    propertySafety: number
   }
 }
 
@@ -19,10 +22,13 @@ const categories = [
   { key: 'income' as const, label: '소득 인증', max: 25, color: 'bg-indigo-500' },
   { key: 'credit' as const, label: '신용 인증', max: 20, color: 'bg-purple-500' },
   { key: 'reference' as const, label: '레퍼런스', max: 30, color: 'bg-amber-500' },
+  { key: 'validation' as const, label: '서류 검증', max: 15, color: 'bg-emerald-500' },
+  { key: 'disputePenalty' as const, label: '분쟁 페널티', max: 30, color: 'bg-red-500' },
+  { key: 'propertySafety' as const, label: '주거 안전', max: 10, color: 'bg-cyan-500' },
 ]
 
 export function TrustScoreChart({ total, breakdown }: TrustScoreChartProps) {
-  const maxScore = 120
+  const maxScore = 145
   const percentage = Math.min(100, (total / maxScore) * 100)
   const circumference = 2 * Math.PI * 54
   const strokeDashoffset = circumference - (percentage / 100) * circumference
@@ -61,18 +67,22 @@ export function TrustScoreChart({ total, breakdown }: TrustScoreChartProps) {
       {/* Category Bars */}
       <div className="space-y-3">
         {categories.map((cat) => {
-          const value = breakdown[cat.key]
+          const rawValue = breakdown[cat.key]
+          const isPenalty = cat.key === 'disputePenalty'
+          const value = isPenalty ? Math.min(0, rawValue) : Math.max(0, rawValue)
+          const barValue = isPenalty ? -value : value
+          const labelValue = isPenalty && value < 0 ? value : value
           return (
             <div key={cat.key} className="space-y-1">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">{cat.label}</span>
                 <span className="font-medium">
-                  {Math.max(0, value)}
+                  {labelValue}
                   <span className="text-muted-foreground">/{cat.max}</span>
                 </span>
               </div>
               <Progress
-                value={Math.max(0, value)}
+                value={barValue}
                 max={cat.max}
                 indicatorClassName={cat.color}
               />

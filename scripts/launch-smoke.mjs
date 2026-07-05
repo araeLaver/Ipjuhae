@@ -58,6 +58,7 @@ async function main() {
   const baseUrl = normalizeUrl(
     requireEnv('LAUNCH_SMOKE_BASE_URL', requireEnv('APP_URL', requireEnv('NEXT_PUBLIC_APP_URL', 'http://localhost:3000')))
   )
+  const csrfOrigin = normalizeUrl(requireEnv('LAUNCH_SMOKE_ORIGIN', requireEnv('NEXT_PUBLIC_APP_URL', baseUrl)))
   const token = process.env.LAUNCH_SMOKE_TOKEN
 
   const commonHeaders = token ? { 'x-launch-smoke-token': token } : undefined
@@ -66,9 +67,9 @@ async function main() {
   checks.push(await runCheck({
     name: 'launch-smoke-route',
     url: `${baseUrl}/api/launch/smoke`,
-    status: [200, 503],
+    status: 200,
     headers: commonHeaders,
-    assert: (payload) => ['ok', 'degraded'].includes(payload.status),
+    assert: (payload) => payload.status === 'ok',
   }))
 
   checks.push(await runCheck({
@@ -91,6 +92,7 @@ async function main() {
     method: 'POST',
     status: 400,
     body: { phoneNumber: 'invalid' },
+    headers: { origin: csrfOrigin },
     assert: (payload) => !!payload?.error,
   }))
 
@@ -111,12 +113,6 @@ async function main() {
   console.log('===============================')
 
   if (failed.length > 0) {
-    process.exit(1)
-  }
-
-  // /api/launch/smoke는 부분 실패를 status=503으로 반환할 수 있습니다.
-  const launchSmoke = checks.find((item) => item.name === 'launch-smoke-route')
-  if (launchSmoke?.detail.includes('status=503')) {
     process.exit(1)
   }
 

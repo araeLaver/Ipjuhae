@@ -150,7 +150,7 @@ CREATE TABLE IF NOT EXISTS consents (
   metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  UNIQUE(owner_user_id, viewer_user_id, viewer_role, resource_type, resource_id, valid_from)
+  UNIQUE NULLS NOT DISTINCT(owner_user_id, viewer_user_id, viewer_role, resource_type, resource_id, valid_from)
 );
 
 DO $$ BEGIN

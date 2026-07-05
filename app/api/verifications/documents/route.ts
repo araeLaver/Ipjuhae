@@ -87,7 +87,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: payload.error }, { status: 400 })
     }
 
-  const { documentType, fileName } = payload
+    const { documentType, fileName } = payload
 
     if (!documentType || !VALID_TYPES.includes(documentType)) {
       return NextResponse.json({ error: '유효하지 않은 서류 유형입니다' }, { status: 400 })
@@ -139,8 +139,8 @@ export async function POST(request: Request) {
 
     const createdValidations: ValidationValue[] = []
 
-    if (payload.file && evidence) {
-      try {
+        if (payload.file && evidence) {
+          try {
         await query('UPDATE evidence_records SET extraction_status = $2 WHERE id = $1', [
           evidence.id,
           'ocr_pending',
@@ -170,7 +170,7 @@ export async function POST(request: Request) {
            RETURNING *`,
           [
             user.id,
-            doc.id,
+            user.id,
             `${documentType}_ocr_text_length`,
             textLength,
             textLength,
@@ -185,10 +185,10 @@ export async function POST(request: Request) {
           `INSERT INTO validation_values
             (owner_user_id, subject_type, subject_id, validation_key, validation_score, validation_numeric, validation_text, validation_flag, status, source_evidence_id, source_comment)
            VALUES ($1, 'tenant', $2, $3, NULL, NULL, $4, 'ocr', 'valid', $5, $6)
-           RETURNING *`,
+            RETURNING *`,
           [
             user.id,
-            doc.id,
+            user.id,
             `${documentType}_ocr_source`,
             source,
             evidence.id,
@@ -222,10 +222,10 @@ export async function POST(request: Request) {
           `INSERT INTO validation_values
             (owner_user_id, subject_type, subject_id, validation_key, validation_score, validation_numeric, validation_text, validation_flag, status, source_evidence_id, source_comment)
            VALUES ($1, 'tenant', $2, $3, NULL, NULL, NULL, NULL, 'needs_review', $4, $5)
-           RETURNING *`,
+            RETURNING *`,
           [
             user.id,
-            doc.id,
+            user.id,
             `${documentType}_ocr_error`,
             evidence.id,
             error instanceof Error ? error.message : 'OCR 처리 실패',
@@ -239,8 +239,8 @@ export async function POST(request: Request) {
     const [validationCount] = await query<{ validation_count: string }>(
       `SELECT COUNT(*)::integer AS validation_count
        FROM validation_values
-       WHERE subject_id = $1`,
-      [doc.id],
+       WHERE owner_user_id = $1 AND subject_type = 'tenant' AND subject_id = $2`,
+      [user.id, user.id],
     )
 
     return NextResponse.json({

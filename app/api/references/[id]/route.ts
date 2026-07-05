@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
-import { LandlordReference, ReferenceResponse, ReferenceResponseItem } from '@/types/database'
+import { LandlordReference, ReferenceResponse, ReferenceResponseItem, ReferenceDispute } from '@/types/database'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -18,7 +18,7 @@ export async function GET(request: Request, { params }: RouteParams) {
     const { id } = await params
 
     const reference = await queryOne<LandlordReference>(
-      'SELECT * FROM landlord_references WHERE id = $1 AND user_id = $2',
+      'SELECT * FROM landlord_references WHERE id = $1 AND COALESCE(subject_user_id, user_id) = $2',
       [id, user.id]
     )
 
@@ -39,7 +39,19 @@ export async function GET(request: Request, { params }: RouteParams) {
         )
       : []
 
-    return NextResponse.json({ reference, response, responseItems })
+    const disputes = response
+      ? await query<ReferenceDispute & { item_code: string | null }>(
+          `SELECT rd.*, rri.item_code
+           FROM reference_disputes rd
+           LEFT JOIN reference_response_items rri
+             ON rd.response_item_id = rri.id
+           WHERE rd.response_id = $1
+           ORDER BY rd.created_at DESC`,
+          [response.id],
+        )
+      : []
+
+    return NextResponse.json({ reference, response, responseItems, disputes })
   } catch (error) {
     console.error('Get reference error:', error)
     return NextResponse.json({ error: '레퍼런스 조회 중 오류가 발생했습니다' }, { status: 500 })
@@ -57,7 +69,7 @@ export async function DELETE(request: Request, { params }: RouteParams) {
     const { id } = await params
 
     const reference = await queryOne<LandlordReference>(
-      'SELECT * FROM landlord_references WHERE id = $1 AND user_id = $2',
+      'SELECT * FROM landlord_references WHERE id = $1 AND COALESCE(subject_user_id, user_id) = $2',
       [id, user.id]
     )
 

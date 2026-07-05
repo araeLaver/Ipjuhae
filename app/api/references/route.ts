@@ -16,7 +16,7 @@ export async function GET() {
     }
 
     const references = await query<LandlordReference>(
-      `SELECT * FROM landlord_references WHERE user_id = $1 ORDER BY created_at DESC`,
+      `SELECT * FROM landlord_references WHERE COALESCE(subject_user_id, user_id) = $1 ORDER BY created_at DESC`,
       [user.id]
     )
 
@@ -48,7 +48,7 @@ export async function POST(request: Request) {
 
     const existingRequest = await queryOne<LandlordReference>(
       `SELECT * FROM landlord_references
-       WHERE user_id = $1 AND landlord_phone = $2 AND status IN ('pending', 'sent')`,
+       WHERE COALESCE(subject_user_id, user_id) = $1 AND landlord_phone = $2 AND status IN ('pending', 'sent')`,
       [user.id, landlordPhone]
     )
 

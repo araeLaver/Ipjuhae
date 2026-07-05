@@ -23,7 +23,7 @@ export async function POST(request: Request, { params }: RouteParams) {
     const { id } = await params
 
     const reference = await queryOne<LandlordReference>(
-      'SELECT * FROM landlord_references WHERE id = $1 AND user_id = $2',
+      'SELECT * FROM landlord_references WHERE id = $1 AND COALESCE(subject_user_id, user_id) = $2',
       [id, user.id]
     )
 

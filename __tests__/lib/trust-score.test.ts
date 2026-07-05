@@ -1,11 +1,12 @@
 import { describe, it, expect } from 'vitest'
 import {
+  MAX_TRUST_SCORE,
   calculateTrustScore,
   getTrustScoreLevel,
   getTrustScoreLabel,
   getTrustScoreColor,
 } from '@/lib/trust-score'
-import { Profile, Verification, ReferenceResponse } from '@/types/database'
+import { Profile, Verification, ReferenceResponse, ValidationValue } from '@/types/database'
 
 describe('calculateTrustScore', () => {
   const mockDate = new Date()
@@ -220,6 +221,75 @@ describe('calculateTrustScore', () => {
       expect(result.total).toBe(120)
     })
 
+    it('서류검증/주거안전 반영', () => {
+      const verification = {
+        ...baseVerification,
+        employment_verified: true,
+        income_verified: true,
+      }
+      const referenceResponses: ReferenceResponse[] = []
+      const validationValues: ValidationValue[] = [
+        {
+          id: 'vv1',
+          owner_user_id: 'user1',
+          subject_type: 'tenant',
+          subject_id: 'user1',
+          validation_key: 'employment_ocr_front',
+          validation_score: null,
+          validation_numeric: null,
+          validation_text: null,
+          validation_flag: null,
+          status: 'valid',
+          source_evidence_id: null,
+          source_comment: null,
+          created_at: new Date(),
+          updated_at: new Date(),
+        },
+        {
+          id: 'vv2',
+          owner_user_id: 'user1',
+          subject_type: 'tenant',
+          subject_id: 'user1',
+          validation_key: 'income_ocr_card',
+          validation_score: null,
+          validation_numeric: null,
+          validation_text: null,
+          validation_flag: null,
+          status: 'valid',
+          source_evidence_id: null,
+          source_comment: null,
+          created_at: new Date(),
+          updated_at: new Date(),
+        },
+      ]
+
+      const result = calculateTrustScore({
+        profile: baseProfile,
+        verification,
+        referenceResponses,
+        validationValues,
+        propertySafetyScore: 120,
+      })
+
+      expect(result.validation).toBe(10)
+      expect(result.propertySafety).toBe(10)
+      // 20 (profile) + 50 (verification) + 10 (validation) + 10 (safety)
+      expect(result.total).toBe(90)
+      expect(result.total).toBeLessThanOrEqual(MAX_TRUST_SCORE)
+    })
+
+    it('분쟁 페널티 반영', () => {
+      const referenceResponses = [createReferenceResponse(4, true)]
+      const result = calculateTrustScore({
+        profile: baseProfile,
+        referenceResponses,
+        referenceDisputes: [{ request_status: 'pending' }],
+      })
+
+      expect(result.disputePenalty).toBe(-5)
+      expect(result.total).toBe(45) // 20 + 30 - 5
+    })
+
     it('아무 인증 없으면 0점', () => {
       const result = calculateTrustScore({})
       expect(result.total).toBe(0)
@@ -239,19 +309,19 @@ describe('calculateTrustScore', () => {
 })
 
 describe('getTrustScoreLevel', () => {
-  it('80점 이상은 excellent', () => {
-    expect(getTrustScoreLevel(80)).toBe('excellent')
+  it('100점 이상은 excellent', () => {
     expect(getTrustScoreLevel(100)).toBe('excellent')
+    expect(getTrustScoreLevel(120)).toBe('excellent')
   })
 
-  it('50-79점은 good', () => {
-    expect(getTrustScoreLevel(50)).toBe('good')
-    expect(getTrustScoreLevel(79)).toBe('good')
+  it('70-99점은 good', () => {
+    expect(getTrustScoreLevel(70)).toBe('good')
+    expect(getTrustScoreLevel(99)).toBe('good')
   })
 
-  it('20-49점은 fair', () => {
-    expect(getTrustScoreLevel(20)).toBe('fair')
-    expect(getTrustScoreLevel(49)).toBe('fair')
+  it('30-69점은 fair', () => {
+    expect(getTrustScoreLevel(30)).toBe('fair')
+    expect(getTrustScoreLevel(69)).toBe('fair')
   })
 
   it('20점 미만은 low', () => {
@@ -262,15 +332,15 @@ describe('getTrustScoreLevel', () => {
 
 describe('getTrustScoreLabel', () => {
   it('excellent은 우수', () => {
-    expect(getTrustScoreLabel(80)).toBe('우수')
+    expect(getTrustScoreLabel(100)).toBe('우수')
   })
 
   it('good은 양호', () => {
-    expect(getTrustScoreLabel(50)).toBe('양호')
+    expect(getTrustScoreLabel(70)).toBe('양호')
   })
 
   it('fair는 보통', () => {
-    expect(getTrustScoreLabel(20)).toBe('보통')
+    expect(getTrustScoreLabel(30)).toBe('보통')
   })
 
   it('low는 시작', () => {
@@ -280,15 +350,15 @@ describe('getTrustScoreLabel', () => {
 
 describe('getTrustScoreColor', () => {
   it('excellent은 bg-green-500', () => {
-    expect(getTrustScoreColor(80)).toBe('bg-green-500')
+    expect(getTrustScoreColor(100)).toBe('bg-green-500')
   })
 
   it('good은 bg-blue-500', () => {
-    expect(getTrustScoreColor(50)).toBe('bg-blue-500')
+    expect(getTrustScoreColor(70)).toBe('bg-blue-500')
   })
 
   it('fair는 bg-yellow-500', () => {
-    expect(getTrustScoreColor(20)).toBe('bg-yellow-500')
+    expect(getTrustScoreColor(30)).toBe('bg-yellow-500')
   })
 
   it('low는 bg-gray-400', () => {

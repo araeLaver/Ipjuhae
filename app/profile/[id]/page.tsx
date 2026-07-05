@@ -96,7 +96,7 @@ export default async function PublicProfilePage({ params }: Props) {
       `SELECT rr.*, lr.completed_at
        FROM reference_responses rr
        JOIN landlord_references lr ON rr.reference_id = lr.id
-       WHERE lr.user_id = $1 AND lr.status = 'completed'
+       WHERE COALESCE(lr.subject_user_id, lr.user_id) = $1 AND lr.status = 'completed'
        ORDER BY lr.completed_at DESC`,
       [profile.user_id]
     ),

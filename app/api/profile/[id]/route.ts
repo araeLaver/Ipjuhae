@@ -1,7 +1,16 @@
 import { NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
-import { Profile, Verification, ReferenceResponse } from '@/types/database'
+import { getCurrentUser } from '@/lib/auth'
+import {
+  Profile,
+  Verification,
+  ReferenceResponse,
+  ReferenceResponseItem,
+  ValidationValue,
+  ReferenceDispute,
+} from '@/types/database'
 import { calculateTrustScore } from '@/lib/trust-score'
+import { evaluateProfileAccess } from '@/lib/consent-access'
 
 // GET: 공개 프로필 조회 (동적 신뢰점수 포함)
 export async function GET(
@@ -9,6 +18,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const viewer = await getCurrentUser()
     const { id } = await params
 
     const profile = await queryOne<Profile>(
@@ -30,20 +40,93 @@ export async function GET(
     const referenceResponses = await query<ReferenceResponse>(
       `SELECT rr.* FROM reference_responses rr
        JOIN landlord_references lr ON rr.reference_id = lr.id
-       WHERE lr.user_id = $1 AND lr.status = 'completed'`,
+       WHERE COALESCE(lr.subject_user_id, lr.user_id) = $1 AND lr.status = 'completed'`,
       [profile.user_id]
     )
 
+    const responseIds = referenceResponses.map((r) => r.id)
+    const referenceResponseItems =
+      responseIds.length === 0
+        ? []
+        : await query<ReferenceResponseItem>(
+            `SELECT rri.*
+             FROM reference_response_items rri
+             WHERE rri.response_id = ANY($1::uuid[])`,
+            [responseIds],
+          )
+
+    const referenceDisputes = responseIds.length === 0
+      ? []
+      : await query<ReferenceDispute>(
+          `SELECT rd.*
+             FROM reference_disputes rd
+             JOIN reference_responses rr ON rr.id = rd.response_id
+             JOIN landlord_references lr ON lr.id = rr.reference_id
+            WHERE COALESCE(lr.subject_user_id, lr.user_id) = $1
+              AND lr.status = 'completed'`,
+          [profile.user_id],
+        )
+
+    const validationValues = await query<ValidationValue>(
+      `SELECT *
+         FROM validation_values
+        WHERE owner_user_id = $1
+          AND subject_type = 'tenant'
+          AND subject_id = $1
+          AND status = 'valid'`,
+      [profile.user_id],
+    )
+
+    const propertySafetyRows = await query<{ avg_safety_score: string }>(
+      `
+        SELECT AVG(pss.safety_score)::FLOAT AS avg_safety_score
+          FROM property_safety_scores pss
+          INNER JOIN landlord_references lr
+            ON lr.target_property_id = pss.property_id
+         WHERE COALESCE(lr.subject_user_id, lr.user_id) = $1
+           AND lr.target_property_id IS NOT NULL
+           AND lr.status = 'completed'
+           AND (pss.expires_at IS NULL OR pss.expires_at >= NOW())
+      `,
+      [profile.user_id],
+    )
+
+    const propertySafetyScore = Number(propertySafetyRows[0]?.avg_safety_score ?? null)
+
+    const { allowed, canViewContact } = await evaluateProfileAccess(request, {
+      viewerUserId: viewer?.id,
+      ownerUserId: profile.user_id,
+      viewerRole: viewer?.user_type,
+      targetId: profile.id,
+      targetType: 'profile',
+      requestedFields: ['trust_score', 'profile', 'verification', 'reference', 'reference_count'],
+      enforceConsent: process.env.ENFORCE_PATENT_CONSENT === 'true',
+    })
+
+    if (!allowed) {
+      return NextResponse.json({ error: '열람 동의가 필요합니다' }, { status: 403 })
+    }
+
+    const publicProfile = { ...profile }
+
+    if (!canViewContact) {
+      publicProfile.name = '익명'
+    }
+
     // 동적 신뢰점수 계산
     const scoreBreakdown = calculateTrustScore({
-      profile,
+      profile: publicProfile,
       verification,
       referenceResponses,
+      referenceResponseItems,
+      referenceDisputes,
+      validationValues,
+      propertySafetyScore,
     })
 
     return NextResponse.json({
       profile: {
-        ...profile,
+        ...publicProfile,
         trust_score: scoreBreakdown.total,
       },
       verification,

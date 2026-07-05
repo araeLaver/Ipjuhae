@@ -207,6 +207,87 @@ export function normalizeReferenceSurveyInput(
   }
 }
 
+export const referenceDisputeSchema = z.object({
+  responseId: z.string().uuid('유효한 응답 ID가 아닙니다'),
+  responseItemId: z.string().uuid('유효한 항목 ID가 아닙니다').optional(),
+  requestType: z.enum(['correction', 'objection', 'appeal']),
+  requestReason: z.string().min(2, '요청 사유를 입력해주세요').max(1000, '요청 사유가 너무 깁니다'),
+  requestedValue: z.record(z.string(), z.unknown()).nullable().optional(),
+})
+
+export type ReferenceDisputeInput = z.infer<typeof referenceDisputeSchema>
+
+export const consentCreateSchema = z
+  .object({
+    viewerUserId: z.string().uuid().nullable().optional(),
+    viewerRole: z.enum(['tenant', 'landlord', 'admin', 'broker', 'manager']).nullable().optional(),
+    resourceType: z.enum(['profile', 'reference', 'property', 'document', 'trade_hint', 'all']).default('profile'),
+    resourceId: z.string().uuid().optional().nullable(),
+    allowedFields: z.array(z.string().min(1)).default(['*']),
+    allowedPurposes: z.array(z.string().min(1)).default([]),
+    canViewContact: z.boolean().default(false),
+    validFrom: z.string().datetime().optional(),
+    validUntil: z.string().datetime().optional().nullable(),
+    metadata: z.record(z.string(), z.unknown()).default({}),
+  })
+  .superRefine((data, ctx) => {
+    if (!data.viewerUserId && !data.viewerRole) {
+      return
+    }
+
+    if (data.viewerUserId === null && data.viewerRole === null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'viewerUserId 또는 viewerRole 중 하나는 null이 아닌 값이어야 합니다',
+        path: ['viewerUserId'],
+      })
+    }
+  })
+
+export const consentUpdateSchema = z.object({
+  viewerUserId: z.string().uuid().nullable().optional(),
+  viewerRole: z.enum(['tenant', 'landlord', 'admin', 'broker', 'manager']).nullable().optional(),
+  resourceType: z.enum(['profile', 'reference', 'property', 'document', 'trade_hint', 'all']).optional(),
+  resourceId: z.string().uuid().optional().nullable(),
+  allowedFields: z.array(z.string().min(1)).optional(),
+  allowedPurposes: z.array(z.string().min(1)).optional(),
+  canViewContact: z.boolean().optional(),
+  validFrom: z.string().datetime().optional(),
+  validUntil: z.string().datetime().optional().nullable(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+  revoked: z.boolean().optional(),
+})
+
+export type ConsentCreateInput = z.infer<typeof consentCreateSchema>
+export type ConsentUpdateInput = z.infer<typeof consentUpdateSchema>
+
+export const tradeConditionHintCreateSchema = z.object({
+  tenantUserId: z.string().uuid('유효한 사용자 ID가 아닙니다'),
+  landlordUserId: z.string().uuid('유효한 사용자 ID가 아닙니다'),
+  propertyId: z.string().uuid().optional().nullable(),
+  hintLevel: z.enum(['low', 'normal', 'high', 'critical']).default('normal'),
+  requiredDocuments: z.array(z.string().min(1)).default([]),
+  adjustmentOptions: z.record(z.string(), z.unknown()).default({}),
+  safetyActions: z.array(z.string().min(1)).default([]),
+  snapshot: z.record(z.string(), z.unknown()).default({}),
+  validUntil: z.string().datetime().optional().nullable(),
+})
+
+export const tradeConditionHintUpdateSchema = z.object({
+  tenantUserId: z.string().uuid().optional(),
+  landlordUserId: z.string().uuid().optional(),
+  propertyId: z.string().uuid().optional().nullable(),
+  hintLevel: z.enum(['low', 'normal', 'high', 'critical']).optional(),
+  requiredDocuments: z.array(z.string().min(1)).optional(),
+  adjustmentOptions: z.record(z.string(), z.unknown()).optional(),
+  safetyActions: z.array(z.string().min(1)).optional(),
+  snapshot: z.record(z.string(), z.unknown()).optional(),
+  validUntil: z.string().datetime().optional().nullable(),
+})
+
+export type TradeConditionHintCreateInput = z.infer<typeof tradeConditionHintCreateSchema>
+export type TradeConditionHintUpdateInput = z.infer<typeof tradeConditionHintUpdateSchema>
+
 // ===== Verification =====
 export const employmentSchema = z.object({
   company: z.string().min(2, '회사명은 2자 이상이어야 합니다').max(100),
@@ -282,8 +363,8 @@ export const tenantFilterSchema = z.object({
   // scalar filters
   smoking: z.enum(['true', 'false']).optional(),
   has_reference: z.enum(['true', 'false']).optional(),
-  trust_min: z.coerce.number().int().min(0).max(120).optional(),
-  trust_max: z.coerce.number().int().min(0).max(120).optional(),
+  trust_min: z.coerce.number().int().min(0).max(145).optional(),
+  trust_max: z.coerce.number().int().min(0).max(145).optional(),
 
   // sort
   sort: z.enum(SORT_OPTIONS).optional().default('trust_desc'),
