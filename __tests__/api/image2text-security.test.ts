@@ -1,4 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { File as NodeFile } from 'node:buffer'
+
+Object.defineProperty(globalThis, 'File', {
+  value: NodeFile,
+  configurable: true,
+})
 
 vi.mock('@/lib/admin', () => ({
   getAdminUser: vi.fn(),
@@ -12,14 +18,26 @@ import { POST as imageToText } from '@/app/api/image2text/route'
 import { getAdminUser } from '@/lib/admin'
 import { extractTextFromDocument } from '@/lib/ocr-pipeline'
 
-function multipartRequest(file: File) {
-  const formData = new FormData()
-  formData.append('image', file)
-  formData.append('prompt', 'extract text')
+function multipartRequest(file: { name: string; type: string; content: string }) {
+  const boundary = '----rentme-test-boundary'
+  const body = [
+    `--${boundary}`,
+    `Content-Disposition: form-data; name="image"; filename="${file.name}"`,
+    `Content-Type: ${file.type}`,
+    '',
+    file.content,
+    `--${boundary}`,
+    'Content-Disposition: form-data; name="prompt"',
+    '',
+    'extract text',
+    `--${boundary}--`,
+    '',
+  ].join('\r\n')
 
   return new Request('http://localhost:3000/api/image2text', {
     method: 'POST',
-    body: formData,
+    headers: { 'Content-Type': `multipart/form-data; boundary=${boundary}` },
+    body,
   })
 }
 
@@ -31,7 +49,7 @@ describe('POST /api/image2text security checks', () => {
   it('requires an admin user before running OCR', async () => {
     vi.mocked(getAdminUser).mockResolvedValue(null)
 
-    const file = new File(['fake'], 'doc.png', { type: 'image/png' })
+    const file = { name: 'doc.png', type: 'image/png', content: 'fake' }
     const res = await imageToText(multipartRequest(file))
     const data = await res.json()
 
@@ -43,7 +61,7 @@ describe('POST /api/image2text security checks', () => {
   it('rejects unsupported file types before running OCR', async () => {
     vi.mocked(getAdminUser).mockResolvedValue({ id: 'admin-1', user_type: 'admin' } as never)
 
-    const file = new File(['<html></html>'], 'doc.html', { type: 'text/html' })
+    const file = { name: 'doc.html', type: 'text/html', content: '<html></html>' }
     const res = await imageToText(multipartRequest(file))
     const data = await res.json()
 
@@ -56,7 +74,7 @@ describe('POST /api/image2text security checks', () => {
     vi.mocked(getAdminUser).mockResolvedValue({ id: 'admin-1', user_type: 'admin' } as never)
     vi.mocked(extractTextFromDocument).mockResolvedValue({ text: '추출 결과', source: 'image' })
 
-    const file = new File(['png-data'], 'doc.png', { type: 'image/png' })
+    const file = { name: 'doc.png', type: 'image/png', content: 'png-data' }
     const res = await imageToText(multipartRequest(file))
     const data = await res.json()
 

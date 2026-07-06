@@ -1,4 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { File as NodeFile } from 'node:buffer'
+
+Object.defineProperty(globalThis, 'File', {
+  value: NodeFile,
+  configurable: true,
+})
 
 vi.mock('@/lib/db', () => ({
   query: vi.fn(),
@@ -39,14 +45,26 @@ function jsonRequest(body: Record<string, unknown>) {
   })
 }
 
-function multipartRequest(file: File) {
-  const formData = new FormData()
-  formData.append('documentType', 'income')
-  formData.append('file', file)
+function multipartRequest(file: { name: string; type: string; content: string }) {
+  const boundary = '----rentme-test-boundary'
+  const body = [
+    `--${boundary}`,
+    'Content-Disposition: form-data; name="documentType"',
+    '',
+    'income',
+    `--${boundary}`,
+    `Content-Disposition: form-data; name="file"; filename="${file.name}"`,
+    `Content-Type: ${file.type}`,
+    '',
+    file.content,
+    `--${boundary}--`,
+    '',
+  ].join('\r\n')
 
   return new Request('http://localhost:3000/api/verifications/documents', {
     method: 'POST',
-    body: formData,
+    headers: { 'Content-Type': `multipart/form-data; boundary=${boundary}` },
+    body,
   })
 }
 
@@ -71,7 +89,7 @@ describe('POST /api/verifications/documents security checks', () => {
   })
 
   it('rejects unsupported multipart file types before storage or OCR', async () => {
-    const file = new File(['<script>alert(1)</script>'], 'payload.html', { type: 'text/html' })
+    const file = { name: 'payload.html', type: 'text/html', content: '<script>alert(1)</script>' }
 
     const res = await uploadDocument(multipartRequest(file))
     const data = await res.json()
