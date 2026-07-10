@@ -21,18 +21,18 @@ const features = [
   },
   {
     icon: CreditCard,
-    title: '인증 시스템',
-    description: '재직, 소득, 신용 인증으로 객관적인 신뢰도를 증명할 수 있어요',
+    title: '확인 항목 관리',
+    description: '재직, 소득, 신용 관련 자료 등 공개할 확인 항목을 정리할 수 있어요',
   },
   {
     icon: Users,
     title: '레퍼런스',
-    description: '이전 집주인으로부터 추천을 받아 신뢰점수를 더 높여보세요',
+    description: '이전 집주인으로부터 추천을 받아 프로필 참고 지표를 보강해보세요',
   },
   {
     icon: BarChart3,
-    title: '신뢰점수',
-    description: '프로필 완성도와 인증에 기반한 점수로 신뢰도를 한눈에 보여줍니다',
+    title: '프로필 요약 점수',
+    description: '프로필 완성도와 확인 항목을 바탕으로 참고용 요약을 보여줍니다',
   },
 ]
 

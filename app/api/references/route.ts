@@ -16,7 +16,7 @@ export async function GET() {
     }
 
     const references = await query<LandlordReference>(
-      `SELECT * FROM landlord_references WHERE user_id = $1 ORDER BY created_at DESC`,
+      `SELECT * FROM landlord_references WHERE COALESCE(subject_user_id, user_id) = $1 ORDER BY created_at DESC`,
       [user.id]
     )
 
@@ -48,7 +48,7 @@ export async function POST(request: Request) {
 
     const existingRequest = await queryOne<LandlordReference>(
       `SELECT * FROM landlord_references
-       WHERE user_id = $1 AND landlord_phone = $2 AND status IN ('pending', 'sent')`,
+       WHERE COALESCE(subject_user_id, user_id) = $1 AND landlord_phone = $2 AND status IN ('pending', 'sent')`,
       [user.id, landlordPhone]
     )
 
@@ -62,8 +62,9 @@ export async function POST(request: Request) {
 
     const [reference] = await query<LandlordReference>(
       `INSERT INTO landlord_references
-        (user_id, landlord_name, landlord_phone, landlord_email, verification_token, token_expires_at, status, request_sent_at)
-       VALUES ($1, $2, $3, $4, $5, $6, 'sent', NOW())
+        (user_id, subject_user_id, landlord_name, landlord_phone, landlord_email,
+         reference_role, reference_channel, verification_token, token_expires_at, status, request_sent_at)
+       VALUES ($1, $1, $2, $3, $4, 'tenant', 'manual', $5, $6, 'sent', NOW())
        RETURNING *`,
       [user.id, landlordName, landlordPhone, landlordEmail, token, expiresAt]
     )

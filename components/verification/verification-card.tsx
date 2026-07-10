@@ -30,8 +30,8 @@ const cardConfig = {
   },
   credit: {
     icon: CreditCard,
-    title: '신용 인증',
-    description: '신용등급을 조회하여 인증합니다',
+    title: '신용 관련 확인 항목',
+    description: '사용자가 제출하거나 동의한 신용 관련 자료를 확인합니다',
     points: '+10~20점',
   },
 }
@@ -134,7 +134,7 @@ export function VerificationCard({ type, verification, onVerified }: Verificatio
               <p>인증된 소득: {verification.income_range}</p>
             )}
             {type === 'credit' && verification?.credit_grade && (
-              <p>신용 등급: {creditGradeLabels[verification.credit_grade]}</p>
+              <p>신용 관련 확인 결과: {creditGradeLabels[verification.credit_grade]}</p>
             )}
           </div>
         ) : (
@@ -175,7 +175,7 @@ export function VerificationCard({ type, verification, onVerified }: Verificatio
 
             {type === 'credit' && (
               <p className="text-sm text-muted-foreground">
-                버튼을 클릭하면 신용등급이 자동으로 조회됩니다.
+                버튼을 클릭하면 제출하거나 동의한 신용 관련 자료를 확인합니다.
               </p>
             )}
 

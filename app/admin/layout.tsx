@@ -23,6 +23,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             { href: '/admin', label: '대시보드' },
             { href: '/admin/users', label: '회원 관리' },
             { href: '/admin/documents', label: '서류 심사' },
+            { href: '/admin/ai-lab', label: 'AI Lab' },
           ].map(({ href, label }) => (
             <Link
               key={href}

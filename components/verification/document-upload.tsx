@@ -46,11 +46,12 @@ export function DocumentUpload({ type, label, onUploaded }: DocumentUploadProps)
     try {
       const res = await fetch('/api/verifications/documents', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          documentType: type,
-          fileName: file.name,
-        }),
+        body: (() => {
+          const formData = new FormData()
+          formData.append('documentType', type)
+          formData.append('file', file)
+          return formData
+        })(),
       })
 
       const data = await res.json()

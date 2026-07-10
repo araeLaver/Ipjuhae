@@ -1,16 +1,15 @@
 <claude-mem-context>
 # Memory Context
 
-# [02_Ipjuhae] recent context, 2026-05-31 10:32pm GMT+9
+# [02_Ipjuhae] recent context, 2026-07-05 11:48pm GMT+9
 
 Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision 🚨security_alert 🔐security_note
 Format: ID TIME TYPE TITLE
 Fetch details: get_observations([IDs]) | Search: mem-search skill
 
-Stats: 50 obs (10,376t read) | 110,332t work | 91% savings
+Stats: 50 obs (10,451t read) | 110,329t work | 91% savings
 
 ### May 12, 2026
-732 8:13p 🔵 입주해 유닛 테스트 전체 통과 — 522개 PASS, 0 FAIL
 739 8:14p 🔵 입주해 프로젝트 Next.js 프로덕션 빌드 상태 확인
 741 8:41p 🔵 입주해 에이전트 — DOW-83 Rentme 배포 리허설 태스크 시작
 742 " 🔵 Rentme 프로젝트 DB 마이그레이션 파일 목록 및 npm 스크립트 구조 확인
@@ -61,6 +60,8 @@ Stats: 50 obs (10,376t read) | 110,332t work | 91% savings
 848 " 🔵 Rentme 런치 체크리스트 및 Smoke QA 문서 미커밋 상태 확인
 849 " 🟣 Rentme 런치 자동화 스크립트 2종 추가 — launch-smoke.mjs, prelaunch-check.mjs
 850 8:36p ✅ Rentme 런치 문서·스크립트 커밋 완료 — commit 163cca3
+### May 31, 2026
+990 10:32p 🔵 02_Ipjuhae 저장소 — 로컬 main이 origin/main보다 2커밋 앞서 있음
 
 Access 110k tokens of past work via get_observations([IDs]) or mem-search skill.
 </claude-mem-context>

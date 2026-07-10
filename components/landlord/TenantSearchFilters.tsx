@@ -23,7 +23,7 @@ const REGIONS = [
 ]
 
 const SORT_LABELS: Record<string, string> = {
-  trust_desc: '신뢰점수 높은 순',
+  trust_desc: '프로필 요약 높은 순',
   created_desc: '최근 가입 순',
   reference_desc: '레퍼런스 많은 순',
   verified_desc: '인증 많은 순',
@@ -151,20 +151,20 @@ export function TenantSearchFilters({ filters, onChange, onReset }: TenantSearch
           </div>
         </div>
 
-        {/* 신뢰점수 범위 */}
+        {/* 프로필 요약 범위 */}
         <div className="space-y-2">
           <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-            신뢰점수 범위
+            프로필 요약 범위
           </Label>
           <div className="space-y-1">
             <div className="flex justify-between text-xs text-muted-foreground">
               <span>{filters.trust_min}점</span>
-              <span>{filters.trust_max >= 120 ? '120점 이상' : `${filters.trust_max}점`}</span>
+              <span>{filters.trust_max >= 145 ? '145점 이상' : `${filters.trust_max}점`}</span>
             </div>
             <input
               type="range"
               min={0}
-              max={120}
+              max={145}
               step={5}
               value={filters.trust_min}
               onChange={(e) => update('trust_min', Number(e.target.value))}
@@ -173,7 +173,7 @@ export function TenantSearchFilters({ filters, onChange, onReset }: TenantSearch
             <input
               type="range"
               min={0}
-              max={120}
+              max={145}
               step={5}
               value={filters.trust_max}
               onChange={(e) => update('trust_max', Number(e.target.value))}

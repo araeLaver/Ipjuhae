@@ -69,16 +69,16 @@ export default function VerificationPage() {
     <PageContainer maxWidth="md">
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold">인증 관리</h1>
-          <p className="text-muted-foreground">인증을 완료하여 신뢰점수를 높여보세요</p>
+          <h1 className="text-2xl font-bold">확인 서류 업로드</h1>
+          <p className="text-muted-foreground">재직, 소득, 신용 관련 서류를 제출해 프로필 확인 항목에 반영하세요</p>
         </div>
 
         <Card className="shadow-card">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>인증 점수</CardTitle>
-                <CardDescription>인증을 통해 획득한 점수</CardDescription>
+                <CardTitle>확인 항목 반영 현황</CardTitle>
+                <CardDescription>승인된 서류는 프로필 요약에 반영됩니다</CardDescription>
               </div>
               <div className="text-center">
                 <div className={`w-16 h-16 rounded-full ${getTrustScoreColor(verificationScore)} flex items-center justify-center`}>
@@ -99,7 +99,7 @@ export default function VerificationPage() {
                 <p className="font-semibold">{scoreBreakdown.income}점</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">신용</p>
+                <p className="text-sm text-muted-foreground">신용 관련</p>
                 <p className="font-semibold">{scoreBreakdown.credit}점</p>
               </div>
             </div>
@@ -125,7 +125,7 @@ export default function VerificationPage() {
         </div>
 
         <div className="text-sm text-muted-foreground text-center">
-          <p>* 인증 정보는 안전하게 암호화되어 저장됩니다.</p>
+          <p>* 제출된 서류는 관리자 심사 후 재직, 소득, 신용 관련 확인 항목에 반영됩니다.</p>
         </div>
       </div>
     </PageContainer>

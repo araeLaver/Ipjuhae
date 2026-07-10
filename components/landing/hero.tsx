@@ -74,7 +74,7 @@ export function Hero() {
                 transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
               >
                 <CheckCircle className="h-5 w-5 text-primary" />
-                <span className="text-sm font-semibold">신뢰점수 85점</span>
+                <span className="text-sm font-semibold">프로필 요약 85점</span>
               </motion.div>
 
               {/* Card */}

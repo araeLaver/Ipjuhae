@@ -1,12 +1,20 @@
 import { NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
-import { Profile, Verification, ReferenceResponse, User } from '@/types/database'
+import {
+  Profile,
+  Verification,
+  ReferenceResponse,
+  ReferenceResponseItem,
+  ValidationValue,
+  ReferenceDispute,
+  User,
+} from '@/types/database'
 import { calculateTrustScore } from '@/lib/trust-score'
 import { profileSchema } from '@/lib/validations'
 import { sanitizeUserInput } from '@/lib/sanitize'
 
-// GET: 내 프로필 조회 (동적 신뢰점수 포함)
+// GET: 내 프로필 조회 (동적 프로필 요약 점수 포함)
 export async function GET() {
   try {
     const user = await getCurrentUser()
@@ -33,9 +41,58 @@ export async function GET() {
     const referenceResponses = await query<ReferenceResponse>(
       `SELECT rr.* FROM reference_responses rr
        JOIN landlord_references lr ON rr.reference_id = lr.id
-       WHERE lr.user_id = $1 AND lr.status = 'completed'`,
+       WHERE COALESCE(lr.subject_user_id, lr.user_id) = $1 AND lr.status = 'completed'`,
       [user.id]
     )
+
+    const responseIds = referenceResponses.map((r) => r.id)
+    const referenceResponseItems =
+      responseIds.length === 0
+        ? []
+        : await query<ReferenceResponseItem>(
+            `SELECT rri.*
+             FROM reference_response_items rri
+             WHERE rri.response_id = ANY($1::uuid[])`,
+            [responseIds],
+          )
+
+    const referenceDisputes = responseIds.length === 0
+      ? []
+      : await query<ReferenceDispute>(
+          `SELECT rd.*
+             FROM reference_disputes rd
+             JOIN reference_responses rr ON rr.id = rd.response_id
+             JOIN landlord_references lr ON lr.id = rr.reference_id
+            WHERE COALESCE(lr.subject_user_id, lr.user_id) = $1
+              AND lr.status = 'completed'`,
+          [user.id],
+        )
+
+    const validationValues = await query<ValidationValue>(
+      `SELECT *
+         FROM validation_values
+        WHERE owner_user_id = $1
+          AND subject_type = 'tenant'
+          AND subject_id = $1
+          AND status = 'valid'`,
+      [user.id],
+    )
+
+    const propertySafetyRows = await query<{ avg_safety_score: string }>(
+      `
+        SELECT AVG(pss.safety_score)::FLOAT AS avg_safety_score
+          FROM property_safety_scores pss
+          INNER JOIN landlord_references lr
+            ON lr.target_property_id = pss.property_id
+         WHERE COALESCE(lr.subject_user_id, lr.user_id) = $1
+           AND lr.target_property_id IS NOT NULL
+           AND lr.status = 'completed'
+           AND (pss.expires_at IS NULL OR pss.expires_at >= NOW())
+      `,
+      [user.id],
+    )
+
+    const propertySafetyScore = Number(propertySafetyRows[0]?.avg_safety_score ?? null)
 
     let dynamicProfile = profile
     let trustScoreBreakdown = null
@@ -44,6 +101,10 @@ export async function GET() {
         profile,
         verification,
         referenceResponses,
+        referenceResponseItems,
+        referenceDisputes,
+        validationValues,
+        propertySafetyScore,
       })
       dynamicProfile = {
         ...profile,
@@ -114,7 +175,20 @@ export async function POST(request: Request) {
           is_complete = COALESCE($11, is_complete)
         WHERE user_id = $12
         RETURNING *`,
-        [sanitizedName, age_range, family_type, pets, smoking, stay_time, duration, noise_level, sanitizedBio, sanitizedIntro, is_complete, user.id]
+        [
+          sanitizedName,
+          age_range,
+          family_type,
+          pets,
+          smoking,
+          stay_time,
+          duration,
+          noise_level,
+          sanitizedBio,
+          sanitizedIntro,
+          is_complete,
+          user.id,
+        ]
       )
       profile = updated
     } else {

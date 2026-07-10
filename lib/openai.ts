@@ -1,5 +1,6 @@
 import OpenAI from 'openai'
 import { Profile } from '@/types/database'
+import { generateOmakaseText, isOmakaseConfigured } from '@/lib/ai-omakase'
 
 const openai = process.env.OPENAI_API_KEY
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
@@ -43,6 +44,14 @@ ${profileSummary}
 - 자연스럽고 정중한 톤
 - 집주인이 안심할 수 있는 내용 위주
 - "안녕하세요"로 시작`
+
+  if (isOmakaseConfigured()) {
+    try {
+      return await generateOmakaseText(prompt, 0.1)
+    } catch (error) {
+      console.warn('AI Omakase intro generation failed, falling back to OpenAI/mock:', error)
+    }
+  }
 
   // Mock response when no API key
   if (!openai) {

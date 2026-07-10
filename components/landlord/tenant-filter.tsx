@@ -111,7 +111,7 @@ export function TenantFilter({ filters, onChange, onReset }: TenantFilterProps) 
           </div>
 
           <div className="space-y-2">
-            <Label className="text-xs">신뢰점수</Label>
+            <Label className="text-xs">프로필 요약</Label>
             <Select
               value={filters.minScore}
               onValueChange={(value) => handleChange('minScore', value)}

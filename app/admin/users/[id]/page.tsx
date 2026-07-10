@@ -124,7 +124,7 @@ export default async function AdminUserDetailPage({
         </dl>
       </section>
 
-      {/* 프로필 + 신뢰점수 */}
+      {/* 프로필 + 프로필 요약 점수 */}
       {profile && (
         <section className="bg-white rounded-xl border border-gray-200 p-5 mb-4">
           <h2 className="text-sm font-semibold text-gray-700 mb-3">프로필</h2>

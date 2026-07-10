@@ -50,6 +50,11 @@ async function start() {
     handler(req, res)
   })
 
+  httpServer.on('error', (err) => {
+    console.error('Failed to start server:', err)
+    process.exit(1)
+  })
+
   const io = new SocketIOServer(httpServer, {
     path: '/api/ws',
     addTrailingSlash: false,

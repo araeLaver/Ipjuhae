@@ -218,7 +218,7 @@ export default function LandlordDashboard() {
                     </div>
                     <div>
                       <h3 className="font-semibold">세입자 찾기</h3>
-                      <p className="text-sm text-muted-foreground">인증된 세입자 프로필을 검색하세요</p>
+                      <p className="text-sm text-muted-foreground">공개 동의된 확인 항목이 있는 세입자 프로필을 검색하세요</p>
                     </div>
                   </div>
                   <ArrowRight className="h-5 w-5 text-muted-foreground" />

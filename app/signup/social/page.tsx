@@ -29,8 +29,24 @@ function SocialSignupForm() {
 
   const providerNames: Record<string, string> = {
     kakao: '카카오',
-    naver: '네이버',
-    google: '구글',
+  }
+
+  if (provider !== 'kakao' || !providerId) {
+    return (
+      <Card className="w-full max-w-md shadow-card">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl">지원하지 않는 가입 방식입니다</CardTitle>
+          <CardDescription>
+            현재 소셜 가입은 카카오만 지원합니다.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button type="button" className="w-full" onClick={() => router.push('/signup')}>
+            회원가입으로 돌아가기
+          </Button>
+        </CardContent>
+      </Card>
+    )
   }
 
   const handleSubmit = async (e: React.FormEvent) => {

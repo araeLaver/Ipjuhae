@@ -29,7 +29,7 @@ export default function TrustScoreEditor({ userId, initialScore }: Props) {
 
   return (
     <div className="border-t border-gray-100 pt-4">
-      <p className="text-xs text-gray-500 mb-2">신뢰점수 수동 조정</p>
+      <p className="text-xs text-gray-500 mb-2">프로필 요약 점수 수동 조정</p>
       <div className="flex items-center gap-3">
         <input
           type="range"

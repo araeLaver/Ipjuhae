@@ -55,7 +55,16 @@ export const referenceRequestSchema = z.object({
   landlordEmail: z.string().email().max(255).optional().nullable(),
 })
 
-export const referenceSurveySchema = z.object({
+export const REFERENCE_ITEM_CODES = [
+  'rent_payment',
+  'property_condition',
+  'neighbor_issues',
+  'checkout_condition',
+] as const
+
+export type ReferenceSurveyItemCode = (typeof REFERENCE_ITEM_CODES)[number]
+
+const referenceSurveyLegacySchema = z.object({
   rentPayment: z.number().int().min(1).max(5),
   propertyCondition: z.number().int().min(1).max(5),
   neighborIssues: z.number().int().min(1).max(5),
@@ -63,6 +72,221 @@ export const referenceSurveySchema = z.object({
   wouldRecommend: z.boolean(),
   comment: z.string().max(500).optional().nullable(),
 })
+
+export const referenceSurveyItemSchema = z.object({
+  itemCode: z.enum(REFERENCE_ITEM_CODES),
+  itemScore: z.number().int().min(1).max(5),
+  itemComment: z.string().max(500).optional().nullable(),
+})
+
+export const referenceSurveyItemizedSchema = z
+  .object({
+    items: z.array(referenceSurveyItemSchema).min(4).max(4),
+    wouldRecommend: z.boolean(),
+    comment: z.string().max(500).optional().nullable(),
+  })
+  .superRefine((data, ctx) => {
+    const seen = new Set<string>()
+    for (const item of data.items) {
+      if (seen.has(item.itemCode)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['items'],
+          message: 'itemCode는 중복될 수 없습니다',
+        })
+      }
+      seen.add(item.itemCode)
+    }
+
+    if (data.items.length !== REFERENCE_ITEM_CODES.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['items'],
+        message: '모든 레퍼런스 항목(월세 납부, 집 관리 상태, 이웃 문제, 퇴실 상태)이 필요합니다',
+      })
+      return
+    }
+
+    for (const item of REFERENCE_ITEM_CODES) {
+      if (!seen.has(item)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['items'],
+          message: `${item} 항목이 누락되었습니다`,
+        })
+      }
+    }
+  })
+
+export const referenceSurveySchema = z.union([referenceSurveyLegacySchema, referenceSurveyItemizedSchema])
+
+export interface ReferenceSurveyNormalizedPayload {
+  rentPayment: number
+  propertyCondition: number
+  neighborIssues: number
+  checkoutCondition: number
+  wouldRecommend: boolean
+  comment: string | null
+  items: Array<{
+    itemCode: ReferenceSurveyItemCode
+    itemScore: number
+    itemComment: string | null
+  }>
+}
+
+export function normalizeReferenceSurveyInput(
+  payload: unknown,
+): { data: ReferenceSurveyNormalizedPayload | null; error: string | null } {
+  const parsed = referenceSurveySchema.safeParse(payload)
+
+  if (!parsed.success) {
+    return {
+      data: null,
+      error: parsed.error.issues[0]?.message || '입력값이 올바르지 않습니다',
+    }
+  }
+
+  if ('rentPayment' in parsed.data) {
+    return {
+      data: {
+        rentPayment: parsed.data.rentPayment,
+        propertyCondition: parsed.data.propertyCondition,
+        neighborIssues: parsed.data.neighborIssues,
+        checkoutCondition: parsed.data.checkoutCondition,
+        wouldRecommend: parsed.data.wouldRecommend,
+        comment: parsed.data.comment ?? null,
+        items: [
+          {
+            itemCode: 'rent_payment',
+            itemScore: parsed.data.rentPayment,
+            itemComment: null,
+          },
+          {
+            itemCode: 'property_condition',
+            itemScore: parsed.data.propertyCondition,
+            itemComment: null,
+          },
+          {
+            itemCode: 'neighbor_issues',
+            itemScore: parsed.data.neighborIssues,
+            itemComment: null,
+          },
+          {
+            itemCode: 'checkout_condition',
+            itemScore: parsed.data.checkoutCondition,
+            itemComment: null,
+          },
+        ],
+      },
+      error: null,
+    }
+  }
+
+  const normalizedItems = parsed.data.items.map((item) => ({
+    itemCode: item.itemCode,
+    itemScore: item.itemScore,
+    itemComment: item.itemComment ?? null,
+  }))
+
+  const itemMap = normalizedItems.reduce((acc, item) => {
+    acc[item.itemCode] = item.itemScore
+    return acc
+  }, {} as Record<ReferenceSurveyItemCode, number>)
+
+  return {
+    data: {
+      rentPayment: itemMap.rent_payment,
+      propertyCondition: itemMap.property_condition,
+      neighborIssues: itemMap.neighbor_issues,
+      checkoutCondition: itemMap.checkout_condition,
+      wouldRecommend: parsed.data.wouldRecommend,
+      comment: parsed.data.comment ?? null,
+      items: normalizedItems,
+    },
+    error: null,
+  }
+}
+
+export const referenceDisputeSchema = z.object({
+  responseId: z.string().uuid('유효한 응답 ID가 아닙니다'),
+  responseItemId: z.string().uuid('유효한 항목 ID가 아닙니다').optional(),
+  requestType: z.enum(['correction', 'objection', 'appeal']),
+  requestReason: z.string().min(2, '요청 사유를 입력해주세요').max(1000, '요청 사유가 너무 깁니다'),
+  requestedValue: z.record(z.string(), z.unknown()).nullable().optional(),
+})
+
+export type ReferenceDisputeInput = z.infer<typeof referenceDisputeSchema>
+
+export const consentCreateSchema = z
+  .object({
+    viewerUserId: z.string().uuid().nullable().optional(),
+    viewerRole: z.enum(['tenant', 'landlord', 'admin', 'broker', 'manager']).nullable().optional(),
+    resourceType: z.enum(['profile', 'reference', 'property', 'document', 'trade_hint', 'all']).default('profile'),
+    resourceId: z.string().uuid().optional().nullable(),
+    allowedFields: z.array(z.string().min(1)).default(['*']),
+    allowedPurposes: z.array(z.string().min(1)).default([]),
+    canViewContact: z.boolean().default(false),
+    validFrom: z.string().datetime().optional(),
+    validUntil: z.string().datetime().optional().nullable(),
+    metadata: z.record(z.string(), z.unknown()).default({}),
+  })
+  .superRefine((data, ctx) => {
+    if (!data.viewerUserId && !data.viewerRole) {
+      return
+    }
+
+    if (data.viewerUserId === null && data.viewerRole === null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'viewerUserId 또는 viewerRole 중 하나는 null이 아닌 값이어야 합니다',
+        path: ['viewerUserId'],
+      })
+    }
+  })
+
+export const consentUpdateSchema = z.object({
+  viewerUserId: z.string().uuid().nullable().optional(),
+  viewerRole: z.enum(['tenant', 'landlord', 'admin', 'broker', 'manager']).nullable().optional(),
+  resourceType: z.enum(['profile', 'reference', 'property', 'document', 'trade_hint', 'all']).optional(),
+  resourceId: z.string().uuid().optional().nullable(),
+  allowedFields: z.array(z.string().min(1)).optional(),
+  allowedPurposes: z.array(z.string().min(1)).optional(),
+  canViewContact: z.boolean().optional(),
+  validFrom: z.string().datetime().optional(),
+  validUntil: z.string().datetime().optional().nullable(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+  revoked: z.boolean().optional(),
+})
+
+export type ConsentCreateInput = z.infer<typeof consentCreateSchema>
+export type ConsentUpdateInput = z.infer<typeof consentUpdateSchema>
+
+export const tradeConditionHintCreateSchema = z.object({
+  tenantUserId: z.string().uuid('유효한 사용자 ID가 아닙니다'),
+  landlordUserId: z.string().uuid('유효한 사용자 ID가 아닙니다'),
+  propertyId: z.string().uuid().optional().nullable(),
+  hintLevel: z.enum(['low', 'normal', 'high', 'critical']).default('normal'),
+  requiredDocuments: z.array(z.string().min(1)).default([]),
+  adjustmentOptions: z.record(z.string(), z.unknown()).default({}),
+  safetyActions: z.array(z.string().min(1)).default([]),
+  snapshot: z.record(z.string(), z.unknown()).default({}),
+  validUntil: z.string().datetime().optional().nullable(),
+})
+
+export const tradeConditionHintUpdateSchema = z.object({
+  tenantUserId: z.string().uuid().optional(),
+  landlordUserId: z.string().uuid().optional(),
+  propertyId: z.string().uuid().optional().nullable(),
+  hintLevel: z.enum(['low', 'normal', 'high', 'critical']).optional(),
+  requiredDocuments: z.array(z.string().min(1)).optional(),
+  adjustmentOptions: z.record(z.string(), z.unknown()).optional(),
+  safetyActions: z.array(z.string().min(1)).optional(),
+  snapshot: z.record(z.string(), z.unknown()).optional(),
+  validUntil: z.string().datetime().optional().nullable(),
+})
+
+export type TradeConditionHintCreateInput = z.infer<typeof tradeConditionHintCreateSchema>
+export type TradeConditionHintUpdateInput = z.infer<typeof tradeConditionHintUpdateSchema>
 
 // ===== Verification =====
 export const employmentSchema = z.object({
@@ -139,8 +363,8 @@ export const tenantFilterSchema = z.object({
   // scalar filters
   smoking: z.enum(['true', 'false']).optional(),
   has_reference: z.enum(['true', 'false']).optional(),
-  trust_min: z.coerce.number().int().min(0).max(120).optional(),
-  trust_max: z.coerce.number().int().min(0).max(120).optional(),
+  trust_min: z.coerce.number().int().min(0).max(145).optional(),
+  trust_max: z.coerce.number().int().min(0).max(145).optional(),
 
   // sort
   sort: z.enum(SORT_OPTIONS).optional().default('trust_desc'),

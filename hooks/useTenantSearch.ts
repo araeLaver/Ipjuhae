@@ -53,7 +53,7 @@ export const DEFAULT_FILTERS: TenantFilters = {
   smoking: '',
   has_reference: '',
   trust_min: 0,
-  trust_max: 120,
+  trust_max: 145,
   sort: 'trust_desc',
 }
 
@@ -92,7 +92,7 @@ export function useTenantSearch(limit = 12) {
       if (f.smoking) p.set('smoking', f.smoking)
       if (f.has_reference) p.set('has_reference', f.has_reference)
       if (f.trust_min > 0) p.set('trust_min', String(f.trust_min))
-      if (f.trust_max < 120) p.set('trust_max', String(f.trust_max))
+      if (f.trust_max < 145) p.set('trust_max', String(f.trust_max))
 
       return p
     },

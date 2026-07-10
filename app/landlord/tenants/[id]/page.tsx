@@ -22,6 +22,9 @@ interface TrustScoreBreakdown {
   income: number
   credit: number
   reference: number
+  validation: number
+  disputePenalty: number
+  propertySafety: number
   total: number
 }
 
@@ -122,7 +125,7 @@ export default function TenantDetailPage() {
         {scoreBreakdown && (
           <Card className="shadow-card">
             <CardHeader>
-              <CardTitle className="text-base">신뢰점수 상세</CardTitle>
+              <CardTitle className="text-base">프로필 요약 상세</CardTitle>
             </CardHeader>
             <CardContent>
               <TrustScoreChart

@@ -14,7 +14,7 @@ import { FavoriteButton } from '@/components/landlord/favorite-button'
 // ---------------------------------------------------------------------------
 
 function getTrustScoreLabel(score: number): string {
-  if (score >= 100) return '최우수'
+  if (score >= 130) return '최우수'
   if (score >= 80) return '우수'
   if (score >= 60) return '양호'
   if (score >= 40) return '보통'
@@ -81,7 +81,7 @@ export function TenantCard({ tenant }: TenantCardProps) {
           </div>
 
           {/* Trust score bar */}
-          <Progress value={tenant.trust_score} max={120} className="h-1.5" />
+          <Progress value={tenant.trust_score} max={145} className="h-1.5" />
 
           {/* Bio */}
           {tenant.bio && (
@@ -129,7 +129,7 @@ export function TenantCard({ tenant }: TenantCardProps) {
               )}
               {tenant.verified.credit && (
                 <span className="text-xs text-violet-600 flex items-center gap-0.5 font-medium">
-                  <CheckCircle className="h-3 w-3" />신용
+                  <CheckCircle className="h-3 w-3" />신용 관련 확인
                 </span>
               )}
               {verifiedCount === 0 && (
