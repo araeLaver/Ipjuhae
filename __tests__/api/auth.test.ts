@@ -39,6 +39,7 @@ import { POST as signup } from '@/app/api/auth/signup/route'
 import { POST as login } from '@/app/api/auth/login/route'
 import { POST as logout } from '@/app/api/auth/logout/route'
 import { GET as me } from '@/app/api/auth/me/route'
+import { DELETE as deleteAccount } from '@/app/api/account/delete/route'
 import { setAuthCookie, clearAuthCookie, getCurrentUser } from '@/lib/auth'
 import { query, queryOne } from '@/lib/db'
 import { authRateLimit } from '@/lib/rate-limit'
@@ -274,5 +275,87 @@ describe('POST /api/auth/logout', () => {
     expect(res.status).toBe(200)
     expect(data.success).toBe(true)
     expect(clearAuthCookie).toHaveBeenCalledOnce()
+  })
+})
+
+describe('DELETE /api/account/delete', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockCookieStore()
+  })
+
+  it('returns 401 and does not mutate data when unauthenticated', async () => {
+    vi.mocked(getCurrentUser).mockResolvedValueOnce(null)
+
+    const res = await deleteAccount()
+    const data = await res.json()
+
+    expect(res.status).toBe(401)
+    expect(data.error).toContain('로그인이 필요합니다')
+    expect(query).not.toHaveBeenCalled()
+    expect(clearAuthCookie).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    ['tenant', 'tenant-user-1'],
+    ['landlord', 'landlord-user-1'],
+  ])('anonymizes account data and clears auth cookie for %s users', async (userType, userId) => {
+    vi.mocked(getCurrentUser).mockResolvedValueOnce({
+      id: userId,
+      email: `${userType}@example.com`,
+      name: userType === 'tenant' ? '세입자' : '집주인',
+      user_type: userType,
+    } as never)
+    vi.mocked(query).mockResolvedValue([])
+
+    const res = await deleteAccount()
+    const data = await res.json()
+
+    expect(res.status).toBe(200)
+    expect(data.ok).toBe(true)
+    expect(query).toHaveBeenCalledTimes(5)
+    expect(query).toHaveBeenNthCalledWith(
+      1,
+      expect.stringContaining('UPDATE users'),
+      [`deleted_${userId}@deleted.invalid`, userId]
+    )
+    expect(query).toHaveBeenNthCalledWith(
+      2,
+      expect.stringContaining('UPDATE profiles'),
+      [userId]
+    )
+    expect(query).toHaveBeenNthCalledWith(
+      3,
+      'DELETE FROM notifications WHERE user_id = $1',
+      [userId]
+    )
+    expect(query).toHaveBeenNthCalledWith(
+      4,
+      'DELETE FROM favorites WHERE user_id = $1',
+      [userId]
+    )
+    expect(query).toHaveBeenNthCalledWith(
+      5,
+      expect.stringContaining('UPDATE tenant_profiles'),
+      [userId]
+    )
+    expect(clearAuthCookie).toHaveBeenCalledOnce()
+  })
+
+  it('returns 500 and preserves auth cookie when anonymization fails', async () => {
+    vi.mocked(getCurrentUser).mockResolvedValueOnce({
+      id: 'tenant-user-1',
+      email: 'tenant@example.com',
+      name: '세입자',
+      user_type: 'tenant',
+    } as never)
+    vi.mocked(query).mockRejectedValueOnce(new Error('database unavailable'))
+
+    const res = await deleteAccount()
+    const data = await res.json()
+
+    expect(res.status).toBe(500)
+    expect(data.error).toContain('계정 삭제 중 오류')
+    expect(clearAuthCookie).not.toHaveBeenCalled()
   })
 })
