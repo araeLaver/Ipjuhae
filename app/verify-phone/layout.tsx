@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: '휴대폰 인증',
-  description: '임주해(Rentme) 본인 확인을 위해 휴대폰 번호를 인증해주세요. 인증 완료 시 신뢰점수가 향상됩니다.',
+  description: '임주해(Rentme) 본인 확인을 위해 휴대폰 번호를 인증해주세요. 인증 완료 시 프로필 완성도가 향상됩니다.',
   openGraph: {
     title: '휴대폰 인증 | 임주해',
     description: '임주해(Rentme) 본인 확인을 위해 휴대폰 번호를 인증해주세요.',

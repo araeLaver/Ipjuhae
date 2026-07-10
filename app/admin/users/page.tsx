@@ -97,7 +97,7 @@ export default function AdminUsersPage() {
         <table className="w-full text-sm">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
-              {['이메일', '이름', '유형', '신뢰점수', '프로필', '가입일', ''].map(h => (
+              {['이메일', '이름', '유형', '프로필 요약', '프로필', '가입일', ''].map(h => (
                 <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                   {h}
                 </th>

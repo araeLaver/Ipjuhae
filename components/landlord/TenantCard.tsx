@@ -129,7 +129,7 @@ export function TenantCard({ tenant }: TenantCardProps) {
               )}
               {tenant.verified.credit && (
                 <span className="text-xs text-violet-600 flex items-center gap-0.5 font-medium">
-                  <CheckCircle className="h-3 w-3" />신용
+                  <CheckCircle className="h-3 w-3" />신용 관련 확인
                 </span>
               )}
               {verifiedCount === 0 && (

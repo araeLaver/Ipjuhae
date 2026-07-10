@@ -14,7 +14,7 @@ import { calculateTrustScore } from '@/lib/trust-score'
 import { profileSchema } from '@/lib/validations'
 import { sanitizeUserInput } from '@/lib/sanitize'
 
-// GET: 내 프로필 조회 (동적 신뢰점수 포함)
+// GET: 내 프로필 조회 (동적 프로필 요약 점수 포함)
 export async function GET() {
   try {
     const user = await getCurrentUser()

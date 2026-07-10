@@ -4,7 +4,7 @@ import Link from 'next/link'
 
 export const metadata: Metadata = {
   title: '프로필 설정',
-  description: '임주해(Rentme)에서 세입자 프로필을 만들어보세요. 기본 정보와 생활 패턴을 입력하면 신뢰할 수 있는 세입자임을 집주인에게 증명할 수 있습니다.',
+  description: '임주해(Rentme)에서 세입자 프로필을 만들어보세요. 기본 정보와 생활 패턴을 입력해 집주인에게 공개할 프로필 정보를 정리할 수 있습니다.',
   openGraph: {
     title: '프로필 설정 | 임주해',
     description: '임주해(Rentme)에서 세입자 프로필을 만들어보세요.',

@@ -58,7 +58,7 @@ describe('GET /api/profile', () => {
     expect(data.verification).toBeNull()
   })
 
-  it('프로필 있는 유저 → 동적 신뢰점수 포함 반환', async () => {
+  it('프로필 있는 유저 → 동적 프로필 요약 점수 포함 반환', async () => {
     vi.mocked(getCurrentUser).mockResolvedValue({ id: 'user-1', email: 'test@example.com' } as unknown as User)
     const mockProfile = {
       id: 'prof-1',

@@ -12,7 +12,7 @@ import {
 import { calculateTrustScore } from '@/lib/trust-score'
 import { evaluateProfileAccess } from '@/lib/consent-access'
 
-// GET: 공개 프로필 조회 (동적 신뢰점수 포함)
+// GET: 공개 프로필 조회 (동적 프로필 요약 점수 포함)
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -113,7 +113,7 @@ export async function GET(
       publicProfile.name = '익명'
     }
 
-    // 동적 신뢰점수 계산
+    // 동적 프로필 요약 점수 계산
     const scoreBreakdown = calculateTrustScore({
       profile: publicProfile,
       verification,

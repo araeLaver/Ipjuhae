@@ -6,7 +6,7 @@
  *   Header: Authorization: Bearer <CRON_SECRET>
  *
  * GitHub Actions 또는 외부 스케줄러에서 매일 자정 실행.
- * 만료된 references → status='expired', 알림 발송, 신뢰점수 재계산.
+ * 만료된 references → status='expired', 알림 발송, 프로필 요약 점수 재계산.
  */
 import { NextResponse } from 'next/server'
 import { query } from '@/lib/db'
@@ -59,7 +59,7 @@ export async function GET(request: Request) {
       )
     )
 
-    // 3. 만료된 유저들의 신뢰점수 재계산
+    // 3. 만료된 유저들의 프로필 요약 점수 재계산
     const userIds = Array.from(new Set(expired.map((r) => r.user_id)))
     await recalculateTrustScores(userIds)
 

@@ -20,7 +20,7 @@ const categories = [
   { key: 'profile' as const, label: '프로필 완성', max: 20, color: 'bg-teal-500' },
   { key: 'employment' as const, label: '재직 인증', max: 25, color: 'bg-blue-500' },
   { key: 'income' as const, label: '소득 인증', max: 25, color: 'bg-indigo-500' },
-  { key: 'credit' as const, label: '신용 인증', max: 20, color: 'bg-purple-500' },
+  { key: 'credit' as const, label: '신용 관련 확인', max: 20, color: 'bg-purple-500' },
   { key: 'reference' as const, label: '레퍼런스', max: 30, color: 'bg-amber-500' },
   { key: 'validation' as const, label: '서류 검증', max: 15, color: 'bg-emerald-500' },
   { key: 'disputePenalty' as const, label: '분쟁 페널티', max: 30, color: 'bg-red-500' },

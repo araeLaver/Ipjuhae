@@ -23,7 +23,7 @@ const REGIONS = [
 ]
 
 const SORT_LABELS: Record<string, string> = {
-  trust_desc: '신뢰점수 높은 순',
+  trust_desc: '프로필 요약 높은 순',
   created_desc: '최근 가입 순',
   reference_desc: '레퍼런스 많은 순',
   verified_desc: '인증 많은 순',
@@ -151,10 +151,10 @@ export function TenantSearchFilters({ filters, onChange, onReset }: TenantSearch
           </div>
         </div>
 
-        {/* 신뢰점수 범위 */}
+        {/* 프로필 요약 범위 */}
         <div className="space-y-2">
           <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-            신뢰점수 범위
+            프로필 요약 범위
           </Label>
           <div className="space-y-1">
             <div className="flex justify-between text-xs text-muted-foreground">

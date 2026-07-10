@@ -149,10 +149,10 @@ export default async function PublicProfilePage({ params }: Props) {
             )}
           </div>
 
-          {/* 신뢰점수 */}
+          {/* 프로필 요약 점수 */}
           <Card className="shadow-card">
             <CardHeader>
-              <CardTitle className="text-base">신뢰점수</CardTitle>
+              <CardTitle className="text-base">프로필 요약 점수</CardTitle>
             </CardHeader>
             <CardContent>
               <TrustScoreChart total={scoreBreakdown.total} breakdown={scoreBreakdown} />
@@ -263,7 +263,7 @@ export default async function PublicProfilePage({ params }: Props) {
               에서 생성되었습니다.
             </p>
             <p className="text-xs text-primary/60 mt-1">
-              신뢰할 수 있는 세입자 프로필을 만들어보세요.
+              세입자 프로필을 만들어보세요.
             </p>
           </div>
         </div>

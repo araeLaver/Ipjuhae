@@ -10,15 +10,15 @@ export const metadata: Metadata = {
     default: '임주해 | 세입자 프로필 기반 부동산 매칭',
     template: '%s | 임주해',
   },
-  description: '신뢰할 수 있는 세입자 프로필로 집주인과 세입자를 매칭하는 서비스',
-  keywords: ['임주해', '세입자 프로필', '임대차 매칭', '전세 구하기', '월세 매칭', '부동산 매칭', '역방향 매칭', '집주인 선택', '임대인 매칭', '세입자 신뢰점수'],
+  description: '확인 항목이 포함된 세입자 프로필로 집주인과 세입자를 연결하는 서비스',
+  keywords: ['임주해', '세입자 프로필', '임대차 매칭', '전세 구하기', '월세 매칭', '부동산 매칭', '역방향 매칭', '집주인 선택', '임대인 매칭', '프로필 요약 점수'],
   openGraph: {
     type: 'website',
     locale: 'ko_KR',
     url: APP_URL,
     siteName: '임주해',
     title: '임주해 | 세입자 프로필 기반 부동산 매칭',
-    description: '신뢰할 수 있는 세입자 프로필로 집주인과 세입자를 매칭하는 서비스',
+    description: '확인 항목이 포함된 세입자 프로필로 집주인과 세입자를 연결하는 서비스',
     images: [
       {
         url: '/opengraph-image',
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: '임주해 | 세입자 프로필 기반 부동산 매칭',
-    description: '신뢰할 수 있는 세입자 프로필로 집주인과 세입자를 매칭하는 서비스',
+    description: '확인 항목이 포함된 세입자 프로필로 집주인과 세입자를 연결하는 서비스',
     images: ['/opengraph-image'],
   },
   robots: {
@@ -46,7 +46,7 @@ const organizationJsonLd = {
   name: '임주해',
   url: APP_URL,
   logo: `${APP_URL}/icon.png`,
-  description: '신뢰할 수 있는 세입자 프로필로 집주인과 세입자를 매칭하는 서비스',
+  description: '확인 항목이 포함된 세입자 프로필로 집주인과 세입자를 연결하는 서비스',
   sameAs: [],
 }
 

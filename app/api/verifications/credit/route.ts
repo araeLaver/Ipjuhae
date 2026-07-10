@@ -5,7 +5,7 @@ import { Verification } from '@/types/database'
 import { verifyCredit, getVerificationProvider } from '@/lib/verification'
 import { logger } from '@/lib/logger'
 
-// POST: 신용 인증
+// POST: 신용 관련 확인 항목
 export async function POST(request: Request) {
   try {
     const user = await getCurrentUser()
@@ -45,7 +45,7 @@ export async function POST(request: Request) {
 
       if (!profile?.phone) {
         return NextResponse.json(
-          { error: '신용 인증을 위해 먼저 휴대폰 인증을 완료해주세요' },
+          { error: '신용 관련 확인 항목 반영을 위해 먼저 휴대폰 인증을 완료해주세요' },
           { status: 400 }
         )
       }
@@ -57,11 +57,11 @@ export async function POST(request: Request) {
       }
     }
 
-    // 신용 인증 실행
+    // 신용 관련 확인 실행
     const result = await verifyCredit(userIdentity)
 
     if (!result.success) {
-      logger.warn('신용 인증 실패', { userId: user.id, error: result.error })
+      logger.warn('신용 관련 확인 실패', { userId: user.id, error: result.error })
       return NextResponse.json({ error: result.error }, { status: 400 })
     }
 
@@ -79,7 +79,7 @@ export async function POST(request: Request) {
       verification = created
     }
 
-    // 신용 인증 업데이트
+    // 신용 관련 확인 항목 업데이트
     const [updated] = await query<Verification>(
       `UPDATE verifications SET
         credit_verified = TRUE,
@@ -90,7 +90,7 @@ export async function POST(request: Request) {
       [result.data?.creditGrade, user.id]
     )
 
-    logger.info('신용 인증 완료', {
+    logger.info('신용 관련 확인 완료', {
       userId: user.id,
       creditGrade: result.data?.creditGrade,
       gradeLabel: result.data?.gradeLabel,
@@ -98,7 +98,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       verification: updated,
-      message: `신용 인증이 완료되었습니다. 등급: ${result.data?.gradeLabel}`,
+      message: `신용 관련 확인 항목이 반영되었습니다. 확인 결과: ${result.data?.gradeLabel}`,
       creditInfo: {
         grade: result.data?.creditGrade,
         label: result.data?.gradeLabel,
@@ -107,7 +107,7 @@ export async function POST(request: Request) {
       provider,
     })
   } catch (error) {
-    logger.error('신용 인증 오류', { error })
-    return NextResponse.json({ error: '신용 인증 중 오류가 발생했습니다' }, { status: 500 })
+    logger.error('신용 관련 확인 오류', { error })
+    return NextResponse.json({ error: '신용 관련 확인 항목 반영 중 오류가 발생했습니다' }, { status: 500 })
   }
 }

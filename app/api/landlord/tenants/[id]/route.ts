@@ -127,7 +127,7 @@ export async function GET(request: Request, { params }: RouteParams) {
       profile.name = '익명'
     }
 
-    // 동적 신뢰점수 계산
+    // 동적 프로필 요약 점수 계산
     const scoreBreakdown = calculateTrustScore({
       profile,
       verification,

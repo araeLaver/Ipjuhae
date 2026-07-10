@@ -99,7 +99,7 @@ export default function ProfilePage() {
         {/* Trust Score */}
         <Card className="shadow-card">
           <CardHeader>
-            <CardTitle className="text-base">신뢰점수</CardTitle>
+            <CardTitle className="text-base">프로필 요약 점수</CardTitle>
           </CardHeader>
           <CardContent>
             <TrustScoreChart
@@ -118,7 +118,7 @@ export default function ProfilePage() {
             <Button variant="outline" className="w-full justify-start">
               <Shield className="h-4 w-4 mr-2" />
               서류 업로드
-              <span className="ml-auto text-sm text-muted-foreground">신뢰점수 높이기</span>
+              <span className="ml-auto text-sm text-muted-foreground">확인 항목 보완</span>
             </Button>
           </Link>
           <Link href="/profile/reference">

@@ -128,7 +128,7 @@ export default function SurveyPage() {
                 <p className="text-muted-foreground mb-6">
                   소중한 의견을 공유해 주셔서 감사합니다.
                   <br />
-                  {tenantName}님의 신뢰점수에 반영됩니다.
+                  {tenantName}님의 프로필 참고 지표에 반영됩니다.
                 </p>
                 {existingResponse && (
                   <Button

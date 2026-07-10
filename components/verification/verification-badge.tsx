@@ -23,8 +23,8 @@ const badgeConfig = {
   },
   credit: {
     icon: CreditCard,
-    label: '신용',
-    verifiedLabel: '신용 인증',
+    label: '신용 관련',
+    verifiedLabel: '신용 관련 확인',
   },
 }
 
