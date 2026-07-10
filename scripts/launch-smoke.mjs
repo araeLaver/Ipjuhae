@@ -58,7 +58,7 @@ async function main() {
   const baseUrl = normalizeUrl(
     requireEnv('LAUNCH_SMOKE_BASE_URL', requireEnv('APP_URL', requireEnv('NEXT_PUBLIC_APP_URL', 'http://localhost:3000')))
   )
-  const csrfOrigin = normalizeUrl(requireEnv('LAUNCH_SMOKE_ORIGIN', requireEnv('NEXT_PUBLIC_APP_URL', baseUrl)))
+  const csrfOrigin = normalizeUrl(requireEnv('LAUNCH_SMOKE_ORIGIN', baseUrl))
   const token = process.env.LAUNCH_SMOKE_TOKEN
 
   const commonHeaders = token ? { 'x-launch-smoke-token': token } : undefined
@@ -92,7 +92,7 @@ async function main() {
     method: 'POST',
     status: 400,
     body: { phoneNumber: 'invalid' },
-    headers: { origin: csrfOrigin },
+    headers: { origin: csrfOrigin, 'x-mobile-client': 'true' },
     assert: (payload) => !!payload?.error,
   }))
 
