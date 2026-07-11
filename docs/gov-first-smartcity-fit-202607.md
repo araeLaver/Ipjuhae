@@ -1,6 +1,6 @@
 # 정부 첫 실증·구매 프로젝트(스마트도시) Rentme 적합성 검토
 
-작성일: 2026-07-10
+작성일: 2026-07-11
 대상 공고: 2026년 정부 첫 실증·구매 프로젝트(스마트도시) 창업기업 모집공고
 결론: No-Go 권장
 
@@ -68,6 +68,7 @@ Rentme는 이번 스마트도시 공고에 바로 제출하지 않는 것을 권
 
 - K-Startup 공고 상세: https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do?pbancSn=178335&schM=view
 - 기업마당 공고 상세: https://www.bizinfo.go.kr/sii/siia/selectSIIA200Detail.do?pblancId=PBLN_000000000123819
+- 중소벤처기업부 공식 공고: https://www.mss.go.kr/site/smba/ex/bbs/View.do?bcIdx=1069495&cbIdx=310
 - 중소벤처기업부 사업공고 목록: https://www.mss.go.kr/site/smba/ex/bbs/List.do?cbIdx=310
 - 공고문 PDF: K-Startup 첨부 `2026년 정부 첫 실증·구매 프로젝트(스마트도시) 창업기업 모집공고.pdf`
 - 수요기관별 과제 ZIP: K-Startup 첨부 `(별첨2) 공공 수요기관별 과제.zip`
