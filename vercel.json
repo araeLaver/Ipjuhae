@@ -1,0 +1,17 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/trust-outbox",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/trust-maintenance",
+      "schedule": "0 18 * * *"
+    },
+    {
+      "path": "/api/cron/references",
+      "schedule": "15 18 * * *"
+    }
+  ]
+}
+

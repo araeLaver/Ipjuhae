@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { query } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
 import { VerificationDocument } from '@/types/database'
+import { createExtractionJob, trustDigest } from '@/lib/trust-engine'
+import { getRequestContext } from '@/lib/request-context'
 
 const VALID_TYPES = ['employment', 'income', 'credit']
 
@@ -28,6 +30,17 @@ export async function POST(request: Request) {
        RETURNING *`,
       [user.id, documentType, fileName]
     )
+
+    await createExtractionJob({
+      documentId: doc.id,
+      subjectType: user.user_type === 'landlord' ? 'landlord' : 'tenant',
+      subjectId: user.id,
+      sourceCode: 'user_upload',
+      storageRef: `verification-document:${doc.id}`,
+      inputChecksum: trustDigest({ documentId: doc.id, fileName }),
+      documentType,
+      metadata: { legacy_file_name: fileName },
+    }, user.id, getRequestContext(request))
 
     return NextResponse.json({ document: doc })
   } catch (error) {

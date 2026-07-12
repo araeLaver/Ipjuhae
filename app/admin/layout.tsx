@@ -4,6 +4,17 @@ import Link from 'next/link'
 
 export const metadata = { title: 'Admin | Rentme' }
 
+const adminNav = [
+  { href: '/admin', label: 'Dashboard' },
+  { href: '/admin/users', label: 'Users' },
+  { href: '/admin/documents', label: 'Documents' },
+  { href: '/admin/patents', label: 'Patent Docs' },
+  { href: '/admin/disputes', label: 'Disputes' },
+  { href: '/admin/access-logs', label: 'Access Logs' },
+  { href: '/admin/trust', label: 'Trust Engine' },
+  { href: '/admin/trust/operations', label: 'Trust Operations' },
+]
+
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const user = await getCurrentUser()
 
@@ -13,18 +24,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="min-h-screen flex bg-gray-50">
-      {/* Sidebar */}
       <aside className="w-56 shrink-0 bg-white border-r border-gray-200 flex flex-col">
         <div className="h-14 flex items-center px-5 border-b border-gray-200">
-          <span className="text-sm font-semibold text-gray-800">관리자</span>
+          <span className="text-sm font-semibold text-gray-800">Admin</span>
         </div>
         <nav className="flex-1 py-4 space-y-1 px-3">
-          {[
-            { href: '/admin', label: '대시보드' },
-            { href: '/admin/users', label: '사용자 관리' },
-            { href: '/admin/documents', label: '문서 심사' },
-            { href: '/admin/patents', label: '특허/출원 문서' },
-          ].map(({ href, label }) => (
+          {adminNav.map(({ href, label }) => (
             <Link
               key={href}
               href={href}
@@ -39,7 +44,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </div>
       </aside>
 
-      {/* Main */}
       <main className="flex-1 p-8 overflow-y-auto">{children}</main>
     </div>
   )

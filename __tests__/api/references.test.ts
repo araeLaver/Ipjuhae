@@ -40,7 +40,7 @@ describe('GET /api/references', () => {
   it('미로그인 → 401', async () => {
     vi.mocked(getCurrentUser).mockResolvedValue(null)
 
-    const res = await GET()
+    const res = await GET(new Request('http://localhost:3000/api/references'))
 
     expect(res.status).toBe(401)
   })
@@ -53,7 +53,7 @@ describe('GET /api/references', () => {
     ]
     vi.mocked(query).mockResolvedValue(mockRefs)
 
-    const res = await GET()
+    const res = await GET(new Request('http://localhost:3000/api/references'))
     const data = await res.json()
 
     expect(res.status).toBe(200)
@@ -97,9 +97,9 @@ describe('POST /api/references', () => {
     }))
     const data = await res.json()
 
-    expect(res.status).toBe(200)
+    expect(res.status).toBe(201)
     expect(data.reference).toBeTruthy()
-    expect(data.message).toContain('전송')
+    expect(data.message).toContain('created')
     expect(sendReferenceRequestSMS).toHaveBeenCalledWith(
       '01012345678',
       '김민수',
@@ -117,7 +117,7 @@ describe('POST /api/references', () => {
     const data = await res.json()
 
     expect(res.status).toBe(400)
-    expect(data.error).toContain('이미')
+    expect(data.code).toBe('REFERENCE_ALREADY_REQUESTED')
   })
 
   it('전화번호 누락 → 400', async () => {

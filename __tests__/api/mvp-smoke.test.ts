@@ -95,7 +95,7 @@ describe('MVP API smoke flows', () => {
     }))
   })
 
-  it('landlord screens masked tenants with verification and reference signals', async () => {
+  it('landlord receives minimum tenant fields when explicit verification consent is absent', async () => {
     vi.mocked(getCurrentUser).mockResolvedValue({ id: landlordId, email: 'landlord@example.com' } as never)
     vi.mocked(queryOne).mockResolvedValue({ id: landlordId, user_type: 'landlord' })
     vi.mocked(query)
@@ -133,10 +133,10 @@ describe('MVP API smoke flows', () => {
     expect(data.total_count).toBe(1)
     expect(data.tenants[0]).toMatchObject({
       user_id: tenantId,
-      name: '김*수',
+      name: '김민수',
       trust_score: 88,
-      reference_count: 2,
-      verified: { employment: true, income: true, credit: false },
+      reference_count: 0,
+      verified: { employment: false, income: false, credit: false },
     })
     expect(data.next_cursor).toEqual(expect.any(String))
   })

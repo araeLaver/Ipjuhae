@@ -4,6 +4,9 @@ import { getCurrentUser } from '@/lib/auth'
 import { User } from '@/types/database'
 import { tenantFilterSchema, SortOption } from '@/lib/validations'
 import { decodeTenantCursor, encodeTenantCursor } from '@/lib/tenant-search-cursor'
+import { getTenantProfileVisibility, getVisibleConsentFields, toConsentRole, getTenantProfileConsent } from '@/lib/consent'
+import { recordAccessAudit } from '@/lib/access-audit'
+import { getClientIp } from '@/lib/rate-limit'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -13,8 +16,8 @@ interface TenantCard {
   profile_id: string
   user_id: string
   name: string
-  age_range: string
-  family_type: string
+  age_range: string | null
+  family_type: string | null
   pets: string[]
   smoking: boolean
   stay_time: string | null
@@ -30,6 +33,7 @@ interface TenantCard {
   reference_count: number
   profile_image_url: string | null
   created_at: string
+  _consent_fields?: string[]
 }
 
 interface ProfileRow {
@@ -279,30 +283,60 @@ export async function GET(request: Request) {
       [...(allParams as (string | number | boolean)[]), limit]
     )
 
+    const actorIp = getClientIp(request)
+    const actorUserAgent = request.headers.get('user-agent')
+    const actorRole = toConsentRole(fullUser.user_type as string | null | undefined)
+    const actorUserId = user.id
+
     // ---------- Map to TenantCard ----------
-    const tenants: TenantCard[] = rows.map((row) => {
+    const tenants: TenantCard[] = await Promise.all(rows.map(async (row) => {
+      const visibility = getTenantProfileVisibility(await getTenantProfileConsent(row.user_id))
+
+      const visibleFields = getVisibleConsentFields(visibility)
+
       return {
         profile_id: row.profile_id,
         user_id: row.user_id,
-        name: maskName(row.name),
-        age_range: row.age_range,
-        family_type: row.family_type,
-        pets: row.pets ?? [],
-        smoking: row.smoking,
-        stay_time: row.stay_time,
-        duration: row.duration,
-        noise_level: row.noise_level,
-        trust_score: row.trust_score,
-        bio: row.bio,
+        name: visibility.basic_profile ? row.name : maskName(row.name),
+        age_range: visibility.basic_profile ? row.age_range : null,
+        family_type: visibility.basic_profile ? row.family_type : null,
+        pets: visibility.basic_profile ? (row.pets ?? []) : [],
+        smoking: visibility.basic_profile ? row.smoking : false,
+        stay_time: visibility.basic_profile ? row.stay_time : null,
+        duration: visibility.basic_profile ? row.duration : null,
+        noise_level: visibility.basic_profile ? row.noise_level : null,
+        bio: visibility.bio ? row.bio : null,
         verified: {
-          employment: row.employment_verified ?? false,
-          income: row.income_verified ?? false,
-          credit: row.credit_verified ?? false,
+          employment: visibility.verification ? row.employment_verified ?? false : false,
+          income: visibility.verification ? row.income_verified ?? false : false,
+          credit: visibility.verification ? row.credit_verified ?? false : false,
         },
-        reference_count: parseInt(row.ref_count ?? '0', 10),
-        profile_image_url: row.profile_image_url ?? null,
+        reference_count: visibility.references ? parseInt(row.ref_count ?? '0', 10) : 0,
+        trust_score: visibility.trust_score ? row.trust_score : 0,
+        profile_image_url: visibility.contact ? row.profile_image_url ?? null : null,
         created_at: row.created_at instanceof Date ? row.created_at.toISOString() : String(row.created_at),
+        _consent_fields: visibleFields,
       }
+    }))
+
+    // Log tenant list access by consent scope.
+    const accessLogRows = tenants.map((tenant) => {
+      return recordAccessAudit({
+        actorUserId,
+        actorRole,
+        actorIp,
+        actorUserAgent,
+        targetType: 'tenant_profile',
+        targetId: tenant.profile_id,
+        targetUserId: tenant.user_id,
+        purpose: 'tenant_profile_view',
+        fieldsViewed: tenant._consent_fields ?? [],
+        metadata: { source: 'landlord_tenants_list' },
+      })
+    })
+
+    Promise.allSettled(accessLogRows).catch((error) => {
+      console.error('access audit batch failed', error)
     })
 
     // ---------- Next cursor ----------

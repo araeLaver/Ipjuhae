@@ -46,7 +46,7 @@ export default function ReferencePage() {
 
   const handleSuccess = (reference: LandlordReference, surveyUrl?: string) => {
     setReferences((prev) => [reference, ...prev])
-    toast.success('레퍼런스 요청이 전송되었습니다!')
+    toast.success('레퍼런스 요청이 추가되었습니다.')
     if (surveyUrl) {
       setLatestSurveyUrl(surveyUrl)
     }
@@ -55,6 +55,11 @@ export default function ReferencePage() {
   const handleDelete = (id: string) => {
     setReferences((prev) => prev.filter((r) => r.id !== id))
     toast.success('레퍼런스 요청이 삭제되었습니다.')
+  }
+
+  const getSurveyUrl = (reference: LandlordReference) => {
+    if (!reference.verification_token) return undefined
+    return `${window.location.origin}/reference/survey/${reference.verification_token}`
   }
 
   const completedCount = references.filter((r) => r.status === 'completed').length
@@ -80,8 +85,10 @@ export default function ReferencePage() {
     <PageContainer maxWidth="md">
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold">레퍼런스 관리</h1>
-          <p className="text-muted-foreground">이전 집주인으로부터 레퍼런스를 받아보세요</p>
+          <h1 className="text-2xl font-bold">레퍼런스 요청</h1>
+          <p className="text-muted-foreground">
+            내 프로필 공유와 연동되는 임대인 레퍼런스를 관리합니다.
+          </p>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -89,7 +96,7 @@ export default function ReferencePage() {
             <CardContent className="pt-6">
               <div className="text-center">
                 <p className="text-3xl font-bold text-green-600">{completedCount}</p>
-                <p className="text-sm text-muted-foreground">완료된 레퍼런스</p>
+                <p className="text-sm text-muted-foreground">완료된 요청</p>
               </div>
             </CardContent>
           </Card>
@@ -97,7 +104,7 @@ export default function ReferencePage() {
             <CardContent className="pt-6">
               <div className="text-center">
                 <p className="text-3xl font-bold text-primary">{pendingCount}</p>
-                <p className="text-sm text-muted-foreground">대기 중</p>
+                <p className="text-sm text-muted-foreground">대기 요청</p>
               </div>
             </CardContent>
           </Card>
@@ -106,9 +113,9 @@ export default function ReferencePage() {
         {latestSurveyUrl && (
           <Alert>
             <Info className="h-4 w-4" />
-            <AlertTitle>설문 링크가 발송되었습니다</AlertTitle>
+            <AlertTitle>요청 링크를 확인해보세요</AlertTitle>
             <AlertDescription>
-              <p>이전 집주인에게 SMS/이메일로 설문 링크가 전달되었습니다. 응답이 오면 자동으로 반영됩니다.</p>
+              <p>링크가 생성되면 임대인에게 SMS/이메일로 전달되고, 요청이 진행 중입니다.</p>
             </AlertDescription>
           </Alert>
         )}
@@ -119,13 +126,14 @@ export default function ReferencePage() {
           <div className="space-y-4">
             <h2 className="text-lg font-semibold flex items-center gap-2">
               <Users className="h-5 w-5" />
-              레퍼런스 요청 내역
+              레퍼런스 요청 목록
             </h2>
             <div className="space-y-3">
               {references.map((reference) => (
                 <ReferenceStatusCard
                   key={reference.id}
                   reference={reference}
+                  surveyUrl={getSurveyUrl(reference)}
                   onDelete={handleDelete}
                 />
               ))}
@@ -134,11 +142,12 @@ export default function ReferencePage() {
         ) : (
           <EmptyState
             icon={<Users className="h-12 w-12" />}
-            title="아직 레퍼런스 요청이 없습니다"
-            description="위 양식을 통해 이전 집주인에게 레퍼런스를 요청해보세요"
+            title="요청 내역이 없습니다"
+            description="아직 요청한 임대인이 없거나 요청이 등록되지 않았습니다."
           />
         )}
       </div>
     </PageContainer>
   )
 }
+

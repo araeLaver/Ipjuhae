@@ -2,12 +2,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
 import { getAdminUser, logAdminAction } from '@/lib/admin'
 import { notifyVerificationApproved, notifyVerificationRejected } from '@/lib/notifications'
+import { calculateTrustScore, completeExtractionJob, createEvidenceFact, trustDigest, type TrustSubjectType } from '@/lib/trust-engine'
+import { getRequestContext } from '@/lib/request-context'
 
 interface DocRow {
   id: string
   user_id: string
   document_type: string
   status: string
+  user_type: string
 }
 
 export async function PATCH(
@@ -34,7 +37,10 @@ export async function PATCH(
   }
 
   const doc = await queryOne<DocRow>(
-    'SELECT id, user_id, document_type, status FROM verification_documents WHERE id = $1',
+    `SELECT document.id, document.user_id, document.document_type, document.status, users.user_type
+       FROM verification_documents document
+       JOIN users ON users.id = document.user_id
+      WHERE document.id = $1`,
     [id]
   )
 
@@ -76,6 +82,35 @@ export async function PATCH(
                updated_at = NOW()`,
         [doc.user_id]
       )
+
+      const subjectType: TrustSubjectType = doc.user_type === 'landlord' ? 'landlord' : 'tenant'
+      const factField = `${doc.document_type}_verified`
+      const extractionJob = await queryOne<{ id: string }>(
+        `SELECT id FROM trust_extraction_jobs WHERE document_id = $1 ORDER BY created_at DESC LIMIT 1`,
+        [doc.id]
+      )
+      const trace = getRequestContext(req)
+      if (extractionJob) {
+        await completeExtractionJob(extractionJob.id, admin.id, [{
+          fieldName: factField,
+          normalizedValue: true,
+          confidence: 1,
+          reasonCodes: ['ADMIN_APPROVED_DOCUMENT'],
+        }], trace)
+      } else {
+        await createEvidenceFact({
+          subjectType,
+          subjectId: doc.user_id,
+          sourceCode: 'human_review',
+          fieldName: factField,
+          normalizedValue: true,
+          objectHash: trustDigest({ documentId: doc.id, status: 'approved' }),
+          humanReviewed: true,
+          reasonCodes: ['ADMIN_APPROVED_DOCUMENT'],
+          metadata: { verification_document_id: doc.id },
+        }, admin.id, trace)
+      }
+      await calculateTrustScore(subjectType, doc.user_id, admin.id, trace)
     }
   }
 

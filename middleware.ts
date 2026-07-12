@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { Ratelimit } from '@upstash/ratelimit'
 import { Redis } from '@upstash/redis'
+import { getRequestContext } from '@/lib/request-context'
 
 /**
  * Edge Runtime에서는 jsonwebtoken을 사용할 수 없으므로
@@ -170,31 +171,55 @@ function checkCsrf(request: NextRequest): boolean {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   const ip = getIp(request)
+  const { requestId, traceId } = getRequestContext(request)
 
   // ── 잘못된 Server Action 요청 차단 (봇/스캐너 방어) ─────────────
   if (request.headers.get('next-action')) {
-    return NextResponse.json(
-      { error: 'Server Actions are not supported' },
+    const blocked = NextResponse.json(
+      { error: 'Server Actions are not supported', request_id: requestId, trace_id: traceId },
       { status: 400 }
     )
+    blocked.headers.set('x-request-id', requestId)
+    blocked.headers.set('x-trace-id', traceId)
+    blocked.headers.set('Retry-After', '0')
+    blocked.headers.set('Cache-Control', 'no-store')
+    return blocked
   }
 
   // ── Rate Limiting (Redis 분산 or 인메모리 폴백) ─────────────────
   if (pathname.startsWith('/api/auth')) {
     const { allowed, retryAfter } = await checkRateLimit(`auth:${ip}`, true)
     if (!allowed) {
-      return NextResponse.json(
-        { error: '너무 많은 요청입니다. 잠시 후 다시 시도하세요.' },
+      const response = NextResponse.json(
+        {
+          error: '요청 한도 초과',
+          code: 'RATE_LIMIT_EXCEEDED',
+          request_id: requestId,
+          trace_id: traceId,
+        },
         { status: 429, headers: { 'Retry-After': String(retryAfter ?? 60) } }
       )
+      response.headers.set('x-request-id', requestId)
+      response.headers.set('x-trace-id', traceId)
+      response.headers.set('Cache-Control', 'no-store')
+      return response
     }
   } else if (pathname.startsWith('/api/')) {
     const { allowed, retryAfter } = await checkRateLimit(`api:${ip}`, false)
     if (!allowed) {
-      return NextResponse.json(
-        { error: '너무 많은 요청입니다. 잠시 후 다시 시도하세요.' },
+      const response = NextResponse.json(
+        {
+          error: '요청 한도 초과',
+          code: 'RATE_LIMIT_EXCEEDED',
+          request_id: requestId,
+          trace_id: traceId,
+        },
         { status: 429, headers: { 'Retry-After': String(retryAfter ?? 60) } }
       )
+      response.headers.set('x-request-id', requestId)
+      response.headers.set('x-trace-id', traceId)
+      response.headers.set('Cache-Control', 'no-store')
+      return response
     }
   }
 
@@ -202,7 +227,19 @@ export async function middleware(request: NextRequest) {
   if (pathname.startsWith('/api/')) {
     const csrfValid = checkCsrf(request)
     if (!csrfValid) {
-      return NextResponse.json({ error: 'CSRF 검증 실패' }, { status: 403 })
+      const response = NextResponse.json(
+        {
+          error: 'CSRF 검증 실패',
+          code: 'CSRF_INVALID',
+          request_id: requestId,
+          trace_id: traceId,
+        },
+        { status: 403 }
+      )
+      response.headers.set('x-request-id', requestId)
+      response.headers.set('x-trace-id', traceId)
+      response.headers.set('Cache-Control', 'no-store')
+      return response
     }
   }
 
@@ -220,6 +257,9 @@ export async function middleware(request: NextRequest) {
   // SameSite 쿠키 정책은 Set-Cookie 헤더에 포함되므로
   // 기존 쿠키에 대해서는 API 응답 시 적용 (여기서는 CSRF 방어 헌더만 추가)
   response.headers.set('X-Content-Type-Options', 'nosniff')
+  response.headers.set('x-request-id', requestId)
+  response.headers.set('x-trace-id', traceId)
+  response.headers.set('Cache-Control', 'no-store')
 
   // Public routes — always allow
   if (
@@ -242,13 +282,19 @@ export async function middleware(request: NextRequest) {
     const loginUrl = request.nextUrl.clone()
     loginUrl.pathname = '/login'
     loginUrl.searchParams.set('redirect', pathname)
-    return NextResponse.redirect(loginUrl)
+    const response = NextResponse.redirect(loginUrl)
+    response.headers.set('x-request-id', requestId)
+    response.headers.set('x-trace-id', traceId)
+    return response
   }
 
   // ── 권한 기반 라우팅 ────────────────────────────────────────────
   // /admin/* → admin 전용
   if (pathname.startsWith('/admin') && userType !== 'admin') {
-    return NextResponse.redirect(new URL('/', request.url))
+    const response = NextResponse.redirect(new URL('/', request.url))
+    response.headers.set('x-request-id', requestId)
+    response.headers.set('x-trace-id', traceId)
+    return response
   }
 
   // /landlord/* → landlord 또는 admin만
@@ -257,12 +303,18 @@ export async function middleware(request: NextRequest) {
     userType !== 'landlord' &&
     userType !== 'admin'
   ) {
-    return NextResponse.redirect(new URL('/profile', request.url))
+    const response = NextResponse.redirect(new URL('/profile', request.url))
+    response.headers.set('x-request-id', requestId)
+    response.headers.set('x-trace-id', traceId)
+    return response
   }
 
   // /onboarding/* → tenant만 (landlord는 /landlord/onboarding)
   if (pathname.startsWith('/onboarding') && userType === 'landlord') {
-    return NextResponse.redirect(new URL('/landlord/onboarding', request.url))
+    const response = NextResponse.redirect(new URL('/landlord/onboarding', request.url))
+    response.headers.set('x-request-id', requestId)
+    response.headers.set('x-trace-id', traceId)
+    return response
   }
 
   // ── 이미 로그인한 경우 auth 페이지 접근 시 리다이렉트 ────────────
@@ -273,7 +325,10 @@ export async function middleware(request: NextRequest) {
     // user_type에 맞는 홈으로 리다이렉트
     const destination =
       userType === 'landlord' ? '/landlord' : userType === 'admin' ? '/admin' : '/profile'
-    return NextResponse.redirect(new URL(destination, request.url))
+    const response = NextResponse.redirect(new URL(destination, request.url))
+    response.headers.set('x-request-id', requestId)
+    response.headers.set('x-trace-id', traceId)
+    return response
   }
 
   return response

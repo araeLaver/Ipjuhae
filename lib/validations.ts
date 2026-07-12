@@ -64,6 +64,24 @@ export const referenceSurveySchema = z.object({
   comment: z.string().max(500).optional().nullable(),
 })
 
+export const consentUpsertSchema = z.object({
+  targetRole: z.enum(['tenant', 'landlord', 'broker', 'admin']),
+  purpose: z.enum(['tenant_profile_view', 'landlord_profile_view', 'property_view']),
+  allowedFields: z.record(z.string(), z.boolean()),
+  expiresInDays: z.number().int().positive().optional(),
+})
+
+export const consentRevokeSchema = z.object({
+  targetRole: z.enum(['tenant', 'landlord', 'broker', 'admin']),
+  purpose: z.enum(['tenant_profile_view', 'landlord_profile_view', 'property_view']),
+  reason: z.string().max(300).optional(),
+})
+
+export const referenceAppealSchema = z.object({
+  reason: z.string().max(100).optional(),
+  detail: z.string().max(1000).optional(),
+})
+
 // ===== Verification =====
 export const employmentSchema = z.object({
   company: z.string().min(2, '회사명은 2자 이상이어야 합니다').max(100),

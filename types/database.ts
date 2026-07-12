@@ -127,6 +127,11 @@ export interface LandlordReference {
   token_expires_at: Date | null
   request_sent_at: Date | null
   completed_at: Date | null
+  token_access_attempts: number
+  token_last_accessed_at: Date | null
+  token_last_accessed_ip: string | null
+  token_blocked_until: Date | null
+  token_verification_metadata: Record<string, unknown> | null
   created_at: Date
 }
 
@@ -142,6 +147,8 @@ export interface ReferenceResponse {
   comment: string | null
   overall_rating: string | null
   created_at: Date
+  updated_at?: Date | null
+  editable_until?: Date | null
 }
 
 // 집주인 프로필
@@ -219,4 +226,94 @@ export interface PropertyImage {
   sort_order: number
   is_main: boolean
   created_at: Date
+}
+
+// ===== ?ㅽ닪??(활용/公開)
+export type ConsentStatus = 'active' | 'revoked'
+export type ConsentPurpose = 'tenant_profile_view' | 'landlord_profile_view' | 'property_view'
+export type ConsentTargetRole = 'tenant' | 'landlord' | 'broker' | 'admin'
+
+export interface DataConsent {
+  id: string
+  user_id: string
+  target_role: ConsentTargetRole
+  purpose: ConsentPurpose
+  allowed_fields: Record<string, unknown>
+  consent_version: number
+  status: ConsentStatus
+  consented_at: Date
+  expires_at: Date | null
+  revoked_at: Date | null
+  revoke_reason: string | null
+  granted_by: string | null
+  created_at: Date
+}
+
+export interface ConsentEvent {
+  id: string
+  data_consent_id: string
+  user_id: string
+  target_role: ConsentTargetRole
+  purpose: ConsentPurpose
+  event_type: 'granted' | 'updated' | 'revoked'
+  from_payload: Record<string, unknown> | null
+  to_payload: Record<string, unknown> | null
+  reason: string | null
+  created_by: string | null
+  created_at: Date
+}
+
+// ===== 열람 로그 =====
+export type AccessTargetType = 'tenant_profile' | 'landlord_profile' | 'property'
+
+export interface AccessAuditLog {
+  id: string
+  actor_user_id: string | null
+  actor_role: ConsentTargetRole | null
+  actor_ip: string | null
+  actor_user_agent: string | null
+  target_type: AccessTargetType
+  target_id: string
+  target_user_id: string | null
+  purpose: string
+  contract_id: string | null
+  fields_viewed: string[]
+  metadata: Record<string, unknown>
+  request_id?: string | null
+  trace_id?: string | null
+  created_at: Date
+}
+
+// ===== 레퍼런스 이력/이의제기 =====
+export type ReferenceDisputeStatus =
+  | 'pending'
+  | 'reviewing'
+  | 'accepted'
+  | 'rejected'
+  | 'corrected'
+  | 'withheld'
+  | 'completed'
+  | 'deleted'
+
+export interface ReferenceResponseHistory {
+  id: string
+  reference_response_id: string
+  previous_data: Record<string, unknown>
+  changed_by: string | null
+  changed_fields: string[]
+  created_at: Date
+}
+
+export interface ReferenceDispute {
+  id: string
+  reference_response_id: string
+  reason: string
+  detail: string
+  status: ReferenceDisputeStatus
+  requester_user_id: string | null
+  reviewed_by: string | null
+  reviewed_at: Date | null
+  review_comment: string | null
+  created_at: Date
+  updated_at: Date
 }

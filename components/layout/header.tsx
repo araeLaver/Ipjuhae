@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Home, Menu, LogOut, User, Building, Shield } from 'lucide-react'
+import { Home, Menu, LogOut, User, Shield, FileText, Eye, MessageSquare } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Avatar } from '@/components/ui/avatar'
 import { DropdownMenu, DropdownMenuItem } from '@/components/ui/dropdown-menu'
@@ -15,6 +15,28 @@ interface HeaderProps {
   user?: { email: string; userType: 'tenant' | 'landlord' } | null
 }
 
+const tenantLinks = [
+  { href: '/profile', label: 'Profile' },
+  { href: '/profile/verification', label: 'Verification' },
+  { href: '/profile/reference', label: 'References' },
+  { href: '/profile/consent', label: 'Consent' },
+  { href: '/profile/consent/events', label: 'Consent Events' },
+  { href: '/profile/access-logs', label: 'Access Logs' },
+  { href: '/messages', label: 'Messages' },
+]
+
+const landlordLinks = [
+  { href: '/landlord', label: 'Landlord' },
+  { href: '/landlord/tenants', label: 'Tenant list' },
+  { href: '/landlord/properties', label: 'Properties' },
+  { href: '/landlord/favorites', label: 'Favorites' },
+  { href: '/landlord/messages', label: 'Messages' },
+  { href: '/landlord/subscription', label: 'Subscription' },
+  { href: '/profile/consent', label: 'Consent' },
+  { href: '/profile/consent/events', label: 'Consent Events' },
+  { href: '/profile/access-logs', label: 'Access Logs' },
+]
+
 export function Header({ user }: HeaderProps) {
   const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -25,23 +47,7 @@ export function Header({ user }: HeaderProps) {
     router.refresh()
   }
 
-  const navLinks = user?.userType === 'landlord'
-    ? [
-        { href: '/landlord', label: '대시보드' },
-        { href: '/landlord/tenants', label: '세입자 찾기' },
-        { href: '/landlord/properties', label: '매물 관리' },
-        { href: '/landlord/favorites', label: '즐겨찾기' },
-        { href: '/landlord/messages', label: '메시지' },
-        { href: '/landlord/subscription', label: '구독' },
-      ]
-    : user
-    ? [
-        { href: '/profile', label: '내 프로필' },
-        { href: '/profile/verification', label: '인증 관리' },
-        { href: '/profile/reference', label: '레퍼런스' },
-        { href: '/messages', label: '메시지' },
-      ]
-    : []
+  const navLinks = user?.userType === 'landlord' ? landlordLinks : user ? tenantLinks : []
 
   return (
     <>
@@ -50,9 +56,9 @@ export function Header({ user }: HeaderProps) {
           <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-2">
               <Home className="h-6 w-6 text-primary" />
-              <span className="text-xl font-bold">입주해</span>
+              <span className="text-xl font-bold">RentMe</span>
               {user?.userType === 'landlord' && (
-                <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">집주인</span>
+                <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">Landlord</span>
               )}
             </Link>
             <nav className="hidden md:flex items-center gap-1">
@@ -72,9 +78,7 @@ export function Header({ user }: HeaderProps) {
             <ThemeToggle />
             {user ? (
               <>
-                {/* 알림 센터 */}
                 <NotificationCenter />
-
                 <div className="hidden md:block">
                   <DropdownMenu
                     trigger={
@@ -83,11 +87,39 @@ export function Header({ user }: HeaderProps) {
                   >
                     <DropdownMenuItem onClick={() => router.push(user.userType === 'landlord' ? '/landlord' : '/profile')}>
                       <User className="h-4 w-4" />
-                      {user.userType === 'landlord' ? '대시보드' : '내 프로필'}
+                      {user.userType === 'landlord' ? 'Landlord area' : 'Profile'}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push('/profile/consent')}>
+                      <span className="w-full">
+                        <Eye className="h-4 w-4" />
+                        Consent
+                      </span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push('/profile/consent/events')}>
+                      <span className="w-full">
+                        <Eye className="h-4 w-4" />
+                        Consent Events
+                      </span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push('/profile/access-logs')}>
+                      <span className="w-full">
+                        <FileText className="h-4 w-4" />
+                        Access Logs
+                      </span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push('/messages')}>
+                      <span className="w-full">
+                        <MessageSquare className="h-4 w-4" />
+                        Messages
+                      </span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push('/profile/reference')}>
+                      <Shield className="h-4 w-4" />
+                      Reference requests
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleLogout} destructive>
                       <LogOut className="h-4 w-4" />
-                      로그아웃
+                      Logout
                     </DropdownMenuItem>
                   </DropdownMenu>
                 </div>
@@ -101,10 +133,12 @@ export function Header({ user }: HeaderProps) {
             ) : (
               <>
                 <Link href="/login">
-                  <Button variant="ghost" size="sm">로그인</Button>
+                  <Button variant="ghost" size="sm">
+                    Login
+                  </Button>
                 </Link>
                 <Link href="/signup">
-                  <Button size="sm">회원가입</Button>
+                  <Button size="sm">Signup</Button>
                 </Link>
               </>
             )}
@@ -112,13 +146,7 @@ export function Header({ user }: HeaderProps) {
         </div>
       </header>
 
-      <MobileNav
-        open={mobileOpen}
-        onClose={() => setMobileOpen(false)}
-        user={user}
-        navLinks={navLinks}
-        onLogout={handleLogout}
-      />
+      <MobileNav open={mobileOpen} onClose={() => setMobileOpen(false)} user={user} navLinks={navLinks} onLogout={handleLogout} />
     </>
   )
 }

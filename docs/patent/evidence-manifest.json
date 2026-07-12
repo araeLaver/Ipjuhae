@@ -1,0 +1,113 @@
+{
+  "schema": "ipjuhae-patent-evidence-manifest/v1",
+  "patentApplication": "10-2026-0126389",
+  "generatedAt": "2026-07-12T13:14:26.608Z",
+  "algorithm": "SHA-256",
+  "files": [
+    {
+      "path": "lib/trust-engine.ts",
+      "sha256": "30973f1df595e936622df4033e83f2ee579f172887ee4c297aa2051ba0e9e91a",
+      "bytes": 57850
+    },
+    {
+      "path": "lib/trust-policy.ts",
+      "sha256": "bb5ac711300a64a9fe18717007a870717200ba9bcd3bb21ed332518ad7d266d7",
+      "bytes": 2556
+    },
+    {
+      "path": "lib/trust-outbox.ts",
+      "sha256": "881ad315a0fd6e296986f6bd9540e54139cf1258f6e15e9d5c35e300f351019c",
+      "bytes": 5207
+    },
+    {
+      "path": "lib/idempotency.ts",
+      "sha256": "8ab65b9d7bcfe071cd6a2a99ff5404a2f81de85d0f9be212012216a33a98fca1",
+      "bytes": 7856
+    },
+    {
+      "path": "db/migration-024-patent-trust-engine.sql",
+      "sha256": "90c9172b4b6a9270d1bcd13720e3c84afb826e7a8e21b9a7597e3947a3584d9c",
+      "bytes": 23063
+    },
+    {
+      "path": "db/migration-025-trust-operations.sql",
+      "sha256": "166dee1fc020c0138362b84868c3ff78d8a19395527cccedf459e478aee76423",
+      "bytes": 6153
+    },
+    {
+      "path": "db/migration-026-evidence-fact-cascade.sql",
+      "sha256": "1c471ae00e2b45471a55e5f584ab5cfb93e687c8af351f1df87c6cf7df52dfe0",
+      "bytes": 1589
+    },
+    {
+      "path": "db/migration-027-trust-model-alignment.sql",
+      "sha256": "b35b9af8a00e45225cdaa41f4762adb1fa2c95772ed20758a7d2488d011db6d0",
+      "bytes": 647
+    },
+    {
+      "path": "db/backfill-trust-ledger.ts",
+      "sha256": "2187ef4a5c472992d86b9ba76e719db9811c69d0fdb7de1bd50a379161c87c8c",
+      "bytes": 3178
+    },
+    {
+      "path": "app/trust-center/page.tsx",
+      "sha256": "c1819959d909818bb6c97a60a78a6a5006787677fef4b3fde79431b3271e09a1",
+      "bytes": 8463
+    },
+    {
+      "path": "app/admin/trust/page.tsx",
+      "sha256": "72487d8567625fdd8373738d1669f9ed17baa6f8840cddac63e8dc575e2e5e37",
+      "bytes": 6229
+    },
+    {
+      "path": "app/admin/trust/operations/page.tsx",
+      "sha256": "4919ce978c9e1f37105f7d0f9d454cfe27a29d3998b712798e1341d6f5490202",
+      "bytes": 18588
+    },
+    {
+      "path": "app/api/v1/evidence/route.ts",
+      "sha256": "7f0b755499ae90e4801e68aea21a2707854dc414d627061b1ad8e22f1ceb9ab2",
+      "bytes": 2312
+    },
+    {
+      "path": "app/api/v1/disclosures/decide/route.ts",
+      "sha256": "a8e914c082089614cb562320f806539c870913675325a3260e94c3e07b93d719",
+      "bytes": 2038
+    },
+    {
+      "path": "app/api/v1/transactions/[id]/references/route.ts",
+      "sha256": "51ce78df0b2ab14210a8209314347dbb05db2c7eed23af12d3ebb964928aabab",
+      "bytes": 2724
+    },
+    {
+      "path": "app/api/v1/trust/change-events/route.ts",
+      "sha256": "7c57d25c327d8fc86cc878162cc9e9d97206359e1148bff6c51235423578a02d",
+      "bytes": 1737
+    },
+    {
+      "path": "app/api/v1/admin/trust-reviews/route.ts",
+      "sha256": "bc6ff736435a90d19aa99f1b4224f0f4dd50df1dfc40fbbb8148fe714a988ec2",
+      "bytes": 2034
+    },
+    {
+      "path": "app/api/v1/external-requests/route.ts",
+      "sha256": "f2d896adb22bbb94cf126afe814e4fa693023da972ba6c98e6953dd1224da47e",
+      "bytes": 4045
+    },
+    {
+      "path": "app/api/cron/trust-maintenance/route.ts",
+      "sha256": "cd5627f09254f9feb77df08750dd6b1f81ce1bf7c386a3b57b9cdcbc497e6389",
+      "bytes": 738
+    },
+    {
+      "path": "app/api/cron/trust-outbox/route.ts",
+      "sha256": "e60d4c9af878f4fff9b29f60db66f107e723b6d6f8af6ca91d7ec6e1b7b1e469",
+      "bytes": 621
+    },
+    {
+      "path": "vercel.json",
+      "sha256": "67ebf5a5650fe7cefe446976729695bd779fc340ef249bafed368569fb88f1fa",
+      "bytes": 278
+    }
+  ]
+}

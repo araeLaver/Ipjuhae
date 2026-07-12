@@ -74,6 +74,13 @@ const migrations = [
   'migration-016-listings-pet.sql',
   'migration-016-analytics.sql',
   'migration-020-properties-pet-allowed.sql',
+  'migration-021-trust-access-and-appeal.sql',
+  'migration-022-dispute-status-constraint-fix.sql',
+  'migration-023-idempotency-reference-token-hardening.sql',
+  'migration-024-patent-trust-engine.sql',
+  'migration-025-trust-operations.sql',
+  'migration-026-evidence-fact-cascade.sql',
+  'migration-027-trust-model-alignment.sql',
 ]
 
 async function runMigrations() {

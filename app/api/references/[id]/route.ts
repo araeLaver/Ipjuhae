@@ -1,18 +1,17 @@
-import { NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
-import { LandlordReference, ReferenceResponse } from '@/types/database'
+import { LandlordReference, ReferenceDispute, ReferenceResponse } from '@/types/database'
+import { jsonError, jsonSuccess } from '@/lib/api-response'
 
 interface RouteParams {
   params: Promise<{ id: string }>
 }
 
-// GET: 레퍼런스 상세
 export async function GET(request: Request, { params }: RouteParams) {
   try {
     const user = await getCurrentUser()
     if (!user) {
-      return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 })
+      return jsonError(request, 401, 'Authentication required', 'AUTH_REQUIRED')
     }
 
     const { id } = await params
@@ -23,30 +22,39 @@ export async function GET(request: Request, { params }: RouteParams) {
     )
 
     if (!reference) {
-      return NextResponse.json({ error: '레퍼런스를 찾을 수 없습니다' }, { status: 404 })
+      return jsonError(request, 404, 'Reference request not found', 'REFERENCE_NOT_FOUND')
     }
 
-    // 응답도 함께 조회
     const response = await queryOne<ReferenceResponse>(
       'SELECT * FROM reference_responses WHERE reference_id = $1',
       [id]
     )
 
-    return NextResponse.json({ reference, response })
+    const disputes = response
+      ? await query<ReferenceDispute>(
+          'SELECT * FROM reference_disputes WHERE reference_response_id = $1 ORDER BY created_at DESC',
+          [response.id]
+        )
+      : []
+
+    return jsonSuccess(request, {
+      reference,
+      response,
+      disputes,
+    })
   } catch (error) {
     console.error('Get reference error:', error)
-    return NextResponse.json({ error: '레퍼런스 조회 중 오류가 발생했습니다' }, { status: 500 })
+    return jsonError(request, 500, 'Failed to load reference detail', 'REFERENCE_DETAIL_FAILED')
   }
 }
 
-// DELETE: 레퍼런스 요청 취소
 export async function DELETE(request: Request, { params }: RouteParams) {
-  try {
-    const user = await getCurrentUser()
-    if (!user) {
-      return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 })
-    }
+  const user = await getCurrentUser()
+  if (!user) {
+    return jsonError(request, 401, 'Authentication required', 'AUTH_REQUIRED')
+  }
 
+  try {
     const { id } = await params
 
     const reference = await queryOne<LandlordReference>(
@@ -55,21 +63,20 @@ export async function DELETE(request: Request, { params }: RouteParams) {
     )
 
     if (!reference) {
-      return NextResponse.json({ error: '레퍼런스를 찾을 수 없습니다' }, { status: 404 })
+      return jsonError(request, 404, 'Reference request not found', 'REFERENCE_NOT_FOUND')
     }
 
     if (reference.status === 'completed') {
-      return NextResponse.json({ error: '이미 완료된 레퍼런스는 취소할 수 없습니다' }, { status: 400 })
+      return jsonError(request, 400, 'Cannot delete a completed reference request', 'REFERENCE_ALREADY_COMPLETED')
     }
 
-    await query(
-      'DELETE FROM landlord_references WHERE id = $1',
-      [id]
-    )
+    await query('DELETE FROM landlord_references WHERE id = $1', [id])
 
-    return NextResponse.json({ message: '레퍼런스 요청이 취소되었습니다' })
+    return jsonSuccess(request, {
+      message: 'Reference request deleted',
+    })
   } catch (error) {
     console.error('Delete reference error:', error)
-    return NextResponse.json({ error: '레퍼런스 취소 중 오류가 발생했습니다' }, { status: 500 })
+    return jsonError(request, 500, 'Failed to delete reference', 'REFERENCE_DELETE_FAILED')
   }
 }

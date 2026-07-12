@@ -4,7 +4,7 @@
   "description": "세입자 프로필 플랫폼",
   "scripts": {
     "dev": "next dev",
-    "build": "NODE_ENV=production next build",
+    "build": "next build",
     "start": "node server.js",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
@@ -17,6 +17,9 @@
     "launch:verify": "npm run launch:check && npm run typecheck && npm run test:run && npm run build",
     "launch:smoke": "node scripts/launch-smoke.mjs",
     "db:migrate": "npx tsx db/migrate.ts"
+    ,"trust:backfill": "tsx db/backfill-trust-ledger.ts"
+    ,"trust:smoke": "node scripts/trust-platform-smoke.mjs"
+    ,"patent:evidence": "node scripts/generate-patent-evidence.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1019.0",

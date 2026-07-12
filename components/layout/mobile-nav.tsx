@@ -1,9 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { Sheet } from '@/components/ui/sheet'
 import { Home, LogOut } from 'lucide-react'
 import { Avatar } from '@/components/ui/avatar'
+import { Sheet } from '@/components/ui/sheet'
 import { ThemeToggle } from './theme-toggle'
 
 interface MobileNavProps {
@@ -20,7 +20,7 @@ export function MobileNav({ open, onClose, user, navLinks, onLogout }: MobileNav
       <div className="flex flex-col gap-6">
         <Link href="/" className="flex items-center gap-2" onClick={onClose}>
           <Home className="h-6 w-6 text-primary" />
-          <span className="text-xl font-bold">입주해</span>
+          <span className="text-xl font-bold">RentMe</span>
         </Link>
 
         {user && (
@@ -29,7 +29,7 @@ export function MobileNav({ open, onClose, user, navLinks, onLogout }: MobileNav
             <div>
               <p className="text-sm font-medium truncate max-w-[180px]">{user.email}</p>
               <p className="text-xs text-muted-foreground">
-                {user.userType === 'landlord' ? '집주인' : '세입자'}
+                {user.userType === 'landlord' ? 'Landlord' : 'Tenant'}
               </p>
             </div>
           </div>
@@ -50,16 +50,19 @@ export function MobileNav({ open, onClose, user, navLinks, onLogout }: MobileNav
 
         <div className="flex items-center gap-2 px-3 py-2">
           <ThemeToggle />
-          <span className="text-sm text-muted-foreground">테마 전환</span>
+          <span className="text-sm text-muted-foreground">Theme</span>
         </div>
 
         {user && (
           <button
-            onClick={() => { onLogout(); onClose() }}
+            onClick={() => {
+              onLogout()
+              onClose()
+            }}
             className="flex items-center gap-2 px-3 py-2.5 text-sm text-destructive rounded-md hover:bg-destructive/10 transition-colors mt-auto"
           >
             <LogOut className="h-4 w-4" />
-            로그아웃
+            Logout
           </button>
         )}
       </div>

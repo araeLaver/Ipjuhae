@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -15,7 +16,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { Clock, CheckCircle, XCircle, Send, Trash2, Loader2, ExternalLink } from 'lucide-react'
+import { Clock, CheckCircle, ExternalLink, FileText, Loader2, Send, Trash2, XCircle } from 'lucide-react'
 import { LandlordReference } from '@/types/database'
 
 interface ReferenceStatusCardProps {
@@ -26,12 +27,12 @@ interface ReferenceStatusCardProps {
 
 const statusConfig: Record<string, { label: string; color: string; icon: React.ElementType }> = {
   pending: {
-    label: '대기 중',
+    label: '대기',
     color: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
     icon: Clock,
   },
   sent: {
-    label: '발송됨',
+    label: '요청됨',
     color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300',
     icon: Send,
   },
@@ -41,13 +42,14 @@ const statusConfig: Record<string, { label: string; color: string; icon: React.E
     icon: CheckCircle,
   },
   expired: {
-    label: '만료됨',
+    label: '만료',
     color: 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300',
     icon: XCircle,
   },
 }
 
 export function ReferenceStatusCard({ reference, surveyUrl, onDelete }: ReferenceStatusCardProps) {
+  const router = useRouter()
   const [isDeleting, setIsDeleting] = useState(false)
 
   const config = statusConfig[reference.status] || statusConfig.pending
@@ -85,7 +87,7 @@ export function ReferenceStatusCard({ reference, surveyUrl, onDelete }: Referenc
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="text-base">
-              {reference.landlord_name || '집주인'}
+              {reference.landlord_name || '임대인'}
             </CardTitle>
             <CardDescription>{reference.landlord_phone}</CardDescription>
           </div>
@@ -128,6 +130,16 @@ export function ReferenceStatusCard({ reference, surveyUrl, onDelete }: Referenc
             </Button>
           )}
 
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1"
+            onClick={() => router.push(`/profile/reference/${reference.id}`)}
+          >
+            <FileText className="h-4 w-4 mr-1" />
+            분쟁 관리
+          </Button>
+
           {reference.status !== 'completed' && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
@@ -137,9 +149,9 @@ export function ReferenceStatusCard({ reference, surveyUrl, onDelete }: Referenc
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>요청을 취소하시겠습니까?</AlertDialogTitle>
+                  <AlertDialogTitle>요청 삭제 확인</AlertDialogTitle>
                   <AlertDialogDescription>
-                    이 작업은 되돌릴 수 없습니다. 레퍼런스 요청이 삭제됩니다.
+                    삭제한 항목은 복구할 수 없습니다. 레퍼런스 요청과 관련 데이터가 함께 삭제됩니다.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -164,3 +176,4 @@ export function ReferenceStatusCard({ reference, surveyUrl, onDelete }: Referenc
     </Card>
   )
 }
+
