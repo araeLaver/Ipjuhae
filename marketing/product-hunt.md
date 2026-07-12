@@ -4,19 +4,19 @@
 - **Product Name**: Rentme
 - **URL**: https://www.ipjuhae.com
 - **Category**: SaaS, Real Estate, PropTech
-- **Topics**: real-estate, matching, trust, rental, tenant-verification
+- **Topics**: real-estate, matching, rental, tenant-profiles
 
 ---
 
 ## Tagline (60자 이내)
-Verified tenant profiles that match you with the right landlord
+Tenant-led rental profiles that help landlords start better conversations
 
 ## Description (260자 이내)
-Rentme flips the rental market. Instead of tenants hunting for listings, they create verified profiles — employment, income, credit — and landlords discover them. Our trust score algorithm matches tenants with compatible landlords, reducing fraud and information asymmetry in the Korean rental market.
+Rentme flips the rental market. Instead of tenants hunting only for listings, they create consent-based profiles with employment, income and other supporting materials they choose to share. Landlords can discover relevant tenants and start conversations with clearer context.
 
 ## Short Description (Korean, 앱스토어/홍보용)
 세입자가 프로필을 만들고, 집주인이 찾아오는 역발상 부동산 매칭 플랫폼.
-신원인증과 신뢰 점수로 안전하고 투명한 임대차 거래를 만듭니다.
+동의 기반 프로필 요약과 확인 항목으로 임대차 대화의 시작 정보를 정리합니다.
 
 ---
 
@@ -24,27 +24,27 @@ Rentme flips the rental market. Instead of tenants hunting for listings, they cr
 
 ### Slide 1: Hero
 "Stop hunting for apartments. Let landlords find you."
-세입자 프로필 기반 역방향 매칭 — 집주인이 검증된 세입자를 발견합니다.
+세입자 프로필 기반 역방향 매칭 — 집주인이 조건에 맞는 프로필을 살펴봅니다.
 
-### Slide 2: Trust Score
-"Trust Score: Your rental credential"
-재직, 소득, 신용 3단계 인증 → 0~100점 신뢰 점수.
-높은 신뢰 점수 = 더 좋은 조건의 매물 매칭.
+### Slide 2: Profile Summary
+"Consent-based profile summary for rental conversations"
+재직, 소득, 레퍼런스 등 사용자가 동의한 확인 항목을 한곳에 정리합니다.
+이 요약은 신용평가나 계약 가능성 보장이 아니라 대화를 돕는 참고 정보입니다.
 
 ### Slide 3: Matching
 "AI-powered matching, not random listings"
 라이프스타일, 예산, 선호 지역을 분석하여
-세입자-집주인 양방향 호환성 점수 제공.
+세입자-집주인 양방향 매칭 참고 정보를 제공합니다.
 
 ### Slide 4: Verification
-"Verified badges that landlords trust"
-재직증명, 소득증명, 신용조회 — 배지 하나가
-10번의 집 보러가기보다 강력합니다.
+"Supporting materials, shared with consent"
+재직, 소득, 레퍼런스 등 사용자가 선택한 자료를
+프로필 확인 항목으로 정리합니다.
 
 ### Slide 5: Dashboard
 "Landlord dashboard: Filter, discover, decide"
-집주인 전용 대시보드에서 인증된 세입자 풀을
-신뢰점수, 예산, 입주 희망일 기준으로 필터링.
+집주인 전용 대시보드에서 프로필, 예산, 입주 희망일,
+레퍼런스 보유 여부를 기준으로 후보를 살펴봅니다.
 
 ---
 
@@ -56,9 +56,9 @@ Rentme flips the rental market. Instead of tenants hunting for listings, they cr
 세입자는 매물 정보를 믿을 수 없고, 집주인은 세입자를 검증할 방법이 없습니다.
 
 Rentme는 이 문제를 뒤집었습니다:
-- 세입자가 먼저 프로필을 만들고 인증합니다
-- 집주인이 검증된 세입자 풀에서 직접 선택합니다
-- 양쪽 모두 신뢰 점수로 상대방을 평가할 수 있습니다
+- 세입자가 먼저 프로필을 만들고 공개 범위를 선택합니다
+- 집주인이 조건에 맞는 프로필을 살펴보고 대화를 시작합니다
+- 프로필 요약 정보는 계약 판단을 대신하지 않는 참고 정보로 제공합니다
 
 현재 베타 운영 중이며, 초대 코드로 가입할 수 있습니다.
 피드백과 질문 환영합니다!
@@ -68,8 +68,8 @@ Hi, I'm the maker of Rentme.
 The biggest problem in Korean rental markets is information asymmetry.
 Tenants can't trust listings, and landlords can't verify tenants.
 
-Rentme reverses this: tenants create verified profiles first,
-and landlords discover them from a trusted pool.
+Rentme reverses this: tenants create consent-based profiles first,
+and landlords discover relevant profiles before starting a conversation.
 
 Currently in beta — feedback and questions welcome!
 
@@ -77,7 +77,7 @@ Currently in beta — feedback and questions welcome!
 
 ## Pricing
 - Free: 기본 프로필 생성, 매물 검색, 메시지 3건/일
-- Premium (₩9,900/월): 무제한 메시지, 우선 매칭, 프리미엄 배지, 상세 분석
+- Premium (₩9,900/월): 무제한 메시지, 우선 매칭, 프로필 강조 노출, 상세 분석
 
 ---
 
@@ -94,8 +94,8 @@ Currently in beta — feedback and questions welcome!
 ## Technical Highlights (for Hacker News cross-post)
 - Next.js 15 + React 18 + TypeScript
 - PostgreSQL + JWT authentication
-- Trust score algorithm (employment × 30 + income × 30 + credit × 40)
-- Verification badge system with document upload
+- Consent-based profile summary pipeline
+- Supporting-material badge system with document upload
 - Real-time messaging
 - Deployed on Koyeb with CI/CD (GitHub Actions)
 

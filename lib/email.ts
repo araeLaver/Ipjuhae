@@ -184,7 +184,7 @@ export async function sendWelcomeEmail(email: string, name: string): Promise<Ema
         <h1 style="color: #2563eb;">입주해에 오신 것을 환영합니다!</h1>
         <p>안녕하세요, ${name || '회원'}님!</p>
         <p>입주해에 가입해 주셔서 감사합니다.</p>
-        <p>지금 바로 프로필을 완성하고 신뢰점수를 높여보세요.</p>
+        <p>지금 바로 프로필을 완성하고 공개할 확인 항목을 정리해보세요.</p>
         <a href="${process.env.NEXT_PUBLIC_BASE_URL}/profile"
            style="display: inline-block; background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; margin-top: 16px;">
           프로필 완성하기

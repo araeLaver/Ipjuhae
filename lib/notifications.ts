@@ -185,16 +185,16 @@ export async function notifyVerificationApproved(opts: {
   documentType: string
 }): Promise<void> {
   const labels: Record<string, string> = {
-    employment: '재직',
-    income: '소득',
-    credit: '신용',
+    employment: '재직 관련',
+    income: '소득 관련',
+    credit: '신용 관련',
   }
   const label = labels[opts.documentType] ?? opts.documentType
   await createNotification({
     userId: opts.toUserId,
     type: 'verification_approved',
-    title: `${label} 인증이 완료됐어요`,
-    body: '신뢰점수가 업데이트됩니다. 프로필을 확인해보세요.',
+    title: `${label} 확인 항목이 반영됐어요`,
+    body: '프로필 요약 정보에 반영됩니다. 공개 범위를 확인해보세요.',
     link: '/profile',
     metadata: { documentType: opts.documentType },
   })
@@ -207,9 +207,9 @@ export async function notifyVerificationRejected(opts: {
   reason?: string
 }): Promise<void> {
   const labels: Record<string, string> = {
-    employment: '재직',
-    income: '소득',
-    credit: '신용',
+    employment: '재직 관련',
+    income: '소득 관련',
+    credit: '신용 관련',
   }
   const label = labels[opts.documentType] ?? opts.documentType
   await createNotification({
@@ -222,18 +222,17 @@ export async function notifyVerificationRejected(opts: {
   })
 }
 
-/** 신뢰점수 변경 */
+/** 프로필 요약 변경 */
 export async function notifyTrustScoreUpdated(opts: {
   toUserId: string
   newScore: number
   delta: number
 }): Promise<void> {
-  const direction = opts.delta >= 0 ? `+${opts.delta}` : `${opts.delta}`
   await createNotification({
     userId: opts.toUserId,
     type: 'trust_score_updated',
-    title: '신뢰점수가 업데이트됐어요',
-    body: `현재 신뢰점수: ${opts.newScore}점 (${direction})`,
+    title: '프로필 요약 정보가 업데이트됐어요',
+    body: '제출한 확인 항목이 프로필 요약에 반영됐습니다.',
     link: '/profile',
     metadata: { newScore: opts.newScore, delta: opts.delta },
   })
@@ -245,7 +244,7 @@ export async function notifyWelcome(userId: string, name: string): Promise<void>
     userId,
     type: 'welcome',
     title: `환영합니다, ${name}님! 🎉`,
-    body: '렌트미에 오신 걸 환영해요. 프로필을 완성하고 신뢰점수를 올려보세요.',
+    body: '렌트미에 오신 걸 환영해요. 프로필을 완성하고 공개할 확인 항목을 정리해보세요.',
     link: '/onboarding/basic',
   })
 }

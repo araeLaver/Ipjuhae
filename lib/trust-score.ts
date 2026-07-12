@@ -126,11 +126,11 @@ function calculatePropertySafetyScore(propertySafetyScore: number | null): numbe
 }
 
 /**
- * 신뢰점수 계산
+ * 프로필 요약값 계산
  * - 프로필 완성: 20점
  * - 재직 인증: 25점
  * - 소득 인증: 25점
- * - 신용 인증: 10-20점 (등급에 따라)
+ * - 신용 관련 확인: 10-20점 (등급에 따라)
  * - 레퍼런스: +30점(긍정) / -20점(부정)
  * 최대: 120점 (100점 초과 가능)
  */
@@ -169,7 +169,7 @@ export function calculateTrustScore(input: TrustScoreInput): TrustScoreBreakdown
     incomeScore = 25
   }
 
-  // 4. 신용 인증 (10-20점)
+  // 4. 신용 관련 확인 (10-20점)
   if (verification?.credit_verified && verification.credit_grade) {
     // 등급 1(최우량): 20점, 등급 2(양호): 15점, 등급 3(보통): 10점
     switch (verification.credit_grade) {
@@ -229,7 +229,7 @@ export function calculateTrustScore(input: TrustScoreInput): TrustScoreBreakdown
 }
 
 /**
- * 신뢰점수 레벨 반환
+ * 프로필 요약 레벨 반환
  */
 export function getTrustScoreLevel(score: number): 'excellent' | 'good' | 'fair' | 'low' {
   if (score >= 100) return 'excellent'
@@ -239,7 +239,7 @@ export function getTrustScoreLevel(score: number): 'excellent' | 'good' | 'fair'
 }
 
 /**
- * 신뢰점수 레벨 라벨
+ * 프로필 요약 레벨 라벨
  */
 export function getTrustScoreLabel(score: number): string {
   const level = getTrustScoreLevel(score)
@@ -256,7 +256,7 @@ export function getTrustScoreLabel(score: number): string {
 }
 
 /**
- * 신뢰점수 색상
+ * 프로필 요약 색상
  */
 export function getTrustScoreColor(score: number): string {
   const level = getTrustScoreLevel(score)

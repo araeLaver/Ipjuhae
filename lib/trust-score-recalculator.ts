@@ -31,7 +31,7 @@ export async function recalculateTrustScoreForUser(
   )
 
   if (!profile) {
-    logger.warn('신뢰점수 재계산 대상 프로필이 없습니다', { userId })
+    logger.warn('프로필 요약 재계산 대상 프로필이 없습니다', { userId })
     return null
   }
 
@@ -133,7 +133,7 @@ export async function recalculateTrustScoreForUser(
       newScore: nextTrustScore,
       delta: nextTrustScore - previousTrustScore,
     }).catch((error) => {
-      logger.error('신뢰점수 알림 전송 실패', { userId, error })
+      logger.error('프로필 요약 알림 전송 실패', { userId, error })
     })
   }
 
@@ -163,7 +163,7 @@ export async function recalculateTrustScores(
         results.push(result)
       }
     } catch (error) {
-      logger.error(`신뢰점수 재계산 실패: ${userId}`, { userId, error })
+      logger.error(`프로필 요약 재계산 실패: ${userId}`, { userId, error })
     }
   }
 

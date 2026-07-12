@@ -23,16 +23,16 @@ const REGIONS = [
 ]
 
 const SORT_LABELS: Record<string, string> = {
-  trust_desc: '프로필 요약 높은 순',
+  trust_desc: '프로필 요약 참고순',
   created_desc: '최근 가입 순',
   reference_desc: '레퍼런스 많은 순',
   verified_desc: '인증 많은 순',
 }
 
 const VERIFIED_OPTIONS = [
-  { value: 'employment', label: '재직인증' },
-  { value: 'income', label: '소득인증' },
-  { value: 'credit', label: '신용인증' },
+  { value: 'employment', label: '재직 관련 확인' },
+  { value: 'income', label: '소득 관련 확인' },
+  { value: 'credit', label: '신용 관련 확인' },
 ]
 
 // ---------------------------------------------------------------------------
@@ -148,37 +148,6 @@ export function TenantSearchFilters({ filters, onChange, onReset }: TenantSearch
                 {SORT_LABELS[opt]}
               </button>
             ))}
-          </div>
-        </div>
-
-        {/* 프로필 요약 범위 */}
-        <div className="space-y-2">
-          <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-            프로필 요약 범위
-          </Label>
-          <div className="space-y-1">
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>{filters.trust_min}점</span>
-              <span>{filters.trust_max >= 145 ? '145점 이상' : `${filters.trust_max}점`}</span>
-            </div>
-            <input
-              type="range"
-              min={0}
-              max={145}
-              step={5}
-              value={filters.trust_min}
-              onChange={(e) => update('trust_min', Number(e.target.value))}
-              className="w-full accent-primary"
-            />
-            <input
-              type="range"
-              min={0}
-              max={145}
-              step={5}
-              value={filters.trust_max}
-              onChange={(e) => update('trust_max', Number(e.target.value))}
-              className="w-full accent-primary"
-            />
           </div>
         </div>
 

@@ -3,26 +3,13 @@
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
 import { Shield, PawPrint, Cigarette, Star, CheckCircle } from 'lucide-react'
 import { TenantCard as TenantCardType } from '@/hooks/useTenantSearch'
-import { getTrustScoreColor } from '@/lib/trust-score'
+import { getTrustScoreColor, getTrustScoreLabel } from '@/lib/trust-score'
 import { FavoriteButton } from '@/components/landlord/favorite-button'
 
 // ---------------------------------------------------------------------------
 // Helpers
-// ---------------------------------------------------------------------------
-
-function getTrustScoreLabel(score: number): string {
-  if (score >= 130) return '최우수'
-  if (score >= 80) return '우수'
-  if (score >= 60) return '양호'
-  if (score >= 40) return '보통'
-  return '초기'
-}
-
-// ---------------------------------------------------------------------------
-// Component
 // ---------------------------------------------------------------------------
 
 interface TenantCardProps {
@@ -41,7 +28,7 @@ export function TenantCard({ tenant }: TenantCardProps) {
     <Link href={`/landlord/tenants/${tenant.profile_id}`}>
       <Card className="h-full hover:shadow-md transition-shadow cursor-pointer group">
         <CardContent className="p-4 flex flex-col gap-3">
-          {/* Header: avatar placeholder + name + score */}
+          {/* Header: avatar placeholder + name + profile signal */}
           <div className="flex items-start justify-between gap-2">
             <div className="flex items-center gap-3">
               {/* Profile image or fallback */}
@@ -68,20 +55,17 @@ export function TenantCard({ tenant }: TenantCardProps) {
               </div>
             </div>
 
-            {/* Trust score chip + favorite */}
+            {/* Profile signal chip + favorite */}
             <div className="flex items-start gap-2 flex-shrink-0">
               <div className="text-right">
-                <span className="text-lg font-bold">{tenant.trust_score}</span>
-                <p className="text-xs text-muted-foreground">{getTrustScoreLabel(tenant.trust_score)}</p>
+                <span className="text-sm font-semibold">요약 {getTrustScoreLabel(tenant.trust_score)}</span>
+                <p className="text-xs text-muted-foreground">참고 정보</p>
               </div>
               <div onClick={(e) => e.preventDefault()}>
                 <FavoriteButton tenantId={tenant.user_id} variant="icon" />
               </div>
             </div>
           </div>
-
-          {/* Trust score bar */}
-          <Progress value={tenant.trust_score} max={145} className="h-1.5" />
 
           {/* Bio */}
           {tenant.bio && (
@@ -119,12 +103,12 @@ export function TenantCard({ tenant }: TenantCardProps) {
             <div className="flex gap-1">
               {tenant.verified.employment && (
                 <span className="text-xs text-emerald-600 flex items-center gap-0.5 font-medium">
-                  <CheckCircle className="h-3 w-3" />재직
+                  <CheckCircle className="h-3 w-3" />재직 관련
                 </span>
               )}
               {tenant.verified.income && (
                 <span className="text-xs text-blue-600 flex items-center gap-0.5 font-medium">
-                  <CheckCircle className="h-3 w-3" />소득
+                  <CheckCircle className="h-3 w-3" />소득 관련
                 </span>
               )}
               {tenant.verified.credit && (

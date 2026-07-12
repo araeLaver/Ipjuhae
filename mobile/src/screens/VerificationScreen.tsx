@@ -39,8 +39,8 @@ const VERIF_ITEMS = [
   },
   {
     key: 'credit' as const,
-    title: '신용 인증',
-    description: '신용등급 확인서를 제출합니다',
+    title: '신용 관련 확인',
+    description: '신용 관련 확인 자료를 제출합니다',
     icon: '📊',
     points: 15,
   },
@@ -108,7 +108,7 @@ const VerificationScreen: React.FC<Props> = ({ navigation }) => {
       <View style={styles.header}>
         <Text style={styles.title}>인증 관리</Text>
         <Text style={styles.subtitle}>
-          인증을 완료하면 신뢰 점수가 올라갑니다
+          확인 항목을 제출하면 프로필 요약에 반영됩니다
         </Text>
       </View>
 
@@ -130,7 +130,7 @@ const VerificationScreen: React.FC<Props> = ({ navigation }) => {
               </View>
             </View>
             <View style={styles.cardFooter}>
-              <Text style={styles.pointsText}>+{item.points}점</Text>
+              <Text style={styles.pointsText}>프로필 요약 반영</Text>
               {!done && (
                 <TouchableOpacity
                   style={[styles.uploadButton, isUploading && styles.uploadButtonDisabled]}

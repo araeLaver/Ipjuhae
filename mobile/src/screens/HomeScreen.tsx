@@ -80,21 +80,21 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
         </Text>
       </View>
 
-      {/* Tenant: Trust Score */}
+      {/* Tenant: Profile Summary */}
       {isTenant && (
         <TouchableOpacity
           style={styles.trustCard}
           onPress={() => navigation.navigate('Profile' as any)}
         >
           <View style={styles.trustHeader}>
-            <Text style={styles.trustTitle}>신뢰 점수</Text>
-            <Text style={styles.trustScore}>{trustScore}</Text>
+            <Text style={styles.trustTitle}>프로필 요약</Text>
+            <Text style={styles.trustScore}>{trustScore >= 80 ? '우수' : trustScore >= 60 ? '양호' : trustScore >= 40 ? '보통' : '시작'}</Text>
           </View>
           <View style={styles.trustBar}>
             <View style={[styles.trustFill, { width: `${Math.min(trustScore, 100)}%` }]} />
           </View>
           {!profileComplete && (
-            <Text style={styles.trustHint}>프로필을 완성하면 점수가 올라갑니다</Text>
+            <Text style={styles.trustHint}>프로필을 완성하면 요약 정보에 반영됩니다</Text>
           )}
         </TouchableOpacity>
       )}

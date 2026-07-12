@@ -3,15 +3,8 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { VerificationBadges } from '@/components/verification/verification-badge'
 import { Avatar } from '@/components/ui/avatar'
-import {
-  Users,
-  PawPrint,
-  Cigarette,
-  Clock,
-  Calendar,
-  Volume2,
-  Shield
-} from 'lucide-react'
+import { Users, PawPrint, Cigarette, Clock, Calendar, Volume2, Shield } from 'lucide-react'
+import { getTrustScoreColor, getTrustScoreLabel } from '@/lib/trust-score'
 
 interface ProfileCardProps {
   profile: Profile
@@ -20,18 +13,6 @@ interface ProfileCardProps {
 }
 
 export function ProfileCard({ profile, verification, profileImage }: ProfileCardProps) {
-  const getTrustScoreColor = (score: number) => {
-    if (score >= 80) return 'bg-green-500'
-    if (score >= 50) return 'bg-yellow-500'
-    return 'bg-gray-400'
-  }
-
-  const getTrustScoreLabel = (score: number) => {
-    if (score >= 80) return '높음'
-    if (score >= 50) return '보통'
-    return '시작'
-  }
-
   const getStayTimeLabel = (value: string | null) => {
     const labels: Record<string, string> = {
       '아침': '주로 아침/오전',
@@ -63,7 +44,7 @@ export function ProfileCard({ profile, verification, profileImage }: ProfileCard
 
   return (
     <Card className="max-w-md mx-auto overflow-hidden">
-      {/* Header with Trust Score */}
+      {/* Header with profile summary signal */}
       <CardHeader className="bg-gradient-to-r from-primary to-blue-600 text-white pb-8">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -82,7 +63,7 @@ export function ProfileCard({ profile, verification, profileImage }: ProfileCard
             <div className={`w-16 h-16 rounded-full ${getTrustScoreColor(profile.trust_score)} flex items-center justify-center`}>
               <Shield className="h-8 w-8 text-white" />
             </div>
-            <p className="text-xs mt-1">{getTrustScoreLabel(profile.trust_score)}</p>
+            <p className="text-xs mt-1">요약 {getTrustScoreLabel(profile.trust_score)}</p>
           </div>
         </div>
       </CardHeader>

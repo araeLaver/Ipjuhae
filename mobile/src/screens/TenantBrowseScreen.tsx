@@ -59,6 +59,13 @@ const TenantBrowseScreen: React.FC<Props> = ({ navigation }) => {
     return '#9CA3AF';
   };
 
+  const getTrustLabel = (score: number) => {
+    if (score >= 80) return '우수';
+    if (score >= 60) return '양호';
+    if (score >= 40) return '보통';
+    return '시작';
+  };
+
   const formatBudget = (min?: number, max?: number) => {
     if (!min && !max) return '미설정';
     if (min && max) return `${min.toLocaleString()} ~ ${max.toLocaleString()}만`;
@@ -97,9 +104,9 @@ const TenantBrowseScreen: React.FC<Props> = ({ navigation }) => {
         </View>
         <View style={styles.trustSection}>
           <Text style={[styles.trustScore, { color: getTrustColor(item.trustScore) }]}>
-            {item.trustScore}
+            {getTrustLabel(item.trustScore)}
           </Text>
-          <Text style={styles.trustLabel}>신뢰점수</Text>
+          <Text style={styles.trustLabel}>프로필 요약</Text>
         </View>
       </View>
 

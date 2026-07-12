@@ -96,7 +96,7 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        {/* Trust Score */}
+        {/* Profile Summary */}
         <Card className="shadow-card">
           <CardHeader>
             <CardTitle className="text-base">프로필 요약 점수</CardTitle>

@@ -7,7 +7,7 @@ import { VerificationBadges } from '@/components/verification/verification-badge
 import { FavoriteButton } from '@/components/landlord/favorite-button'
 import { Profile, Verification } from '@/types/database'
 import { Shield, PawPrint, Cigarette, ChevronRight } from 'lucide-react'
-import { getTrustScoreColor } from '@/lib/trust-score'
+import { getTrustScoreColor, getTrustScoreLabel } from '@/lib/trust-score'
 
 interface TenantListItemProps {
   profile: Profile & { verification?: Verification | null; user_id?: string }
@@ -23,12 +23,12 @@ export function TenantListItem({ profile, showFavorite = true }: TenantListItemP
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              {/* Trust Score Badge */}
+              {/* Profile signal badge */}
               <div className="text-center">
                 <div className={`w-12 h-12 rounded-full ${getTrustScoreColor(profile.trust_score)} flex items-center justify-center`}>
                   <Shield className="h-6 w-6 text-white" />
                 </div>
-                <p className="text-xs mt-1 font-medium">{profile.trust_score}점</p>
+                <p className="text-xs mt-1 font-medium">요약 {getTrustScoreLabel(profile.trust_score)}</p>
               </div>
 
               {/* Profile Info */}

@@ -28,7 +28,7 @@
 
 ### 현재 상태
 - 기본 목록(`/landlord/tenants`) 존재
-- 필터 없음 / 신뢰점수 단순 정렬만 지원
+- 필터 없음 / 프로필 요약 참고순 정렬만 지원
 
 ### 요구사항
 
@@ -41,12 +41,12 @@
 | 흡연 여부 | boolean | 비흡연 / 전체 |
 | 거주 소음 | multiselect | 조용, 보통, 활발 |
 | 거주 기간 | multiselect | 6개월, 1년, 2년, 장기 |
-| 신뢰점수 | range | 0~100 (슬라이더) |
-| 인증 여부 | checkbox | 재직인증, 소득인증, 신용인증 |
+| 프로필 요약 | internal sort | 기본 노출은 숫자 범위 대신 요약 라벨 |
+| 확인 항목 | checkbox | 재직 관련 확인, 소득 관련 확인, 신용 관련 확인 |
 | 레퍼런스 | boolean | 집주인 레퍼런스 있음 |
 
 #### 정렬 조건
-- 신뢰점수 높은 순 (기본)
+- 프로필 요약 참고순 (기본)
 - 최근 가입 순
 - 레퍼런스 많은 순
 - 인증 배지 많은 순
@@ -69,8 +69,8 @@ pets[]          string[]   반려동물
 smoking         boolean    흡연 여부
 noise_level[]   string[]   소음 수준
 duration[]      string[]   거주 기간
-trust_min       number     신뢰점수 최솟값 (0~100)
-trust_max       number     신뢰점수 최댓값 (0~100)
+trust_min       number     내부 프로필 요약값 최솟값. 법무 검토 전 UI 기본 노출 제외
+trust_max       number     내부 프로필 요약값 최댓값. 법무 검토 전 UI 기본 노출 제외
 verified[]      string[]   인증 종류 (employment|income|credit)
 has_reference   boolean    레퍼런스 보유 여부
 sort            string     trust_desc | created_desc | reference_desc | verified_desc
@@ -96,7 +96,7 @@ interface TenantCard {
   stay_time: StayTime
   duration: Duration
   noise_level: NoiseLevel
-  trust_score: number
+  trust_score: number           // 내부 정렬용. 법무 검토 전 기본 UI에는 숫자 직접 노출 금지
   bio: string
   verified: {
     employment: boolean
@@ -123,7 +123,7 @@ CREATE INDEX IF NOT EXISTS idx_profiles_preferred_regions ON profiles USING GIN(
 
 ### UI 컴포넌트
 - `components/landlord/TenantSearchFilters.tsx` — 사이드 필터 패널
-- `components/landlord/TenantCard.tsx` — 카드 (이름 마스킹, 배지, 신뢰점수 바)
+- `components/landlord/TenantCard.tsx` — 카드 (이름 마스킹, 확인 항목 배지, 프로필 요약 라벨)
 - `components/landlord/TenantGrid.tsx` — 그리드 + 무한스크롤
 - `hooks/useTenantSearch.ts` — 필터 상태 관리 + API 호출 (debounce 300ms)
 
@@ -147,7 +147,7 @@ CREATE INDEX IF NOT EXISTS idx_profiles_preferred_regions ON profiles USING GIN(
 - 일간 가입자 (7일 차트)
 - 대기중인 서류 심사 수
 - 만료 임박 레퍼런스 수
-- 신뢰점수 분포 히스토그램
+- 프로필 요약 상태 분포
 ```
 
 #### 2. 유저 관리 (`/admin/users`)
@@ -165,7 +165,7 @@ CREATE INDEX IF NOT EXISTS idx_profiles_preferred_regions ON profiles USING GIN(
 대기중인 서류 목록 (FIFO 순)
 각 서류:
   - 업로드된 파일 미리보기 (PDF/이미지)
-  - 문서 유형 (재직/소득/신용)
+  - 문서 유형 (재직/소득/신용 관련 확인)
   - 제출자 정보
   - 승인 / 반려 (반려 사유 필수 입력)
 자동: 승인/반려 시 이메일 알림 발송

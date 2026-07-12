@@ -26,16 +26,16 @@ export default function TermsPage() {
           <section>
             <h2 className="text-lg font-semibold text-foreground">제1조 (목적)</h2>
             <p>
-              이 약관은 렌트미(이하 &quot;회사&quot;)가 제공하는 세입자 신뢰 프로필 서비스(이하 &quot;서비스&quot;)의 이용과 관련하여 회사와 회원 간의 권리, 의무 및 책임 사항을 규정함을 목적으로 합니다.
+              이 약관은 렌트미(이하 &quot;회사&quot;)가 제공하는 정보 탐색 및 커뮤니케이션 지원 서비스(이하 &quot;서비스&quot;)의 이용과 관련하여 회사와 회원 간의 권리, 의무 및 책임 사항을 규정함을 목적으로 합니다.
             </p>
           </section>
 
           <section>
             <h2 className="text-lg font-semibold text-foreground">제2조 (용어의 정의)</h2>
             <ol className="list-decimal pl-4 space-y-1">
-              <li>&quot;서비스&quot;란 회사가 제공하는 세입자 신뢰 프로필 구축 및 공유 플랫폼을 말합니다.</li>
+              <li>&quot;서비스&quot;란 회사가 제공하는 임대차 정보 탐색, 프로필 정리 및 회원 간 커뮤니케이션 지원 플랫폼을 말합니다.</li>
               <li>&quot;회원&quot;이란 본 약관에 동의하고 서비스를 이용하는 자를 말합니다.</li>
-              <li>&quot;세입자 프로필&quot;이란 회원이 입력한 개인 정보 및 인증 정보로 구성된 신뢰 지표를 말합니다.</li>
+              <li>&quot;세입자 프로필&quot;이란 회원이 입력하거나 제출한 정보 중 공개 범위에 따라 정리되는 프로필 요약 정보를 말합니다.</li>
             </ol>
           </section>
 
@@ -77,7 +77,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-lg font-semibold text-foreground">제7조 (면책 조항)</h2>
             <p>
-              회사는 천재지변, 불가항력 등으로 인한 서비스 중단에 대해 책임을 지지 않습니다. 회원 간 거래 및 분쟁에 대해 회사는 중개자로서의 책임만을 부담합니다.
+              회사는 천재지변, 불가항력 등으로 인한 서비스 중단에 대해 책임을 지지 않습니다. 회사는 회원 간 임대차 계약을 직접 체결하거나 대리하지 않으며, 서비스는 정보 탐색 및 커뮤니케이션 지원 목적으로 제공됩니다. 회원 간 거래 및 분쟁은 당사자 간 책임으로 해결해야 합니다.
             </p>
           </section>
 

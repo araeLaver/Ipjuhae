@@ -10,7 +10,7 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { PageContainer } from '@/components/layout/page-container'
 import { FavoriteButton } from '@/components/landlord/favorite-button'
 import { Shield, Heart, ChevronRight } from 'lucide-react'
-import { getTrustScoreColor } from '@/lib/trust-score'
+import { getTrustScoreColor, getTrustScoreLabel } from '@/lib/trust-score'
 import { toast } from 'sonner'
 
 interface FavoriteItem {
@@ -116,12 +116,12 @@ export default function FavoritesPage() {
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      {/* Trust Score Badge */}
+                      {/* Profile signal badge */}
                       <div className="text-center">
                         <div className={`w-12 h-12 rounded-full ${getTrustScoreColor(favorite.trust_score)} flex items-center justify-center`}>
                           <Shield className="h-6 w-6 text-white" />
                         </div>
-                        <p className="text-xs mt-1 font-medium">{favorite.trust_score}점</p>
+                        <p className="text-xs mt-1 font-medium">요약 {getTrustScoreLabel(favorite.trust_score)}</p>
                       </div>
 
                       {/* Profile Info */}

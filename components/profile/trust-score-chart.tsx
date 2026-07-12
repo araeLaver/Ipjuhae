@@ -1,6 +1,7 @@
 'use client'
 
 import { Progress } from '@/components/ui/progress'
+import { getTrustScoreLabel } from '@/lib/trust-score'
 
 interface TrustScoreChartProps {
   total: number
@@ -18,12 +19,12 @@ interface TrustScoreChartProps {
 
 const categories = [
   { key: 'profile' as const, label: '프로필 완성', max: 20, color: 'bg-teal-500' },
-  { key: 'employment' as const, label: '재직 인증', max: 25, color: 'bg-blue-500' },
-  { key: 'income' as const, label: '소득 인증', max: 25, color: 'bg-indigo-500' },
+  { key: 'employment' as const, label: '재직 관련 확인', max: 25, color: 'bg-blue-500' },
+  { key: 'income' as const, label: '소득 관련 확인', max: 25, color: 'bg-indigo-500' },
   { key: 'credit' as const, label: '신용 관련 확인', max: 20, color: 'bg-purple-500' },
   { key: 'reference' as const, label: '레퍼런스', max: 30, color: 'bg-amber-500' },
-  { key: 'validation' as const, label: '서류 검증', max: 15, color: 'bg-emerald-500' },
-  { key: 'disputePenalty' as const, label: '분쟁 페널티', max: 30, color: 'bg-red-500' },
+  { key: 'validation' as const, label: '서류 확인', max: 15, color: 'bg-emerald-500' },
+  { key: 'disputePenalty' as const, label: '추가 확인 필요', max: 30, color: 'bg-red-500' },
   { key: 'propertySafety' as const, label: '주거 안전', max: 10, color: 'bg-cyan-500' },
 ]
 
@@ -32,6 +33,10 @@ export function TrustScoreChart({ total, breakdown }: TrustScoreChartProps) {
   const percentage = Math.min(100, (total / maxScore) * 100)
   const circumference = 2 * Math.PI * 54
   const strokeDashoffset = circumference - (percentage / 100) * circumference
+  const visibleCategories = categories.filter((cat) => {
+    const rawValue = breakdown[cat.key]
+    return cat.key === 'disputePenalty' ? rawValue < 0 : rawValue > 0
+  })
 
   return (
     <div className="space-y-6">
@@ -58,28 +63,24 @@ export function TrustScoreChart({ total, breakdown }: TrustScoreChartProps) {
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-3xl font-bold">{total}</span>
-            <span className="text-xs text-muted-foreground">/ {maxScore}</span>
+            <span className="text-xl font-bold">{getTrustScoreLabel(total)}</span>
+            <span className="text-xs text-muted-foreground">프로필 요약</span>
           </div>
         </div>
       </div>
 
-      {/* Category Bars */}
+      {/* Category Signals */}
       <div className="space-y-3">
-        {categories.map((cat) => {
+        {visibleCategories.map((cat) => {
           const rawValue = breakdown[cat.key]
           const isPenalty = cat.key === 'disputePenalty'
           const value = isPenalty ? Math.min(0, rawValue) : Math.max(0, rawValue)
           const barValue = isPenalty ? -value : value
-          const labelValue = isPenalty && value < 0 ? value : value
           return (
             <div key={cat.key} className="space-y-1">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">{cat.label}</span>
-                <span className="font-medium">
-                  {labelValue}
-                  <span className="text-muted-foreground">/{cat.max}</span>
-                </span>
+                <span className="font-medium">{isPenalty ? '확인 필요' : '반영됨'}</span>
               </div>
               <Progress
                 value={barValue}

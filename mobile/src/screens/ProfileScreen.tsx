@@ -102,18 +102,18 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
         </View>
       </View>
 
-      {/* Trust Score (Tenant) */}
+      {/* Profile Summary (Tenant) */}
       {isTenant && profile && (
         <View style={styles.trustSection}>
           <View style={styles.trustHeader}>
-            <Text style={styles.trustTitle}>신뢰 점수</Text>
+            <Text style={styles.trustTitle}>프로필 요약</Text>
             <View style={[styles.gradeBadge, { backgroundColor: getTrustGrade(profile.trustScore).color + '20' }]}>
               <Text style={[styles.gradeText, { color: getTrustGrade(profile.trustScore).color }]}>
                 {getTrustGrade(profile.trustScore).label}
               </Text>
             </View>
           </View>
-          <Text style={styles.trustScoreValue}>{profile.trustScore}점</Text>
+          <Text style={styles.trustScoreValue}>{getTrustGrade(profile.trustScore).label}</Text>
           <View style={styles.trustBar}>
             <View style={[styles.trustFill, { width: `${Math.min(profile.trustScore, 100)}%` }]} />
           </View>
@@ -124,9 +124,9 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
       {isTenant && verifications && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>인증 현황</Text>
-          <VerifItem label="재직 인증" done={verifications.employmentVerified} />
-          <VerifItem label="소득 인증" done={verifications.incomeVerified} />
-          <VerifItem label="신용 인증" done={verifications.creditVerified} />
+          <VerifItem label="재직 관련 확인" done={verifications.employmentVerified} />
+          <VerifItem label="소득 관련 확인" done={verifications.incomeVerified} />
+          <VerifItem label="신용 관련 확인" done={verifications.creditVerified} />
           <TouchableOpacity
             style={styles.verifButton}
             onPress={() => navigation.navigate('Verification')}

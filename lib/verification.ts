@@ -198,7 +198,7 @@ async function mockCreditVerification(): Promise<CreditVerificationResult> {
     3: '보통',
   }
 
-  logger.info('신용 인증 (Mock)', { creditGrade })
+  logger.info('신용 관련 확인 (Mock)', { creditGrade })
 
   return {
     success: true,
@@ -420,16 +420,16 @@ async function codefCreditVerification(
       }
     }
 
-    logger.error('CODEF 신용 인증 실패', { code: data.result?.code })
+    logger.error('CODEF 신용 관련 확인 실패', { code: data.result?.code })
     return {
       success: false,
-      error: data.result?.message || '신용 인증에 실패했습니다',
+      error: data.result?.message || '신용 관련 확인에 실패했습니다',
     }
   } catch (error) {
-    logger.error('CODEF 신용 인증 오류', { error })
+    logger.error('CODEF 신용 관련 확인 오류', { error })
     return {
       success: false,
-      error: error instanceof Error ? error.message : '신용 인증 중 오류가 발생했습니다',
+      error: error instanceof Error ? error.message : '신용 관련 확인 중 오류가 발생했습니다',
     }
   }
 }
@@ -544,7 +544,7 @@ export async function verifyIncome(
 }
 
 /**
- * 신용 인증
+ * 신용 관련 확인
  */
 export async function verifyCredit(
   userIdentity?: { name: string; birthDate: string; phoneNumber: string }
