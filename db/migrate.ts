@@ -81,6 +81,7 @@ const migrations = [
   'migration-025-trust-operations.sql',
   'migration-026-evidence-fact-cascade.sql',
   'migration-027-trust-model-alignment.sql',
+  'migration-028-contract-report-productization.sql',
 ]
 
 async function runMigrations() {

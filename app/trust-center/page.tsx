@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { Header } from '@/components/layout/header'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -105,7 +106,17 @@ export default function TrustCenterPage() {
             ))}
           </Panel>
         </section>
-      </main>
+      <section className="mt-8 grid gap-4 md:grid-cols-2">
+        <Link href="/trust/reports" className="rounded-2xl border border-orange-200 bg-orange-50 p-5 transition hover:-translate-y-0.5 hover:border-orange-400">
+          <strong className="block text-lg text-stone-900">계약 전 확인 리포트</strong>
+          <span className="mt-1 block text-sm text-stone-600">임차인·임대인·주택의 확인상태와 다음 행동을 한 번에 정리합니다.</span>
+        </Link>
+        <Link href="/trust/cards" className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 transition hover:-translate-y-0.5 hover:border-emerald-400">
+          <strong className="block text-lg text-stone-900">Trust Card 관리</strong>
+          <span className="mt-1 block text-sm text-stone-600">승인된 확인항목만 목적과 만료일을 정해 선택 공개합니다.</span>
+        </Link>
+      </section>
+    </main>
     </div>
   )
 }
@@ -125,4 +136,3 @@ function Row({ title, badge, detail }: { title: string; badge: string; detail: s
 function Empty({ text }: { text: string }) {
   return <div className="rounded-2xl border border-dashed border-[#18342e]/20 px-4 py-8 text-center text-sm text-[#18342e]/50">{text}</div>
 }
-
