@@ -48,6 +48,34 @@ interface CreateReportInput {
   expiresAt?: string | null
 }
 
+interface ContractReportRow {
+  id: string
+  owner_id: string
+  organization_id: string | null
+  transaction_id: string | null
+  property_id: string | null
+  tenant_id: string | null
+  landlord_id: string | null
+  realtor_id: string | null
+  requester_role: RequesterRole
+  title: string
+  contract_address: string | null
+  contract_stage: string
+  status: string
+  public_summary: string | null
+  disclaimer_version: string
+  // pg는 NUMERIC을 정밀도 보존을 위해 string으로 반환한다
+  ocr_cost: string
+  api_cost: string
+  review_minutes: number
+  payment_fee: string
+  storage_support_cost: string
+  generated_at: Date | null
+  expires_at: Date | null
+  created_at: Date
+  updated_at: Date
+}
+
 function hash(value: string) {
   return createHash('sha256').update(value).digest('hex')
 }
@@ -65,7 +93,7 @@ function reportAccessSql(admin: boolean) {
 }
 
 async function accessibleReport(reportId: string, actorId: string, admin = false) {
-  return queryOne<Record<string, unknown>>(reportAccessSql(admin), admin ? [reportId] : [reportId, actorId])
+  return queryOne<ContractReportRow>(reportAccessSql(admin), admin ? [reportId] : [reportId, actorId])
 }
 
 export async function createContractReport(actorId: string, input: CreateReportInput) {
