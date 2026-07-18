@@ -3,13 +3,21 @@ name: DB Migration
 on:
   workflow_dispatch:
     inputs:
-      confirmation:
-        description: 'Type MIGRATE to apply pending production migrations'
+      mode:
+        description: 'Choose plan for read-only inspection or apply after reviewing the plan'
         required: true
+        default: plan
+        type: choice
+        options:
+          - plan
+          - apply
+      confirmation:
+        description: 'For apply mode only, type MIGRATE'
+        required: false
         type: string
       baseline_confirmation:
-        description: 'Type BASELINE_VERIFIED after read-only verification of production ipjuhae._migrations (or an empty schema)'
-        required: true
+        description: 'For apply mode only, type BASELINE_VERIFIED after reviewing the plan'
+        required: false
         type: string
 
 permissions:
@@ -28,6 +36,7 @@ jobs:
 
     steps:
       - name: Verify operator confirmation
+        if: ${{ inputs.mode == 'apply' }}
         env:
           CONFIRMATION: ${{ inputs.confirmation }}
           BASELINE_CONFIRMATION: ${{ inputs.baseline_confirmation }}
@@ -77,6 +86,7 @@ jobs:
           DB_SCHEMA: ipjuhae
 
       - name: Apply the reviewed migration plan
+        if: ${{ inputs.mode == 'apply' }}
         run: npm run db:migrate
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
