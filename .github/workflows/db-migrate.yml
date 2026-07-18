@@ -3,43 +3,81 @@ name: DB Migration
 on:
   workflow_dispatch:
     inputs:
-      migration:
-        description: 'Migration to run (012, 013, all)'
-        required: false
-        default: 'all'
+      confirmation:
+        description: 'Type MIGRATE to apply pending production migrations'
+        required: true
+        type: string
+      baseline_confirmation:
+        description: 'Type BASELINE_VERIFIED after read-only verification of production ipjuhae._migrations (or an empty schema)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
 
 jobs:
   migrate:
-    name: Apply DB migrations
+    name: Apply production DB migrations
+    if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    environment: production
+    timeout-minutes: 15
+    concurrency:
+      group: production-database-migration
+      cancel-in-progress: false
 
     steps:
+      - name: Verify operator confirmation
+        env:
+          CONFIRMATION: ${{ inputs.confirmation }}
+          BASELINE_CONFIRMATION: ${{ inputs.baseline_confirmation }}
+        run: |
+          if [ "$CONFIRMATION" != "MIGRATE" ]; then
+            echo "::error::Confirmation must be exactly MIGRATE."
+            exit 1
+          fi
+          if [ "$BASELINE_CONFIRMATION" != "BASELINE_VERIFIED" ]; then
+            echo "::error::Baseline confirmation must be exactly BASELINE_VERIFIED."
+            exit 1
+          fi
+
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
 
-      - name: Install PostgreSQL client
-        run: sudo apt-get install -y --no-install-recommends postgresql-client
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
 
-      - name: Run migration-012 (landlord_references + trust_score)
-        if: ${{ github.event.inputs.migration == 'all' || github.event.inputs.migration == '012' }}
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate migration configuration
         env:
-          PGPASSWORD: ''
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DB_SCHEMA: ipjuhae
         run: |
-          echo "Running migration-012..."
-          psql "${{ secrets.DATABASE_URL }}" -f db/migration-012-references-trust-score.sql
-          echo "✅ migration-012 done"
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::The production environment is missing DATABASE_URL."
+            exit 1
+          fi
+          if [ "$DB_SCHEMA" != "ipjuhae" ]; then
+            echo "::error::Unexpected DB_SCHEMA."
+            exit 1
+          fi
 
-      - name: Run migration-013 (analytics_events)
-        if: ${{ github.event.inputs.migration == 'all' || github.event.inputs.migration == '013' }}
-        run: |
-          echo "Running migration-013..."
-          psql "${{ secrets.DATABASE_URL }}" -f db/migration-013-analytics-events.sql
-          echo "✅ migration-013 done"
+      - name: Plan pending migrations (read-only)
+        run: npm run db:migrate -- --plan
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DB_SCHEMA: ipjuhae
 
-      - name: Verify tables exist
-        run: |
-          psql "${{ secrets.DATABASE_URL }}" -c "\dt landlord_references" 2>&1 || true
-          psql "${{ secrets.DATABASE_URL }}" -c "\dt analytics_events" 2>&1 || true
-          psql "${{ secrets.DATABASE_URL }}" -c "\d profiles" 2>&1 | grep -E "reference_score|verification_score|profile_score" || echo "⚠️ trust score columns not found"
-          echo "✅ Verification complete"
+      - name: Apply the reviewed migration plan
+        run: npm run db:migrate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DB_SCHEMA: ipjuhae

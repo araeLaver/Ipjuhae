@@ -12,6 +12,8 @@ interface Overview {
   organizations: Array<Record<string, unknown>>
 }
 
+type GateStatus = 'pending' | 'approved' | 'blocked'
+
 const EMPTY: Overview = { reports: [], intakes: [], ai_runs: [], experiments: [], gates: [], organizations: [] }
 
 export default function TrustProductAdminPage() {
@@ -69,8 +71,10 @@ export default function TrustProductAdminPage() {
     }
   }
 
-  async function changeGate(gate: Record<string, unknown>, status: string) {
-    const reference = status === 'approved' ? window.prompt('승인 근거 문서 또는 검토번호를 입력하세요.') : null
+  async function changeGate(gate: Record<string, unknown>, status: GateStatus) {
+    const reference = status === 'approved'
+      ? window.prompt('승인 근거 문서 또는 검토번호를 입력하세요.')?.trim() || null
+      : null
     if (status === 'approved' && !reference) return
     await patch({
       resource: 'compliance_gate',
@@ -119,8 +123,10 @@ export default function TrustProductAdminPage() {
                 <div key={String(gate.gate_key)} className="rounded-xl border border-[#3b4540] bg-[#202622] p-4">
                   <div className="flex items-center justify-between gap-3"><strong>{String(gate.label)}</strong><span className="text-xs uppercase text-[#f2a65a]">{String(gate.status)}</span></div>
                   <p className="mt-2 text-xs leading-5 text-[#929e97]">{JSON.stringify(gate.required_evidence)}</p>
+                  {gate.approval_reference ? <p className="mt-2 text-xs text-[#b9c4bd]">승인 근거: {String(gate.approval_reference)}</p> : null}
+                  {gate.approved_at ? <p className="mt-1 text-[11px] text-[#7f8b84]">승인 시각: {String(gate.approved_at)}</p> : null}
                   <div className="mt-3 flex gap-2">
-                    {['pending', 'approved', 'blocked'].map((status) => <button key={status} onClick={() => void changeGate(gate, status)} className="rounded-full border border-[#56635c] px-3 py-1 text-[11px] hover:bg-[#343d38]">{status}</button>)}
+                    {(['pending', 'approved', 'blocked'] as const).map((status) => <button key={status} onClick={() => void changeGate(gate, status)} className="rounded-full border border-[#56635c] px-3 py-1 text-[11px] hover:bg-[#343d38]">{status}</button>)}
                   </div>
                 </div>
               ))}
@@ -205,4 +211,3 @@ function Panel({ title, children }: { title: string; children: React.ReactNode }
 function Empty() {
   return <p className="py-6 text-center text-sm text-[#77827c]">기록 없음</p>
 }
-

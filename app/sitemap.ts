@@ -18,7 +18,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.9,
     },
     {
-      url: `${BASE_URL}/match`,
+      url: `${BASE_URL}/matches`,
       lastModified: new Date(),
       changeFrequency: 'weekly',
       priority: 0.8,
@@ -39,7 +39,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   let dynamicRoutes: MetadataRoute.Sitemap = []
   try {
-    const listings = await query<{ id: number; updated_at: string }>(
+    const properties = await query<{ id: string; updated_at: string }>(
       'SELECT id, updated_at FROM properties ORDER BY updated_at DESC LIMIT 500'
     )
     const profiles = await query<{ user_id: string; updated_at: string }>(
@@ -47,9 +47,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     )
 
     dynamicRoutes = [
-      ...listings.map((l) => ({
-        url: `${BASE_URL}/listings/${l.id}`,
-        lastModified: new Date(l.updated_at),
+      ...properties.map((property) => ({
+        url: `${BASE_URL}/properties/${property.id}`,
+        lastModified: new Date(property.updated_at),
         changeFrequency: 'weekly' as const,
         priority: 0.7,
       })),

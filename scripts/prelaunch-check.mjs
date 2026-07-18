@@ -29,6 +29,7 @@ function validateProviders() {
     ['DATABASE_URL', 'DATABASE_URL is required for production DB access'],
     ['DB_SCHEMA', 'DB_SCHEMA is required'],
     ['JWT_SECRET', 'JWT_SECRET is required'],
+    ['DISCLOSURE_SIGNING_KEY', 'DISCLOSURE_SIGNING_KEY is required for trust disclosure packages'],
     ['CRON_SECRET', 'CRON_SECRET is required for /api/cron'],
     ['NEXT_PUBLIC_APP_URL', 'NEXT_PUBLIC_APP_URL is required'],
     ['NEXT_PUBLIC_BASE_URL', 'NEXT_PUBLIC_BASE_URL is required'],
@@ -36,6 +37,7 @@ function validateProviders() {
 
   coreChecks.forEach(([name, message]) => collectFailure(failures, requireEnv(name, message)))
   collectFailure(failures, validateLength('JWT_SECRET', 32))
+  collectFailure(failures, validateLength('DISCLOSURE_SIGNING_KEY', 32))
 
   // SMS provider must be real in production
   const smsProvider = process.env.SMS_PROVIDER

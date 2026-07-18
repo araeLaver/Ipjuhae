@@ -5,6 +5,7 @@ import { Verification } from '@/types/database'
 import { employmentSchema } from '@/lib/validations'
 import { verifyEmployment, getVerificationProvider } from '@/lib/verification'
 import { logger } from '@/lib/logger'
+import { isComplianceGateError } from '@/lib/compliance-gates'
 
 // POST: 재직 인증
 export async function POST(request: Request) {
@@ -91,6 +92,12 @@ export async function POST(request: Request) {
       provider,
     })
   } catch (error) {
+    if (isComplianceGateError(error)) {
+      return NextResponse.json(
+        { error: 'External verification is unavailable', code: error.code },
+        { status: 503 },
+      )
+    }
     logger.error('재직 인증 오류', { error })
     return NextResponse.json({ error: '재직 인증 중 오류가 발생했습니다' }, { status: 500 })
   }

@@ -7,7 +7,7 @@ import { trackServer } from '@/lib/analytics'
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
-async function getLandlordId(request: Request): Promise<{ id: number } | NextResponse> {
+async function getLandlordId(request: Request): Promise<{ id: string } | NextResponse> {
   const cookieStore = await cookies()
   const token = cookieStore.get('auth_token')?.value
 
@@ -20,7 +20,7 @@ async function getLandlordId(request: Request): Promise<{ id: number } | NextRes
     return NextResponse.json({ error: '유효하지 않은 토큰입니다' }, { status: 401 })
   }
 
-  return { id: Number(payload.userId) }
+  return { id: payload.userId }
 }
 
 function isNextResponse(v: unknown): v is NextResponse {

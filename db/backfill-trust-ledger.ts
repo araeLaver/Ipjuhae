@@ -1,5 +1,6 @@
 import { query } from '../lib/db'
 import { calculateTrustScore, createEvidenceFact, trustDigest, type TrustSubjectType } from '../lib/trust-engine'
+import { requireApprovedComplianceGate } from '../lib/compliance-gates'
 
 interface LegacyVerification {
   user_id: string
@@ -18,6 +19,8 @@ interface LegacyReferenceCount {
 }
 
 async function run() {
+  await requireApprovedComplianceGate('automated_scoring')
+
   const verifications = await query<LegacyVerification>(
     `SELECT verification.user_id, users.user_type,
             COALESCE(verification.employment_verified, FALSE) AS employment_verified,
@@ -81,4 +84,3 @@ run().catch((error) => {
   console.error(error)
   process.exit(1)
 })
-

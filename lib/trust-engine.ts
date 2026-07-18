@@ -2,6 +2,10 @@ import { createHash, createHmac, randomBytes } from 'crypto'
 import type { PoolClient } from 'pg'
 import { query, queryOne, transaction } from '@/lib/db'
 import { canTransitionTransaction } from '@/lib/trust-policy'
+import {
+  isComplianceGateError,
+  requireApprovedComplianceGate,
+} from '@/lib/compliance-gates'
 
 export type TrustSubjectType = 'tenant' | 'landlord' | 'property'
 export type TransactionStage = 'pre_application' | 'application' | 'negotiation' | 'contract' | 'completed' | 'cancelled'
@@ -235,6 +239,8 @@ export async function calculateTrustScore(
   actorId: string | null,
   trace: RequestTrace = {},
 ) {
+  await requireApprovedComplianceGate('automated_scoring')
+
   const model = await queryOne<{ id: string; version: string; ruleset: { rules: ScoreRule[] } }>(
     `SELECT id, version, ruleset FROM trust_score_models
       WHERE subject_type = $1 AND status = 'active'
@@ -285,6 +291,8 @@ export async function calculateTrustScore(
   })))
 
   return transaction(async (client) => {
+    await requireApprovedComplianceGate('automated_scoring', client)
+
     const previousResult = await client.query(
       `SELECT sr.id, sr.derived_node_id
          FROM trust_score_runs sr
@@ -373,8 +381,8 @@ function disclosureClaim(value: unknown, representation: string, conditionValue:
 }
 
 export async function createDisclosurePackage(input: DisclosureInput, actorId: string, trace: RequestTrace = {}) {
-  const signingKey = process.env.DISCLOSURE_SIGNING_KEY || process.env.JWT_SECRET
-  if (!signingKey) throw new Error('DISCLOSURE_SIGNING_KEY_NOT_CONFIGURED')
+  const signingKey = process.env.DISCLOSURE_SIGNING_KEY
+  if (!signingKey || signingKey.length < 32) throw new Error('DISCLOSURE_SIGNING_KEY_NOT_CONFIGURED')
 
   const context = await queryOne<Record<string, unknown>>(`SELECT * FROM trust_transaction_contexts WHERE id = $1`, [input.transactionId])
   if (!context) throw new Error('TRUST_TRANSACTION_NOT_FOUND')
@@ -541,15 +549,31 @@ export async function cascadeTrustChange(
     [result.derivedIds]
   )
   const recalculated: string[] = []
+  let recalculationDeferred: string | null = null
   for (const evaluation of affectedEvaluations) {
-    const run = await calculateTrustScore(evaluation.subject_type, evaluation.subject_id, actorId, trace)
-    recalculated.push(run.id)
+    try {
+      const run = await calculateTrustScore(evaluation.subject_type, evaluation.subject_id, actorId, trace)
+      recalculated.push(run.id)
+    } catch (error) {
+      if (!isComplianceGateError(error)) throw error
+      recalculationDeferred = error.code
+      break
+    }
   }
   await query(
     `UPDATE trust_impact_jobs SET status = 'completed', completed_at = NOW(), affected_nodes = affected_nodes || $2::jsonb WHERE id = $1`,
-    [result.job.id, JSON.stringify([{ recalculated_score_runs: recalculated }])]
+    [result.job.id, JSON.stringify([{
+      recalculated_score_runs: recalculated,
+      recalculation_deferred: recalculationDeferred,
+    }])]
   )
-  return { changeEvent: result.event, impactJobId: result.job.id, affectedCount: result.derivedIds.length, recalculated }
+  return {
+    changeEvent: result.event,
+    impactJobId: result.job.id,
+    affectedCount: result.derivedIds.length,
+    recalculated,
+    recalculationDeferred,
+  }
 }
 
 export async function requestFactCorrection(
@@ -696,6 +720,106 @@ export async function recordContractOutcome(
   })
 }
 
+interface GraphReferenceSubmission {
+  id: string
+  responder_id: string
+  subject_id: string
+  rating: number | string
+  shared_identifier_hash: string | null
+}
+
+async function deferredAutomatedScoringCode(
+  client: PoolClient,
+): Promise<string | null> {
+  const savepoint = 'automated_scoring_gate_check'
+  await client.query(`SAVEPOINT ${savepoint}`)
+  try {
+    await requireApprovedComplianceGate('automated_scoring', client)
+  } catch (error) {
+    await client.query(`ROLLBACK TO SAVEPOINT ${savepoint}`)
+    await client.query(`RELEASE SAVEPOINT ${savepoint}`)
+    if (!isComplianceGateError(error)) throw error
+    return error.code
+  }
+  await client.query(`RELEASE SAVEPOINT ${savepoint}`)
+  return null
+}
+
+async function upsertReferenceGraphEdges(
+  client: PoolClient,
+  relationshipId: string,
+  all: GraphReferenceSubmission[],
+  candidates: GraphReferenceSubmission[] = all,
+): Promise<number> {
+  let created = 0
+  for (const item of candidates) {
+    const recentResult = await client.query(
+      `SELECT COUNT(*)::int AS count FROM trust_reference_submissions WHERE responder_id = $1 AND submitted_at > NOW() - INTERVAL '24 hours'`,
+      [item.responder_id]
+    )
+    const pairResult = await client.query(
+      `SELECT COUNT(*)::int AS count FROM trust_graph_edges WHERE from_user_id = $1 AND to_user_id = $2`,
+      [item.responder_id, item.subject_id]
+    )
+    let risk = 0
+    const signals: Array<{ type: string; value: number; threshold: number }> = []
+    if (Number(recentResult.rows[0]?.count ?? 0) > 5) {
+      risk += 0.35
+      signals.push({ type: 'TIME_BURST', value: Number(recentResult.rows[0].count), threshold: 5 })
+    }
+    if (Number(pairResult.rows[0]?.count ?? 0) > 0) {
+      risk += 0.25
+      signals.push({ type: 'REPEATED_PAIR', value: Number(pairResult.rows[0].count), threshold: 1 })
+    }
+    if (
+      item.shared_identifier_hash &&
+      all.some((other) =>
+        other.id !== item.id &&
+        other.shared_identifier_hash === item.shared_identifier_hash
+      )
+    ) {
+      risk += 0.5
+      signals.push({ type: 'SHARED_IDENTIFIER', value: 1, threshold: 1 })
+    }
+    if (
+      (Number(item.rating) >= 95 || Number(item.rating) <= 5) &&
+      all.every((other) => Number(other.rating) >= 95 || Number(other.rating) <= 5)
+    ) {
+      risk += 0.2
+      signals.push({ type: 'RECIPROCAL_EXTREME', value: Number(item.rating), threshold: 95 })
+    }
+    risk = Math.min(1, risk)
+    const state = risk >= 0.7 ? 'QUARANTINED' : 'ACTIVE'
+    const edgeResult = await client.query(
+      `INSERT INTO trust_graph_edges
+        (relationship_id, reference_submission_id, from_user_id, to_user_id, trust_value, risk_score, state, current_weight)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       ON CONFLICT (reference_submission_id) DO UPDATE SET trust_value = EXCLUDED.trust_value,
+         risk_score = EXCLUDED.risk_score, state = EXCLUDED.state, current_weight = EXCLUDED.current_weight, updated_at = NOW()
+       RETURNING id`,
+      [
+        relationshipId,
+        item.id,
+        item.responder_id,
+        item.subject_id,
+        item.rating,
+        risk,
+        state,
+        state === 'ACTIVE' ? 1 : 0,
+      ]
+    )
+    for (const signal of signals) {
+      await client.query(
+        `INSERT INTO trust_risk_signals (edge_id, relationship_id, signal_type, signal_value, threshold)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [edgeResult.rows[0].id, relationshipId, signal.type, signal.value, signal.threshold]
+      )
+    }
+    created++
+  }
+  return created
+}
+
 export async function submitBilateralReference(
   transactionId: string,
   responderId: string,
@@ -733,56 +857,52 @@ export async function submitBilateralReference(
     const allResult = await client.query(`SELECT * FROM trust_reference_submissions WHERE relationship_id = $1 ORDER BY submitted_at`, [relationship.id])
     const all = allResult.rows
     const reveal = all.length >= 2 || all.some((item) => new Date(item.reveal_after).getTime() <= Date.now())
+    let scoringDeferredCode: string | null = null
     if (reveal) {
       await client.query(`UPDATE trust_reference_submissions SET reveal_state = 'PUBLISHED', revealed_at = NOW() WHERE relationship_id = $1 AND reveal_state = 'SEALED'`, [relationship.id])
-      for (const item of all) {
-        const recentResult = await client.query(
-          `SELECT COUNT(*)::int AS count FROM trust_reference_submissions WHERE responder_id = $1 AND submitted_at > NOW() - INTERVAL '24 hours'`,
-          [item.responder_id]
+      scoringDeferredCode = await deferredAutomatedScoringCode(client)
+      if (!scoringDeferredCode) {
+        await upsertReferenceGraphEdges(
+          client,
+          relationship.id,
+          all as GraphReferenceSubmission[],
         )
-        const pairResult = await client.query(
-          `SELECT COUNT(*)::int AS count FROM trust_graph_edges WHERE from_user_id = $1 AND to_user_id = $2`,
-          [item.responder_id, item.subject_id]
-        )
-        let risk = 0
-        const signals: Array<{ type: string; value: number; threshold: number }> = []
-        if (Number(recentResult.rows[0]?.count ?? 0) > 5) { risk += 0.35; signals.push({ type: 'TIME_BURST', value: Number(recentResult.rows[0].count), threshold: 5 }) }
-        if (Number(pairResult.rows[0]?.count ?? 0) > 0) { risk += 0.25; signals.push({ type: 'REPEATED_PAIR', value: Number(pairResult.rows[0].count), threshold: 1 }) }
-        if (item.shared_identifier_hash && all.some((other) => other.id !== item.id && other.shared_identifier_hash === item.shared_identifier_hash)) {
-          risk += 0.5
-          signals.push({ type: 'SHARED_IDENTIFIER', value: 1, threshold: 1 })
-        }
-        if ((Number(item.rating) >= 95 || Number(item.rating) <= 5) && all.every((other) => Number(other.rating) >= 95 || Number(other.rating) <= 5)) {
-          risk += 0.2
-          signals.push({ type: 'RECIPROCAL_EXTREME', value: Number(item.rating), threshold: 95 })
-        }
-        risk = Math.min(1, risk)
-        const state = risk >= 0.7 ? 'QUARANTINED' : 'ACTIVE'
-        const edgeResult = await client.query(
-          `INSERT INTO trust_graph_edges
-            (relationship_id, reference_submission_id, from_user_id, to_user_id, trust_value, risk_score, state, current_weight)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-           ON CONFLICT (reference_submission_id) DO UPDATE SET trust_value = EXCLUDED.trust_value,
-             risk_score = EXCLUDED.risk_score, state = EXCLUDED.state, current_weight = EXCLUDED.current_weight, updated_at = NOW()
-           RETURNING id`,
-          [relationship.id, item.id, item.responder_id, item.subject_id, item.rating, risk, state, state === 'ACTIVE' ? 1 : 0]
-        )
-        for (const signal of signals) {
-          await client.query(
-            `INSERT INTO trust_risk_signals (edge_id, relationship_id, signal_type, signal_value, threshold)
-             VALUES ($1, $2, $3, $4, $5)`,
-            [edgeResult.rows[0].id, relationship.id, signal.type, signal.value, signal.threshold]
-          )
-        }
       }
     }
-    await emitOutbox(client, 'reference_submission', submission.id, 'BilateralReferenceSubmitted', { relationship_id: relationship.id, reveal_state: reveal ? 'PUBLISHED' : 'SEALED' }, trace)
-    await appendAudit(client, responderId, 'reference.submit_blind', 'relationship', relationship.id, 'bilateral_reference', 'allowed', Object.keys(answers), trace)
-    return { submissionId: submission.id, revealState: reveal ? 'PUBLISHED' : 'SEALED', bothSubmitted: all.length >= 2 }
+    await emitOutbox(client, 'reference_submission', submission.id, 'BilateralReferenceSubmitted', {
+      relationship_id: relationship.id,
+      reveal_state: reveal ? 'PUBLISHED' : 'SEALED',
+      scoring_deferred: Boolean(scoringDeferredCode),
+      ...(scoringDeferredCode ? { scoring_deferred_code: scoringDeferredCode } : {}),
+    }, trace)
+    await appendAudit(
+      client,
+      responderId,
+      'reference.submit_blind',
+      'relationship',
+      relationship.id,
+      'bilateral_reference',
+      'allowed',
+      Object.keys(answers),
+      trace,
+      {
+        scoring_deferred: Boolean(scoringDeferredCode),
+        ...(scoringDeferredCode ? { scoring_deferred_code: scoringDeferredCode } : {}),
+      },
+    )
+    return {
+      submissionId: submission.id,
+      revealState: reveal ? 'PUBLISHED' : 'SEALED',
+      bothSubmitted: all.length >= 2,
+      scoringDeferred: Boolean(scoringDeferredCode),
+      ...(scoringDeferredCode ? { scoringDeferredCode } : {}),
+    }
   })
 }
 
 export async function calculateGraphTrust(userId: string) {
+  await requireApprovedComplianceGate('automated_scoring')
+
   const edges = await query<{ trust_value: string | number; current_weight: string | number; activated_at: Date | string }>(
     `SELECT trust_value, current_weight, activated_at FROM trust_graph_edges
       WHERE to_user_id = $1 AND state = 'ACTIVE' AND (expires_at IS NULL OR expires_at > NOW())`,
@@ -810,6 +930,8 @@ export async function calculateGraphTrust(userId: string) {
 }
 
 export async function generateTransactionRecommendations(transactionId: string, actorId: string, trace: RequestTrace = {}) {
+  await requireApprovedComplianceGate('automated_scoring')
+
   const context = await queryOne<Record<string, unknown>>(`SELECT * FROM trust_transaction_contexts WHERE id = $1`, [transactionId])
   if (!context) throw new Error('TRUST_TRANSACTION_NOT_FOUND')
   if (![context.landlord_id, context.tenant_id, context.realtor_id].includes(actorId)) throw new Error('TRUST_TRANSACTION_FORBIDDEN')
@@ -855,6 +977,8 @@ export async function generateTransactionRecommendations(transactionId: string, 
   const evidenceHash = trustDigest({ transactionId, scores, mismatchVector, recommendations })
 
   return transaction(async (client) => {
+    await requireApprovedComplianceGate('automated_scoring', client)
+
     const runResult = await client.query(
       `INSERT INTO trust_match_runs (transaction_id, model_version, mismatch_vector, result_snapshot, evidence_hash)
        VALUES ($1, 'condition-engine-1.0', $2, $3, $4) RETURNING *`,
@@ -893,16 +1017,33 @@ export async function generateTransactionRecommendations(transactionId: string, 
 }
 
 export async function getTrustReport(userId: string) {
-  const [scores, facts, transactions, reviews, disclosures, audit, graph] = await Promise.all([
+  const graphResultPromise = calculateGraphTrust(userId)
+    .then((graph) => ({ graph, deferredCode: null as string | null }))
+    .catch((error: unknown) => {
+      if (!isComplianceGateError(error)) throw error
+      return { graph: null, deferredCode: error.code }
+    })
+  const [scores, facts, transactions, reviews, disclosures, audit, graphResult] = await Promise.all([
     query(`SELECT subject_type, subject_id, score, band, confidence, model_version, reason_codes, missing_fields, created_at FROM trust_score_runs WHERE subject_id = $1 ORDER BY created_at DESC LIMIT 20`, [userId]),
     query(`SELECT id, field_name, status, quality, reason_codes, valid_until, created_at FROM trust_fact_nodes WHERE subject_id = $1 ORDER BY created_at DESC LIMIT 50`, [userId]),
     query(`SELECT * FROM trust_transaction_contexts WHERE landlord_id = $1 OR tenant_id = $1 OR realtor_id = $1 ORDER BY created_at DESC LIMIT 30`, [userId]),
     query(`SELECT id, target_type, target_id, review_type, reason, status, decision, created_at FROM trust_review_tasks WHERE requester_id = $1 ORDER BY created_at DESC LIMIT 30`, [userId]),
     query(`SELECT id, subject_type, subject_id, recipient_id, transaction_id, policy_version, claims, state, expires_at, created_at FROM trust_disclosure_packages WHERE subject_id = $1 OR recipient_id = $1 ORDER BY created_at DESC LIMIT 30`, [userId]),
     query(`SELECT action, target_type, target_id, purpose, result, fields, occurred_at FROM trust_audit_events WHERE actor_id = $1 OR target_id = $1 ORDER BY occurred_at DESC LIMIT 50`, [userId]),
-    calculateGraphTrust(userId),
+    graphResultPromise,
   ])
-  return { scores, facts, transactions, reviews, disclosures, audit, graph }
+  return {
+    scores,
+    facts,
+    transactions,
+    reviews,
+    disclosures,
+    audit,
+    graph: graphResult.graph,
+    scoringDeferred: Boolean(graphResult.deferredCode),
+    graphDeferred: Boolean(graphResult.deferredCode),
+    deferredCode: graphResult.deferredCode,
+  }
 }
 
 interface ExtractionJobInput {
@@ -920,7 +1061,16 @@ interface ExtractionJobInput {
 }
 
 export async function createExtractionJob(input: ExtractionJobInput, actorId: string, trace: RequestTrace = {}) {
+  const engineVersion = input.engineVersion?.trim() || 'manual-review-1.0'
+  const usesProductionOcr = engineVersion !== 'manual-review-1.0'
+  if (usesProductionOcr) {
+    await requireApprovedComplianceGate('production_ocr')
+  }
+
   return transaction(async (client) => {
+    if (usesProductionOcr) {
+      await requireApprovedComplianceGate('production_ocr', client)
+    }
     const sourceResult = await client.query(`SELECT id, status FROM trust_source_registry WHERE code = $1`, [input.sourceCode])
     const source = sourceResult.rows[0]
     if (!source || source.status !== 'active') throw new Error('TRUST_SOURCE_UNAVAILABLE')
@@ -934,7 +1084,7 @@ export async function createExtractionJob(input: ExtractionJobInput, actorId: st
        RETURNING *`,
       [input.documentId ?? null, actorId, input.subjectType, input.subjectId, input.propertyId ?? null,
        source.id, input.consentId ?? null, input.storageRef, input.inputChecksum, input.documentType,
-       input.engineVersion ?? 'manual-review-1.0', JSON.stringify(input.metadata ?? {})]
+       engineVersion, JSON.stringify(input.metadata ?? {})]
     )
     const job = result.rows[0]
     await emitOutbox(client, 'extraction_job', job.id, 'DocumentUploaded', { document_type: input.documentType, source_code: input.sourceCode }, trace)
@@ -1093,23 +1243,83 @@ export async function runTrustMaintenance(trace: RequestTrace = {}) {
     await query(`UPDATE trust_derived_nodes SET state = 'REVOKED' WHERE id = ANY($1::uuid[])`, [expiredDisclosures.map((item) => item.derived_node_id)])
   }
 
-  const releasedReferences = await transaction(async (client) => {
+  const releasedReferenceResult = await transaction(async (client) => {
     const due = await client.query(
       `UPDATE trust_reference_submissions SET reveal_state = 'PUBLISHED', revealed_at = NOW()
         WHERE reveal_state = 'SEALED' AND reveal_after <= NOW()
         RETURNING *`
     )
-    for (const item of due.rows) {
-      await client.query(
-        `INSERT INTO trust_graph_edges
-          (relationship_id, reference_submission_id, from_user_id, to_user_id, trust_value, risk_score, state, current_weight)
-         VALUES ($1, $2, $3, $4, $5, 0, 'ACTIVE', 1)
-         ON CONFLICT (reference_submission_id) DO UPDATE SET state = 'ACTIVE', current_weight = 1, updated_at = NOW()`,
-        [item.relationship_id, item.id, item.responder_id, item.subject_id, item.rating]
-      )
-      await emitOutbox(client, 'reference_submission', item.id, 'BilateralReferenceReleased', { reason: 'reveal_deadline' }, trace)
+    const missingEdgesResult = await client.query<GraphReferenceSubmission & { relationship_id: string }>(
+      `SELECT submission.*
+         FROM trust_reference_submissions submission
+         LEFT JOIN trust_graph_edges edge
+           ON edge.reference_submission_id = submission.id
+        WHERE submission.reveal_state = 'PUBLISHED'
+          AND edge.id IS NULL
+        ORDER BY submission.submitted_at, submission.id
+        LIMIT 100
+        FOR UPDATE OF submission SKIP LOCKED`
+    )
+    let scoringDeferredCode: string | null = null
+    let referenceEdgesBackfilled = 0
+    if (missingEdgesResult.rows.length > 0) {
+      scoringDeferredCode = await deferredAutomatedScoringCode(client)
+      if (!scoringDeferredCode) {
+        const candidatesByRelationship = new Map<string, GraphReferenceSubmission[]>()
+        for (const item of missingEdgesResult.rows) {
+          const candidates = candidatesByRelationship.get(item.relationship_id) ?? []
+          candidates.push(item)
+          candidatesByRelationship.set(item.relationship_id, candidates)
+        }
+        for (const [relationshipId, candidates] of candidatesByRelationship) {
+          const allResult = await client.query<GraphReferenceSubmission>(
+            `SELECT id, responder_id, subject_id, rating, shared_identifier_hash
+               FROM trust_reference_submissions
+              WHERE relationship_id = $1
+                AND reveal_state = 'PUBLISHED'
+              ORDER BY submitted_at, id`,
+            [relationshipId],
+          )
+          referenceEdgesBackfilled += await upsertReferenceGraphEdges(
+            client,
+            relationshipId,
+            allResult.rows,
+            candidates,
+          )
+        }
+      }
     }
-    return due.rowCount ?? 0
+    const backfillCandidateIds = new Set(
+      missingEdgesResult.rows.map((item) => item.id),
+    )
+    for (const item of due.rows) {
+      const backfillPending =
+        !scoringDeferredCode && !backfillCandidateIds.has(item.id)
+      const itemDeferredCode = scoringDeferredCode
+        ?? (backfillPending ? 'SCORING_BACKFILL_PENDING' : null)
+      await emitOutbox(client, 'reference_submission', item.id, 'BilateralReferenceReleased', {
+        reason: 'reveal_deadline',
+        scoring_deferred: Boolean(itemDeferredCode),
+        ...(itemDeferredCode ? { scoring_deferred_code: itemDeferredCode } : {}),
+      }, trace)
+    }
+    const pendingResult = await client.query<{ pending_count: number | string }>(
+      `SELECT COUNT(*)::int AS pending_count
+         FROM trust_reference_submissions submission
+         LEFT JOIN trust_graph_edges edge
+           ON edge.reference_submission_id = submission.id
+        WHERE submission.reveal_state = 'PUBLISHED'
+          AND edge.id IS NULL`
+    )
+    const referenceScoringPending = Number(
+      pendingResult.rows[0]?.pending_count ?? 0,
+    )
+    return {
+      count: due.rowCount ?? 0,
+      scoringDeferredCode,
+      referenceEdgesBackfilled,
+      referenceScoringPending,
+    }
   })
 
   const retentionQueued = await query(
@@ -1127,7 +1337,16 @@ export async function runTrustMaintenance(trace: RequestTrace = {}) {
     expiredEvidence: expiredEvidence.length,
     cascades: cascades.length,
     expiredDisclosures: expiredDisclosures.length,
-    releasedReferences,
+    releasedReferences: releasedReferenceResult.count,
+    referenceEdgesBackfilled: releasedReferenceResult.referenceEdgesBackfilled,
+    referenceScoringPending: releasedReferenceResult.referenceScoringPending,
+    referenceScoringDeferred: Boolean(
+      releasedReferenceResult.scoringDeferredCode ||
+      releasedReferenceResult.referenceScoringPending > 0
+    ),
+    ...(releasedReferenceResult.scoringDeferredCode
+      ? { referenceScoringDeferredCode: releasedReferenceResult.scoringDeferredCode }
+      : {}),
     retentionQueued: retentionQueued.length,
   }
 }

@@ -1,4 +1,7 @@
 /** @type {import('next').NextConfig} */
+const scriptSources = ["'self'", "'unsafe-inline'"]
+if (process.env.NODE_ENV === 'development') scriptSources.push("'unsafe-eval'")
+
 const nextConfig = {
   output: 'standalone',
 
@@ -43,7 +46,7 @@ const nextConfig = {
           { key: 'X-Frame-Options', value: 'DENY' },
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-          { key: 'X-XSS-Protection', value: '1; mode=block' },
+          { key: 'X-XSS-Protection', value: '0' },
           {
             key: 'Strict-Transport-Security',
             value: 'max-age=31536000; includeSubDomains',
@@ -56,9 +59,9 @@ const nextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net",
-              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "font-src 'self' https://fonts.gstatic.com",
+              `script-src ${scriptSources.join(' ')}`,
+              "style-src 'self' 'unsafe-inline'",
+              "font-src 'self' data:",
               "img-src 'self' data: blob: https:",
               "connect-src 'self' wss: ws: https://vitals.vercel-insights.com",
               "frame-ancestors 'none'",

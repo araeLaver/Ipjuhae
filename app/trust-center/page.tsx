@@ -24,10 +24,24 @@ interface TrustReport {
   reviews: Array<{ id: string; reason: string; status: string; decision: string | null; created_at: string }>
   disclosures: Array<{ id: string; policy_version: string; claims: Record<string, unknown>; state: string; expires_at: string }>
   audit: Array<{ action: string; purpose: string; result: string; occurred_at: string }>
-  graph: { trustValue: number; confidence: number; evidenceCount: number; interval: number[] }
+  graph: { trustValue: number; confidence: number; evidenceCount: number; interval: number[] } | null
+  scoringDeferred: boolean
+  graphDeferred: boolean
+  deferredCode: string | null
 }
 
-const EMPTY: TrustReport = { scores: [], facts: [], transactions: [], reviews: [], disclosures: [], audit: [], graph: { trustValue: 50, confidence: 0.15, evidenceCount: 0, interval: [25, 75] } }
+const EMPTY: TrustReport = {
+  scores: [],
+  facts: [],
+  transactions: [],
+  reviews: [],
+  disclosures: [],
+  audit: [],
+  graph: null,
+  scoringDeferred: false,
+  graphDeferred: false,
+  deferredCode: null,
+}
 
 export default function TrustCenterPage() {
   const [report, setReport] = useState<TrustReport>(EMPTY)
@@ -76,8 +90,30 @@ export default function TrustCenterPage() {
         {error ? <div className="mt-6 rounded-2xl border border-red-300 bg-red-50 p-4 text-sm text-red-700">{error}</div> : null}
 
         <section className="mt-7 grid gap-4 md:grid-cols-3">
-          <Metric icon={ShieldCheck} label="최신 신뢰 참고값" value={latestScore ? `${Math.round(Number(latestScore.score))}` : '50'} note={latestScore ? `${latestScore.band} · ${latestScore.model_version}` : '검증 근거가 쌓이면 갱신됩니다'} />
-          <Metric icon={GitBranch} label="거래 신뢰 그래프" value={`${Math.round(report.graph.trustValue)}`} note={`${report.graph.evidenceCount}개 거래 근거 · 확신도 ${Math.round(report.graph.confidence * 100)}%`} />
+          <Metric
+            icon={ShieldCheck}
+            label="최신 신뢰 참고값"
+            value={latestScore
+              ? `${Math.round(Number(latestScore.score))}`
+              : report.scoringDeferred
+                ? '승인 대기'
+                : '—'}
+            note={latestScore
+              ? `${latestScore.band} · ${latestScore.model_version}`
+              : report.scoringDeferred
+                ? '자동 점수 운영 승인 후 계산됩니다'
+                : '검증 근거가 쌓이면 갱신됩니다'}
+          />
+          {report.graph ? (
+            <Metric icon={GitBranch} label="거래 신뢰 그래프" value={`${Math.round(report.graph.trustValue)}`} note={`${report.graph.evidenceCount}개 거래 근거 · 확신도 ${Math.round(report.graph.confidence * 100)}%`} />
+          ) : (
+            <Metric
+              icon={GitBranch}
+              label="거래 신뢰 그래프"
+              value={report.graphDeferred ? '승인 대기' : '—'}
+              note={report.graphDeferred ? '자동 점수 운영 승인 후 표시됩니다' : '그래프를 불러오는 중입니다'}
+            />
+          )}
           <Metric icon={LockKeyhole} label="활성 공개 패키지" value={`${report.disclosures.filter((item) => item.state === 'ISSUED').length}`} note="수신자·목적·만료가 묶인 최소 공개" />
         </section>
 

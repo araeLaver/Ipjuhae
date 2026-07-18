@@ -1,20 +1,54 @@
 name: Fly Deploy
+
 on:
-  push:
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
     branches:
-      - main # main 브랜치에 코드가 푸시될 때만 실행
+      - main
+
+permissions:
+  contents: read
 
 jobs:
   deploy:
     name: Deploy app
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main'
     runs-on: ubuntu-latest
-    concurrency: deploy-group # 한 번에 하나의 배포만 진행되도록 제한
+    environment: production
+    timeout-minutes: 20
+    concurrency:
+      group: fly-production
+      cancel-in-progress: false
+
     steps:
-      - uses: actions/checkout@v4
-      
-      - uses: superfly/flyctl-actions/setup-flyctl@master
-      
+      - name: Checkout tested commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Set up Fly CLI
+        uses: superfly/flyctl-actions/setup-flyctl@ed8efb33836e8b2096c7fd3ba1c8afe303ebbff1
+
       - name: Deploy to Fly.io
-        run: flyctl deploy --remote-only
+        shell: bash
+        run: |
+          set -euo pipefail
+          CURRENT_MAIN_SHA="$(git ls-remote origin refs/heads/main | awk '{print $1}')"
+          if [ "$CURRENT_MAIN_SHA" != "$TESTED_SHA" ]; then
+            echo "::notice::Skipping stale tested commit $TESTED_SHA; current main is $CURRENT_MAIN_SHA."
+            exit 0
+          fi
+          if ! flyctl secrets list --app ipjuhae-production | awk 'NR > 1 { print $1 }' | grep -qx DISCLOSURE_SIGNING_KEY; then
+            echo "::error::DISCLOSURE_SIGNING_KEY must be provisioned before deploy."
+            exit 1
+          fi
+          flyctl deploy --remote-only
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          TESTED_SHA: ${{ github.event.workflow_run.head_sha }}

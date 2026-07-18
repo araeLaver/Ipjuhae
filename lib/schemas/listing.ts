@@ -43,7 +43,7 @@ export type CreateListingInput = z.infer<typeof createListingSchema>
 
 export interface Listing {
   id: number
-  landlord_id: number
+  landlord_id: string
   monthly_rent: number
   deposit: number
   address: string

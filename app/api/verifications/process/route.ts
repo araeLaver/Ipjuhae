@@ -3,8 +3,30 @@ import { query, queryOne } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
 import { VerificationDocument, Verification } from '@/types/database'
 
+function isLegacyMockVerificationEnabled() {
+  // Security boundary: mock approval must never be reachable in production,
+  // even when the opt-in environment variable is accidentally configured.
+  return (
+    process.env.NODE_ENV === 'development' &&
+    process.env.ALLOW_LEGACY_MOCK_VERIFICATION === 'true'
+  )
+}
+
 // POST: Mock 서류 처리 (상태 전이: pending → processing → approved/rejected)
 export async function POST(request: Request) {
+  if (!isLegacyMockVerificationEnabled()) {
+    return NextResponse.json(
+      {
+        error: '레거시 모의 서류 검증 기능은 비활성화되었습니다',
+        code: 'LEGACY_MOCK_VERIFICATION_DISABLED',
+      },
+      {
+        status: 410,
+        headers: { 'Cache-Control': 'no-store' },
+      }
+    )
+  }
+
   try {
     const user = await getCurrentUser()
     if (!user) {

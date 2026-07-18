@@ -1,5 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto'
+import type { PoolClient } from 'pg'
 import { query, queryOne, transaction } from './db'
+import { requireApprovedComplianceGate } from './compliance-gates'
 
 export const CONTRACT_REPORT_DISCLAIMER =
   '이 리포트와 Trust Card는 제출자료의 확인상태를 정리한 참고자료입니다. 계약의 안전, 당사자의 신용, 문서의 진위 또는 법률적 결론을 보장하지 않습니다. 기준일, 미확인 항목과 추가 확인사항을 함께 검토해야 합니다.'
@@ -96,11 +98,92 @@ async function accessibleReport(reportId: string, actorId: string, admin = false
   return queryOne<ContractReportRow>(reportAccessSql(admin), admin ? [reportId] : [reportId, actorId])
 }
 
+type ContractReportMutationAction = 'item_update' | 'transition' | 'card_issue'
+
+const ORGANIZATION_MUTATION_ROLES: Record<ContractReportMutationAction, readonly string[]> = {
+  item_update: ['owner', 'admin', 'reviewer'],
+  transition: ['owner', 'admin'],
+  card_issue: ['owner', 'admin'],
+}
+
+interface MutationAuthorizationOptions {
+  admin?: boolean
+  requireB2bGate?: boolean
+  allowInactiveOrganization?: boolean
+  lock?: 'share' | 'update'
+}
+
+async function authorizeContractReportMutation(
+  client: PoolClient,
+  actorId: string,
+  reportId: string,
+  action: ContractReportMutationAction,
+  options: MutationAuthorizationOptions = {}
+) {
+  const lockClause = options.lock === 'share' ? 'FOR SHARE' : 'FOR UPDATE'
+  const reportResult = await client.query<ContractReportRow>(
+    `SELECT * FROM contract_check_reports WHERE id = $1 ${lockClause}`,
+    [reportId]
+  )
+  const report = reportResult.rows[0]
+  if (!report) throw new Error('CONTRACT_REPORT_NOT_FOUND')
+
+  if (!report.organization_id) {
+    if (!options.admin && report.owner_id !== actorId) {
+      throw new Error('CONTRACT_REPORT_NOT_FOUND')
+    }
+    return report
+  }
+
+  if (!options.admin) {
+    const membershipResult = await client.query<{ member_role: string }>(
+      `SELECT member_role
+         FROM trust_organization_memberships
+        WHERE organization_id = $1
+          AND user_id = $2
+          AND status = 'active'
+        FOR SHARE`,
+      [report.organization_id, actorId]
+    )
+    const membership = membershipResult.rows[0]
+    if (!membership) throw new Error('CONTRACT_REPORT_NOT_FOUND')
+
+    const roleAllowed = ORGANIZATION_MUTATION_ROLES[action].includes(membership.member_role)
+    if (!roleAllowed) {
+      throw new Error('CONTRACT_REPORT_MUTATION_DENIED')
+    }
+  }
+
+  const organizationResult = await client.query<{ status: string }>(
+    'SELECT status FROM trust_organizations WHERE id = $1 FOR SHARE',
+    [report.organization_id]
+  )
+  const organization = organizationResult.rows[0]
+  if (!organization) throw new Error('CONTRACT_REPORT_NOT_FOUND')
+  if (
+    !options.allowInactiveOrganization &&
+    !['pending', 'active'].includes(organization.status)
+  ) {
+    throw new Error('CONTRACT_REPORT_ORGANIZATION_INACTIVE')
+  }
+
+  if (options.requireB2bGate) {
+    await requireApprovedComplianceGate('b2b_api', client)
+  }
+
+  return report
+}
+
 export async function createContractReport(actorId: string, input: CreateReportInput) {
+  if (input.organizationId) {
+    await requireApprovedComplianceGate('b2b_api')
+  }
+
   return transaction(async (client) => {
     if (input.organizationId) {
+      await requireApprovedComplianceGate('b2b_api', client)
       const membership = await client.query(
-        'SELECT 1 FROM trust_organization_memberships WHERE organization_id = $1 AND user_id = $2 AND status = \'active\'',
+        'SELECT 1 FROM trust_organization_memberships WHERE organization_id = $1 AND user_id = $2 AND status = \'active\' FOR SHARE',
         [input.organizationId, actorId]
       )
       if (membership.rowCount === 0) throw new Error('ORGANIZATION_ACCESS_DENIED')
@@ -228,43 +311,58 @@ export async function updateContractReportItem(
   input: ReportItemUpdate,
   admin = false
 ) {
-  const report = await accessibleReport(reportId, actorId, admin)
-  if (!report) throw new Error('CONTRACT_REPORT_NOT_FOUND')
-  const reviewState = admin ? input.reviewState ?? 'pending' : 'pending'
-  const item = await queryOne<Record<string, unknown>>(
-    'UPDATE contract_check_items SET ' +
-    'verification_status = $4, source_type = $5, source_name = $6, source_ref = $7, ' +
-    'source_observed_at = $8, valid_until = $9, public_value = $10::jsonb, missing_reason = $11, ' +
-    'next_action = $12, review_state = $13, reviewer_id = CASE WHEN $13 = \'pending\' THEN NULL ELSE $3::uuid END, ' +
-    'reviewed_at = CASE WHEN $13 = \'pending\' THEN NULL ELSE NOW() END, notes = $14, updated_at = NOW() ' +
-    'WHERE id = $1 AND report_id = $2 RETURNING *',
-    [
-      itemId,
-      reportId,
+  return transaction(async (client) => {
+    const report = await authorizeContractReportMutation(
+      client,
       actorId,
-      input.verificationStatus,
-      input.sourceType ?? null,
-      input.sourceName ?? null,
-      input.sourceRef ?? null,
-      input.sourceObservedAt ?? null,
-      input.validUntil ?? null,
-      JSON.stringify(input.publicValue ?? null),
-      input.missingReason ?? null,
-      input.nextAction ?? null,
-      reviewState,
-      input.notes ?? null,
-    ]
-  )
-  if (!item) throw new Error('CONTRACT_REPORT_ITEM_NOT_FOUND')
-  await query('UPDATE contract_check_reports SET updated_at = NOW() WHERE id = $1', [reportId])
-  return item
+      reportId,
+      'item_update',
+      {
+        admin,
+        requireB2bGate: true,
+      }
+    )
+    if (!['draft', 'in_review'].includes(String(report.status))) {
+      throw new Error('CONTRACT_REPORT_ITEM_LOCKED')
+    }
+
+    const reviewState = admin ? input.reviewState ?? 'pending' : 'pending'
+    const result = await client.query<Record<string, unknown>>(
+      'UPDATE contract_check_items SET ' +
+      'verification_status = $4, source_type = $5, source_name = $6, source_ref = $7, ' +
+      'source_observed_at = $8, valid_until = $9, public_value = $10::jsonb, missing_reason = $11, ' +
+      'next_action = $12, review_state = $13, reviewer_id = CASE WHEN $13 = \'pending\' THEN NULL ELSE $3::uuid END, ' +
+      'reviewed_at = CASE WHEN $13 = \'pending\' THEN NULL ELSE NOW() END, notes = $14, updated_at = NOW() ' +
+      'WHERE id = $1 AND report_id = $2 RETURNING *',
+      [
+        itemId,
+        reportId,
+        actorId,
+        input.verificationStatus,
+        input.sourceType ?? null,
+        input.sourceName ?? null,
+        input.sourceRef ?? null,
+        input.sourceObservedAt ?? null,
+        input.validUntil ?? null,
+        JSON.stringify(input.publicValue ?? null),
+        input.missingReason ?? null,
+        input.nextAction ?? null,
+        reviewState,
+        input.notes ?? null,
+      ]
+    )
+    const item = result.rows[0]
+    if (!item) throw new Error('CONTRACT_REPORT_ITEM_NOT_FOUND')
+    await client.query('UPDATE contract_check_reports SET updated_at = NOW() WHERE id = $1', [reportId])
+    return item
+  })
 }
 
 const TRANSITIONS: Record<string, string[]> = {
   draft: ['in_review', 'revoked'],
   in_review: ['draft', 'ready', 'revoked'],
-  ready: ['in_review', 'shared', 'expired', 'revoked'],
-  shared: ['ready', 'expired', 'revoked'],
+  ready: ['in_review', 'expired', 'revoked'],
+  shared: ['expired', 'revoked'],
   revoked: [],
   expired: [],
 }
@@ -275,22 +373,51 @@ export async function transitionContractReport(
   nextStatus: string,
   admin = false
 ) {
-  const report = await accessibleReport(reportId, actorId, admin)
-  if (!report) throw new Error('CONTRACT_REPORT_NOT_FOUND')
-  const current = String(report.status)
-  if (!(TRANSITIONS[current] ?? []).includes(nextStatus)) throw new Error('CONTRACT_REPORT_INVALID_TRANSITION')
-  if (nextStatus === 'ready' && !admin) throw new Error('CONTRACT_REPORT_REVIEW_REQUIRED')
-  if (nextStatus === 'ready') {
-    const pending = await queryOne<{ count: number }>(
-      'SELECT COUNT(*)::int AS count FROM contract_check_items WHERE report_id = $1 AND review_state = \'pending\'',
-      [reportId]
+  const restrictiveTransition = ['revoked', 'expired'].includes(nextStatus)
+
+  return transaction(async (client) => {
+    const report = await authorizeContractReportMutation(
+      client,
+      actorId,
+      reportId,
+      'transition',
+      {
+        admin,
+        requireB2bGate: !restrictiveTransition,
+        allowInactiveOrganization: restrictiveTransition,
+      }
     )
-    if ((pending?.count ?? 0) > 0) throw new Error('CONTRACT_REPORT_REVIEW_INCOMPLETE')
-  }
-  return queryOne<Record<string, unknown>>(
-    'UPDATE contract_check_reports SET status = $2, generated_at = CASE WHEN $2 = \'ready\' THEN NOW() ELSE generated_at END, updated_at = NOW() WHERE id = $1 RETURNING *',
-    [reportId, nextStatus]
-  )
+    const current = String(report.status)
+    if (!(TRANSITIONS[current] ?? []).includes(nextStatus)) {
+      throw new Error('CONTRACT_REPORT_INVALID_TRANSITION')
+    }
+    if (nextStatus === 'ready' && !admin) throw new Error('CONTRACT_REPORT_REVIEW_REQUIRED')
+    if (nextStatus === 'ready') {
+      const pendingResult = await client.query<{ count: number }>(
+        'SELECT COUNT(*)::int AS count FROM contract_check_items WHERE report_id = $1 AND review_state = \'pending\'',
+        [reportId]
+      )
+      if ((pendingResult.rows[0]?.count ?? 0) > 0) {
+        throw new Error('CONTRACT_REPORT_REVIEW_INCOMPLETE')
+      }
+    }
+    const result = await client.query<Record<string, unknown>>(
+      'UPDATE contract_check_reports SET status = $2, generated_at = CASE WHEN $2 = \'ready\' THEN NOW() ELSE generated_at END, updated_at = NOW() WHERE id = $1 RETURNING *',
+      [reportId, nextStatus]
+    )
+    if (restrictiveTransition) {
+      await client.query(
+        `UPDATE trust_cards
+            SET status = $2,
+                revoked_at = CASE WHEN $2 = 'revoked' THEN NOW() ELSE revoked_at END,
+                updated_at = NOW()
+          WHERE report_id = $1
+            AND status = 'issued'`,
+        [reportId, nextStatus]
+      )
+    }
+    return result.rows[0] ?? null
+  })
 }
 
 interface CreateCardInput {
@@ -304,37 +431,68 @@ interface CreateCardInput {
   expiresAt: string
 }
 
-export async function createTrustCard(actorId: string, input: CreateCardInput) {
-  const report = await accessibleReport(input.reportId, actorId)
-  if (!report) throw new Error('CONTRACT_REPORT_NOT_FOUND')
+async function validateTrustCardCreation(
+  client: PoolClient,
+  actorId: string,
+  input: CreateCardInput,
+  lock: 'share' | 'update'
+) {
+  const report = await authorizeContractReportMutation(
+    client,
+    actorId,
+    input.reportId,
+    'card_issue',
+    {
+      requireB2bGate: true,
+      lock,
+    }
+  )
   if (!['ready', 'shared'].includes(String(report.status))) throw new Error('CONTRACT_REPORT_NOT_READY')
-  const allowed = await query<{ item_key: string }>(
+  const allowedResult = await client.query<{ item_key: string }>(
     'SELECT DISTINCT item_key FROM contract_check_items WHERE report_id = $1 AND review_state = \'approved\' AND item_key = ANY($2::text[]) AND ($3 = \'combined\' OR subject_type = $3)',
     [input.reportId, input.fieldKeys, input.subjectType]
   )
-  if (allowed.length !== new Set(input.fieldKeys).size) throw new Error('TRUST_CARD_FIELD_NOT_APPROVED')
+  if (allowedResult.rows.length !== new Set(input.fieldKeys).size) {
+    throw new Error('TRUST_CARD_FIELD_NOT_APPROVED')
+  }
+  return report
+}
 
-  const token = randomBytes(32).toString('base64url')
-  const card = await queryOne<Record<string, unknown>>(
-    'INSERT INTO trust_cards ' +
-    '(owner_id, report_id, subject_type, subject_id, title, audience_role, purpose, field_keys, share_token_hash, token_prefix, expires_at) ' +
-    'VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *',
-    [
-      actorId,
-      input.reportId,
-      input.subjectType,
-      input.subjectId ?? null,
-      input.title,
-      input.audienceRole,
-      input.purpose,
-      [...new Set(input.fieldKeys)],
-      hash(token),
-      token.slice(0, 8),
-      input.expiresAt,
-    ]
-  )
-  await query('UPDATE contract_check_reports SET status = \'shared\', updated_at = NOW() WHERE id = $1 AND status = \'ready\'', [input.reportId])
-  return { card, share_token: token }
+export async function preflightTrustCardCreation(actorId: string, input: CreateCardInput) {
+  await transaction(async (client) => {
+    await validateTrustCardCreation(client, actorId, input, 'share')
+  })
+}
+
+export async function createTrustCard(actorId: string, input: CreateCardInput) {
+  return transaction(async (client) => {
+    await validateTrustCardCreation(client, actorId, input, 'update')
+
+    const token = randomBytes(32).toString('base64url')
+    const cardResult = await client.query<Record<string, unknown>>(
+      'INSERT INTO trust_cards ' +
+      '(owner_id, report_id, subject_type, subject_id, title, audience_role, purpose, field_keys, share_token_hash, token_prefix, expires_at) ' +
+      'VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *',
+      [
+        actorId,
+        input.reportId,
+        input.subjectType,
+        input.subjectId ?? null,
+        input.title,
+        input.audienceRole,
+        input.purpose,
+        [...new Set(input.fieldKeys)],
+        hash(token),
+        token.slice(0, 8),
+        input.expiresAt,
+      ]
+    )
+    await client.query(
+      'UPDATE contract_check_reports SET status = \'shared\', updated_at = NOW() WHERE id = $1 AND status = \'ready\'',
+      [input.reportId]
+    )
+    return { card: cardResult.rows[0] ?? null, share_token: token }
+  })
 }
 
 export async function listTrustCards(actorId: string) {
@@ -500,6 +658,44 @@ interface AiRunInput {
 
 export async function recordAiProcessingRun(actorId: string, input: AiRunInput) {
   if (input.containsPersonalData && !input.consentId) throw new Error('AI_RUN_CONSENT_REQUIRED')
+  if (input.organizationId) {
+    await requireApprovedComplianceGate('b2b_api')
+    return transaction(async (client) => {
+      await requireApprovedComplianceGate('b2b_api', client)
+      const membership = await client.query(
+        `SELECT 1
+           FROM trust_organization_memberships
+          WHERE organization_id = $1
+            AND user_id = $2
+            AND status = 'active'
+          FOR SHARE`,
+        [input.organizationId, actorId],
+      )
+      if (membership.rowCount === 0) throw new Error('AI_RUN_ORGANIZATION_ACCESS_DENIED')
+      const result = await client.query(
+        'INSERT INTO ai_processing_runs ' +
+        '(owner_user_id, organization_id, extraction_job_id, purpose, provider, model_name, model_version, policy_version, input_hash, output_hash, contains_personal_data, consent_id, status, cost_amount, completed_at) ' +
+        'VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,CASE WHEN $13 IN (\'completed\',\'failed\',\'cancelled\') THEN NOW() ELSE NULL END) RETURNING *',
+        [
+          actorId,
+          input.organizationId,
+          input.extractionJobId ?? null,
+          input.purpose,
+          input.provider,
+          input.modelName,
+          input.modelVersion ?? null,
+          input.policyVersion ?? null,
+          input.inputHash.toLowerCase(),
+          input.outputHash?.toLowerCase() ?? null,
+          input.containsPersonalData ?? false,
+          input.consentId ?? null,
+          input.status ?? 'requested',
+          input.costAmount ?? null,
+        ],
+      )
+      return result.rows[0] ?? null
+    })
+  }
   return queryOne<Record<string, unknown>>(
     'INSERT INTO ai_processing_runs ' +
     '(owner_user_id, organization_id, extraction_job_id, purpose, provider, model_name, model_version, policy_version, input_hash, output_hash, contains_personal_data, consent_id, status, cost_amount, completed_at) ' +
@@ -534,7 +730,10 @@ export async function createOrganization(
   actorId: string,
   input: { name: string; organizationType: string; businessNumber?: string | null; metadata?: Record<string, unknown> }
 ) {
+  await requireApprovedComplianceGate('b2b_api')
+
   return transaction(async (client) => {
+    await requireApprovedComplianceGate('b2b_api', client)
     const inserted = await client.query(
       'INSERT INTO trust_organizations (name, organization_type, business_number, created_by, metadata) VALUES ($1,$2,$3,$4,$5::jsonb) RETURNING *',
       [input.name, input.organizationType, input.businessNumber ?? null, actorId, JSON.stringify(input.metadata ?? {})]
@@ -563,14 +762,20 @@ export async function addOrganizationMember(
   userId: string,
   memberRole: string
 ) {
-  const authorized = await queryOne(
-    'SELECT 1 FROM trust_organization_memberships WHERE organization_id = $1 AND user_id = $2 AND status = \'active\' AND member_role IN (\'owner\',\'admin\')',
-    [organizationId, actorId]
-  )
-  if (!authorized) throw new Error('ORGANIZATION_ADMIN_REQUIRED')
-  return queryOne<Record<string, unknown>>(
-    'INSERT INTO trust_organization_memberships (organization_id, user_id, member_role, status, invited_by) ' +
-    'VALUES ($1,$2,$3,\'active\',$4) ON CONFLICT (organization_id,user_id) DO UPDATE SET member_role = EXCLUDED.member_role, status = \'active\', updated_at = NOW() RETURNING *',
-    [organizationId, userId, memberRole, actorId]
-  )
+  await requireApprovedComplianceGate('b2b_api')
+
+  return transaction(async (client) => {
+    await requireApprovedComplianceGate('b2b_api', client)
+    const authorized = await client.query(
+      'SELECT 1 FROM trust_organization_memberships WHERE organization_id = $1 AND user_id = $2 AND status = \'active\' AND member_role IN (\'owner\',\'admin\') FOR SHARE',
+      [organizationId, actorId]
+    )
+    if (authorized.rowCount === 0) throw new Error('ORGANIZATION_ADMIN_REQUIRED')
+    const result = await client.query(
+      'INSERT INTO trust_organization_memberships (organization_id, user_id, member_role, status, invited_by) ' +
+      'VALUES ($1,$2,$3,\'active\',$4) ON CONFLICT (organization_id,user_id) DO UPDATE SET member_role = EXCLUDED.member_role, status = \'active\', updated_at = NOW() RETURNING *',
+      [organizationId, userId, memberRole, actorId]
+    )
+    return result.rows[0] ?? null
+  })
 }

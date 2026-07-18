@@ -1,24 +1,13 @@
 const { createServer } = require('http')
 const path = require('path')
 const { Server: SocketIOServer } = require('socket.io')
-const jwt = require('jsonwebtoken')
+const { verifySocketToken } = require('./socket-auth')
 
 process.env.NODE_ENV = 'production'
 
 const hostname = process.env.HOSTNAME || '0.0.0.0'
 const port = parseInt(process.env.PORT || '8000', 10)
 const dev = process.env.NODE_ENV !== 'production'
-
-function getJwtSecret() {
-  const secret = process.env.JWT_SECRET
-  if (!secret) {
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error('JWT_SECRET 환경변수가 설정되지 않았습니다')
-    }
-    return 'dev-only-secret-do-not-use-in-production'
-  }
-  return secret
-}
 
 async function start() {
   let handler
@@ -50,11 +39,25 @@ async function start() {
     handler(req, res)
   })
 
+  const configuredOrigin = process.env.NEXT_PUBLIC_APP_URL
+  if (!configuredOrigin) {
+    throw new Error('NEXT_PUBLIC_APP_URL is required for Socket.IO origin checks')
+  }
+  const appUrl = new URL(configuredOrigin)
+  const localOrigin = ['localhost', '127.0.0.1', '::1'].includes(appUrl.hostname)
+  if (appUrl.protocol !== 'https:' && !(localOrigin && appUrl.protocol === 'http:')) {
+    throw new Error('NEXT_PUBLIC_APP_URL must use HTTPS outside local development')
+  }
+  if (appUrl.username || appUrl.password) {
+    throw new Error('NEXT_PUBLIC_APP_URL must not include credentials')
+  }
+  const appOrigin = appUrl.origin
+
   const io = new SocketIOServer(httpServer, {
     path: '/api/ws',
     addTrailingSlash: false,
     cors: {
-      origin: process.env.NEXT_PUBLIC_APP_URL || '*',
+      origin: appOrigin,
       credentials: true,
     },
     transports: ['websocket', 'polling'],
@@ -63,39 +66,54 @@ async function start() {
   // API routes에서 접근 가능하도록 global에 저장
   globalThis.io = io
 
-  // JWT 인증 미들웨어
+  // 짧은 수명의 대화방 범위 토큰만 허용한다.
   io.use((socket, next) => {
     const token = socket.handshake.auth?.token
-    if (!token) {
-      return next(new Error('인증이 필요합니다'))
+    const claims = verifySocketToken(token)
+    if (!claims) {
+      return next(new Error('Invalid socket token'))
     }
-    try {
-      const payload = jwt.verify(token, getJwtSecret())
-      socket.data.userId = payload.userId
-      socket.data.userType = payload.userType
-      next()
-    } catch {
-      next(new Error('유효하지 않은 토큰입니다'))
-    }
+
+    socket.data.userId = claims.userId
+    socket.data.conversationId = claims.conversationId
+    socket.data.expiresAt = claims.expiresAt
+    next()
   })
 
   io.on('connection', (socket) => {
+    const scopedConversationId = socket.data.conversationId
+    const scopedRoom = `conversation:${scopedConversationId}`
+    socket.join(scopedRoom)
+    const tokenExpiryTimer = setTimeout(
+      () => socket.disconnect(true),
+      Math.max(0, socket.data.expiresAt - Date.now())
+    )
+    tokenExpiryTimer.unref?.()
+
+    socket.on('disconnect', () => clearTimeout(tokenExpiryTimer))
+
     socket.on('join', (conversationId) => {
-      socket.join(`conversation:${conversationId}`)
+      if (conversationId === scopedConversationId) {
+        socket.join(scopedRoom)
+      }
     })
 
     socket.on('leave', (conversationId) => {
-      socket.leave(`conversation:${conversationId}`)
+      if (conversationId === scopedConversationId) {
+        socket.leave(scopedRoom)
+      }
     })
 
     socket.on('typing:start', (conversationId) => {
-      socket.to(`conversation:${conversationId}`).emit('typing:start', {
+      if (conversationId !== scopedConversationId) return
+      socket.to(scopedRoom).emit('typing:start', {
         userId: socket.data.userId,
       })
     })
 
     socket.on('typing:stop', (conversationId) => {
-      socket.to(`conversation:${conversationId}`).emit('typing:stop', {
+      if (conversationId !== scopedConversationId) return
+      socket.to(scopedRoom).emit('typing:stop', {
         userId: socket.data.userId,
       })
     })

@@ -16,6 +16,16 @@ interface NotificationTemplate {
   link: string
 }
 
+// This worker must leave non-notification events pending for their dedicated workers.
+export const TRUST_NOTIFICATION_EVENT_TYPES = [
+  'ScoreCalculated',
+  'DisclosureRevoked',
+  'CorrectionRequested',
+  'BilateralReferenceReleased',
+  'ContractOutcomeRecorded',
+  'TrustDependencyInvalidated',
+] as const
+
 function templateFor(event: OutboxEvent): NotificationTemplate | null {
   const templates: Record<string, NotificationTemplate> = {
     ScoreCalculated: { title: '신뢰 결과가 갱신됐습니다', body: '새 검증 근거가 반영된 신뢰 결과를 확인하세요.', link: '/trust-center' },
@@ -72,24 +82,38 @@ export async function dispatchTrustOutbox(limit = 50) {
       WHERE id IN (
         SELECT id FROM trust_outbox_events
          WHERE published_at IS NULL AND available_at <= NOW()
+           AND event_type = ANY($2::text[])
          ORDER BY created_at
          LIMIT $1
          FOR UPDATE SKIP LOCKED
       )
       RETURNING *`,
-    [Math.min(Math.max(limit, 1), 100)]
+    [
+      Math.min(Math.max(limit, 1), 100),
+      [...TRUST_NOTIFICATION_EVENT_TYPES],
+    ]
   )
   let published = 0
   let failed = 0
   for (const event of events) {
     try {
       const template = templateFor(event)
-      const recipients = template ? await resolveRecipients(event) : []
+      if (!template) {
+        await query(
+          `UPDATE trust_outbox_events
+              SET last_error = 'OUTBOX_HANDLER_UNAVAILABLE'
+            WHERE id = $1 AND published_at IS NULL`,
+          [event.id]
+        )
+        failed++
+        continue
+      }
+      const recipients = await resolveRecipients(event)
       for (const userId of recipients) {
         await createNotification({
           userId,
           type: 'admin_notice',
-          ...template!,
+          ...template,
           metadata: { trust_event_id: event.id, event_type: event.event_type },
         })
         await query(
@@ -114,4 +138,3 @@ export async function dispatchTrustOutbox(limit = 50) {
   }
   return { claimed: events.length, published, failed }
 }
-

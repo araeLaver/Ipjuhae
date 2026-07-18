@@ -1,23 +1,22 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures'
 
 test.describe('온보딩 플로우', () => {
   // 온보딩 페이지는 로그인 필요 - 미로그인시 리다이렉트 확인
   test('미로그인시 온보딩 접근 시도 -> 로그인 페이지로 리다이렉트', async ({ page }) => {
     await page.goto('/onboarding/basic')
 
-    // 로그인 페이지로 리다이렉트되거나 로그인 필요 메시지 표시
-    await expect(page).toHaveURL(/\/(login|onboarding)/)
+    await expect(page).toHaveURL(
+      (url) =>
+        url.pathname === '/login' &&
+        url.searchParams.get('redirect') === '/onboarding/basic',
+    )
   })
 
-  test('온보딩 기본 정보 페이지 UI 요소 확인', async ({ page }) => {
-    // 직접 접근하여 페이지 구조 확인 (리다이렉트 될 수 있음)
+  test('온보딩 리다이렉트 후 로그인 UI 표시', async ({ page }) => {
     await page.goto('/onboarding/basic')
 
-    // 리다이렉트 되지 않은 경우 UI 확인
-    const currentUrl = page.url()
-    if (currentUrl.includes('/onboarding/basic')) {
-      await expect(page.getByText(/기본 정보|프로필/)).toBeVisible()
-    }
+    await expect(page.getByRole('heading', { name: '로그인' })).toBeVisible()
+    await expect(page.locator('form')).toBeVisible()
   })
 })
 
@@ -25,8 +24,11 @@ test.describe('프로필 대시보드', () => {
   test('미로그인시 프로필 페이지 접근 -> 리다이렉트', async ({ page }) => {
     await page.goto('/profile')
 
-    // 로그인 페이지로 리다이렉트
-    await expect(page).toHaveURL(/\/(login|profile)/)
+    await expect(page).toHaveURL(
+      (url) =>
+        url.pathname === '/login' &&
+        url.searchParams.get('redirect') === '/profile',
+    )
   })
 })
 
@@ -34,8 +36,11 @@ test.describe('집주인 대시보드', () => {
   test('미로그인시 집주인 대시보드 접근 -> 리다이렉트', async ({ page }) => {
     await page.goto('/landlord')
 
-    // 로그인 페이지로 리다이렉트
-    await expect(page).toHaveURL(/\/(login|landlord)/)
+    await expect(page).toHaveURL(
+      (url) =>
+        url.pathname === '/login' &&
+        url.searchParams.get('redirect') === '/landlord',
+    )
   })
 })
 
@@ -43,7 +48,7 @@ test.describe('네비게이션', () => {
   test('헤더 로고 클릭시 홈으로 이동', async ({ page }) => {
     await page.goto('/login')
 
-    await page.getByRole('link', { name: /입주해|RentMe/i }).first().click()
+    await page.getByRole('link', { name: 'RentMe', exact: true }).click()
 
     await expect(page).toHaveURL('/')
   })

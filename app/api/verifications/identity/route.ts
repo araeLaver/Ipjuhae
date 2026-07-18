@@ -4,6 +4,7 @@ import { getCurrentUser } from '@/lib/auth'
 import { verifyIdentity, getVerificationProvider } from '@/lib/verification'
 import { logger } from '@/lib/logger'
 import { z } from 'zod'
+import { isComplianceGateError } from '@/lib/compliance-gates'
 
 const identitySchema = z.object({
   name: z.string().min(2, '이름을 입력해주세요'),
@@ -99,6 +100,12 @@ export async function POST(request: Request) {
       provider,
     })
   } catch (error) {
+    if (isComplianceGateError(error)) {
+      return NextResponse.json(
+        { error: 'External verification is unavailable', code: error.code },
+        { status: 503 },
+      )
+    }
     logger.error('본인 인증 오류', { error })
     return NextResponse.json({ error: '본인 인증 중 오류가 발생했습니다' }, { status: 500 })
   }

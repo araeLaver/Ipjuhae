@@ -1,8 +1,9 @@
 import { z } from 'zod'
 import { getAdminUser } from '@/lib/admin'
-import { query, queryOne } from '@/lib/db'
+import { query, queryOne, transaction } from '@/lib/db'
 import { listAllContractReports } from '@/lib/contract-trust'
 import { jsonError, jsonSuccess } from '@/lib/api-response'
+import { COMPLIANCE_GATE_KEYS } from '@/lib/compliance-gates'
 
 const experimentSchema = z.object({
   name: z.string().trim().min(2).max(200),
@@ -41,7 +42,7 @@ const patchSchema = z.discriminatedUnion('resource', [
   }),
   z.object({
     resource: z.literal('compliance_gate'),
-    id: z.string().min(2).max(100),
+    id: z.enum(COMPLIANCE_GATE_KEYS),
     status: z.enum(['pending', 'approved', 'blocked']),
     approvalReference: z.string().trim().max(1000).nullish(),
     notes: z.string().trim().max(2000).nullish(),
@@ -51,15 +52,24 @@ const patchSchema = z.discriminatedUnion('resource', [
 export async function GET(request: Request) {
   const admin = await getAdminUser()
   if (!admin) return jsonError(request, 403, 'Admin access required', 'ADMIN_REQUIRED')
-  const [reports, intakes, aiRuns, experiments, gates, organizations] = await Promise.all([
+  const [reports, intakes, aiRuns, experiments, gates, gateHistory, organizations] = await Promise.all([
     listAllContractReports(),
     query('SELECT * FROM document_intakes ORDER BY created_at DESC LIMIT 200'),
     query('SELECT * FROM ai_processing_runs ORDER BY created_at DESC LIMIT 200'),
     query('SELECT * FROM validation_experiments ORDER BY created_at DESC LIMIT 200'),
     query('SELECT * FROM trust_compliance_gates ORDER BY gate_key'),
+    query('SELECT * FROM trust_compliance_gate_events ORDER BY changed_at DESC, id DESC LIMIT 200'),
     query('SELECT * FROM trust_organizations ORDER BY created_at DESC LIMIT 100'),
   ])
-  return jsonSuccess(request, { reports, intakes, ai_runs: aiRuns, experiments, gates, organizations })
+  return jsonSuccess(request, {
+    reports,
+    intakes,
+    ai_runs: aiRuns,
+    experiments,
+    gates,
+    gate_history: gateHistory,
+    organizations,
+  })
 }
 
 export async function POST(request: Request) {
@@ -118,9 +128,36 @@ export async function PATCH(request: Request) {
     )
     return jsonSuccess(request, { experiment: row })
   }
-  const row = await queryOne(
-    'UPDATE trust_compliance_gates SET status = $2, approval_reference = $3, notes = $4, approved_by = CASE WHEN $2 = \'approved\' THEN $5::uuid ELSE NULL END, approved_at = CASE WHEN $2 = \'approved\' THEN NOW() ELSE NULL END, updated_at = NOW() WHERE gate_key = $1 RETURNING *',
-    [input.id, input.status, input.approvalReference ?? null, input.notes ?? null, admin.id]
-  )
+  if (input.status === 'approved' && !input.approvalReference?.trim()) {
+    return jsonError(
+      request,
+      400,
+      'An approval reference is required to approve a compliance gate',
+      'COMPLIANCE_GATE_APPROVAL_REFERENCE_REQUIRED',
+    )
+  }
+  const row = await transaction(async (client) => {
+    await client.query(
+      `SELECT set_config('app.compliance_actor_id', $1, TRUE)`,
+      [admin.id],
+    )
+    const currentResult = await client.query<Record<string, unknown>>(
+      'SELECT * FROM trust_compliance_gates WHERE gate_key = $1 FOR UPDATE',
+      [input.id],
+    )
+    const current = currentResult.rows[0]
+    if (!current) return null
+
+    const updatedResult = await client.query<Record<string, unknown>>(
+      'UPDATE trust_compliance_gates SET status = $2, approval_reference = $3, notes = $4, approved_by = CASE WHEN $2 = \'approved\' THEN $5::uuid ELSE NULL END, approved_at = CASE WHEN $2 = \'approved\' THEN NOW() ELSE NULL END, updated_at = NOW() WHERE gate_key = $1 RETURNING *',
+      [input.id, input.status, input.approvalReference ?? null, input.notes ?? null, admin.id],
+    )
+    const updated = updatedResult.rows[0]
+    if (!updated) return null
+    return updated
+  })
+  if (!row) {
+    return jsonError(request, 404, 'Compliance gate not found', 'COMPLIANCE_GATE_NOT_FOUND')
+  }
   return jsonSuccess(request, { compliance_gate: row })
 }

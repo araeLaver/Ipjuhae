@@ -17,6 +17,7 @@
 
 import { logger } from './logger'
 import crypto from 'crypto'
+import { requireApprovedComplianceGate } from './compliance-gates'
 
 // 타입 정의
 interface VerificationResult {
@@ -514,12 +515,15 @@ export async function verifyEmployment(
 
   switch (VERIFICATION_PROVIDER) {
     case 'codef':
+      await requireApprovedComplianceGate('external_data_access')
       if (!userIdentity) {
         return { success: false, error: '본인인증 정보가 필요합니다' }
       }
       return codefEmploymentVerification(companyName, userIdentity)
-    default:
+    case 'mock':
       return mockEmploymentVerification(companyName)
+    default:
+      return { success: false, error: 'Employment verification provider is unavailable' }
   }
 }
 
@@ -534,12 +538,15 @@ export async function verifyIncome(
 
   switch (VERIFICATION_PROVIDER) {
     case 'codef':
+      await requireApprovedComplianceGate('external_data_access')
       if (!userIdentity) {
         return { success: false, error: '본인인증 정보가 필요합니다' }
       }
       return codefIncomeVerification(userIdentity)
-    default:
+    case 'mock':
       return mockIncomeVerification(incomeRange)
+    default:
+      return { success: false, error: 'Income verification provider is unavailable' }
   }
 }
 
@@ -553,12 +560,15 @@ export async function verifyCredit(
 
   switch (VERIFICATION_PROVIDER) {
     case 'codef':
+      await requireApprovedComplianceGate('external_data_access')
       if (!userIdentity) {
         return { success: false, error: '본인인증 정보가 필요합니다' }
       }
       return codefCreditVerification(userIdentity)
-    default:
+    case 'mock':
       return mockCreditVerification()
+    default:
+      return { success: false, error: 'Credit verification provider is unavailable' }
   }
 }
 
@@ -574,9 +584,12 @@ export async function verifyIdentity(
 
   switch (VERIFICATION_PROVIDER) {
     case 'nice':
+      await requireApprovedComplianceGate('external_data_access')
       return niceIdentityVerification(name, phoneNumber, birthDate)
-    default:
+    case 'mock':
       return mockIdentityVerification(name, phoneNumber, birthDate)
+    default:
+      return { success: false, error: 'Identity verification provider is unavailable' }
   }
 }
 

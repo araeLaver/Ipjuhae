@@ -16,6 +16,7 @@ interface IdempotentRequestRecord {
   created_at: Date
   updated_at: Date
   expires_at: Date
+  expired?: boolean
 }
 
 function setDefaultHeaders(response: NextResponse, requestId: string, traceId: string) {
@@ -27,7 +28,7 @@ function setDefaultHeaders(response: NextResponse, requestId: string, traceId: s
 
 async function findRecord(namespace: string, key: string): Promise<IdempotentRequestRecord | null> {
   return queryOne<IdempotentRequestRecord>(
-    `SELECT *
+    `SELECT *, expires_at <= NOW() AS expired
        FROM api_idempotency_requests
       WHERE namespace = $1
         AND idempotency_key = $2`,
@@ -46,13 +47,14 @@ function toMs(value: Date | string | null): number | null {
   return date.getTime()
 }
 
-function isExpired(expiresAt: Date | string | null): boolean {
-  const ts = toMs(expiresAt)
+function isExpired(record: IdempotentRequestRecord): boolean {
+  if (typeof record.expired === 'boolean') return record.expired
+  const ts = toMs(record.expires_at)
   if (!ts) return true
   return ts <= Date.now()
 }
 
-function createPendingRecord(
+function reserveRecord(
   namespace: string,
   key: string,
   actorUserId: string | null,
@@ -61,14 +63,29 @@ function createPendingRecord(
   requestHash: string,
   ttlMinutes: number,
 ) {
-  const expiresAt = new Date(Date.now() + Math.max(1, ttlMinutes) * 60_000)
+  const ttl = Math.max(1, Math.ceil(ttlMinutes))
   return queryOne<IdempotentRequestRecord>(
     `INSERT INTO api_idempotency_requests
-      (namespace, idempotency_key, actor_user_id, request_id, trace_id, request_hash, in_progress, expires_at)
-     VALUES ($1, $2, $3, $4, $5, $6, TRUE, $7)
-     ON CONFLICT (namespace, idempotency_key) DO NOTHING
+      (namespace, idempotency_key, actor_user_id, request_id, trace_id, request_hash,
+       in_progress, response_status, response_body, created_at, updated_at, expires_at)
+     VALUES (
+       $1, $2, $3, $4, $5, $6, TRUE, NULL, NULL,
+       NOW(), NOW(), NOW() + make_interval(mins => $7::int)
+     )
+     ON CONFLICT (namespace, idempotency_key) DO UPDATE
+       SET actor_user_id = EXCLUDED.actor_user_id,
+           request_id = EXCLUDED.request_id,
+           trace_id = EXCLUDED.trace_id,
+           request_hash = EXCLUDED.request_hash,
+           in_progress = TRUE,
+           response_status = NULL,
+           response_body = NULL,
+           created_at = EXCLUDED.created_at,
+           updated_at = EXCLUDED.updated_at,
+           expires_at = EXCLUDED.expires_at
+       WHERE api_idempotency_requests.expires_at <= NOW()
      RETURNING *`,
-    [namespace, key, actorUserId, requestId, traceId, requestHash, expiresAt]
+    [namespace, key, actorUserId, requestId, traceId, requestHash, ttl]
   )
 }
 
@@ -90,6 +107,7 @@ interface IdempotencyContext {
   key: string | null
   actorUserId?: string | null
   ttlMinutes?: number
+  nonCacheableStatuses?: readonly number[]
   handler: () => Promise<NextResponse>
 }
 
@@ -160,8 +178,10 @@ async function completeRecord(
   status: number,
   payload: Record<string, unknown> | null,
   ttlMinutes: number,
+  reservationCreatedAt: Date | string,
+  requestHash: string,
 ) {
-  const expiresAt = new Date(Date.now() + Math.max(1, ttlMinutes) * 60_000)
+  const ttl = Math.max(1, Math.ceil(ttlMinutes))
   await query(
     `UPDATE api_idempotency_requests
        SET in_progress = FALSE,
@@ -170,27 +190,74 @@ async function completeRecord(
            response_status = $3,
            response_body = $4,
            updated_at = NOW(),
-           expires_at = $5
+           expires_at = NOW() + make_interval(mins => $5::int)
        WHERE namespace = $6
-         AND idempotency_key = $7`,
-    [requestId, traceId, status, payload, expiresAt, namespace, key]
+         AND idempotency_key = $7
+         AND created_at = $8
+         AND request_hash = $9
+         AND in_progress = TRUE`,
+    [
+      requestId,
+      traceId,
+      status,
+      payload,
+      ttl,
+      namespace,
+      key,
+      reservationCreatedAt,
+      requestHash,
+    ]
+  )
+}
+
+async function releasePendingRecord(
+  namespace: string,
+  key: string,
+  reservationCreatedAt: Date | string,
+  requestHash: string,
+) {
+  await query(
+    `DELETE FROM api_idempotency_requests
+      WHERE namespace = $1
+        AND idempotency_key = $2
+        AND created_at = $3
+        AND request_hash = $4
+        AND in_progress = TRUE`,
+    [namespace, key, reservationCreatedAt, requestHash]
   )
 }
 
 export async function withIdempotency(options: IdempotencyContext): Promise<NextResponse> {
-  const key = (options.key ?? '').trim()
-  if (!key) {
+  const suppliedKey = (options.key ?? '').trim()
+  if (!suppliedKey) {
     return options.handler()
   }
 
   const { request, namespace } = options
   const ttlMinutes = options.ttlMinutes ?? 120
   const actorUserId = options.actorUserId ?? null
+  const actorScope = actorUserId ?? `anonymous:${new URL(request.url).pathname}`
+  const key = createHash('sha256')
+    .update(actorScope)
+    .update('\0')
+    .update(suppliedKey)
+    .digest('hex')
   const { requestId, traceId } = getRequestContext(request)
   const requestHash = await hashRequest(request)
 
-  const existing = await findRecord(namespace, key)
-  if (existing && !isExpired(existing.expires_at)) {
+  let existing = await findRecord(namespace, key)
+  if (!existing || isExpired(existing)) {
+    const legacy = await findRecord(namespace, suppliedKey)
+    if (
+      legacy &&
+      !isExpired(legacy) &&
+      legacy.actor_user_id === actorUserId &&
+      legacy.request_hash === requestHash
+    ) {
+      existing = legacy
+    }
+  }
+  if (existing && !isExpired(existing)) {
     if (existing.request_hash && existing.request_hash !== requestHash) {
       return buildPayloadMismatchResponse(request, existing)
     }
@@ -202,11 +269,7 @@ export async function withIdempotency(options: IdempotencyContext): Promise<Next
     }
   }
 
-  if (existing && isExpired(existing.expires_at)) {
-    await query('DELETE FROM api_idempotency_requests WHERE namespace = $1 AND idempotency_key = $2', [namespace, key])
-  }
-
-  const reserved = await createPendingRecord(
+  const reserved = await reserveRecord(
     namespace,
     key,
     actorUserId,
@@ -217,7 +280,7 @@ export async function withIdempotency(options: IdempotencyContext): Promise<Next
   )
   if (!reserved) {
     const fallback = await findRecord(namespace, key)
-    if (fallback && !isExpired(fallback.expires_at)) {
+    if (fallback && !isExpired(fallback)) {
       if (fallback.request_hash && fallback.request_hash !== requestHash) {
         return buildPayloadMismatchResponse(request, fallback)
       }
@@ -253,12 +316,36 @@ export async function withIdempotency(options: IdempotencyContext): Promise<Next
       request_id: requestId,
       trace_id: traceId,
     }
-    await completeRecord(namespace, key, requestId, traceId, 500, fallbackPayload, ttlMinutes)
+    await completeRecord(
+      namespace,
+      key,
+      requestId,
+      traceId,
+      500,
+      fallbackPayload,
+      ttlMinutes,
+      reserved.created_at,
+      requestHash,
+    )
     return setDefaultHeaders(NextResponse.json(fallbackPayload, { status: 500 }), requestId, traceId)
   }
 
   const payload = (await response.clone().json().catch(() => null)) as Record<string, unknown> | null
-  await completeRecord(namespace, key, requestId, traceId, response.status, payload, ttlMinutes)
+  if (options.nonCacheableStatuses?.includes(response.status)) {
+    await releasePendingRecord(namespace, key, reserved.created_at, requestHash)
+    return setDefaultHeaders(response, requestId, traceId)
+  }
+  await completeRecord(
+    namespace,
+    key,
+    requestId,
+    traceId,
+    response.status,
+    payload,
+    ttlMinutes,
+    reserved.created_at,
+    requestHash,
+  )
 
   return setDefaultHeaders(response, requestId, traceId)
 }

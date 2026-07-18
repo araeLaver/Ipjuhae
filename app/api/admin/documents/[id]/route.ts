@@ -4,6 +4,7 @@ import { getAdminUser, logAdminAction } from '@/lib/admin'
 import { notifyVerificationApproved, notifyVerificationRejected } from '@/lib/notifications'
 import { calculateTrustScore, completeExtractionJob, createEvidenceFact, trustDigest, type TrustSubjectType } from '@/lib/trust-engine'
 import { getRequestContext } from '@/lib/request-context'
+import { isComplianceGateError } from '@/lib/compliance-gates'
 
 interface DocRow {
   id: string
@@ -63,6 +64,8 @@ export async function PATCH(
     [newStatus, body.reject_reason ?? null, admin.id, id]
   )
 
+  let scoreDeferred: string | null = null
+
   // 승인 시 verifications 테이블 업데이트
   if (newStatus === 'approved') {
     const typeMap: Record<string, string> = {
@@ -110,7 +113,12 @@ export async function PATCH(
           metadata: { verification_document_id: doc.id },
         }, admin.id, trace)
       }
-      await calculateTrustScore(subjectType, doc.user_id, admin.id, trace)
+      try {
+        await calculateTrustScore(subjectType, doc.user_id, admin.id, trace)
+      } catch (error) {
+        if (!isComplianceGateError(error)) throw error
+        scoreDeferred = error.code
+      }
     }
   }
 
@@ -125,5 +133,10 @@ export async function PATCH(
     reject_reason: body.reject_reason,
   })
 
-  return NextResponse.json({ ok: true, status: newStatus })
+  return NextResponse.json({
+    ok: true,
+    status: newStatus,
+    score_deferred: Boolean(scoreDeferred),
+    ...(scoreDeferred ? { score_deferred_code: scoreDeferred } : {}),
+  })
 }

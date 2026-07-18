@@ -12,6 +12,10 @@ import { NextResponse } from 'next/server'
 import { query } from '@/lib/db'
 import { createNotification } from '@/lib/notifications'
 import { logger } from '@/lib/logger'
+import {
+  isComplianceGateError,
+  requireApprovedComplianceGate,
+} from '@/lib/compliance-gates'
 
 interface ExpiredReference {
   id: string
@@ -77,6 +81,14 @@ export async function GET(request: Request) {
  */
 async function recalculateTrustScores(userIds: string[]): Promise<void> {
   if (userIds.length === 0) return
+
+  try {
+    await requireApprovedComplianceGate('automated_scoring')
+  } catch (error) {
+    if (!isComplianceGateError(error)) throw error
+    logger.warn('Automated trust score recalculation deferred', { code: error.code })
+    return
+  }
 
   // 각 유저의 completed reference 수 기반으로 reference_score 재계산
   // trust_score = (verification_score * 0.5) + (reference_score * 0.3) + (profile_score * 0.2)

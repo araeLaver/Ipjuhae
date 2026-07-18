@@ -10,6 +10,14 @@ COPY package.json package-lock.json ./
 # --ignore-scripts: skip postinstall hooks for security
 RUN npm ci --ignore-scripts
 
+# Production-only dependency tree for the custom HTTP/Socket.IO server.
+# Keep it lockfile-backed instead of resolving packages during the final image build.
+FROM node:20-alpine AS prod-deps
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev --ignore-scripts
+
 # ============================================================
 # Stage 2: Builder
 # ============================================================
@@ -50,14 +58,11 @@ COPY --from=builder /app/public ./public
 RUN mkdir .next && chown nextjs:nodejs .next
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=prod-deps --chown=nextjs:nodejs /app/node_modules ./node_modules
 
 # Custom HTTP server (Socket.IO)
 COPY --from=builder --chown=nextjs:nodejs /app/server.js ./server.js
-
-# Socket.IO + jsonwebtoken runtime deps (not auto-traced by Next.js standalone)
-# Install with all transitive dependencies to avoid missing module errors
-RUN npm install --no-save --omit=dev socket.io@4 jsonwebtoken@9 && \
-    npm cache clean --force
+COPY --from=builder --chown=nextjs:nodejs /app/socket-auth.js ./socket-auth.js
 
 USER nextjs
 

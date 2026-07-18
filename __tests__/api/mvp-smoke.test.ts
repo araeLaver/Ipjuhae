@@ -142,11 +142,11 @@ describe('MVP API smoke flows', () => {
   })
 
   it('listing creation can feed tenant matches and start a conversation', async () => {
-    vi.mocked(verifyToken).mockReturnValue({ userId: '42', userType: 'landlord' } as never)
+    vi.mocked(verifyToken).mockReturnValue({ userId: landlordId, userType: 'landlord' } as never)
     vi.mocked(query).mockResolvedValueOnce([
       {
         id: 7,
-        landlord_id: 42,
+        landlord_id: landlordId,
         monthly_rent: 75,
         deposit: 1000,
         address: '서울 마포구 합정동',
@@ -171,9 +171,13 @@ describe('MVP API smoke flows', () => {
     expect(listingRes.status).toBe(201)
     expect(listingData.listing.id).toBe(7)
     expect(trackServer).toHaveBeenCalledWith('listing_submitted', expect.objectContaining({
-      userId: '42',
+      userId: landlordId,
       listing_id: 7,
     }))
+    expect(query).toHaveBeenCalledWith(
+      expect.stringContaining('INSERT INTO listings'),
+      expect.arrayContaining([landlordId]),
+    )
 
     vi.clearAllMocks()
     mockAuthCookie()

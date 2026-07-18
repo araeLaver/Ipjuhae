@@ -3,6 +3,7 @@ import { getCurrentUser } from '@/lib/auth'
 import { getAdminUser } from '@/lib/admin'
 import { updateContractReportItem } from '@/lib/contract-trust'
 import { jsonError, jsonSuccess } from '@/lib/api-response'
+import { isComplianceGateError } from '@/lib/compliance-gates'
 
 const schema = z.object({
   verificationStatus: z.enum(['VERIFIED', 'REVIEW_REQUIRED', 'MISSING', 'EXPIRED', 'REJECTED']),
@@ -34,8 +35,15 @@ export async function PATCH(
     const item = await updateContractReportItem(user.id, id, itemId, parsed.data, Boolean(admin))
     return jsonSuccess(request, { item })
   } catch (error) {
+    if (isComplianceGateError(error)) {
+      return jsonError(request, 503, 'B2B organization operations are unavailable', error.code)
+    }
     const code = error instanceof Error ? error.message : 'CONTRACT_REPORT_ITEM_UPDATE_FAILED'
-    return jsonError(request, code.endsWith('NOT_FOUND') ? 404 : 500, 'Failed to update report item', code)
+    const status =
+      code.endsWith('NOT_FOUND') ? 404 :
+        code.includes('MUTATION_DENIED') ? 403 :
+          code.includes('ITEM_LOCKED') ||
+          code.includes('ORGANIZATION_INACTIVE') ? 409 : 500
+    return jsonError(request, status, 'Failed to update report item', code)
   }
 }
-

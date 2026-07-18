@@ -17,7 +17,6 @@ const schema = z.object({
   storageRef: z.string().min(1).max(1000),
   inputChecksum: z.string().length(64),
   documentType: z.string().min(1).max(80),
-  engineVersion: z.string().max(80).optional(),
   metadata: z.record(z.string(), z.unknown()).optional(),
 })
 
@@ -50,7 +49,11 @@ export async function POST(request: Request) {
         return jsonError(request, 409, 'Document intake metadata mismatch', 'DOCUMENT_INTAKE_MISMATCH')
       }
       try {
-        const job = await createExtractionJob(parsed.data, user.id, getRequestContext(request))
+        const job = await createExtractionJob(
+          { ...parsed.data, engineVersion: 'manual-review-1.0' },
+          user.id,
+          getRequestContext(request),
+        )
         await query('UPDATE document_intakes SET extraction_job_id = $2, updated_at = NOW() WHERE id = $1', [
           parsed.data.intakeId,
           job.id,
