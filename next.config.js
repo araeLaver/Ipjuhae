@@ -7,6 +7,12 @@ const nextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
 
+  // Keep local/CI builds within constrained process limits.
+  experimental: {
+    cpus: 2,
+    staticGenerationMaxConcurrency: 2,
+  },
+
   // External packages that must not be bundled (server-side native/CJS)
   serverExternalPackages: ['pg', 'pg-connection-string', 'pgpass', 'bcryptjs'],
 
