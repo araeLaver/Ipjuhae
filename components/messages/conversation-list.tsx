@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { Avatar } from '@/components/ui/avatar'
@@ -32,11 +32,7 @@ export function ConversationList({ basePath }: ConversationListProps) {
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
-  useEffect(() => {
-    fetchConversations()
-  }, [])
-
-  const fetchConversations = async () => {
+  const fetchConversations = useCallback(async () => {
     try {
       const response = await fetch('/api/messages/conversations')
       const data = await response.json()
@@ -55,7 +51,11 @@ export function ConversationList({ basePath }: ConversationListProps) {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [router])
+
+  useEffect(() => {
+    fetchConversations()
+  }, [fetchConversations])
 
   if (isLoading) {
     return (

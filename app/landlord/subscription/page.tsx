@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic'
 
-import { Suspense, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -66,17 +66,7 @@ function SubscriptionContent() {
   const [isLoading, setIsLoading] = useState(true)
   const [upgrading, setUpgrading] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (!searchParams) return
-    if (searchParams.get('success') === 'true') {
-      toast.success('결제가 완료되었습니다! 구독이 활성화됩니다.')
-    } else if (searchParams.get('canceled') === 'true') {
-      toast.info('결제가 취소되었습니다.')
-    }
-    fetchSubscription()
-  }, [])
-
-  const fetchSubscription = async () => {
+  const fetchSubscription = useCallback(async () => {
     try {
       const res = await fetch('/api/landlord/subscription')
       const json = await res.json()
@@ -93,7 +83,17 @@ function SubscriptionContent() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [router])
+
+  useEffect(() => {
+    if (!searchParams) return
+    if (searchParams.get('success') === 'true') {
+      toast.success('결제가 완료되었습니다! 구독이 활성화됩니다.')
+    } else if (searchParams.get('canceled') === 'true') {
+      toast.info('결제가 취소되었습니다.')
+    }
+    fetchSubscription()
+  }, [fetchSubscription, searchParams])
 
   const handleUpgrade = async (plan: string) => {
     if (plan === data?.plan) return

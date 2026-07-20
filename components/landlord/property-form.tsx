@@ -277,6 +277,7 @@ export function PropertyForm({ property, onSuccess }: PropertyFormProps) {
                   key={photo.previewUrl}
                   className="relative aspect-square rounded-lg overflow-hidden border bg-muted"
                 >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={photo.previewUrl}
                     alt={`매물 사진 ${index + 1}`}

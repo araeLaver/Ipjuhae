@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import Image from 'next/image'
+import { useCallback, useEffect, useState, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -29,11 +30,7 @@ export default function PropertyDetailPage() {
   const [isEditing, setIsEditing] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => {
-    fetchProperty()
-  }, [propertyId])
-
-  const fetchProperty = async () => {
+  const fetchProperty = useCallback(async () => {
     try {
       const response = await fetch(`/api/landlord/properties/${propertyId}`)
       const data = await response.json()
@@ -58,7 +55,11 @@ export default function PropertyDetailPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [propertyId, router])
+
+  useEffect(() => {
+    fetchProperty()
+  }, [fetchProperty])
 
   const handleDelete = async () => {
     if (!confirm('정말 이 매물을 삭제하시겠습니까?')) return
@@ -323,11 +324,14 @@ export default function PropertyDetailPage() {
               <div className="grid grid-cols-3 gap-3">
                 {images.map(image => (
                   <div key={image.id} className="relative group">
-                    <div className="aspect-square rounded-lg overflow-hidden bg-muted">
-                      <img
+                    <div className="relative aspect-square rounded-lg overflow-hidden bg-muted">
+                      <Image
                         src={image.thumbnail_url || image.image_url}
                         alt="매물 사진"
-                        className="w-full h-full object-cover"
+                        fill
+                        sizes="(min-width: 768px) 180px, 33vw"
+                        className="object-cover"
+                        unoptimized
                       />
                     </div>
                     {image.is_main && (

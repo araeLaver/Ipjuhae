@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
@@ -38,11 +38,7 @@ export default function FavoritesPage() {
   const [pagination, setPagination] = useState<Pagination | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  useEffect(() => {
-    fetchFavorites()
-  }, [])
-
-  const fetchFavorites = async (page = 1) => {
+  const fetchFavorites = useCallback(async (page = 1) => {
     try {
       const response = await fetch(`/api/favorites?page=${page}&limit=20`)
       const data = await response.json()
@@ -66,7 +62,11 @@ export default function FavoritesPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [router])
+
+  useEffect(() => {
+    fetchFavorites()
+  }, [fetchFavorites])
 
   const handleFavoriteRemoved = (tenantId: string) => {
     setFavorites(prev => prev.filter(f => f.tenant_id !== tenantId))

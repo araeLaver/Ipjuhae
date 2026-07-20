@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -17,11 +17,7 @@ export default function VerificationPage() {
   const [verification, setVerification] = useState<Verification | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  useEffect(() => {
-    fetchVerification()
-  }, [])
-
-  const fetchVerification = async () => {
+  const fetchVerification = useCallback(async () => {
     try {
       const response = await fetch('/api/verifications')
       const data = await response.json()
@@ -40,7 +36,11 @@ export default function VerificationPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [router])
+
+  useEffect(() => {
+    fetchVerification()
+  }, [fetchVerification])
 
   const handleVerified = (updated: Verification) => {
     setVerification(updated)

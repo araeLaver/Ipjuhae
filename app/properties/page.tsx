@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useEffect, useState, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
@@ -255,12 +256,15 @@ export default function PropertiesPage() {
                 <Link key={property.id} href={`/properties/${property.id}`}>
                   <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
                     {/* Image */}
-                    <div className="w-full h-44 bg-muted rounded-t-xl overflow-hidden">
+                    <div className="relative w-full h-44 bg-muted rounded-t-xl overflow-hidden">
                       {property.mainImageUrl ? (
-                        <img
+                        <Image
                           src={property.mainImageUrl}
                           alt={property.title}
-                          className="w-full h-full object-cover"
+                          fill
+                          sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                          className="object-cover"
+                          unoptimized
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">

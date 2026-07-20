@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -19,11 +19,7 @@ export default function ReferencePage() {
   const [isLoading, setIsLoading] = useState(true)
   const [latestSurveyUrl, setLatestSurveyUrl] = useState<string | null>(null)
 
-  useEffect(() => {
-    fetchReferences()
-  }, [])
-
-  const fetchReferences = async () => {
+  const fetchReferences = useCallback(async () => {
     try {
       const response = await fetch('/api/references')
       const data = await response.json()
@@ -42,7 +38,11 @@ export default function ReferencePage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [router])
+
+  useEffect(() => {
+    fetchReferences()
+  }, [fetchReferences])
 
   const handleSuccess = (reference: LandlordReference, surveyUrl?: string) => {
     setReferences((prev) => [reference, ...prev])

@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import Image from 'next/image'
+import { useCallback, useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -78,11 +79,7 @@ export default function PropertyDetailPage() {
   const [isSendingMessage, setIsSendingMessage] = useState(false)
   const [imgIndex, setImgIndex] = useState(0)
 
-  useEffect(() => {
-    fetchProperty()
-  }, [propertyId])
-
-  const fetchProperty = async () => {
+  const fetchProperty = useCallback(async () => {
     try {
       const res = await fetch(`/api/properties/${propertyId}`)
       const data = await res.json()
@@ -102,7 +99,11 @@ export default function PropertyDetailPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [propertyId, router])
+
+  useEffect(() => {
+    fetchProperty()
+  }, [fetchProperty])
 
   const handleContactLandlord = async () => {
     if (!property) return
@@ -171,10 +172,13 @@ export default function PropertyDetailPage() {
         <div className="relative w-full h-72 sm:h-96 bg-muted rounded-xl overflow-hidden">
           {images.length > 0 && currentImage ? (
             <>
-              <img
+              <Image
                 src={currentImage.imageUrl}
                 alt={property.title}
-                className="w-full h-full object-cover"
+                fill
+                sizes="(min-width: 1024px) 1024px, 100vw"
+                className="object-cover"
+                unoptimized
               />
               {images.length > 1 && (
                 <>
@@ -216,12 +220,15 @@ export default function PropertyDetailPage() {
               <button
                 key={img.id}
                 onClick={() => setImgIndex(i)}
-                className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition ${i === imgIndex ? 'border-primary' : 'border-transparent'}`}
+                className={`relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition ${i === imgIndex ? 'border-primary' : 'border-transparent'}`}
               >
-                <img
+                <Image
                   src={img.thumbnailUrl || img.imageUrl}
                   alt=""
-                  className="w-full h-full object-cover"
+                  fill
+                  sizes="64px"
+                  className="object-cover"
+                  unoptimized
                 />
               </button>
             ))}
@@ -327,12 +334,15 @@ export default function PropertyDetailPage() {
               <CardContent className="pt-4 pb-4">
                 <h3 className="font-semibold mb-3">집주인 정보</h3>
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-12 h-12 rounded-full bg-muted overflow-hidden flex-shrink-0">
+                  <div className="relative w-12 h-12 rounded-full bg-muted overflow-hidden flex-shrink-0">
                     {property.landlord.profileImage ? (
-                      <img
+                      <Image
                         src={property.landlord.profileImage}
                         alt={property.landlord.name || '집주인'}
-                        className="w-full h-full object-cover"
+                        fill
+                        sizes="48px"
+                        className="object-cover"
+                        unoptimized
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">

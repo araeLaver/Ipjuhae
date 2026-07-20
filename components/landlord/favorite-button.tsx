@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Heart } from 'lucide-react'
 import { toast } from 'sonner'
@@ -22,11 +22,7 @@ export function FavoriteButton({
   const [isFavorited, setIsFavorited] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
 
-  useEffect(() => {
-    checkFavoriteStatus()
-  }, [tenantId])
-
-  const checkFavoriteStatus = async () => {
+  const checkFavoriteStatus = useCallback(async () => {
     try {
       const response = await fetch(`/api/favorites/check?tenantId=${tenantId}`)
       const data = await response.json()
@@ -36,7 +32,11 @@ export function FavoriteButton({
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [tenantId])
+
+  useEffect(() => {
+    checkFavoriteStatus()
+  }, [checkFavoriteStatus])
 
   const toggleFavorite = async (e: React.MouseEvent) => {
     e.preventDefault()

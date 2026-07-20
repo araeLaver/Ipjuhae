@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -40,11 +40,7 @@ export default function TenantDetailPage() {
   const [tenantUserId, setTenantUserId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  useEffect(() => {
-    fetchTenantDetail()
-  }, [id])
-
-  const fetchTenantDetail = async () => {
+  const fetchTenantDetail = useCallback(async () => {
     try {
       const response = await fetch(`/api/landlord/tenants/${id}`)
       const data = await response.json()
@@ -71,7 +67,11 @@ export default function TenantDetailPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [id, router])
+
+  useEffect(() => {
+    fetchTenantDetail()
+  }, [fetchTenantDetail])
 
   if (isLoading) {
     return (

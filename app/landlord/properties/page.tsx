@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import Image from 'next/image'
+import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
@@ -71,11 +72,7 @@ export default function PropertiesPage() {
     }
   }
 
-  useEffect(() => {
-    fetchProperties()
-  }, [])
-
-  const fetchProperties = async () => {
+  const fetchProperties = useCallback(async () => {
     try {
       const response = await fetch('/api/landlord/properties')
       const data = await response.json()
@@ -98,7 +95,11 @@ export default function PropertiesPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [router])
+
+  useEffect(() => {
+    fetchProperties()
+  }, [fetchProperties])
 
   const formatPrice = (amount: number) => {
     if (amount >= 100000000) {
@@ -159,12 +160,15 @@ export default function PropertiesPage() {
                   <CardContent className="p-4">
                     <div className="flex gap-4">
                       {/* 이미지 */}
-                      <div className="w-24 h-24 bg-muted rounded-lg flex-shrink-0 overflow-hidden">
+                      <div className="relative w-24 h-24 bg-muted rounded-lg flex-shrink-0 overflow-hidden">
                         {property.main_image_url ? (
-                          <img
+                          <Image
                             src={property.main_image_url}
                             alt={property.title}
-                            className="w-full h-full object-cover"
+                            fill
+                            sizes="96px"
+                            className="object-cover"
+                            unoptimized
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">

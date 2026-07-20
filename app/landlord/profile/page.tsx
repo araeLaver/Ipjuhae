@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -26,11 +26,7 @@ export default function LandlordProfilePage() {
   const [regions, setRegions] = useState<string[]>([])
   const [newRegion, setNewRegion] = useState('')
 
-  useEffect(() => {
-    fetchProfile()
-  }, [])
-
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     try {
       const response = await fetch('/api/landlord/profile')
       const data = await response.json()
@@ -65,7 +61,11 @@ export default function LandlordProfilePage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [router])
+
+  useEffect(() => {
+    fetchProfile()
+  }, [fetchProfile])
 
   const handleAddRegion = () => {
     if (newRegion.trim() && !regions.includes(newRegion.trim())) {
