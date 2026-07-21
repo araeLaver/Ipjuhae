@@ -44,6 +44,8 @@ const migrations = [
   'migration-027-trust-model-alignment.sql',
   'migration-028-contract-report-productization.sql',
   'migration-029-compliance-gate-audit.sql',
+  'migration-030-trust-stage-performance.sql',
+  'migration-031-trust-disclosure-matrix.sql',
 ] as const
 
 const args = process.argv.slice(2)

@@ -11,7 +11,23 @@ const schema = z.object({
   landlordId: z.string().uuid().nullish(),
   tenantId: z.string().uuid().nullish(),
   realtorId: z.string().uuid().nullish(),
-  stage: z.enum(['pre_application', 'application', 'negotiation', 'contract']).optional(),
+  stage: z.enum([
+    'pre_application',
+    'application',
+    'negotiation',
+    'contract',
+    'completed',
+    'cancelled',
+    'S0',
+    'S1',
+    'S2',
+    'S3',
+    'S4',
+    'S5',
+    'S6',
+    'S7',
+    'S8',
+  ]).optional(),
   requirements: z.record(z.string(), z.unknown()).optional(),
   terms: z.record(z.string(), z.unknown()).optional(),
 })
@@ -51,4 +67,3 @@ export async function POST(request: Request) {
     },
   })
 }
-

@@ -240,6 +240,9 @@ describe('trust engine compliance boundaries', () => {
           }
           return { rows: [dueReference] }
         }
+        if (sql.includes("stage = 'S7'")) {
+          return { rows: [] }
+        }
         if (
           sql.includes('INSERT INTO trust_outbox_events') ||
           sql.startsWith('SAVEPOINT ') ||
@@ -293,6 +296,9 @@ describe('trust engine compliance boundaries', () => {
           }
           return { rows: [deferredReference] }
         }
+        if (sql.includes("stage = 'S7'")) {
+          return { rows: [] }
+        }
         if (sql.includes('FROM trust_reference_submissions') && sql.includes('reveal_state')) {
           return { rows: [deferredReference] }
         }
@@ -331,5 +337,80 @@ describe('trust engine compliance boundaries', () => {
       client,
     )
     expect(statements.filter((sql) => sql.includes('INSERT INTO trust_graph_edges'))).toHaveLength(1)
+  })
+
+  it('auto-settles overdue S7 transactions with no dispute and grants fallback second assessment', async () => {
+    vi.mocked(query).mockResolvedValue([])
+
+    const dueTransaction = {
+      id: '99999999-9999-4999-8999-999999999999',
+      stage: 'S7',
+      status: 'active',
+      landlord_id: '11111111-1111-4111-8111-111111111111',
+      tenant_id: '22222222-2222-4222-8222-222222222222',
+      realtor_id: null,
+      property_id: '33333333-3333-4333-8333-333333333333',
+      evaluation_flags: {},
+      dispute_meta: {
+        disputed: false,
+        deposit_return_due_at: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
+      },
+    }
+
+    const client = {
+      query: vi.fn(async (sql: string) => {
+        if (sql.includes('UPDATE trust_evidence_nodes')) {
+          return { rows: [] }
+        }
+        if (sql.includes('UPDATE trust_disclosure_packages') && sql.includes("state = 'EXPIRED'")) {
+          return { rows: [] }
+        }
+        if (sql.includes('UPDATE trust_reference_submissions')) {
+          return { rows: [], rowCount: 0 }
+        }
+        if (sql.includes('LEFT JOIN trust_graph_edges')) {
+          if (sql.includes('pending_count')) {
+            return { rows: [{ pending_count: 0 }] }
+          }
+          return { rows: [] }
+        }
+        if (sql.includes('SELECT * FROM trust_reference_submissions') && sql.includes('reveal_state')) {
+          return { rows: [] }
+        }
+        if (sql.includes('SELECT * FROM trust_transaction_contexts')) {
+          return { rows: [dueTransaction] }
+        }
+        if (sql.includes('UPDATE trust_transaction_contexts') && sql.includes("SET stage = 'S8'")) {
+          return { rows: [{ id: dueTransaction.id }] }
+        }
+        if (
+          sql.includes('UPDATE trust_derived_nodes') ||
+          sql.includes('INSERT INTO trust_outbox_events') ||
+          sql.includes('INSERT INTO trust_retention_actions')
+        ) {
+          return { rows: [] }
+        }
+        throw new Error(`Unexpected query: ${sql}`)
+      }),
+    }
+    vi.mocked(transaction).mockImplementation(async (handler) => handler(client as never))
+
+    const result = await runTrustMaintenance()
+
+    expect(result).toMatchObject({
+      autoSettledTransactions: 1,
+      releasedReferences: 0,
+      referenceScoringPending: 0,
+      expiredEvidence: 0,
+      expiredDisclosures: 0,
+    })
+    const statements = client.query.mock.calls.map(([sql]) => String(sql))
+    expect(statements.some((sql) => sql.includes("stage = 'S7'"))).toBe(true)
+    expect(statements.some((sql) => sql.includes("SET stage = 'S8'"))).toBe(true)
+    const calls = client.query.mock.calls as unknown as Array<[string, unknown[]]>
+    const hasAutoSettledEvent = calls
+      .filter((call) => call[0]?.includes('INSERT INTO trust_outbox_events'))
+      .some((call) => Array.isArray(call[1]) && call[1][2] === 'TransactionAutoSettled')
+    expect(hasAutoSettledEvent).toBe(true)
   })
 })

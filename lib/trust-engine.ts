@@ -1,19 +1,88 @@
 import { createHash, createHmac, randomBytes } from 'crypto'
 import type { PoolClient } from 'pg'
 import { query, queryOne, transaction } from '@/lib/db'
-import { canTransitionTransaction } from '@/lib/trust-policy'
+import {
+  canTransitionTransaction,
+  normalizeTransactionStageCandidates,
+  normalizeTransactionStage,
+  type TransactionStageInput,
+  type TransactionStage,
+} from '@/lib/trust-policy'
 import {
   isComplianceGateError,
   requireApprovedComplianceGate,
 } from '@/lib/compliance-gates'
 
 export type TrustSubjectType = 'tenant' | 'landlord' | 'property'
-export type TransactionStage = 'pre_application' | 'application' | 'negotiation' | 'contract' | 'completed' | 'cancelled'
+type LegacyDisputeResult = 'ReferenceDisputed' | 'DisputeResolvedKeep' | 'DisputeResolvedInvalidated'
+type PerformanceEventCode = 'ContractSigned' | 'MoveInConfirmed' | 'LeaseEnded' | 'DepositReturned'
+type LegacyContractOutcome = 'completed' | 'cancelled' | 'defaulted' | 'disputed' | 'renewed'
+export type ContractOutcomeCode = PerformanceEventCode | LegacyContractOutcome
 
 interface RequestTrace {
   requestId?: string | null
   traceId?: string | null
   ip?: string | null
+}
+
+type VerificationLevel = 0 | 1 | 2
+
+const SUBJECT_VERIFICATION_FACT_REQUIREMENTS: Record<TrustSubjectType, {
+  baseline: string[]
+  l1: string[]
+  l2: string[]
+}> = {
+  tenant: {
+    baseline: ['identity_verified'],
+    l1: ['employment_verified'],
+    l2: ['income_verified', 'credit_verified'],
+  },
+  landlord: {
+    baseline: ['identity_verified'],
+    l1: ['owner_matched'],
+    l2: ['registry_clear', 'senior_claim_safe'],
+  },
+  property: {
+    baseline: ['owner_matched'],
+    l1: ['registry_clear'],
+    l2: ['insurance_eligible', 'building_compliant'],
+  },
+}
+
+const VERIFICATION_LEVEL_TEXT: Record<VerificationLevel, string> = {
+  0: 'L0',
+  1: 'L1',
+  2: 'L2',
+}
+
+const PERFORMANCE_EVENT_TO_STAGE: Record<PerformanceEventCode, TransactionStage> = {
+  ContractSigned: 'S4',
+  MoveInConfirmed: 'S5',
+  LeaseEnded: 'S7',
+  DepositReturned: 'S8',
+}
+
+interface TransactionContextRecord {
+  id: string
+  stage: string
+  status: string | null
+  landlord_id: string | null
+  tenant_id: string | null
+  realtor_id: string | null
+  property_id: string | null
+  evaluation_flags: Record<string, unknown> | null
+  dispute_meta: Record<string, unknown> | null
+  requirements?: Record<string, unknown> | null
+  terms?: Record<string, unknown> | null
+}
+
+interface EvaluationFlags {
+  firstAssessment?: {
+    granted_at?: string | null
+  }
+  secondAssessment?: {
+    granted_at?: string | null
+  }
 }
 
 interface EvidenceInput {
@@ -62,6 +131,82 @@ function canonicalize(value: unknown): unknown {
     )
   }
   return value
+}
+
+function parseEvaluationFlags(raw: Record<string, unknown> | null): EvaluationFlags {
+  return {
+    firstAssessment: raw && typeof raw.firstAssessment === 'object'
+      ? {
+          granted_at: (raw.firstAssessment as Record<string, unknown>).granted_at ? String((raw.firstAssessment as Record<string, unknown>).granted_at) : null,
+        }
+      : undefined,
+    secondAssessment: raw && typeof raw.secondAssessment === 'object'
+      ? {
+          granted_at: (raw.secondAssessment as Record<string, unknown>).granted_at ? String((raw.secondAssessment as Record<string, unknown>).granted_at) : null,
+        }
+      : undefined,
+  }
+}
+
+function parseDisputeMeta(raw: Record<string, unknown> | null): Record<string, unknown> {
+  return raw && typeof raw === 'object' ? { ...raw } : {}
+}
+
+function calculateDepositReturnDeadline(isoAt: string): string | null {
+  const rawDate = new Date(isoAt)
+  if (Number.isNaN(rawDate.getTime())) return null
+  const threshold = new Date(rawDate.getTime())
+  threshold.setDate(threshold.getDate() + 60)
+  return threshold.toISOString()
+}
+
+
+function normalizeContractOutcome(value: string): ContractOutcomeCode {
+  const normalizedValue = value.trim()
+  if (
+    normalizedValue === 'ContractSigned'
+    || normalizedValue === 'MoveInConfirmed'
+    || normalizedValue === 'LeaseEnded'
+    || normalizedValue === 'DepositReturned'
+    || normalizedValue === 'completed'
+    || normalizedValue === 'cancelled'
+    || normalizedValue === 'defaulted'
+    || normalizedValue === 'disputed'
+    || normalizedValue === 'renewed'
+  ) {
+    return normalizedValue
+  }
+  throw new Error(`TRUST_CONTRACT_OUTCOME_INVALID:${value}`)
+}
+
+function mapOutcomeToStage(outcome: ContractOutcomeCode): TransactionStage | null {
+  if (outcome in PERFORMANCE_EVENT_TO_STAGE) {
+    return PERFORMANCE_EVENT_TO_STAGE[outcome as PerformanceEventCode]
+  }
+  if (outcome === 'completed' || outcome === 'renewed') return 'S8'
+  return null
+}
+
+function mapOutcomeStatus(outcome: ContractOutcomeCode): string {
+  if (outcome === 'completed' || outcome === 'renewed') return 'completed'
+  if (outcome === 'DepositReturned') return 'completed'
+  if (outcome === 'cancelled') return 'cancelled'
+  if (outcome === 'defaulted') return 'held'
+  if (outcome === 'disputed') return 'disputed'
+  return 'active'
+}
+
+function nextEvaluationFlagsForEvent(event: PerformanceEventCode, current: EvaluationFlags): EvaluationFlags {
+  const next = { ...current } as EvaluationFlags
+  if (event === 'MoveInConfirmed') {
+    next.firstAssessment = { granted_at: new Date().toISOString() }
+  } else if (event === 'DepositReturned') {
+    next.secondAssessment = { granted_at: new Date().toISOString() }
+    if (!next.firstAssessment?.granted_at) {
+      next.firstAssessment = { granted_at: new Date().toISOString() }
+    }
+  }
+  return next
 }
 
 export function trustDigest(value: unknown): string {
@@ -380,21 +525,129 @@ function disclosureClaim(value: unknown, representation: string, conditionValue:
   return null
 }
 
+function subjectVerificationLevelFromFacts(
+  subjectType: TrustSubjectType,
+  facts: FactRow[],
+): VerificationLevel {
+  const fieldValues = new Map<string, unknown>()
+  for (const fact of facts) {
+    if (!fieldValues.has(fact.field_name)) {
+      fieldValues.set(fact.field_name, fact.normalized_value)
+    }
+  }
+  const rule = SUBJECT_VERIFICATION_FACT_REQUIREMENTS[subjectType]
+  const isMet = (field: string): boolean => truthyFact(fieldValues.get(field))
+
+  const allSatisfied = rule.l2.every((field) => isMet(field))
+  if (allSatisfied && rule.l1.every((field) => isMet(field)) && rule.baseline.every((field) => isMet(field))) {
+    return 2
+  }
+
+  const l1Satisfied = rule.l1.every((field) => isMet(field)) && rule.baseline.every((field) => isMet(field))
+  if (l1Satisfied) {
+    return 1
+  }
+
+  if (rule.baseline.every((field) => isMet(field))) {
+    return 0
+  }
+
+  return 0
+}
+
+function normalizeRecipientRole(role: 'tenant' | 'landlord' | 'broker', context: TransactionContextRecord): TrustSubjectType | null {
+  if (role === 'tenant' && context.tenant_id) return 'tenant'
+  if (role === 'landlord' && context.landlord_id) return 'landlord'
+  return null
+}
+
+function resolveVerifiedActor(
+  subjectType: TrustSubjectType,
+  input: DisclosureInput,
+  context: TransactionContextRecord,
+): { type: TrustSubjectType; subjectId: string | null } | null {
+  if (subjectType === 'property') {
+    return { type: 'property', subjectId: input.subjectId }
+  }
+
+  const actorType = normalizeRecipientRole(input.recipientRole, context)
+  if (!actorType) return null
+  return {
+    type: actorType,
+    subjectId: actorType === 'tenant' ? context.tenant_id : context.landlord_id,
+  }
+}
+
+async function resolveVerificationLevel(
+  context: TransactionContextRecord,
+  input: DisclosureInput,
+): Promise<VerificationLevel> {
+  const target = resolveVerifiedActor(input.subjectType, input, context)
+  if (!target) return 0
+
+  const { type: subjectType, subjectId } = target
+  if (!subjectId) return 0
+
+  const factRequirements = SUBJECT_VERIFICATION_FACT_REQUIREMENTS[subjectType]
+  const requestedFields = [
+    ...factRequirements.baseline,
+    ...factRequirements.l1,
+    ...factRequirements.l2,
+  ]
+
+  const facts = await query<FactRow>(
+    `SELECT field_name, normalized_value FROM trust_fact_nodes
+      WHERE subject_type = $1 AND subject_id = $2
+        AND status IN ('ACTIVE', 'CONFIRMED', 'REVISED')
+        AND (valid_until IS NULL OR valid_until > NOW())
+        AND field_name = ANY($3::text[])
+      ORDER BY created_at DESC`,
+    [subjectType, subjectId, requestedFields]
+  )
+  return subjectVerificationLevelFromFacts(subjectType, facts)
+}
+
+function pickRecipientDischarge(
+  context: TransactionContextRecord,
+  recipientId: string,
+): 'tenant' | 'landlord' | 'broker' | null {
+  if (recipientId === context.tenant_id) return 'tenant'
+  if (recipientId === context.landlord_id) return 'landlord'
+  if (recipientId === context.realtor_id) return 'broker'
+  return null
+}
+
 export async function createDisclosurePackage(input: DisclosureInput, actorId: string, trace: RequestTrace = {}) {
   const signingKey = process.env.DISCLOSURE_SIGNING_KEY
   if (!signingKey || signingKey.length < 32) throw new Error('DISCLOSURE_SIGNING_KEY_NOT_CONFIGURED')
 
-  const context = await queryOne<Record<string, unknown>>(`SELECT * FROM trust_transaction_contexts WHERE id = $1`, [input.transactionId])
+  const context = await queryOne<TransactionContextRecord & { status: string | null }>(
+    `SELECT * FROM trust_transaction_contexts WHERE id = $1`,
+    [input.transactionId]
+  )
   if (!context) throw new Error('TRUST_TRANSACTION_NOT_FOUND')
   const participants = [context.landlord_id, context.tenant_id, context.realtor_id].filter(Boolean)
   if (!participants.includes(input.recipientId)) throw new Error('DISCLOSURE_RECIPIENT_NOT_PARTICIPANT')
+  if (context.status === 'held' || context.status === 'disputed') {
+    throw new Error('TRUST_TRANSACTION_DISCLOSURE_BLOCKED')
+  }
 
-  const policy = await queryOne<{ id: string; version: string; claim_rules: { claims: Array<{ fact: string; claim: string; representation: string; condition?: string }> }; ttl_minutes: number }>(
-    `SELECT id, version, claim_rules, ttl_minutes
+  const verificationLevel = await resolveVerificationLevel(context, input)
+  const policyStages = normalizeTransactionStageCandidates(context.stage)
+
+  const policy = await queryOne<{
+    id: string
+    version: string
+    claim_rules: { claims: Array<{ fact: string; claim: string; representation: string; condition?: string }> }
+    ttl_minutes: number
+    verification_level: number
+  }>(
+    `SELECT id, version, claim_rules, ttl_minutes, verification_level
        FROM trust_disclosure_policies
-      WHERE subject_type = $1 AND recipient_role = $2 AND transaction_stage = $3 AND purpose = $4 AND status = 'active'
-      ORDER BY created_at DESC LIMIT 1`,
-    [input.subjectType, input.recipientRole, context.stage, input.purpose]
+      WHERE subject_type = $1 AND recipient_role = $2 AND transaction_stage = ANY($3::text[]) AND purpose = $4 AND status = 'active'
+      AND COALESCE(verification_level, 0) <= $5
+      ORDER BY COALESCE(verification_level, 0) DESC, created_at DESC LIMIT 1`,
+    [input.subjectType, input.recipientRole, policyStages, input.purpose, verificationLevel]
   )
   if (!policy) throw new Error('DISCLOSURE_POLICY_NOT_FOUND')
 
@@ -449,6 +702,11 @@ export async function createDisclosurePackage(input: DisclosureInput, actorId: s
       if (factExpiry < expiresAt) expiresAt.setTime(factExpiry.getTime())
     }
   }
+  const resolvedVerificationLevel = Math.min(
+    Math.max(0, Math.min(2, Number(policy.verification_level ?? verificationLevel))),
+    verificationLevel,
+  ) as VerificationLevel
+  const conditions = input.conditions ?? {}
   const envelope = {
     subject_type: input.subjectType,
     subject_id: input.subjectId,
@@ -456,10 +714,12 @@ export async function createDisclosurePackage(input: DisclosureInput, actorId: s
     transaction_id: input.transactionId,
     purpose: input.purpose,
     policy_version: policy.version,
+    verification_level: VERIFICATION_LEVEL_TEXT[resolvedVerificationLevel],
     claims,
     evidence_digests: usedFacts.map((fact) => fact.value_digest),
     nonce,
     expires_at: expiresAt.toISOString(),
+    conditions,
     revocation_handle: revocationHandle,
   }
   const signature = createHmac('sha256', signingKey).update(JSON.stringify(canonicalize(envelope))).digest('hex')
@@ -472,15 +732,31 @@ export async function createDisclosurePackage(input: DisclosureInput, actorId: s
       [input.subjectType, input.subjectId, input.transactionId, JSON.stringify(envelope), trustDigest(envelope), policy.version]
     )
     const derived = derivedResult.rows[0]
+    const latestScoreRunResult = await client.query<{ id: string; derived_node_id: string }>(
+      `SELECT id, derived_node_id
+         FROM trust_score_runs
+        WHERE subject_type = $1 AND subject_id = $2 AND status = 'PUBLISHED'
+        ORDER BY created_at DESC LIMIT 1`,
+      [input.subjectType, input.subjectId]
+    )
+    const latestScoreRun = latestScoreRunResult.rows[0]
     const packageResult = await client.query(
       `INSERT INTO trust_disclosure_packages
         (derived_node_id, subject_type, subject_id, recipient_id, transaction_id, consent_id, policy_id,
-         policy_version, claims, evidence_digests, nonce, signature, revocation_handle, expires_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *`,
+         policy_version, verification_level, disclosure_conditions, claims, evidence_digests, nonce, signature, revocation_handle, expires_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING *`,
       [derived.id, input.subjectType, input.subjectId, input.recipientId, input.transactionId, input.consentId,
-       policy.id, policy.version, JSON.stringify(claims), usedFacts.map((fact) => fact.value_digest), nonce,
+       policy.id, policy.version, resolvedVerificationLevel, JSON.stringify(conditions), JSON.stringify(claims), usedFacts.map((fact) => fact.value_digest), nonce,
        signature, revocationHandle, expiresAt]
     )
+    if (latestScoreRun) {
+      await client.query(
+        `INSERT INTO trust_dependency_edges
+          (from_node_type, from_node_id, to_node_type, to_node_id, dependency_type, created_by_run)
+         VALUES ('derived', $1, 'derived', $2, 'required', $3) ON CONFLICT DO NOTHING`,
+        [latestScoreRun.derived_node_id, derived.id, latestScoreRun.id]
+      )
+    }
     for (const fact of usedFacts) {
       await client.query(
         `INSERT INTO trust_dependency_edges
@@ -653,19 +929,20 @@ interface TransactionInput {
   landlordId?: string | null
   tenantId?: string | null
   realtorId?: string | null
-  stage?: TransactionStage
+  stage?: TransactionStageInput
   requirements?: Record<string, unknown>
   terms?: Record<string, unknown>
 }
 
 export async function createTrustTransaction(input: TransactionInput, actorId: string, trace: RequestTrace = {}) {
+  const stage = normalizeTransactionStage(input.stage ?? 'S0')
   return transaction(async (client) => {
     const result = await client.query(
       `INSERT INTO trust_transaction_contexts
         (property_id, landlord_id, tenant_id, realtor_id, stage, requirements, terms, created_by)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
       [input.propertyId ?? null, input.landlordId ?? null, input.tenantId ?? null, input.realtorId ?? null,
-       input.stage ?? 'pre_application', JSON.stringify(input.requirements ?? {}), JSON.stringify(input.terms ?? {}), actorId]
+       stage, JSON.stringify(input.requirements ?? {}), JSON.stringify(input.terms ?? {}), actorId]
     )
     const context = result.rows[0]
     await emitOutbox(client, 'transaction', context.id, 'TransactionContextCreated', { stage: context.stage }, trace)
@@ -677,7 +954,7 @@ export async function createTrustTransaction(input: TransactionInput, actorId: s
 export async function recordContractOutcome(
   transactionId: string,
   actorId: string,
-  outcome: 'completed' | 'cancelled' | 'defaulted' | 'disputed' | 'renewed',
+  outcome: ContractOutcomeCode,
   terms: Record<string, unknown>,
   evidenceIds: string[],
   occurredAt: string,
@@ -688,23 +965,61 @@ export async function recordContractOutcome(
     const context = contextResult.rows[0]
     if (!context) throw new Error('TRUST_TRANSACTION_NOT_FOUND')
     if (![context.landlord_id, context.tenant_id, context.realtor_id].includes(actorId)) throw new Error('TRUST_TRANSACTION_FORBIDDEN')
-    const contractHash = trustDigest({ transactionId, terms, evidenceIds, occurredAt, landlordId: context.landlord_id, tenantId: context.tenant_id })
+    const normalizedOutcome = normalizeContractOutcome(outcome)
+    const nextStage = mapOutcomeToStage(normalizedOutcome) ?? normalizeTransactionStage(context.stage)
+    if (!canTransitionTransaction(context.stage, nextStage) && context.stage !== nextStage) {
+      throw new Error('TRUST_TRANSACTION_STAGE_INVALID')
+    }
+
+    const previousEvaluationFlags = parseEvaluationFlags(context.evaluation_flags as Record<string, unknown> | null)
+    const previousDisputeMeta = parseDisputeMeta(context.dispute_meta as Record<string, unknown> | null)
+    let nextEvaluationFlags = { ...previousEvaluationFlags }
+    const nextDisputeMeta = { ...previousDisputeMeta }
+
+    if (normalizedOutcome in PERFORMANCE_EVENT_TO_STAGE) {
+      nextEvaluationFlags = nextEvaluationFlagsForEvent(normalizedOutcome as PerformanceEventCode, previousEvaluationFlags)
+      if (normalizedOutcome === 'LeaseEnded') {
+        const depositReturnDueAt = calculateDepositReturnDeadline(occurredAt)
+        if (depositReturnDueAt) {
+          nextDisputeMeta.deposit_return_due_at = depositReturnDueAt
+        }
+        nextDisputeMeta.last_stage_entered_at = occurredAt
+      } else if (normalizedOutcome === 'DepositReturned') {
+        nextDisputeMeta.deposit_return_due_at = null
+        nextDisputeMeta.deposit_returned_at = occurredAt
+      }
+    }
+
+    if (normalizedOutcome === 'disputed' || normalizedOutcome === 'defaulted') {
+      nextDisputeMeta.disputed = true
+      nextDisputeMeta.dispute_reason = normalizedOutcome
+      nextDisputeMeta.last_disputed_at = occurredAt
+    } else if (normalizedOutcome === 'completed' || normalizedOutcome === 'renewed') {
+      nextDisputeMeta.disputed = false
+      nextDisputeMeta.dispute_reason = null
+      nextDisputeMeta.last_disputed_at = null
+      nextDisputeMeta.deposit_return_due_at = null
+      nextDisputeMeta.deposit_returned_at = occurredAt
+    }
+
+    const nextStatus = mapOutcomeStatus(normalizedOutcome)
+    const contractHash = trustDigest({ transactionId, terms, evidenceIds, outcome: normalizedOutcome, occurredAt, landlordId: context.landlord_id, tenantId: context.tenant_id, stage: nextStage, status: nextStatus })
     const result = await client.query(
       `INSERT INTO trust_contract_outcomes
         (transaction_id, recorded_by, outcome, contract_hash, terms_snapshot, evidence_ids, occurred_at)
        VALUES ($1, $2, $3, $4, $5, $6, $7)
        ON CONFLICT (transaction_id) DO UPDATE SET outcome = EXCLUDED.outcome, terms_snapshot = EXCLUDED.terms_snapshot, evidence_ids = EXCLUDED.evidence_ids
        RETURNING *`,
-      [transactionId, actorId, outcome, contractHash, JSON.stringify(terms), evidenceIds, occurredAt]
+      [transactionId, actorId, normalizedOutcome, contractHash, JSON.stringify(terms), evidenceIds, occurredAt]
     )
-    const completed = outcome === 'completed' || outcome === 'renewed'
+
     await client.query(
       `UPDATE trust_transaction_contexts
-          SET stage = $2, status = $3, terms = $4, terms_evidence_hash = $5, updated_at = NOW()
+          SET stage = $2, status = $3, terms = $4, terms_evidence_hash = $5, evaluation_flags = $6, dispute_meta = $7, updated_at = NOW()
         WHERE id = $1`,
-      [transactionId, completed ? 'completed' : context.stage, completed ? 'completed' : outcome === 'cancelled' ? 'cancelled' : 'disputed', JSON.stringify(terms), contractHash]
+      [transactionId, nextStage, nextStatus, JSON.stringify(terms), contractHash, JSON.stringify(nextEvaluationFlags), JSON.stringify(nextDisputeMeta)]
     )
-    if (completed && context.landlord_id && context.tenant_id) {
+    if ((normalizedOutcome === 'completed' || normalizedOutcome === 'renewed') && context.landlord_id && context.tenant_id) {
       await client.query(
         `INSERT INTO trust_tenancy_relationships
           (transaction_id, landlord_id, tenant_id, property_id, contract_hash, verification_status, ended_at)
@@ -714,7 +1029,7 @@ export async function recordContractOutcome(
         [transactionId, context.landlord_id, context.tenant_id, context.property_id, contractHash, occurredAt]
       )
     }
-    await emitOutbox(client, 'transaction', transactionId, 'ContractOutcomeRecorded', { outcome, contract_hash: contractHash }, trace)
+    await emitOutbox(client, 'transaction', transactionId, 'ContractOutcomeRecorded', { outcome: normalizedOutcome, contract_hash: contractHash, stage: nextStage }, trace)
     await appendAudit(client, actorId, 'contract.outcome', 'transaction', transactionId, 'contract_feedback', 'allowed', ['outcome', 'terms'], trace)
     return result.rows[0]
   })
@@ -1163,7 +1478,7 @@ export async function completeExtractionJob(
 export async function updateTrustTransaction(
   transactionId: string,
   actorId: string,
-  nextStage: TransactionStage,
+  nextStage: TransactionStageInput,
   requirements: Record<string, unknown> | undefined,
   terms: Record<string, unknown> | undefined,
   trace: RequestTrace = {},
@@ -1173,32 +1488,49 @@ export async function updateTrustTransaction(
     const context = result.rows[0]
     if (!context) throw new Error('TRUST_TRANSACTION_NOT_FOUND')
     if (![context.landlord_id, context.tenant_id, context.realtor_id].includes(actorId)) throw new Error('TRUST_TRANSACTION_FORBIDDEN')
-    if (!canTransitionTransaction(context.stage, nextStage)) throw new Error('TRUST_TRANSACTION_STAGE_INVALID')
+    const normalizedNextStage = normalizeTransactionStage(nextStage)
+    const normalizedCurrentStage = normalizeTransactionStage(context.stage)
+    if (!canTransitionTransaction(context.stage, normalizedNextStage)) throw new Error('TRUST_TRANSACTION_STAGE_INVALID')
+    const stageChanged = normalizedCurrentStage !== normalizedNextStage
+    const nextStatus = stageChanged
+      ? (normalizedNextStage === 'S8' ? 'completed' : context.status ?? 'active')
+      : context.status
 
     const updatedResult = await client.query(
       `UPDATE trust_transaction_contexts
           SET stage = $2,
-              status = CASE WHEN $2 = 'cancelled' THEN 'cancelled' WHEN $2 = 'completed' THEN 'completed' ELSE status END,
-              requirements = COALESCE($3::jsonb, requirements),
-              terms = COALESCE($4::jsonb, terms),
+              status = $3,
+              requirements = COALESCE($4::jsonb, requirements),
+              terms = COALESCE($5::jsonb, terms),
               updated_at = NOW()
         WHERE id = $1 RETURNING *`,
-      [transactionId, nextStage, requirements ? JSON.stringify(requirements) : null, terms ? JSON.stringify(terms) : null]
+      [transactionId, normalizedNextStage, nextStatus, requirements ? JSON.stringify(requirements) : null, terms ? JSON.stringify(terms) : null]
     )
-    const packagesResult = await client.query(
-      `UPDATE trust_disclosure_packages
-          SET state = 'REVOKED', revoked_at = NOW(), revoke_reason = 'transaction_stage_changed'
-        WHERE transaction_id = $1 AND state = 'ISSUED'
-        RETURNING id, derived_node_id`,
-      [transactionId]
-    )
-    for (const item of packagesResult.rows) {
-      await client.query(`UPDATE trust_derived_nodes SET state = 'REVOKED' WHERE id = $1`, [item.derived_node_id])
-      await emitOutbox(client, 'disclosure', item.id, 'DisclosureRevoked', { reason: 'transaction_stage_changed', previous_stage: context.stage, next_stage: nextStage }, trace)
+    let revokedPackages: Array<{ id: string; derived_node_id: string }> = []
+    if (stageChanged) {
+      const revokeResult = await client.query(
+        `UPDATE trust_disclosure_packages
+            SET state = 'REVOKED', revoked_at = NOW(), revoke_reason = 'transaction_stage_changed'
+          WHERE transaction_id = $1 AND state = 'ISSUED'
+          RETURNING id, derived_node_id`,
+        [transactionId]
+      )
+      revokedPackages = revokeResult.rows
+      for (const item of revokedPackages) {
+        await client.query(`UPDATE trust_derived_nodes SET state = 'REVOKED' WHERE id = $1`, [item.derived_node_id])
+        await emitOutbox(client, 'disclosure', item.id, 'DisclosureRevoked', { reason: 'transaction_stage_changed', previous_stage: context.stage, next_stage: normalizedNextStage }, trace)
+      }
     }
-    await emitOutbox(client, 'transaction', transactionId, 'TransactionStageChanged', { previous_stage: context.stage, next_stage: nextStage, revoked_disclosures: packagesResult.rowCount }, trace)
-    await appendAudit(client, actorId, 'transaction.stage', 'transaction', transactionId, 'lease_progress', 'allowed', ['stage'], trace, { previous_stage: context.stage, next_stage: nextStage })
-    return { transaction: updatedResult.rows[0], revokedDisclosures: packagesResult.rowCount }
+    await emitOutbox(
+      client,
+      'transaction',
+      transactionId,
+      'TransactionStageChanged',
+      { previous_stage: context.stage, next_stage: normalizedNextStage, revoked_disclosures: revokedPackages.length },
+      trace,
+    )
+    await appendAudit(client, actorId, 'transaction.stage', 'transaction', transactionId, 'lease_progress', 'allowed', ['stage'], trace, { previous_stage: context.stage, next_stage: normalizedNextStage })
+    return { transaction: updatedResult.rows[0], revokedDisclosures: revokedPackages.length }
   })
 }
 
@@ -1322,6 +1654,50 @@ export async function runTrustMaintenance(trace: RequestTrace = {}) {
     }
   })
 
+  const autoSettlements = await transaction(async (client) => {
+    const due = await client.query<TransactionContextRecord>(
+      `SELECT * FROM trust_transaction_contexts
+        WHERE stage = 'S7'
+          AND (dispute_meta->>'disputed')::boolean IS DISTINCT FROM true
+          AND (dispute_meta->>'deposit_return_due_at')::timestamptz <= NOW()
+        LIMIT 100
+        FOR UPDATE SKIP LOCKED`
+    )
+    const settledIds: string[] = []
+    const fallbackTimestamp = new Date().toISOString()
+
+    for (const context of due.rows) {
+      const nextEvaluationFlags = parseEvaluationFlags(context.evaluation_flags)
+      if (!nextEvaluationFlags.secondAssessment?.granted_at) {
+        nextEvaluationFlags.secondAssessment = { granted_at: fallbackTimestamp }
+      }
+
+      const nextDisputeMeta = parseDisputeMeta(context.dispute_meta)
+      nextDisputeMeta.disputed = false
+      nextDisputeMeta.dispute_reason = null
+      nextDisputeMeta.last_disputed_at = null
+      nextDisputeMeta.deposit_return_due_at = null
+      nextDisputeMeta.auto_deposit_settlement_at = fallbackTimestamp
+
+      await client.query(
+        `UPDATE trust_transaction_contexts
+            SET stage = 'S8', status = 'completed',
+                evaluation_flags = $2::jsonb, dispute_meta = $3::jsonb,
+                updated_at = NOW()
+          WHERE id = $1`,
+        [context.id, JSON.stringify(nextEvaluationFlags), JSON.stringify(nextDisputeMeta)],
+      )
+      await emitOutbox(client, 'transaction', context.id, 'TransactionAutoSettled', {
+        previous_stage: context.stage,
+        next_stage: 'S8',
+        reason: 'deposit_return_due_passed',
+      }, trace)
+      settledIds.push(context.id)
+    }
+
+    return settledIds
+  })
+
   const retentionQueued = await query(
     `INSERT INTO trust_retention_actions (target_type, target_id, policy_code, action, scheduled_at)
      SELECT 'evidence', evidence.id, 'source-retention-v1', 'storage_delete', NOW()
@@ -1344,6 +1720,7 @@ export async function runTrustMaintenance(trace: RequestTrace = {}) {
       releasedReferenceResult.scoringDeferredCode ||
       releasedReferenceResult.referenceScoringPending > 0
     ),
+    autoSettledTransactions: autoSettlements.length,
     ...(releasedReferenceResult.scoringDeferredCode
       ? { referenceScoringDeferredCode: releasedReferenceResult.scoringDeferredCode }
       : {}),

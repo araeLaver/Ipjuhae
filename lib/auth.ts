@@ -1,20 +1,9 @@
 import { cookies } from 'next/headers'
-import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
+import jwt from 'jsonwebtoken'
 import { queryOne } from './db'
 import { User } from '@/types/database'
-
-// Lazy init: check at request time, not module load time (avoids next build failure)
-function getJwtSecret(): string {
-  const secret = process.env.JWT_SECRET
-  if (!secret) {
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error('JWT_SECRET 환경변수가 설정되지 않았습니다')
-    }
-    return 'dev-only-secret-do-not-use-in-production'
-  }
-  return secret
-}
+import { getJwtSecret, isJwtStrictMode, verifyJwtTokenSync } from './jwt'
 
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 10)
@@ -26,12 +15,48 @@ export async function verifyPassword(password: string, hash: string | null): Pro
 }
 
 export function generateToken(userId: string, userType?: string): string {
-  return jwt.sign({ userId, userType }, getJwtSecret(), { expiresIn: '7d', algorithm: 'HS256' })
+  return jwt.sign(
+    {
+      userId,
+      userType,
+      iss: process.env.JWT_ISSUER || 'rentme',
+      aud: process.env.JWT_AUDIENCE || 'rentme-api',
+      tokenType: process.env.JWT_TOKEN_TYPE || 'access',
+    },
+    getJwtSecret(),
+    {
+      expiresIn: '7d',
+      algorithm: 'HS256',
+      jwtid: crypto.randomUUID(),
+      audience: process.env.JWT_AUDIENCE || 'rentme-api',
+      issuer: process.env.JWT_ISSUER || 'rentme',
+    }
+  )
 }
 
 export function verifyToken(token: string): { userId: string; userType?: string } | null {
   try {
-    return jwt.verify(token, getJwtSecret(), { algorithms: ['HS256'] }) as { userId: string; userType?: string }
+    const strictMode = isJwtStrictMode()
+    const payload = verifyJwtTokenSync(token, {
+      strict: strictMode,
+      requireJti: strictMode,
+    })
+
+    if (payload) {
+      return {
+        userId: payload.userId,
+        userType: payload.userType,
+      }
+    }
+    if (strictMode) return null
+
+    const legacyPayload = verifyJwtTokenSync(token, {
+      strict: false,
+      requireJti: false,
+    })
+    if (!legacyPayload) return null
+
+    return { userId: legacyPayload.userId, userType: legacyPayload.userType }
   } catch {
     return null
   }
@@ -41,7 +66,7 @@ export async function getCurrentUser(): Promise<User | null> {
   const cookieStore = await cookies()
   const cookieToken = cookieStore.get('auth_token')?.value
 
-  const reqHeaders = await import('next/headers').then(h => h.headers())
+  const reqHeaders = await import('next/headers').then((h) => h.headers())
   const authHeader = (await reqHeaders).get('authorization')
   const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null
 
@@ -52,10 +77,7 @@ export async function getCurrentUser(): Promise<User | null> {
   const payload = verifyToken(token)
   if (!payload) return null
 
-  const user = await queryOne<User>(
-    'SELECT * FROM users WHERE id = $1',
-    [payload.userId]
-  )
+  const user = await queryOne<User>('SELECT * FROM users WHERE id = $1', [payload.userId])
 
   return user
 }
@@ -66,7 +88,7 @@ export async function setAuthCookie(token: string) {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    maxAge: 60 * 60 * 24 * 7, // 7 days
+    maxAge: 60 * 60 * 24 * 7,
     path: '/',
   })
 }

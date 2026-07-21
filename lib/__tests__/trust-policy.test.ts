@@ -1,11 +1,22 @@
 import { describe, expect, it } from 'vitest'
-import { canTransitionTransaction, rankVerificationSources } from '../trust-policy'
+import {
+  canTransitionTransaction,
+  normalizeTransactionStage,
+  rankVerificationSources,
+} from '../trust-policy'
 
 describe('trust policy', () => {
   it('allows only forward transaction transitions and cancellation', () => {
     expect(canTransitionTransaction('pre_application', 'application')).toBe(true)
-    expect(canTransitionTransaction('application', 'contract')).toBe(false)
+    expect(canTransitionTransaction('S0', 'S1')).toBe(true)
+    expect(canTransitionTransaction('application', 'S4')).toBe(false)
     expect(canTransitionTransaction('completed', 'cancelled')).toBe(false)
+  })
+
+  it('normalizes legacy and machine stages safely', () => {
+    expect(normalizeTransactionStage('pre_application')).toBe('S0')
+    expect(normalizeTransactionStage('S5')).toBe('S5')
+    expect(() => normalizeTransactionStage('invalid')).toThrowError('TRUST_TRANSACTION_STAGE_INVALID')
   })
 
   it('excludes sources that exceed privacy limits or cannot provide requested fields', () => {
@@ -26,4 +37,3 @@ describe('trust policy', () => {
     expect(ranked[0].utility).toBeGreaterThan(ranked[1].utility)
   })
 })
-

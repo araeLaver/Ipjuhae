@@ -7,7 +7,23 @@ import { jsonError, jsonSuccess } from '@/lib/api-response'
 import { withIdempotency } from '@/lib/idempotency'
 
 const schema = z.object({
-  stage: z.enum(['application', 'negotiation', 'contract', 'completed', 'cancelled']),
+  stage: z.enum([
+    'pre_application',
+    'application',
+    'negotiation',
+    'contract',
+    'completed',
+    'cancelled',
+    'S0',
+    'S1',
+    'S2',
+    'S3',
+    'S4',
+    'S5',
+    'S6',
+    'S7',
+    'S8',
+  ]),
   requirements: z.record(z.string(), z.unknown()).optional(),
   terms: z.record(z.string(), z.unknown()).optional(),
 })
@@ -42,4 +58,3 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     },
   })
 }
-

@@ -3,8 +3,6 @@ const path = require('path')
 const { Server: SocketIOServer } = require('socket.io')
 const { verifySocketToken } = require('./socket-auth')
 
-process.env.NODE_ENV = 'production'
-
 const hostname = process.env.HOSTNAME || '0.0.0.0'
 const port = parseInt(process.env.PORT || '8000', 10)
 const dev = process.env.NODE_ENV !== 'production'

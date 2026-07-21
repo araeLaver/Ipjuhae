@@ -19,18 +19,18 @@ const CONFIGURABLE_TYPES: NotificationType[] = [
 
 /**
  * GET /api/notifications/preferences
- * 알림 이메일 수신 설정 조회
+ * ?�림 ?�메???�신 ?�정 조회
  */
 export async function GET() {
   const cookieStore = await cookies()
   const token = cookieStore.get('auth_token')?.value
   if (!token) {
-    return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 })
+    return NextResponse.json({ error: '로그?�이 ?�요?�니?? }, { status: 401 })
   }
 
-  const payload = await verifyToken(token)
+  const payload = verifyToken(token)
   if (!payload) {
-    return NextResponse.json({ error: '유효하지 않은 토큰입니다' }, { status: 401 })
+    return NextResponse.json({ error: '?�효?��? ?��? ?�큰?�니?? }, { status: 401 })
   }
 
   const rows = await query<PrefRow>(
@@ -38,7 +38,7 @@ export async function GET() {
     [payload.userId]
   )
 
-  // 설정이 없는 타입은 기본 활성화
+  // ?�정???�는 ?�?��? 기본 ?�성??
   const preferences: Record<string, boolean> = {}
   for (const type of CONFIGURABLE_TYPES) {
     const row = rows.find(r => r.notification_type === type)
@@ -50,25 +50,25 @@ export async function GET() {
 
 /**
  * PUT /api/notifications/preferences
- * 알림 이메일 수신 설정 변경
+ * ?�림 ?�메???�신 ?�정 변�?
  * Body: { preferences: { new_message: true, reference_request: false, ... } }
  */
 export async function PUT(request: Request) {
   const cookieStore = await cookies()
   const token = cookieStore.get('auth_token')?.value
   if (!token) {
-    return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 })
+    return NextResponse.json({ error: '로그?�이 ?�요?�니?? }, { status: 401 })
   }
 
-  const payload = await verifyToken(token)
+  const payload = verifyToken(token)
   if (!payload) {
-    return NextResponse.json({ error: '유효하지 않은 토큰입니다' }, { status: 401 })
+    return NextResponse.json({ error: '?�효?��? ?��? ?�큰?�니?? }, { status: 401 })
   }
 
   const body = await request.json()
   const prefs = body.preferences as Record<string, boolean> | undefined
   if (!prefs || typeof prefs !== 'object') {
-    return NextResponse.json({ error: 'preferences 객체가 필요합니다' }, { status: 400 })
+    return NextResponse.json({ error: 'preferences 객체가 ?�요?�니?? }, { status: 400 })
   }
 
   for (const [type, enabled] of Object.entries(prefs)) {
@@ -86,3 +86,4 @@ export async function PUT(request: Request) {
 
   return NextResponse.json({ success: true })
 }
+

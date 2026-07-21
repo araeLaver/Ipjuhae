@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
-import { mockListings } from '@/lib/mock-listings'
+import { queryOne } from '@/lib/db'
+import { type Listing } from '@/lib/schemas/listing'
 
 export async function GET(
   _request: Request,
@@ -10,19 +11,22 @@ export async function GET(
     const numId = parseInt(id, 10)
 
     if (isNaN(numId)) {
-      return NextResponse.json({ error: '잘못된 매물 ID입니다' }, { status: 400 })
+      return NextResponse.json({ error: 'Invalid listing id' }, { status: 400 })
     }
 
-    const listing = mockListings.find((l) => l.id === numId)
+    const listing = await queryOne<Listing>(
+      'SELECT * FROM listings WHERE id = $1',
+      [numId]
+    )
 
     if (!listing) {
-      return NextResponse.json({ error: '매물을 찾을 수 없습니다' }, { status: 404 })
+      return NextResponse.json({ error: 'Listing not found' }, { status: 404 })
     }
 
     return NextResponse.json({ listing })
   } catch {
     return NextResponse.json(
-      { error: '매물 정보를 불러오는데 실패했습니다' },
+      { error: 'Unable to load listing detail now' },
       { status: 500 }
     )
   }

@@ -1,14 +1,28 @@
 import { NextResponse } from 'next/server'
+import { query, transaction } from '@/lib/db'
 import { stripe } from '@/lib/stripe'
-import { query, queryOne } from '@/lib/db'
 import { logger } from '@/lib/logger'
 import type Stripe from 'stripe'
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
 
+const BILLING_DAYS = 30
+
+type TenantPlan = 'basic' | 'pro'
+
+function isTenantPlan(value: string | undefined): value is TenantPlan {
+  return value === 'basic' || value === 'pro'
+}
+
+function getDefaultExpiresAt(): string {
+  const expiresAt = new Date()
+  expiresAt.setDate(expiresAt.getDate() + BILLING_DAYS)
+  return expiresAt.toISOString()
+}
+
 /**
  * POST /api/webhooks/stripe
- * Stripe 웹훅 처리
+ * Stripe webhook handler
  */
 export async function POST(request: Request) {
   if (!stripe || !webhookSecret) {
@@ -26,7 +40,7 @@ export async function POST(request: Request) {
   try {
     event = stripe.webhooks.constructEvent(body, sig, webhookSecret)
   } catch (err) {
-    logger.error('Stripe webhook 서명 검증 실패', { error: err })
+    logger.error('Stripe webhook signature invalid', { error: err })
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
   }
 
@@ -52,76 +66,152 @@ export async function POST(request: Request) {
         await handlePaymentFailed(invoice)
         break
       }
+      default:
+        break
     }
 
     return NextResponse.json({ received: true })
   } catch (error) {
-    logger.error('Stripe webhook 처리 오류', { error, eventType: event.type })
+    logger.error('Stripe webhook handler failed', { error, eventType: event.type })
     return NextResponse.json({ error: 'Webhook handler failed' }, { status: 500 })
   }
 }
 
 async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
   const userId = session.metadata?.userId
-  const plan = session.metadata?.plan as 'basic' | 'pro'
+  const rawPlan = session.metadata?.plan
+  const paymentRef = typeof session.subscription === 'string' ? session.subscription : null
 
-  if (!userId || !plan) {
-    logger.error('Checkout 메타데이터 누락', { sessionId: session.id })
+  if (!userId || !isTenantPlan(rawPlan)) {
+    logger.error('Checkout completed missing metadata', {
+      sessionId: session.id,
+      userId: userId ?? null,
+      plan: rawPlan,
+    })
     return
   }
 
-  // 기존 구독 비활성화
-  await query(
-    'UPDATE landlord_subscriptions SET is_active = false WHERE landlord_id = $1',
-    [userId]
-  )
+  await transaction(async (client) => {
+    const existingByRef = paymentRef
+      ? await client.query<{ id: string }>(
+          `SELECT id FROM landlord_subscriptions WHERE payment_ref = $1 FOR UPDATE`,
+          [paymentRef]
+        )
+      : { rows: [] as { id: string }[] }
 
-  // 새 구독 생성
-  const expiresAt = new Date()
-  expiresAt.setDate(expiresAt.getDate() + 30)
+    const expiresAt =
+      typeof session.expires_at === 'number' ? new Date(session.expires_at * 1000).toISOString() : getDefaultExpiresAt()
 
-  await query(
-    `INSERT INTO landlord_subscriptions (landlord_id, plan, expires_at, is_active, payment_ref)
-     VALUES ($1, $2, $3, true, $4)`,
-    [userId, plan, expiresAt.toISOString(), session.subscription as string]
-  )
+    if (existingByRef.rows.length > 0) {
+      const targetId = existingByRef.rows[0].id
+      await client.query(
+        `
+          UPDATE landlord_subscriptions
+          SET landlord_id = $1,
+              plan = $2,
+              expires_at = $3,
+              is_active = true,
+              payment_ref = $4,
+              updated_at = NOW()
+          WHERE id = $5
+        `,
+        [userId, rawPlan, expiresAt, paymentRef, targetId]
+      )
 
-  logger.info('구독 활성화', { userId, plan, subscriptionId: session.subscription })
+      await client.query(
+        `
+          UPDATE landlord_subscriptions
+          SET is_active = false, updated_at = NOW()
+          WHERE landlord_id = $1 AND id <> $2 AND is_active = true
+        `,
+        [userId, targetId]
+      )
+
+      logger.info('Subscription checkout completed (idempotent update)', {
+        userId,
+        plan: rawPlan,
+        subscriptionId: paymentRef,
+      })
+      return
+    }
+
+    await client.query('UPDATE landlord_subscriptions SET is_active = false, updated_at = NOW() WHERE landlord_id = $1', [
+      userId,
+    ])
+
+    await client.query(
+      `
+        INSERT INTO landlord_subscriptions (landlord_id, plan, expires_at, is_active, payment_ref)
+        VALUES ($1, $2, $3, true, $4)
+      `,
+      [userId, rawPlan, expiresAt, paymentRef]
+    )
+  })
+
+  logger.info('Subscription checkout completed (new subscription)', {
+    userId,
+    plan: rawPlan,
+    subscriptionId: paymentRef ?? session.id,
+  })
 }
 
 async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
-  const sub = await queryOne<{ id: string }>(
+  const periodEnd = typeof subscription.current_period_end === 'number'
+    ? new Date(subscription.current_period_end * 1000).toISOString()
+    : null
+  const isActive = subscription.status === 'active'
+
+  const result = await query<{ id: string }>(
     'SELECT id FROM landlord_subscriptions WHERE payment_ref = $1',
     [subscription.id]
   )
 
-  if (!sub) return
+  if (result.length === 0) {
+    logger.warn('Stripe subscription.update with no matching local record', {
+      stripeSubscriptionId: subscription.id,
+    })
+    return
+  }
 
-  const isActive = subscription.status === 'active'
-  const periodEnd = new Date((subscription as unknown as { current_period_end: number }).current_period_end * 1000)
-
+  const params = [isActive, periodEnd ?? getDefaultExpiresAt(), subscription.id]
   await query(
-    'UPDATE landlord_subscriptions SET is_active = $1, expires_at = $2 WHERE payment_ref = $3',
-    [isActive, periodEnd.toISOString(), subscription.id]
+    'UPDATE landlord_subscriptions SET is_active = $1, expires_at = $2, updated_at = NOW() WHERE payment_ref = $3',
+    params
   )
 
-  logger.info('구독 업데이트', { subscriptionId: subscription.id, status: subscription.status })
+  logger.info('Subscription synchronized', {
+    subscriptionId: subscription.id,
+    status: subscription.status,
+    isActive,
+  })
 }
 
 async function handleSubscriptionCanceled(subscription: Stripe.Subscription) {
-  await query(
-    'UPDATE landlord_subscriptions SET is_active = false WHERE payment_ref = $1',
+  const result = await query<{ id: string }>(
+    'SELECT id FROM landlord_subscriptions WHERE payment_ref = $1',
     [subscription.id]
   )
 
-  logger.info('구독 취소', { subscriptionId: subscription.id })
+  if (result.length === 0) {
+    logger.warn('Stripe subscription.delete with no matching local record', {
+      stripeSubscriptionId: subscription.id,
+    })
+    return
+  }
+
+  await query(
+    'UPDATE landlord_subscriptions SET is_active = false, updated_at = NOW() WHERE payment_ref = $1',
+    [subscription.id]
+  )
+
+  logger.info('Subscription cancelled', { subscriptionId: subscription.id })
 }
 
 async function handlePaymentFailed(invoice: Stripe.Invoice) {
-  const subscriptionId = (invoice as unknown as { subscription: string | null }).subscription
+  const subscriptionId = (invoice as { subscription: string | null }).subscription
   if (!subscriptionId) return
 
-  logger.warn('결제 실패', {
+  logger.warn('Payment failed', {
     subscriptionId,
     customerId: invoice.customer,
     amountDue: invoice.amount_due,

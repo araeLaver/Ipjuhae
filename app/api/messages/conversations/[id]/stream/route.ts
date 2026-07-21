@@ -14,15 +14,12 @@ interface MessageRow {
 
 interface ConversationCheckRow {
   id: string
+  created_at?: string
 }
 
 /**
  * GET /api/messages/conversations/[id]/stream
- * Server-Sent Events — 신규 메시지 스트림
- *
- * 클라이언트는 EventSource로 연결 후:
- *   event: message  → 새 메시지 JSON
- *   event: ping     → 30초마다 keep-alive
+ * Server-Sent Events for live message polling
  */
 export async function GET(
   request: Request,
@@ -36,23 +33,34 @@ export async function GET(
     return new Response('Unauthorized', { status: 401 })
   }
 
-  const payload = await verifyToken(token)
+  const payload = verifyToken(token)
   if (!payload) {
     return new Response('Unauthorized', { status: 401 })
   }
 
-  // 대화방 접근 권한 확인
   const convResult = await query<ConversationCheckRow>(
     `SELECT id FROM conversations WHERE id = $1 AND (landlord_id = $2 OR tenant_id = $2)`,
     [conversationId, payload.userId]
   )
-
   if (convResult.length === 0) {
     return new Response('Not Found', { status: 404 })
   }
 
-  // 연결 시점 기준으로 이후 메시지만 스트림
-  const since = new URL(request.url).searchParams.get('since') || new Date().toISOString()
+  const sinceParam = new URL(request.url).searchParams.get('since')
+  let since: string
+  if (sinceParam) {
+    const parsed = new Date(sinceParam)
+    if (Number.isNaN(parsed.getTime())) {
+      return new Response('Bad Request', { status: 400 })
+    }
+    since = parsed.toISOString()
+  } else {
+    const latestMessage = await query<ConversationCheckRow>(
+      'SELECT created_at::text AS created_at FROM messages WHERE conversation_id = $1 ORDER BY created_at DESC LIMIT 1',
+      [conversationId]
+    )
+    since = latestMessage[0]?.created_at || new Date(0).toISOString()
+  }
 
   const encoder = new TextEncoder()
   let closed = false
@@ -70,7 +78,6 @@ export async function GET(
         }
       }
 
-      // 최초 연결 확인
       send('connected', { conversationId, since })
 
       let lastChecked = since
@@ -80,7 +87,6 @@ export async function GET(
         if (closed) return
 
         try {
-          // 신규 메시지 조회 (lastChecked 이후)
           const newMessages = await query<MessageRow>(
             `SELECT
               m.id,
@@ -98,7 +104,6 @@ export async function GET(
           )
 
           if (newMessages.length > 0) {
-            // 상대방 메시지 읽음 처리
             await query(
               `UPDATE messages SET is_read = TRUE
                WHERE conversation_id = $1 AND sender_id != $2 AND is_read = FALSE AND created_at > $3`,
@@ -111,29 +116,27 @@ export async function GET(
             lastChecked = newMessages[newMessages.length - 1].created_at
           }
 
-          // 30초마다 ping
           pingCount++
           if (pingCount % 15 === 0) {
             send('ping', { ts: Date.now() })
           }
         } catch {
-          // DB 오류 시 일시적으로 건너뜀
+          // ignore transient polling errors
         }
 
         if (!closed) {
-          setTimeout(poll, 2000) // 2초 polling → 체감상 실시간
+          setTimeout(poll, 2000)
         }
       }
 
-      setTimeout(poll, 500) // 초기 0.5초 딜레이
+      setTimeout(poll, 500)
 
-      // 클라이언트 연결 종료 감지
       request.signal.addEventListener('abort', () => {
         closed = true
         try {
           controller.close()
         } catch {
-          // 이미 닫힌 경우 무시
+          // ignore close errors
         }
       })
     },
@@ -144,7 +147,7 @@ export async function GET(
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache, no-transform',
       Connection: 'keep-alive',
-      'X-Accel-Buffering': 'no', // Nginx proxy buffering 비활성화
+      'X-Accel-Buffering': 'no',
     },
   })
 }
