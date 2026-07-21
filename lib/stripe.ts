@@ -1,9 +1,16 @@
+import { PHASE_PRODUCTION_BUILD } from 'next/constants'
 import Stripe from 'stripe'
 
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY
+const isNextProductionBuild = process.env.NEXT_PHASE === PHASE_PRODUCTION_BUILD
 // Runtime-only validation: build-time throw causes next build to fail locally and in CI
 // without STRIPE_SECRET_KEY. isStripeEnabled() + route-level checks handle this at runtime.
-if (!stripeSecretKey && process.env.NODE_ENV === 'production' && !process.env.SKIP_ENV_VALIDATION) {
+if (
+  !stripeSecretKey &&
+  process.env.NODE_ENV === 'production' &&
+  !process.env.SKIP_ENV_VALIDATION &&
+  !isNextProductionBuild
+) {
   console.warn('[stripe] STRIPE_SECRET_KEY is not set — Stripe features will return 503')
 }
 

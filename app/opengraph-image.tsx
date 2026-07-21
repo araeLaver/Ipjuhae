@@ -1,6 +1,5 @@
 import { ImageResponse } from 'next/og'
 
-export const runtime = 'edge'
 export const alt = '입주해 - 세입자 프로필 기반 부동산 매칭'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
