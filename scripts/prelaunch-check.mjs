@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 /* eslint-disable no-console */
 
+import { existsSync } from 'node:fs'
+
 function requireEnv(name, message = `${name} is required`) {
   const value = process.env[name]
   if (!value) {
@@ -128,8 +130,28 @@ function validateProviders() {
   return failures
 }
 
+function validateLaunchAssets() {
+  const requiredFiles = [
+    ['app/manifest.ts', 'PWA manifest route is required'],
+    ['public/app-icon-192.png', 'PWA 192px icon is required'],
+    ['public/app-icon-512.png', 'PWA 512px icon is required'],
+    ['public/app-icon-maskable-512.png', 'PWA maskable icon is required'],
+    ['app/icon.tsx', 'browser favicon route is required'],
+    ['app/apple-icon.tsx', 'Apple touch icon route is required'],
+    ['mobile/app.json', 'Expo app config is required'],
+    ['mobile/assets/icon.png', 'Expo icon asset is required'],
+    ['mobile/assets/adaptive-icon.png', 'Expo Android adaptive icon asset is required'],
+    ['mobile/assets/splash.png', 'Expo splash asset is required'],
+    ['mobile/assets/notification-icon.png', 'Expo notification icon asset is required'],
+  ]
+
+  return requiredFiles
+    .filter(([file]) => !existsSync(file))
+    .map(([, message]) => message)
+}
+
 function main() {
-  const failures = validateProviders()
+  const failures = [...validateProviders(), ...validateLaunchAssets()]
 
   if (failures.length > 0) {
     console.error('❌ launch:check failed')

@@ -27,10 +27,10 @@ interface Props {
 }
 
 const STATUS_LABELS: Record<string, { text: string; color: string; bg: string }> = {
-  available: { text: '공개', color: '#059669', bg: '#ECFDF5' },
-  reserved: { text: '예약', color: '#D97706', bg: '#FFFBEB' },
-  rented: { text: '계약', color: '#2563EB', bg: '#EFF6FF' },
-  hidden: { text: '숨김', color: '#6B7280', bg: '#F3F4F6' },
+  available: { text: '공개', color: '#61765B', bg: '#EEF2EA' },
+  reserved: { text: '예약', color: '#D98A72', bg: '#F8F5EF' },
+  rented: { text: '계약', color: '#B95545', bg: '#EEF2EA' },
+  hidden: { text: '숨김', color: '#7A5E55', bg: '#F2E5DE' },
 };
 
 const PropertiesScreen: React.FC<Props> = ({ navigation }) => {
@@ -152,7 +152,7 @@ const PropertiesScreen: React.FC<Props> = ({ navigation }) => {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#2563EB" />
+        <ActivityIndicator size="large" color="#B95545" />
       </View>
     );
   }
@@ -178,31 +178,31 @@ const PropertiesScreen: React.FC<Props> = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
+  container: { flex: 1, backgroundColor: '#F8F5EF' },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   listContent: { padding: 16, gap: 12 },
   card: { backgroundColor: '#fff', borderRadius: 12, overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
   image: { width: '100%', height: 160 },
-  imagePlaceholder: { width: '100%', height: 160, backgroundColor: '#F3F4F6', justifyContent: 'center', alignItems: 'center' },
+  imagePlaceholder: { width: '100%', height: 160, backgroundColor: '#F2E5DE', justifyContent: 'center', alignItems: 'center' },
   imageIcon: { fontSize: 40 },
   cardContent: { padding: 14 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  title: { fontSize: 16, fontWeight: '600', color: '#111827', flex: 1, marginRight: 8 },
+  title: { fontSize: 16, fontWeight: '600', color: '#2A211F', flex: 1, marginRight: 8 },
   statusBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
   statusText: { fontSize: 12, fontWeight: '600' },
-  address: { fontSize: 13, color: '#6B7280', marginBottom: 6 },
-  price: { fontSize: 18, fontWeight: '700', color: '#2563EB', marginBottom: 8 },
+  address: { fontSize: 13, color: '#7A5E55', marginBottom: 6 },
+  price: { fontSize: 18, fontWeight: '700', color: '#B95545', marginBottom: 8 },
   statsRow: { flexDirection: 'row', gap: 12, marginBottom: 10 },
-  statText: { fontSize: 12, color: '#9CA3AF' },
-  actionRow: { flexDirection: 'row', gap: 8, borderTopWidth: 1, borderTopColor: '#F3F4F6', paddingTop: 10 },
-  actionButton: { flex: 1, paddingVertical: 8, backgroundColor: '#F3F4F6', borderRadius: 8, alignItems: 'center' },
-  actionText: { fontSize: 13, fontWeight: '500', color: '#374151' },
+  statText: { fontSize: 12, color: '#7A5E55' },
+  actionRow: { flexDirection: 'row', gap: 8, borderTopWidth: 1, borderTopColor: '#F2E5DE', paddingTop: 10 },
+  actionButton: { flex: 1, paddingVertical: 8, backgroundColor: '#F2E5DE', borderRadius: 8, alignItems: 'center' },
+  actionText: { fontSize: 13, fontWeight: '500', color: '#2A211F' },
   deleteButton: { backgroundColor: '#FEF2F2' },
   deleteText: { fontSize: 13, fontWeight: '500', color: '#DC2626' },
   emptyContainer: { alignItems: 'center', paddingTop: 80 },
   emptyIcon: { fontSize: 48, marginBottom: 12 },
-  emptyTitle: { fontSize: 18, fontWeight: '600', color: '#374151', marginBottom: 4 },
-  emptySubtitle: { fontSize: 14, color: '#9CA3AF' },
+  emptyTitle: { fontSize: 18, fontWeight: '600', color: '#2A211F', marginBottom: 4 },
+  emptySubtitle: { fontSize: 14, color: '#7A5E55' },
 });
 
 export default PropertiesScreen;

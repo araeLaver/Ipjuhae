@@ -53,10 +53,10 @@ const TenantBrowseScreen: React.FC<Props> = ({ navigation }) => {
   }, [loadTenants]);
 
   const getTrustColor = (score: number) => {
-    if (score >= 80) return '#059669';
-    if (score >= 60) return '#2563EB';
-    if (score >= 40) return '#D97706';
-    return '#9CA3AF';
+    if (score >= 80) return '#61765B';
+    if (score >= 60) return '#B95545';
+    if (score >= 40) return '#D98A72';
+    return '#7A5E55';
   };
 
   const getTrustLabel = (score: number) => {
@@ -157,7 +157,7 @@ const TenantBrowseScreen: React.FC<Props> = ({ navigation }) => {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#2563EB" />
+        <ActivityIndicator size="large" color="#B95545" />
       </View>
     );
   }
@@ -183,36 +183,36 @@ const TenantBrowseScreen: React.FC<Props> = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
+  container: { flex: 1, backgroundColor: '#F8F5EF' },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   listContent: { padding: 16, gap: 12 },
   card: { backgroundColor: '#fff', borderRadius: 12, padding: 16, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
   cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
-  avatarCircle: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#2563EB', justifyContent: 'center', alignItems: 'center' },
+  avatarCircle: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#B95545', justifyContent: 'center', alignItems: 'center' },
   avatarText: { fontSize: 18, fontWeight: 'bold', color: '#fff' },
   headerInfo: { flex: 1, marginLeft: 12 },
-  name: { fontSize: 16, fontWeight: '600', color: '#111827' },
+  name: { fontSize: 16, fontWeight: '600', color: '#2A211F' },
   tagRow: { flexDirection: 'row', gap: 6, marginTop: 4 },
-  tag: { backgroundColor: '#F3F4F6', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
-  tagText: { fontSize: 11, color: '#6B7280' },
+  tag: { backgroundColor: '#F2E5DE', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
+  tagText: { fontSize: 11, color: '#7A5E55' },
   trustSection: { alignItems: 'center' },
   trustScore: { fontSize: 22, fontWeight: '700' },
-  trustLabel: { fontSize: 10, color: '#9CA3AF', marginTop: 1 },
-  bio: { fontSize: 13, color: '#6B7280', marginBottom: 10, lineHeight: 18 },
+  trustLabel: { fontSize: 10, color: '#7A5E55', marginTop: 1 },
+  bio: { fontSize: 13, color: '#7A5E55', marginBottom: 10, lineHeight: 18 },
   detailRow: { flexDirection: 'row', gap: 16, marginBottom: 10 },
   detailItem: {},
-  detailLabel: { fontSize: 11, color: '#9CA3AF', marginBottom: 2 },
-  detailValue: { fontSize: 13, fontWeight: '500', color: '#374151' },
+  detailLabel: { fontSize: 11, color: '#7A5E55', marginBottom: 2 },
+  detailValue: { fontSize: 13, fontWeight: '500', color: '#2A211F' },
   districtRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 8 },
-  districtTag: { backgroundColor: '#EFF6FF', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
-  districtText: { fontSize: 12, color: '#2563EB', fontWeight: '500' },
-  moreText: { fontSize: 12, color: '#9CA3AF', alignSelf: 'center' },
+  districtTag: { backgroundColor: '#EEF2EA', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+  districtText: { fontSize: 12, color: '#B95545', fontWeight: '500' },
+  moreText: { fontSize: 12, color: '#7A5E55', alignSelf: 'center' },
   infoIcons: { flexDirection: 'row', gap: 6 },
   infoIcon: { fontSize: 16 },
   emptyContainer: { alignItems: 'center', paddingTop: 80 },
   emptyIcon: { fontSize: 48, marginBottom: 12 },
-  emptyTitle: { fontSize: 18, fontWeight: '600', color: '#374151', marginBottom: 4 },
-  emptySubtitle: { fontSize: 14, color: '#9CA3AF' },
+  emptyTitle: { fontSize: 18, fontWeight: '600', color: '#2A211F', marginBottom: 4 },
+  emptySubtitle: { fontSize: 14, color: '#7A5E55' },
 });
 
 export default TenantBrowseScreen;

@@ -10,6 +10,9 @@
 - [ ] `NEXT_PUBLIC_APP_URL` and `NEXT_PUBLIC_BASE_URL` are the final public HTTPS origin.
 - [ ] Docker/Koyeb routes traffic to container port `8000`.
 - [ ] `/api/health` returns `200` with `database: "ok"` after deployment.
+- [ ] PWA manifest is generated at `/manifest.webmanifest`.
+- [ ] PWA icons exist: `/app-icon-192.png`, `/app-icon-512.png`, `/app-icon-maskable-512.png`.
+- [ ] OpenGraph, favicon, Apple icon, and app splash assets use the production coral/sage brand theme.
 
 ## Feature configuration
 
@@ -36,15 +39,27 @@
 - [ ] Upload provider is not `mock` for production document/property/profile image flows.
 - [ ] Internal analytics uses the `analytics_events` table; no external analytics provider is currently wired.
 
+## Web/app launch surface
+
+- [ ] Home, listings, login, signup, profile, verification, landlord, and messaging flows use the same coral/sage brand theme.
+- [ ] Mobile Expo config points to the production API origin through `extra.apiUrl`.
+- [ ] `EXPO_PUBLIC_API_URL` can override the mobile API origin for staging builds.
+- [ ] Expo assets exist and pass dimension checks: icon `1024x1024`, adaptive icon `1024x1024`, splash `1242x2436`, notification icon `96x96`, favicon `48x48`.
+- [ ] Mobile document upload sends `x-mobile-client: true` and never bypasses the server-side verification/document checks.
+- [ ] App Store / Play Store submission, production deploy, cron registration, and production DB migration remain approval-gated external actions.
+
 ## Verification commands
 
 Run these without production secrets where possible:
 
 ```bash
+npm run assets:generate
+npm run mobile:launch-check
 npm run launch:check
 npm run typecheck
 npm run test:run
 npm run build
+npm run docs:public-check
 ```
 
 After deploy, verify:

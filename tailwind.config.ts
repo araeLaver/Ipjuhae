@@ -31,6 +31,10 @@ const config: Config = {
           DEFAULT: 'hsl(var(--muted))',
           foreground: 'hsl(var(--muted-foreground))',
         },
+        trust: {
+          DEFAULT: 'hsl(var(--trust))',
+          foreground: 'hsl(var(--trust-foreground))',
+        },
         accent: {
           DEFAULT: 'hsl(var(--accent))',
           foreground: 'hsl(var(--accent-foreground))',
@@ -58,9 +62,9 @@ const config: Config = {
         sm: 'calc(var(--radius) - 4px)',
       },
       boxShadow: {
-        soft: '0 2px 8px -2px rgba(0, 0, 0, 0.08)',
-        card: '0 4px 16px -4px rgba(0, 0, 0, 0.1)',
-        elevated: '0 8px 30px -8px rgba(0, 0, 0, 0.15)',
+        soft: '0 2px 8px -2px rgba(74, 56, 48, 0.10)',
+        card: '0 8px 24px -12px rgba(74, 56, 48, 0.22)',
+        elevated: '0 20px 50px -24px rgba(74, 56, 48, 0.35)',
       },
       animation: {
         'fade-in': 'fade-in 0.5s ease-out forwards',

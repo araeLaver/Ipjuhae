@@ -8,6 +8,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, Text, StyleSheet } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
+import { colors } from '../theme';
 
 // Screens
 import LoginScreen from '../screens/LoginScreen';
@@ -81,15 +82,15 @@ const MainTabNavigator = () => (
   <Tab.Navigator
     screenOptions={({ route }) => ({
       headerShown: false,
-      tabBarActiveTintColor: '#2563EB',
-      tabBarInactiveTintColor: '#9CA3AF',
+      tabBarActiveTintColor: colors.coral,
+      tabBarInactiveTintColor: colors.muted,
       tabBarStyle: {
         paddingBottom: 8,
         paddingTop: 8,
         height: 60,
-        backgroundColor: '#fff',
+        backgroundColor: colors.card,
         borderTopWidth: 1,
-        borderTopColor: '#E5E7EB',
+        borderTopColor: colors.border,
       },
       tabBarLabelStyle: { fontSize: 11, fontWeight: '500' },
       tabBarIcon: ({ focused }) => <TabIcon name={route.name} focused={focused} />,
@@ -133,7 +134,7 @@ const AppNavigator = () => {
                 headerShown: true,
                 headerTitle: '매물 상세',
                 headerBackTitle: '뒤로',
-                headerTintColor: '#2563EB',
+                headerTintColor: colors.coral,
               }}
             />
             <Stack.Screen
@@ -143,7 +144,7 @@ const AppNavigator = () => {
                 headerShown: true,
                 headerTitle: 'AI 매칭',
                 headerBackTitle: '뒤로',
-                headerTintColor: '#2563EB',
+                headerTintColor: colors.coral,
               }}
             />
             <Stack.Screen
@@ -153,18 +154,18 @@ const AppNavigator = () => {
                 headerShown: true,
                 headerTitle: '인증 관리',
                 headerBackTitle: '뒤로',
-                headerTintColor: '#2563EB',
+                headerTintColor: colors.coral,
               }}
             />
             <Stack.Screen
               name="Properties"
               component={PropertiesScreen}
-              options={{ headerShown: true, headerTitle: '매물 관리', headerBackTitle: '뒤로', headerTintColor: '#2563EB' }}
+              options={{ headerShown: true, headerTitle: '매물 관리', headerBackTitle: '뒤로', headerTintColor: colors.coral }}
             />
             <Stack.Screen
               name="TenantBrowse"
               component={TenantBrowseScreen}
-              options={{ headerShown: true, headerTitle: '세입자 탐색', headerBackTitle: '뒤로', headerTintColor: '#2563EB' }}
+              options={{ headerShown: true, headerTitle: '세입자 탐색', headerBackTitle: '뒤로', headerTintColor: colors.coral }}
             />
             <Stack.Screen
               name="ChatRoom"
@@ -173,28 +174,28 @@ const AppNavigator = () => {
                 headerShown: true,
                 headerTitle: route.params.otherUserName || '대화',
                 headerBackTitle: '뒤로',
-                headerTintColor: '#2563EB',
+                headerTintColor: colors.coral,
               })}
             />
             <Stack.Screen
               name="ProfileEdit"
               component={PlaceholderScreen}
-              options={{ headerShown: true, headerTitle: '프로필 편집', headerTintColor: '#2563EB' }}
+              options={{ headerShown: true, headerTitle: '프로필 편집', headerTintColor: colors.coral }}
             />
             <Stack.Screen
               name="References"
               component={PlaceholderScreen}
-              options={{ headerShown: true, headerTitle: '레퍼런스 관리', headerTintColor: '#2563EB' }}
+              options={{ headerShown: true, headerTitle: '레퍼런스 관리', headerTintColor: colors.coral }}
             />
             <Stack.Screen
               name="NotificationSettings"
               component={PlaceholderScreen}
-              options={{ headerShown: true, headerTitle: '알림 설정', headerTintColor: '#2563EB' }}
+              options={{ headerShown: true, headerTitle: '알림 설정', headerTintColor: colors.coral }}
             />
             <Stack.Screen
               name="Settings"
               component={SettingsScreen}
-              options={{ headerShown: true, headerTitle: '설정', headerBackTitle: '뒤로', headerTintColor: '#2563EB' }}
+              options={{ headerShown: true, headerTitle: '설정', headerBackTitle: '뒤로', headerTintColor: colors.coral }}
             />
           </>
         ) : (
@@ -210,13 +211,13 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#2563EB',
+    backgroundColor: colors.coral,
   },
-  loadingText: { fontSize: 32, fontWeight: 'bold', color: '#fff' },
+  loadingText: { fontSize: 32, fontWeight: 'bold', color: colors.card },
   tabIcon: { fontSize: 22, opacity: 0.6 },
   tabIconFocused: { opacity: 1 },
-  placeholder: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F9FAFB' },
-  placeholderText: { fontSize: 16, color: '#9CA3AF' },
+  placeholder: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.paper },
+  placeholderText: { fontSize: 16, color: colors.muted },
 });
 
 export default AppNavigator;

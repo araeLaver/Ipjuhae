@@ -126,7 +126,7 @@ const ChatRoomScreen: React.FC<Props> = ({ route }) => {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#2563EB" />
+        <ActivityIndicator size="large" color="#B95545" />
       </View>
     );
   }
@@ -157,7 +157,7 @@ const ChatRoomScreen: React.FC<Props> = ({ route }) => {
           value={inputText}
           onChangeText={setInputText}
           placeholder="메시지를 입력하세요"
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor="#7A5E55"
           multiline
           maxLength={1000}
           returnKeyType="send"
@@ -177,28 +177,28 @@ const ChatRoomScreen: React.FC<Props> = ({ route }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
+  container: { flex: 1, backgroundColor: '#F8F5EF' },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   messageList: { padding: 16, paddingBottom: 8 },
   dateHeader: { alignItems: 'center', marginVertical: 12 },
-  dateHeaderText: { fontSize: 12, color: '#9CA3AF', backgroundColor: '#F3F4F6', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12 },
+  dateHeaderText: { fontSize: 12, color: '#7A5E55', backgroundColor: '#F2E5DE', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12 },
   messageBubbleRow: { marginBottom: 8, alignItems: 'flex-start' },
   messageBubbleRowMine: { alignItems: 'flex-end' },
   messageBubble: { maxWidth: '75%', padding: 12, borderRadius: 16 },
   bubbleOther: { backgroundColor: '#fff', borderBottomLeftRadius: 4, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 4, elevation: 1 },
-  bubbleMine: { backgroundColor: '#2563EB', borderBottomRightRadius: 4 },
-  messageText: { fontSize: 15, color: '#111827', lineHeight: 20 },
+  bubbleMine: { backgroundColor: '#B95545', borderBottomRightRadius: 4 },
+  messageText: { fontSize: 15, color: '#2A211F', lineHeight: 20 },
   messageTextMine: { color: '#fff' },
-  timeText: { fontSize: 11, color: '#9CA3AF', marginTop: 4, marginLeft: 4 },
+  timeText: { fontSize: 11, color: '#7A5E55', marginTop: 4, marginLeft: 4 },
   timeTextMine: { marginRight: 4, marginLeft: 0 },
-  inputContainer: { flexDirection: 'row', alignItems: 'flex-end', padding: 12, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#E5E7EB' },
-  textInput: { flex: 1, maxHeight: 100, paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#F3F4F6', borderRadius: 20, fontSize: 15, color: '#111827' },
-  sendButton: { marginLeft: 8, paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#2563EB', borderRadius: 20 },
-  sendButtonDisabled: { backgroundColor: '#93C5FD' },
+  inputContainer: { flexDirection: 'row', alignItems: 'flex-end', padding: 12, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#E7D8CB' },
+  textInput: { flex: 1, maxHeight: 100, paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#F2E5DE', borderRadius: 20, fontSize: 15, color: '#2A211F' },
+  sendButton: { marginLeft: 8, paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#B95545', borderRadius: 20 },
+  sendButtonDisabled: { backgroundColor: '#D6CABF' },
   sendButtonText: { fontSize: 14, fontWeight: '600', color: '#fff' },
   emptyContainer: { alignItems: 'center', paddingTop: 80 },
   emptyIcon: { fontSize: 48, marginBottom: 12 },
-  emptyText: { fontSize: 16, color: '#9CA3AF' },
+  emptyText: { fontSize: 16, color: '#7A5E55' },
 });
 
 export default ChatRoomScreen;

@@ -23,11 +23,11 @@ async function getListings() {
 
 export const metadata = {
   title: '매물 리스트 | 입주해',
-  description: '임주해에서 다양한 전세/월세 매물을 카드형으로 확인하세요. 세입자 프로필 기반 매칭으로 원하는 집을 빠르게 찾아보세요.',
+  description: '입주해에서 다양한 전세/월세 매물을 확인하세요. 생활 조건과 주거 신뢰 리포트 기반 추천 근거를 함께 비교할 수 있습니다.',
   openGraph: {
-    title: '매물 리스트 | 임주해',
-    description: '임주해에서 다양한 전세/월세 매물을 카드형으로 확인하세요.',
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: '임주해 매물 리스트' }],
+    title: '매물 리스트 | 입주해',
+    description: '입주해에서 다양한 전세/월세 매물과 추천 근거를 함께 확인하세요.',
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: '입주해 매물 리스트' }],
   },
 }
 
@@ -37,12 +37,12 @@ export default async function ListingsPage() {
   return (
     <PageContainer maxWidth="xl">
       <div className="space-y-8">
-        <div className="rounded-lg bg-background p-6 shadow-soft">
+        <div className="rounded-lg border bg-background p-6 shadow-soft">
           <div className="max-w-3xl space-y-3">
-            <p className="text-sm font-semibold text-primary">Rentme Search</p>
+            <p className="text-sm font-semibold text-primary">입주해 Search</p>
             <h1 className="text-3xl font-bold tracking-normal sm:text-4xl">매물 찾기</h1>
             <p className="text-muted-foreground">
-              세입자 프로필과 생활 조건을 기준으로 지역, 예산, 이동 동선에 맞는 매물을 비교하세요.
+              생활 조건, 예산, 입주일과 주거 신뢰 리포트의 확인 항목을 함께 놓고 매물을 비교하세요.
             </p>
           </div>
         </div>

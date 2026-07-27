@@ -20,6 +20,7 @@ import { RootStackParamList, MainTabParamList } from '../navigation/AppNavigator
 import { useAuth } from '../contexts/AuthContext';
 import { apiClient } from '../services/apiClient';
 import { TenantProfile, VerificationStatus } from '../types';
+import { colors, shadows } from '../theme';
 
 type ProfileScreenNavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<MainTabParamList, 'Profile'>,
@@ -71,10 +72,10 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   const getTrustGrade = (score: number) => {
-    if (score >= 80) return { label: '우수', color: '#059669' };
-    if (score >= 60) return { label: '양호', color: '#2563EB' };
-    if (score >= 40) return { label: '보통', color: '#F59E0B' };
-    return { label: '시작', color: '#9CA3AF' };
+    if (score >= 80) return { label: '검수 완료', color: colors.sage };
+    if (score >= 60) return { label: '확인 중', color: colors.coral };
+    if (score >= 40) return { label: '추가 확인', color: colors.coralSoft };
+    return { label: '시작', color: colors.muted };
   };
 
   const isTenant = user?.userType === 'tenant';
@@ -106,7 +107,7 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
       {isTenant && profile && (
         <View style={styles.trustSection}>
           <View style={styles.trustHeader}>
-            <Text style={styles.trustTitle}>프로필 요약</Text>
+            <Text style={styles.trustTitle}>주거 신뢰 리포트</Text>
             <View style={[styles.gradeBadge, { backgroundColor: getTrustGrade(profile.trustScore).color + '20' }]}>
               <Text style={[styles.gradeText, { color: getTrustGrade(profile.trustScore).color }]}>
                 {getTrustGrade(profile.trustScore).label}
@@ -181,83 +182,84 @@ const MenuItem: React.FC<{ icon: string; label: string; onPress: () => void }> =
 );
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
+  container: { flex: 1, backgroundColor: colors.paper },
   header: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.card,
     paddingTop: 60,
     paddingBottom: 24,
     alignItems: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: colors.border,
   },
   profileImage: { width: 80, height: 80, borderRadius: 40 },
   profileImagePlaceholder: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#2563EB',
+    backgroundColor: colors.coral,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  profileInitial: { fontSize: 32, fontWeight: 'bold', color: '#fff' },
-  name: { fontSize: 22, fontWeight: 'bold', color: '#111827', marginTop: 12 },
-  email: { fontSize: 14, color: '#6B7280', marginTop: 2 },
-  typeBadge: { backgroundColor: '#EFF6FF', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12, marginTop: 8 },
-  typeText: { fontSize: 12, color: '#2563EB', fontWeight: '600' },
+  profileInitial: { fontSize: 32, fontWeight: 'bold', color: colors.card },
+  name: { fontSize: 22, fontWeight: 'bold', color: colors.ink, marginTop: 12 },
+  email: { fontSize: 14, color: colors.muted, marginTop: 2 },
+  typeBadge: { backgroundColor: colors.sageSoft, paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12, marginTop: 8 },
+  typeText: { fontSize: 12, color: colors.sage, fontWeight: '600' },
   trustSection: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.card,
     margin: 16,
     padding: 20,
     borderRadius: 12,
+    ...shadows.card,
   },
   trustHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  trustTitle: { fontSize: 16, fontWeight: '600', color: '#374151' },
+  trustTitle: { fontSize: 16, fontWeight: '600', color: colors.ink },
   gradeBadge: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 8 },
   gradeText: { fontSize: 13, fontWeight: '600' },
-  trustScoreValue: { fontSize: 36, fontWeight: 'bold', color: '#2563EB', marginTop: 8 },
-  trustBar: { height: 8, backgroundColor: '#E5E7EB', borderRadius: 4, marginTop: 12 },
-  trustFill: { height: 8, backgroundColor: '#2563EB', borderRadius: 4 },
+  trustScoreValue: { fontSize: 36, fontWeight: 'bold', color: colors.sage, marginTop: 8 },
+  trustBar: { height: 8, backgroundColor: colors.line, borderRadius: 4, marginTop: 12 },
+  trustFill: { height: 8, backgroundColor: colors.sage, borderRadius: 4 },
   section: { marginTop: 16, paddingHorizontal: 16 },
-  sectionTitle: { fontSize: 16, fontWeight: '600', color: '#374151', marginBottom: 12 },
+  sectionTitle: { fontSize: 16, fontWeight: '600', color: colors.ink, marginBottom: 12 },
   verifItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    backgroundColor: '#fff',
+    backgroundColor: colors.card,
     padding: 14,
     borderRadius: 10,
     marginBottom: 6,
   },
-  verifLabel: { fontSize: 15, color: '#111827' },
-  verifStatus: { fontSize: 14, color: '#9CA3AF' },
-  verifDone: { color: '#059669', fontWeight: '600' },
+  verifLabel: { fontSize: 15, color: colors.ink },
+  verifStatus: { fontSize: 14, color: colors.muted },
+  verifDone: { color: colors.sage, fontWeight: '600' },
   verifButton: {
-    backgroundColor: '#2563EB',
+    backgroundColor: colors.coral,
     paddingVertical: 12,
     borderRadius: 10,
     alignItems: 'center',
     marginTop: 8,
   },
-  verifButtonText: { fontSize: 14, fontWeight: '600', color: '#fff' },
+  verifButtonText: { fontSize: 14, fontWeight: '600', color: colors.card },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: colors.card,
     padding: 16,
     borderRadius: 12,
     marginBottom: 6,
   },
   menuIcon: { fontSize: 20, marginRight: 12 },
-  menuText: { flex: 1, fontSize: 16, color: '#111827' },
-  menuArrow: { fontSize: 20, color: '#9CA3AF' },
+  menuText: { flex: 1, fontSize: 16, color: colors.ink },
+  menuArrow: { fontSize: 20, color: colors.muted },
   logoutSection: { marginTop: 32, alignItems: 'center', paddingHorizontal: 24 },
   logoutButton: {
-    backgroundColor: '#FEE2E2',
+    backgroundColor: colors.dangerSoft,
     paddingVertical: 14,
     paddingHorizontal: 32,
     borderRadius: 12,
   },
   logoutText: { fontSize: 16, fontWeight: '600', color: '#DC2626' },
-  versionText: { fontSize: 12, color: '#9CA3AF', marginTop: 16 },
+  versionText: { fontSize: 12, color: colors.muted, marginTop: 16 },
   bottomPadding: { height: 48 },
 });
 

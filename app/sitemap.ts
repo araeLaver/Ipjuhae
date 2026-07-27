@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next'
 import { query } from '@/lib/db'
 
-const BASE_URL = 'https://www.ipjuhae.com'
+const BASE_URL = (process.env.NEXT_PUBLIC_APP_URL || 'https://www.ipjuhae.com').replace(/\/+$/, '')
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticRoutes: MetadataRoute.Sitemap = [
@@ -18,7 +18,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.9,
     },
     {
-      url: `${BASE_URL}/match`,
+      url: `${BASE_URL}/matches`,
       lastModified: new Date(),
       changeFrequency: 'weekly',
       priority: 0.8,

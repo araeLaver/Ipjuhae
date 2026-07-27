@@ -19,6 +19,7 @@ import { RootStackParamList, MainTabParamList } from '../navigation/AppNavigator
 import { useAuth } from '../contexts/AuthContext';
 import { apiClient } from '../services/apiClient';
 import { TenantProfile, DashboardStats } from '../types';
+import { colors, shadows } from '../theme';
 
 type HomeScreenNavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<MainTabParamList, 'Home'>,
@@ -76,7 +77,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
           안녕하세요, {user?.name || '회원'}님!
         </Text>
         <Text style={styles.welcomeSubtext}>
-          {isTenant ? '나에게 맞는 집을 찾아보세요' : '매물을 관리하고 세입자를 만나보세요'}
+          {isTenant ? '확인 항목과 매물 조건을 함께 비교하세요' : '매물과 확인 요청을 한 화면에서 관리하세요'}
         </Text>
       </View>
 
@@ -87,7 +88,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
           onPress={() => navigation.navigate('Profile' as any)}
         >
           <View style={styles.trustHeader}>
-            <Text style={styles.trustTitle}>프로필 요약</Text>
+            <Text style={styles.trustTitle}>주거 신뢰 리포트</Text>
             <Text style={styles.trustScore}>{trustScore >= 80 ? '우수' : trustScore >= 60 ? '양호' : trustScore >= 40 ? '보통' : '시작'}</Text>
           </View>
           <View style={styles.trustBar}>
@@ -127,22 +128,17 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
         <View style={styles.quickActions}>
           {isTenant ? (
             <>
-              <QuickAction
-                icon="🏠"
-                label="매물 검색"
-                color="#DBEAFE"
-                onPress={() => navigation.navigate('Listings' as any)}
-              />
+              <QuickAction icon="🏠" label="매물 검색" color={colors.sageSoft} onPress={() => navigation.navigate('Listings' as any)} />
               <QuickAction
                 icon="🎯"
                 label="AI 매칭"
-                color="#FEF3C7"
+                color="#F3E8E2"
                 onPress={() => navigation.navigate('Matches')}
               />
               <QuickAction
                 icon="📋"
                 label="인증 관리"
-                color="#D1FAE5"
+                color={colors.sageSoft}
                 onPress={() => navigation.navigate('Verification')}
               />
             </>
@@ -151,19 +147,19 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
               <QuickAction
                 icon="🏗️"
                 label="매물 관리"
-                color="#DBEAFE"
+                color={colors.sageSoft}
                 onPress={() => navigation.navigate('Properties')}
               />
               <QuickAction
                 icon="👥"
                 label="세입자 탐색"
-                color="#FEF3C7"
+                color="#F3E8E2"
                 onPress={() => navigation.navigate('TenantBrowse')}
               />
               <QuickAction
                 icon="💬"
                 label="메시지"
-                color="#FCE7F3"
+                color={colors.sageSoft}
                 onPress={() => navigation.navigate('Messages' as any)}
               />
             </>
@@ -191,26 +187,22 @@ const QuickAction: React.FC<{
 );
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
+  container: { flex: 1, backgroundColor: colors.paper },
   welcomeSection: {
-    backgroundColor: '#2563EB',
+    backgroundColor: colors.coral,
     paddingHorizontal: 24,
     paddingTop: 60,
     paddingBottom: 32,
   },
-  welcomeText: { fontSize: 24, fontWeight: 'bold', color: '#fff' },
-  welcomeSubtext: { fontSize: 14, color: '#BFDBFE', marginTop: 4 },
+  welcomeText: { fontSize: 24, fontWeight: 'bold', color: colors.card },
+  welcomeSubtext: { fontSize: 14, color: '#F3E8E2', marginTop: 4 },
   trustCard: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.card,
     marginHorizontal: 16,
     marginTop: -16,
     borderRadius: 12,
     padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    ...shadows.card,
   },
   trustHeader: {
     flexDirection: 'row',
@@ -218,19 +210,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
-  trustTitle: { fontSize: 16, fontWeight: '600', color: '#374151' },
-  trustScore: { fontSize: 28, fontWeight: 'bold', color: '#2563EB' },
+  trustTitle: { fontSize: 16, fontWeight: '600', color: colors.ink },
+  trustScore: { fontSize: 28, fontWeight: 'bold', color: colors.sage },
   trustBar: {
     height: 8,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: colors.line,
     borderRadius: 4,
   },
   trustFill: {
     height: 8,
-    backgroundColor: '#2563EB',
+    backgroundColor: colors.sage,
     borderRadius: 4,
   },
-  trustHint: { fontSize: 12, color: '#9CA3AF', marginTop: 8 },
+  trustHint: { fontSize: 12, color: colors.muted, marginTop: 8 },
   statsRow: {
     flexDirection: 'row',
     paddingHorizontal: 16,
@@ -239,24 +231,20 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: colors.card,
     borderRadius: 12,
     padding: 14,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    ...shadows.card,
   },
-  statNumber: { fontSize: 22, fontWeight: 'bold', color: '#111827' },
-  statLabel: { fontSize: 11, color: '#6B7280', marginTop: 4 },
+  statNumber: { fontSize: 22, fontWeight: 'bold', color: colors.ink },
+  statLabel: { fontSize: 11, color: colors.muted, marginTop: 4 },
   section: { marginTop: 24, paddingHorizontal: 24 },
-  sectionTitle: { fontSize: 18, fontWeight: '600', color: '#111827', marginBottom: 16 },
+  sectionTitle: { fontSize: 18, fontWeight: '600', color: colors.ink, marginBottom: 16 },
   quickActions: { flexDirection: 'row', gap: 12 },
   actionButton: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: colors.card,
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
@@ -270,7 +258,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   actionEmoji: { fontSize: 24 },
-  actionText: { fontSize: 12, color: '#374151', fontWeight: '500' },
+  actionText: { fontSize: 12, color: colors.ink, fontWeight: '500' },
   bottomPadding: { height: 48 },
 });
 

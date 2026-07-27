@@ -4,56 +4,61 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 168 76% 42%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 170 30% 95%;
-    --secondary-foreground: 168 76% 25%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 38 92% 50%;
-    --accent-foreground: 38 92% 15%;
+    /* Ipjuhae brand theme: warm coral action, sage trust, paper-like surfaces. */
+    --background: 40 39% 95%;
+    --foreground: 11 15% 14%;
+    --card: 40 100% 99%;
+    --card-foreground: 11 15% 14%;
+    --popover: 40 100% 99%;
+    --popover-foreground: 11 15% 14%;
+    --primary: 8 46% 50%;
+    --primary-foreground: 40 100% 99%;
+    --secondary: 90 24% 93%;
+    --secondary-foreground: 107 14% 37%;
+    --muted: 33 69% 97%;
+    --muted-foreground: 15 18% 41%;
+    --trust: 107 13% 41%;
+    --trust-foreground: 40 100% 99%;
+    --accent: 14 58% 65%;
+    --accent-foreground: 9 36% 31%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-    --success: 142 76% 36%;
-    --success-foreground: 0 0% 100%;
-    --warning: 38 92% 50%;
-    --warning-foreground: 38 92% 15%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 168 76% 42%;
+    --success: 107 13% 41%;
+    --success-foreground: 40 100% 99%;
+    --warning: 11 50% 58%;
+    --warning-foreground: 9 36% 31%;
+    --border: 28 37% 85%;
+    --input: 28 37% 85%;
+    --ring: 107 13% 41%;
     --radius: 0.5rem;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 168 76% 50%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 170 30% 15%;
-    --secondary-foreground: 168 76% 80%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 38 92% 50%;
-    --accent-foreground: 38 92% 95%;
+    --background: 24 18% 12%;
+    --foreground: 40 39% 95%;
+    --card: 25 18% 16%;
+    --card-foreground: 40 39% 95%;
+    --popover: 25 18% 16%;
+    --popover-foreground: 40 39% 95%;
+    --primary: 14 58% 65%;
+    --primary-foreground: 11 15% 14%;
+    --secondary: 105 10% 21%;
+    --secondary-foreground: 90 24% 93%;
+    --muted: 24 16% 18%;
+    --muted-foreground: 30 22% 74%;
+    --trust: 104 17% 59%;
+    --trust-foreground: 11 15% 14%;
+    --accent: 14 58% 65%;
+    --accent-foreground: 40 39% 95%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    --success: 142 76% 36%;
-    --success-foreground: 0 0% 100%;
-    --warning: 38 92% 50%;
-    --warning-foreground: 38 92% 15%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 168 76% 50%;
+    --success: 104 17% 59%;
+    --success-foreground: 11 15% 14%;
+    --warning: 14 58% 65%;
+    --warning-foreground: 11 15% 14%;
+    --border: 25 17% 26%;
+    --input: 25 17% 26%;
+    --ring: 104 17% 59%;
   }
 }
 

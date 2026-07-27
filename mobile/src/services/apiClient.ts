@@ -4,7 +4,8 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_BASE_URL = 'https://www.ipjuhae.com/api';
+const DEFAULT_API_BASE_URL = 'https://www.ipjuhae.com/api';
+const API_BASE_URL = (process.env.EXPO_PUBLIC_API_URL || DEFAULT_API_BASE_URL).replace(/\/+$/, '');
 
 const TOKEN_KEY = 'auth_token';
 const REFRESH_TOKEN_KEY = 'refresh_token';
@@ -96,12 +97,14 @@ class ApiClient {
       method: 'POST',
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        'x-mobile-client': 'true',
       },
       body: formData,
     });
 
     if (!response.ok) {
-      throw new Error(`Upload failed: ${response.status}`);
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || `Upload failed: ${response.status}`);
     }
     return response.json();
   }

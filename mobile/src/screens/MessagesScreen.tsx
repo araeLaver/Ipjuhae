@@ -117,7 +117,7 @@ const MessagesScreen: React.FC<Props> = ({ navigation }) => {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#2563EB" />
+        <ActivityIndicator size="large" color="#B95545" />
       </View>
     );
   }
@@ -139,7 +139,7 @@ const MessagesScreen: React.FC<Props> = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
+  container: { flex: 1, backgroundColor: '#F8F5EF' },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   listContent: { paddingVertical: 8 },
   conversationCard: {
@@ -148,27 +148,27 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: '#F2E5DE',
   },
   avatar: { width: 52, height: 52, borderRadius: 26 },
   avatarPlaceholder: {
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: '#2563EB',
+    backgroundColor: '#B95545',
     justifyContent: 'center',
     alignItems: 'center',
   },
   avatarInitial: { fontSize: 20, fontWeight: 'bold', color: '#fff' },
   conversationInfo: { flex: 1, marginLeft: 12 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  userName: { fontSize: 16, fontWeight: '600', color: '#111827' },
-  userType: { fontSize: 11, color: '#6B7280', backgroundColor: '#F3F4F6', paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4 },
-  lastMessage: { fontSize: 14, color: '#6B7280', marginTop: 4 },
+  userName: { fontSize: 16, fontWeight: '600', color: '#2A211F' },
+  userType: { fontSize: 11, color: '#7A5E55', backgroundColor: '#F2E5DE', paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4 },
+  lastMessage: { fontSize: 14, color: '#7A5E55', marginTop: 4 },
   metaSection: { alignItems: 'flex-end', marginLeft: 8 },
-  timeText: { fontSize: 12, color: '#9CA3AF' },
+  timeText: { fontSize: 12, color: '#7A5E55' },
   unreadBadge: {
-    backgroundColor: '#2563EB',
+    backgroundColor: '#B95545',
     borderRadius: 10,
     minWidth: 20,
     height: 20,
@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   unreadText: { fontSize: 11, fontWeight: 'bold', color: '#fff' },
-  emptyText: { textAlign: 'center', color: '#9CA3AF', fontSize: 14, marginTop: 60 },
+  emptyText: { textAlign: 'center', color: '#7A5E55', fontSize: 14, marginTop: 60 },
 });
 
 export default MessagesScreen;

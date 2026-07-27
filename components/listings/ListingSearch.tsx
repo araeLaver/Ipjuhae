@@ -11,7 +11,6 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from '@/components/ui/select'
 import type { MockListing } from '@/lib/mock-listings'
 
@@ -29,6 +28,17 @@ const sortOptions = [
   { value: 'deposit-low', label: '보증금 낮은순' },
   { value: 'area-large', label: '면적 넓은순' },
 ]
+const maxRentOptions = [
+  { value: 'all', label: '전체' },
+  { value: '60', label: '60만원 이하' },
+  { value: '80', label: '80만원 이하' },
+  { value: '100', label: '100만원 이하' },
+  { value: '130', label: '130만원 이하' },
+]
+
+function getOptionLabel(options: Array<{ value: string; label: string }>, value: string) {
+  return options.find((item) => item.value === value)?.label ?? value
+}
 
 interface ListingSearchProps {
   listings: MockListing[]
@@ -106,8 +116,8 @@ export function ListingSearch({ listings, compact = false }: ListingSearchProps)
           <div className="space-y-2">
             <Label>지역</Label>
             <Select value={region} onValueChange={setRegion}>
-              <SelectTrigger>
-                <SelectValue />
+              <SelectTrigger aria-label="지역">
+                <span className="truncate text-left">{region}</span>
               </SelectTrigger>
               <SelectContent>
                 {regions.map((item) => (
@@ -122,8 +132,8 @@ export function ListingSearch({ listings, compact = false }: ListingSearchProps)
           <div className="space-y-2">
             <Label>유형</Label>
             <Select value={propertyType} onValueChange={setPropertyType}>
-              <SelectTrigger>
-                <SelectValue />
+              <SelectTrigger aria-label="유형">
+                <span className="truncate text-left">{getOptionLabel(propertyTypes, propertyType)}</span>
               </SelectTrigger>
               <SelectContent>
                 {propertyTypes.map((item) => (
@@ -138,15 +148,15 @@ export function ListingSearch({ listings, compact = false }: ListingSearchProps)
           <div className="space-y-2">
             <Label>월세</Label>
             <Select value={maxRent} onValueChange={setMaxRent}>
-              <SelectTrigger>
-                <SelectValue placeholder="전체" />
+              <SelectTrigger aria-label="월세">
+                <span className="truncate text-left">{getOptionLabel(maxRentOptions, maxRent)}</span>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">전체</SelectItem>
-                <SelectItem value="60">60만원 이하</SelectItem>
-                <SelectItem value="80">80만원 이하</SelectItem>
-                <SelectItem value="100">100만원 이하</SelectItem>
-                <SelectItem value="130">130만원 이하</SelectItem>
+                {maxRentOptions.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    {item.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -154,8 +164,8 @@ export function ListingSearch({ listings, compact = false }: ListingSearchProps)
           <div className="space-y-2">
             <Label>정렬</Label>
             <Select value={sort} onValueChange={setSort}>
-              <SelectTrigger>
-                <SelectValue />
+              <SelectTrigger aria-label="정렬">
+                <span className="truncate text-left">{getOptionLabel(sortOptions, sort)}</span>
               </SelectTrigger>
               <SelectContent>
                 {sortOptions.map((item) => (
@@ -188,9 +198,9 @@ export function ListingSearch({ listings, compact = false }: ListingSearchProps)
         </div>
       ) : (
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-label="매물 목록">
-          {filteredListings.map((listing) => (
+          {filteredListings.map((listing, index) => (
             <li key={listing.id}>
-              <ListingCard listing={listing} />
+              <ListingCard listing={listing} priority={compact && index < 6} />
             </li>
           ))}
         </ul>

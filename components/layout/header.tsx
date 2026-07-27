@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Home, Menu, LogOut, User, Building, Shield } from 'lucide-react'
+import { Home, Menu, LogOut, User } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Avatar } from '@/components/ui/avatar'
 import { DropdownMenu, DropdownMenuItem } from '@/components/ui/dropdown-menu'
@@ -43,7 +43,11 @@ export function Header({ user }: HeaderProps) {
         { href: '/messages', label: '메시지' },
         { href: '/community', label: '커뮤니티' },
       ]
-    : []
+    : [
+        { href: '/listings', label: '매물 찾기' },
+        { href: '/landlord', label: '임대인' },
+        { href: '/community', label: '커뮤니티' },
+      ]
 
   return (
     <>
@@ -51,10 +55,12 @@ export function Header({ user }: HeaderProps) {
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-2">
-              <Home className="h-6 w-6 text-primary" />
-              <span className="text-xl font-bold">입주해</span>
+              <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground shadow-soft">
+                <Home className="h-4 w-4" />
+              </span>
+              <span className="text-xl font-bold text-foreground">입주해</span>
               {user?.userType === 'landlord' && (
-                <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">집주인</span>
+                <span className="rounded-sm bg-secondary px-2 py-0.5 text-xs text-secondary-foreground">집주인</span>
               )}
             </Link>
             <nav className="hidden md:flex items-center gap-1">

@@ -21,9 +21,10 @@ function formatRent(amount: number): string {
 
 interface ListingCardProps {
   listing: MockListing
+  priority?: boolean
 }
 
-export function ListingCard({ listing }: ListingCardProps) {
+export function ListingCard({ listing, priority = false }: ListingCardProps) {
   const regionLabel = listing.address.split(' ').slice(0, 2).join(' ')
   const mainPhoto = listing.photo_urls[0] ?? null
   const tags = listing.tags ?? []
@@ -36,12 +37,13 @@ export function ListingCard({ listing }: ListingCardProps) {
     >
       <Card className="hover:shadow-md transition-shadow cursor-pointer h-full group">
         {/* Thumbnail */}
-        <div className="relative w-full h-44 bg-muted rounded-t-xl overflow-hidden">
+        <div className="relative w-full h-44 bg-muted rounded-t-lg overflow-hidden">
           {mainPhoto ? (
             <Image
               src={mainPhoto}
               alt={`${listing.address} 매물 사진`}
               fill
+              {...(priority ? { priority: true } : { loading: 'lazy' as const })}
               sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
               className="object-cover group-hover:scale-105 transition-transform duration-300"
             />

@@ -111,8 +111,8 @@ const SettingsScreen: React.FC<Props> = ({ navigation }) => {
         <Switch
           value={item.value}
           onValueChange={item.onToggle}
-          trackColor={{ false: '#D1D5DB', true: '#93C5FD' }}
-          thumbColor={item.value ? '#2563EB' : '#F3F4F6'}
+          trackColor={{ false: '#D1D5DB', true: '#D6CABF' }}
+          thumbColor={item.value ? '#B95545' : '#F2E5DE'}
         />
       )}
       {item.type === 'link' && <Text style={styles.chevron}>›</Text>}
@@ -143,17 +143,17 @@ const SettingsScreen: React.FC<Props> = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
+  container: { flex: 1, backgroundColor: '#F8F5EF' },
   content: { padding: 16, paddingBottom: 40 },
   section: { marginBottom: 20 },
-  sectionTitle: { fontSize: 13, fontWeight: '600', color: '#6B7280', textTransform: 'uppercase', marginBottom: 8, marginLeft: 4 },
+  sectionTitle: { fontSize: 13, fontWeight: '600', color: '#7A5E55', textTransform: 'uppercase', marginBottom: 8, marginLeft: 4 },
   sectionCard: { backgroundColor: '#fff', borderRadius: 12, overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 6, elevation: 1 },
   settingRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16 },
   settingIcon: { fontSize: 18, marginRight: 12 },
-  settingLabel: { flex: 1, fontSize: 15, color: '#111827' },
+  settingLabel: { flex: 1, fontSize: 15, color: '#2A211F' },
   dangerText: { color: '#DC2626' },
   chevron: { fontSize: 20, color: '#D1D5DB', fontWeight: '300' },
-  divider: { height: 1, backgroundColor: '#F3F4F6', marginLeft: 46 },
+  divider: { height: 1, backgroundColor: '#F2E5DE', marginLeft: 46 },
   versionText: { textAlign: 'center', fontSize: 12, color: '#D1D5DB', marginTop: 20 },
 });
 
