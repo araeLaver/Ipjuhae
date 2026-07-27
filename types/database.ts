@@ -248,6 +248,20 @@ export interface ValidationValue {
   status: 'valid' | 'needs_review' | 'disputed' | 'stale'
   source_evidence_id: string | null
   source_comment: string | null
+  source_type?: 'legacy' | 'ocr' | 'manual' | 'external_api' | 'reference' | 'system'
+  source_authority?: string | null
+  issued_at?: Date | null
+  observed_at?: Date
+  confidence?: string | null
+  review_status?: 'extracted' | 'needs_review' | 'confirmed' | 'rejected' | 'corrected' | 'expired' | 'disputed'
+  reason_codes?: string[]
+  consent_id?: string | null
+  valid_until?: Date | null
+  retention_until?: Date | null
+  model_version?: string | null
+  reviewed_at?: Date | null
+  reviewed_by?: string | null
+  metadata?: Record<string, unknown>
   created_at: Date
   updated_at: Date
 }
@@ -266,6 +280,49 @@ export interface AccessLog {
   contract_stage: string | null
   result: string | null
   viewed_at: Date
+}
+
+export interface DisclosureDecision {
+  id: string
+  owner_user_id: string
+  viewer_user_id: string
+  viewer_role: 'tenant' | 'landlord' | 'admin' | 'broker' | 'manager' | null
+  target_type: 'profile' | 'reference' | 'document' | 'property' | 'trade_hint'
+  target_id: string
+  target_property_id: string | null
+  consent_id: string | null
+  access_log_id: string | null
+  purpose: string
+  contract_stage: string | null
+  requested_fields: string[]
+  allowed_fields: string[]
+  result: 'granted' | 'denied' | 'revoked' | 'expired'
+  denial_reason: 'missing_consent' | 'purpose_not_allowed' | 'no_allowed_fields' | null
+  policy_version: string
+  decided_at: Date
+  revoked_at: Date | null
+  revocation_reason: string | null
+  metadata: Record<string, unknown>
+}
+
+export interface ReportBundle {
+  id: string
+  disclosure_decision_id: string
+  owner_user_id: string
+  viewer_user_id: string
+  report_type: 'tenant_trust' | 'landlord_trust' | 'property_safety'
+  target_type: 'profile' | 'property'
+  target_id: string
+  target_property_id: string | null
+  status: 'active' | 'revoked' | 'expired' | 'superseded'
+  allowed_fields: string[]
+  report_snapshot: Record<string, unknown>
+  snapshot_version: string
+  generated_at: Date
+  expires_at: Date | null
+  revoked_at: Date | null
+  revocation_reason: string | null
+  metadata: Record<string, unknown>
 }
 
 export interface PropertySafetyScore {

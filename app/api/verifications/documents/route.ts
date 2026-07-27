@@ -152,8 +152,11 @@ export async function POST(request: Request) {
 
         const [ocrLengthValidation] = await query<ValidationValue>(
           `INSERT INTO validation_values
-            (owner_user_id, subject_type, subject_id, validation_key, validation_score, validation_numeric, validation_text, validation_flag, status, source_evidence_id, source_comment)
-           VALUES ($1, 'tenant', $2, $3, $4, $5, $6, $7, 'valid', $8, $9)
+            (owner_user_id, subject_type, subject_id, validation_key, validation_score, validation_numeric,
+             validation_text, validation_flag, status, source_evidence_id, source_comment, source_type,
+             source_authority, observed_at, review_status, reason_codes, model_version, metadata)
+           VALUES ($1, 'tenant', $2, $3, $4, $5, $6, $7, 'needs_review', $8, $9,
+                   'ocr', $10, NOW(), 'needs_review', $11, $12, $13)
            RETURNING *`,
           [
             user.id,
@@ -165,13 +168,24 @@ export async function POST(request: Request) {
             'ocr',
             evidence.id,
             `OCR(${source})`,
+            source,
+            ['OCR_CANDIDATE_REQUIRES_HUMAN_REVIEW'],
+            'ai-omakase:image-to-text',
+            {
+              documentType,
+              extractedTextLength: textLength,
+              provider: 'ai-omakase',
+            },
           ],
         )
 
         const [ocrSourceValidation] = await query<ValidationValue>(
           `INSERT INTO validation_values
-            (owner_user_id, subject_type, subject_id, validation_key, validation_score, validation_numeric, validation_text, validation_flag, status, source_evidence_id, source_comment)
-           VALUES ($1, 'tenant', $2, $3, NULL, NULL, $4, 'ocr', 'valid', $5, $6)
+            (owner_user_id, subject_type, subject_id, validation_key, validation_score, validation_numeric,
+             validation_text, validation_flag, status, source_evidence_id, source_comment, source_type,
+             source_authority, observed_at, review_status, reason_codes, model_version, metadata)
+           VALUES ($1, 'tenant', $2, $3, NULL, NULL, $4, 'ocr', 'needs_review', $5, $6,
+                   'ocr', $7, NOW(), 'needs_review', $8, $9, $10)
             RETURNING *`,
           [
             user.id,
@@ -180,6 +194,13 @@ export async function POST(request: Request) {
             source,
             evidence.id,
             `OCR source: ${source}`,
+            source,
+            ['OCR_SOURCE_RECORDED'],
+            'ai-omakase:image-to-text',
+            {
+              documentType,
+              provider: 'ai-omakase',
+            },
           ],
         )
 
@@ -207,8 +228,11 @@ export async function POST(request: Request) {
 
         const [errorValidation] = await query<ValidationValue>(
           `INSERT INTO validation_values
-            (owner_user_id, subject_type, subject_id, validation_key, validation_score, validation_numeric, validation_text, validation_flag, status, source_evidence_id, source_comment)
-           VALUES ($1, 'tenant', $2, $3, NULL, NULL, NULL, NULL, 'needs_review', $4, $5)
+            (owner_user_id, subject_type, subject_id, validation_key, validation_score, validation_numeric,
+             validation_text, validation_flag, status, source_evidence_id, source_comment, source_type,
+             source_authority, observed_at, review_status, reason_codes, model_version, metadata)
+           VALUES ($1, 'tenant', $2, $3, NULL, NULL, NULL, 'ocr', 'needs_review', $4, $5,
+                   'ocr', 'ai-omakase', NOW(), 'needs_review', $6, $7, $8)
             RETURNING *`,
           [
             user.id,
@@ -216,6 +240,12 @@ export async function POST(request: Request) {
             `${documentType}_ocr_error`,
             evidence.id,
             error instanceof Error ? error.message : 'OCR 처리 실패',
+            ['OCR_FAILED', 'HUMAN_REVIEW_REQUIRED'],
+            'ai-omakase:image-to-text',
+            {
+              documentType,
+              provider: 'ai-omakase',
+            },
           ],
         )
 

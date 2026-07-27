@@ -1,4 +1,5 @@
 import { query, queryOne } from '@/lib/db'
+import type { ReportAccessResult } from '@/lib/consent-access'
 import { calculateTrustScore, getTrustScoreLevel } from '@/lib/trust-score'
 import type {
   Profile,
@@ -62,6 +63,96 @@ interface PropertyRow {
   property_type: string
   status: string
   updated_at: Date
+}
+
+type ReportType = 'landlord_trust' | 'tenant_trust' | 'property_safety'
+type ReportTargetType = 'profile' | 'property'
+
+interface RecordReportDisclosureInput {
+  access: ReportAccessResult
+  ownerUserId: string
+  viewerUserId: string
+  viewerRole: string | null
+  targetType: ReportTargetType
+  targetId: string
+  targetPropertyId?: string | null
+  requestedFields: string[]
+  purpose: string
+  contractStage?: string | null
+  reportType: ReportType
+  reportSnapshot?: Record<string, unknown> | null
+}
+
+export interface ReportDisclosureRecord {
+  disclosureDecisionId: string | null
+  reportBundleId: string | null
+}
+
+export async function recordReportDisclosureSnapshot(
+  input: RecordReportDisclosureInput,
+): Promise<ReportDisclosureRecord> {
+  const decisionRows = await query<{ id: string }>(
+    `INSERT INTO disclosure_decisions
+      (owner_user_id, viewer_user_id, viewer_role, target_type, target_id, target_property_id,
+       consent_id, access_log_id, purpose, contract_stage, requested_fields, allowed_fields,
+       result, denial_reason, metadata)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+     RETURNING id`,
+    [
+      input.ownerUserId,
+      input.viewerUserId,
+      input.viewerRole,
+      input.targetType,
+      input.targetId,
+      input.targetPropertyId ?? null,
+      input.access.consentId,
+      input.access.accessLogId,
+      input.purpose,
+      input.contractStage ?? null,
+      input.requestedFields,
+      input.access.allowedFields,
+      input.access.allowed ? 'granted' : 'denied',
+      input.access.denialReason,
+      {
+        canViewContact: input.access.canViewContact,
+        reportType: input.reportType,
+      },
+    ],
+  )
+
+  const disclosureDecisionId = decisionRows?.[0]?.id ?? null
+  if (!disclosureDecisionId || !input.access.allowed || !input.reportSnapshot) {
+    return { disclosureDecisionId, reportBundleId: null }
+  }
+
+  const reportBundleRows = await query<{ id: string }>(
+    `INSERT INTO report_bundles
+      (disclosure_decision_id, owner_user_id, viewer_user_id, report_type, target_type,
+       target_id, target_property_id, allowed_fields, report_snapshot, expires_at, metadata)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+     RETURNING id`,
+    [
+      disclosureDecisionId,
+      input.ownerUserId,
+      input.viewerUserId,
+      input.reportType,
+      input.targetType,
+      input.targetId,
+      input.targetPropertyId ?? null,
+      input.access.allowedFields,
+      input.reportSnapshot,
+      input.access.consentValidUntil,
+      {
+        purpose: input.purpose,
+        contractStage: input.contractStage ?? null,
+      },
+    ],
+  )
+
+  return {
+    disclosureDecisionId,
+    reportBundleId: reportBundleRows?.[0]?.id ?? null,
+  }
 }
 
 export function parsePurpose(searchParams: URLSearchParams): string | null {
@@ -286,6 +377,13 @@ export function buildProfileTrustReport(
         key: value.validation_key,
         status: value.status === 'valid' ? '확인 항목' : mapReviewStatus(value.status),
         flag: value.validation_flag,
+        sourceType: value.source_type ?? null,
+        sourceAuthority: value.source_authority ?? null,
+        observedAt: value.observed_at ?? null,
+        issuedAt: value.issued_at ?? null,
+        reviewStatus: value.review_status ? mapValidationReviewStatus(value.review_status) : null,
+        reasonCodes: value.reason_codes ?? [],
+        validUntil: value.valid_until ?? null,
       })),
     }
   }
@@ -412,5 +510,23 @@ function mapReviewStatus(status: ValidationValue['status']): string {
       return '위험 신호'
     case 'stale':
       return '최신 확인 필요'
+  }
+}
+
+function mapValidationReviewStatus(status: NonNullable<ValidationValue['review_status']>): string {
+  switch (status) {
+    case 'confirmed':
+      return '확인 완료'
+    case 'rejected':
+      return '반려'
+    case 'corrected':
+      return '정정 반영'
+    case 'expired':
+      return '최신 확인 필요'
+    case 'disputed':
+      return '검토 중'
+    case 'extracted':
+    case 'needs_review':
+      return '사람 검수 필요'
   }
 }

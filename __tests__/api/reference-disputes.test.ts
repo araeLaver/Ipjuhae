@@ -57,6 +57,12 @@ describe('POST /api/references/[id]/disputes', () => {
     vi.mocked(query).mockResolvedValueOnce([
       { id: 'dispute-1', request_status: 'pending', request_type: 'correction' },
     ])
+      .mockResolvedValueOnce([
+        { id: 'bundle-1', disclosure_decision_id: 'decision-1' },
+      ])
+      .mockResolvedValueOnce([
+        { id: 'decision-1' },
+      ])
 
     const res = await POST(
       makeRequest({
@@ -77,9 +83,17 @@ describe('POST /api/references/[id]/disputes', () => {
       id: 'dispute-1',
       request_status: 'pending',
     })
+    expect(data.revocation).toMatchObject({
+      revokedReportBundles: 1,
+      revokedDisclosureDecisions: 1,
+    })
     expect(query).toHaveBeenCalledWith(
       expect.stringContaining('INSERT INTO reference_disputes'),
       expect.any(Array),
+    )
+    expect(query).toHaveBeenCalledWith(
+      expect.stringContaining('reference_dispute_opened'),
+      expect.arrayContaining(['user-1']),
     )
   })
 

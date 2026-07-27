@@ -20,6 +20,32 @@ function dedupe(values: string[] | undefined): string[] | undefined {
   return Array.from(new Set(values.map((value) => value.trim()).filter(Boolean)))
 }
 
+async function revokeDerivedReportBundles(consentId: string, ownerUserId: string, reason: string) {
+  await query(
+    `UPDATE report_bundles rb
+        SET status = 'revoked',
+            revoked_at = NOW(),
+            revocation_reason = $3
+       FROM disclosure_decisions dd
+      WHERE rb.disclosure_decision_id = dd.id
+        AND dd.consent_id = $1
+        AND dd.owner_user_id = $2
+        AND rb.status = 'active'`,
+    [consentId, ownerUserId, reason],
+  )
+
+  await query(
+    `UPDATE disclosure_decisions
+        SET result = 'revoked',
+            revoked_at = NOW(),
+            revocation_reason = $3
+      WHERE consent_id = $1
+        AND owner_user_id = $2
+        AND result = 'granted'`,
+    [consentId, ownerUserId, reason],
+  )
+}
+
 export async function GET(_request: Request, { params }: RouteParams) {
   try {
     const user = await getCurrentUser()
@@ -130,6 +156,10 @@ export async function PATCH(request: Request, { params }: RouteParams) {
       return NextResponse.json({ error: '동의를 찾을 수 없습니다' }, { status: 404 })
     }
 
+    if (data.revoked === true) {
+      await revokeDerivedReportBundles(id, user.id, 'consent_revoked')
+    }
+
     return NextResponse.json({ consent })
   } catch (error) {
     console.error('Update consent error:', error)
@@ -153,6 +183,8 @@ export async function DELETE(_request: Request, { params }: RouteParams) {
     if (!consent) {
       return NextResponse.json({ error: '동의를 찾을 수 없습니다' }, { status: 404 })
     }
+
+    await revokeDerivedReportBundles(id, user.id, 'consent_deleted')
 
     return NextResponse.json({ consent, message: '동의가 철회되었습니다' })
   } catch (error) {

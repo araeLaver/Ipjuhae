@@ -37,7 +37,7 @@ export async function getAdminUser(): Promise<AdminUser | null> {
 export async function logAdminAction(
   adminId: string,
   action: string,
-  targetType: 'user' | 'document' | 'profile',
+  targetType: 'user' | 'document' | 'profile' | 'validation_value',
   targetId: string,
   detail?: Record<string, unknown>
 ): Promise<void> {

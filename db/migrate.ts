@@ -30,6 +30,7 @@
  * 24. migration-020-properties-pet-allowed.sql - properties.pet_allowed + listings 데이터 통합
  * 25. migration-021-community.sql              - 역할별 커뮤니티 게시판
  * 26. migration-022-patent-trust-engine.sql    - 특허 기반 신뢰도 엔진 보강
+ * 27. migration-023-report-bundles-disclosure.sql - 검증값 표준화 + 공개결정/리포트번들
  */
 
 import { Pool } from 'pg'
@@ -141,6 +142,7 @@ const migrations = [
   'migration-020-properties-pet-allowed.sql',
   'migration-021-community.sql',
   'migration-022-patent-trust-engine.sql',
+  'migration-023-report-bundles-disclosure.sql',
 ]
 
 const migrationAliases: Record<string, string[]> = {

@@ -129,6 +129,8 @@ export interface ReportAccessContext {
 
 export interface ReportAccessResult extends ConsentAccessResult {
   accessLogId: string | null
+  consentId: string | null
+  consentValidUntil: Date | null
   denialReason: 'missing_consent' | 'purpose_not_allowed' | 'no_allowed_fields' | null
 }
 
@@ -172,6 +174,8 @@ export async function evaluateReportAccess(
       allowedFields,
       canViewContact: true,
       accessLogId,
+      consentId: null,
+      consentValidUntil: null,
       denialReason: null,
     }
   }
@@ -187,6 +191,8 @@ export async function evaluateReportAccess(
   let denialReason: ReportAccessResult['denialReason'] = null
   let allowedFields: string[] = []
   let canViewContact = false
+  const consentId = matchingConsent?.id ?? null
+  const consentValidUntil = matchingConsent?.valid_until ?? null
 
   if (!matchingConsent) {
     denialReason = 'missing_consent'
@@ -224,6 +230,8 @@ export async function evaluateReportAccess(
     allowedFields,
     canViewContact,
     accessLogId,
+    consentId,
+    consentValidUntil,
     denialReason,
   }
 }

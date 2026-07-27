@@ -8,6 +8,7 @@ import {
   parseContractStage,
   parsePurpose,
   parseRequestedFields,
+  recordReportDisclosureSnapshot,
 } from '@/lib/report-aggregate'
 
 export async function GET(
@@ -33,6 +34,7 @@ export async function GET(
     }
 
     const requestedFields = parseRequestedFields(searchParams, TENANT_TRUST_FIELDS)
+    const contractStage = parseContractStage(searchParams)
     const access = await evaluateReportAccess(request, {
       viewerUserId: viewer.id,
       ownerUserId: data.profile.user_id,
@@ -42,20 +44,54 @@ export async function GET(
       targetId: data.profile.id,
       requestedFields,
       purpose,
-      contractStage: parseContractStage(searchParams),
+      contractStage,
     })
 
     if (!access.allowed) {
+      const disclosure = await recordReportDisclosureSnapshot({
+        access,
+        ownerUserId: data.profile.user_id,
+        viewerUserId: viewer.id,
+        viewerRole: viewer.user_type,
+        targetType: 'profile',
+        targetId: data.profile.id,
+        requestedFields,
+        purpose,
+        contractStage,
+        reportType: 'tenant_trust',
+      })
+
       return NextResponse.json(
-        { error: '열람 동의가 필요합니다', reason: access.denialReason },
+        {
+          error: '열람 동의가 필요합니다',
+          reason: access.denialReason,
+          disclosureDecisionId: disclosure.disclosureDecisionId,
+        },
         { status: 403 },
       )
     }
 
+    const report = buildProfileTrustReport(data, access.allowedFields, 'tenant_trust')
+    const disclosure = await recordReportDisclosureSnapshot({
+      access,
+      ownerUserId: data.profile.user_id,
+      viewerUserId: viewer.id,
+      viewerRole: viewer.user_type,
+      targetType: 'profile',
+      targetId: data.profile.id,
+      requestedFields,
+      purpose,
+      contractStage,
+      reportType: 'tenant_trust',
+      reportSnapshot: report,
+    })
+
     return NextResponse.json({
       allowedFields: access.allowedFields,
       accessLogId: access.accessLogId,
-      report: buildProfileTrustReport(data, access.allowedFields, 'tenant_trust'),
+      disclosureDecisionId: disclosure.disclosureDecisionId,
+      reportBundleId: disclosure.reportBundleId,
+      report,
     })
   } catch (error) {
     console.error('Get tenant trust aggregate error:', error)

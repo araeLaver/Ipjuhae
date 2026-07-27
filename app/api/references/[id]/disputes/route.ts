@@ -27,6 +27,54 @@ async function requireReferenceOwnership(referenceId: string, viewerId: string):
   return Boolean(reference)
 }
 
+function uniqueStrings(values: Array<string | null | undefined>): string[] {
+  return Array.from(new Set(values.filter((value): value is string => Boolean(value))))
+}
+
+async function revokeReportBundlesForReferenceDispute(
+  ownerUserId: string,
+  referenceId: string,
+  disputeId: string,
+): Promise<{ revokedReportBundles: number; revokedDisclosureDecisions: number }> {
+  const metadata = JSON.stringify({
+    revoked_by: 'reference_dispute',
+    reference_id: referenceId,
+    dispute_id: disputeId,
+  })
+
+  const bundles = await query<{ id: string; disclosure_decision_id: string | null }>(
+    `UPDATE report_bundles
+        SET status = 'revoked',
+            revoked_at = NOW(),
+            revocation_reason = 'reference_dispute_opened',
+            metadata = COALESCE(metadata, '{}'::jsonb) || $2::jsonb,
+            updated_at = NOW()
+      WHERE owner_user_id = $1
+        AND status = 'active'
+      RETURNING id, disclosure_decision_id`,
+    [ownerUserId, metadata],
+  )
+
+  const decisionIds = uniqueStrings(bundles.map((bundle) => bundle.disclosure_decision_id))
+  const decisions = decisionIds.length > 0
+    ? await query<{ id: string }>(
+        `UPDATE disclosure_decisions
+            SET result = 'revoked',
+                revoked_at = NOW(),
+                metadata = COALESCE(metadata, '{}'::jsonb) || $2::jsonb
+          WHERE result = 'granted'
+            AND id = ANY($1::uuid[])
+          RETURNING id`,
+        [decisionIds, metadata],
+      )
+    : []
+
+  return {
+    revokedReportBundles: bundles.length,
+    revokedDisclosureDecisions: decisions.length,
+  }
+}
+
 // GET: 레퍼런스 분쟁/정정 목록
 export async function GET(_request: Request, { params }: RouteParams) {
   try {
@@ -141,7 +189,9 @@ export async function POST(request: Request, { params }: RouteParams) {
       return NextResponse.json({ error: '분쟁 요청 생성에 실패했습니다' }, { status: 500 })
     }
 
-    return NextResponse.json({ dispute }, { status: 201 })
+    const revocation = await revokeReportBundlesForReferenceDispute(user.id, id, dispute.id)
+
+    return NextResponse.json({ dispute, revocation }, { status: 201 })
   } catch (error) {
     const message = resolveSqlErrorMessage(error, '분쟁 요청 등록 중 오류가 발생했습니다')
     console.error('Create reference dispute error:', error)

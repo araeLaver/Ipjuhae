@@ -78,6 +78,12 @@ function mockEmptyProfileAggregates() {
   vi.mocked(query).mockResolvedValueOnce([])
 }
 
+function findQueryParams(sqlFragment: string): unknown[] | undefined {
+  return vi.mocked(query).mock.calls.find(([sql]) =>
+    String(sql).includes(sqlFragment)
+  )?.[1]
+}
+
 describe('GET /api/reports/*/[id]/aggregate', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -102,7 +108,10 @@ describe('GET /api/reports/*/[id]/aggregate', () => {
       .mockResolvedValueOnce(profile as any)
       .mockResolvedValueOnce(verification as any)
     mockEmptyProfileAggregates()
-    vi.mocked(query).mockResolvedValueOnce([{ id: 'log-1' }])
+    vi.mocked(query)
+      .mockResolvedValueOnce([{ id: 'log-1' }])
+      .mockResolvedValueOnce([{ id: 'decision-1' }])
+      .mockResolvedValueOnce([{ id: 'bundle-1' }])
 
     const res = await getTenantTrust(
       request(`http://localhost:3000/api/reports/tenant-trust/${profileId}/aggregate?purpose=tenant_trust_review`),
@@ -112,9 +121,14 @@ describe('GET /api/reports/*/[id]/aggregate', () => {
 
     expect(res.status).toBe(200)
     expect(data.accessLogId).toBe('log-1')
+    expect(data.disclosureDecisionId).toBe('decision-1')
+    expect(data.reportBundleId).toBe('bundle-1')
     expect(data.allowedFields).toContain('profile.contact')
-    expect(vi.mocked(query).mock.calls.at(-1)?.[1]).toEqual(
+    expect(findQueryParams('INSERT INTO access_logs')).toEqual(
       expect.arrayContaining([ownerUserId, ownerUserId, 'profile', profileId, 'granted']),
+    )
+    expect(findQueryParams('INSERT INTO disclosure_decisions')).toEqual(
+      expect.arrayContaining([ownerUserId, ownerUserId, 'tenant', 'profile', profileId, null, null, 'log-1']),
     )
   })
 
@@ -124,7 +138,10 @@ describe('GET /api/reports/*/[id]/aggregate', () => {
       .mockResolvedValueOnce(profile as any)
       .mockResolvedValueOnce(verification as any)
     mockEmptyProfileAggregates()
-    vi.mocked(query).mockResolvedValueOnce([{ id: 'log-admin' }])
+    vi.mocked(query)
+      .mockResolvedValueOnce([{ id: 'log-admin' }])
+      .mockResolvedValueOnce([{ id: 'decision-admin' }])
+      .mockResolvedValueOnce([{ id: 'bundle-admin' }])
 
     const res = await getLandlordTrust(
       request(`http://localhost:3000/api/reports/landlord-trust/${profileId}/aggregate?purpose=admin_review`),
@@ -132,8 +149,11 @@ describe('GET /api/reports/*/[id]/aggregate', () => {
     )
 
     expect(res.status).toBe(200)
-    expect(vi.mocked(query).mock.calls.at(-1)?.[1]).toEqual(
+    expect(findQueryParams('INSERT INTO access_logs')).toEqual(
       expect.arrayContaining([viewerUserId, ownerUserId, 'profile', profileId, 'admin_review', 'granted']),
+    )
+    expect(findQueryParams('INSERT INTO disclosure_decisions')).toEqual(
+      expect.arrayContaining([ownerUserId, viewerUserId, 'admin', 'profile', profileId, null, null, 'log-admin']),
     )
   })
 
@@ -156,6 +176,8 @@ describe('GET /api/reports/*/[id]/aggregate', () => {
         can_view_contact: false,
       }])
       .mockResolvedValueOnce([{ id: 'log-2' }])
+      .mockResolvedValueOnce([{ id: 'decision-2' }])
+      .mockResolvedValueOnce([{ id: 'bundle-2' }])
 
     const res = await getTenantTrust(
       request(
@@ -168,8 +190,13 @@ describe('GET /api/reports/*/[id]/aggregate', () => {
     expect(res.status).toBe(200)
     expect(data.allowedFields).toEqual(['profile.basic', 'trust.overall_signal'])
     expect(data.report.profile.contact).toBeUndefined()
-    expect(vi.mocked(query).mock.calls.at(-1)?.[1]).toEqual(
+    expect(data.disclosureDecisionId).toBe('decision-2')
+    expect(data.reportBundleId).toBe('bundle-2')
+    expect(findQueryParams('INSERT INTO access_logs')).toEqual(
       expect.arrayContaining([['profile.basic', 'trust.overall_signal'], 'tenant_trust_review', 'granted']),
+    )
+    expect(findQueryParams('INSERT INTO disclosure_decisions')).toEqual(
+      expect.arrayContaining(['consent-1', 'log-2', 'tenant_trust_review']),
     )
   })
 
@@ -192,6 +219,7 @@ describe('GET /api/reports/*/[id]/aggregate', () => {
         can_view_contact: false,
       }])
       .mockResolvedValueOnce([{ id: 'log-denied' }])
+      .mockResolvedValueOnce([{ id: 'decision-denied' }])
 
     const res = await getTenantTrust(
       request(`http://localhost:3000/api/reports/tenant-trust/${profileId}/aggregate?purpose=tenant_trust_review`),
@@ -201,8 +229,12 @@ describe('GET /api/reports/*/[id]/aggregate', () => {
 
     expect(res.status).toBe(403)
     expect(data.reason).toBe('purpose_not_allowed')
-    expect(vi.mocked(query).mock.calls.at(-1)?.[1]).toEqual(
+    expect(data.disclosureDecisionId).toBe('decision-denied')
+    expect(findQueryParams('INSERT INTO access_logs')).toEqual(
       expect.arrayContaining([[], 'tenant_trust_review', 'denied']),
+    )
+    expect(findQueryParams('INSERT INTO disclosure_decisions')).toEqual(
+      expect.arrayContaining(['denied', 'purpose_not_allowed']),
     )
   })
 
@@ -215,13 +247,16 @@ describe('GET /api/reports/*/[id]/aggregate', () => {
     vi.mocked(query)
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([{ id: 'log-denied' }])
+      .mockResolvedValueOnce([{ id: 'decision-denied' }])
 
     await getTenantTrust(
       request(`http://localhost:3000/api/reports/tenant-trust/${profileId}/aggregate?purpose=tenant_trust_review`),
       params(),
     )
 
-    const consentSql = vi.mocked(query).mock.calls.at(-2)?.[0] as string
+    const consentSql = vi.mocked(query).mock.calls.find(([sql]) =>
+      String(sql).includes('FROM consents')
+    )?.[0] as string
     expect(consentSql).toContain('revoked_at IS NULL')
     expect(consentSql).toContain('valid_from <= NOW()')
     expect(consentSql).toContain('valid_until IS NULL OR valid_until >= NOW()')
@@ -248,7 +283,10 @@ describe('GET /api/reports/*/[id]/aggregate', () => {
         updated_at: new Date(),
         expires_at: new Date(Date.now() - 1000),
       } as any)
-    vi.mocked(query).mockResolvedValueOnce([{ id: 'log-property' }])
+    vi.mocked(query)
+      .mockResolvedValueOnce([{ id: 'log-property' }])
+      .mockResolvedValueOnce([{ id: 'decision-property' }])
+      .mockResolvedValueOnce([{ id: 'bundle-property' }])
 
     const res = await getPropertySafety(
       request(`http://localhost:3000/api/reports/property-safety/${propertyId}/aggregate?purpose=property_safety_review`),
@@ -257,6 +295,8 @@ describe('GET /api/reports/*/[id]/aggregate', () => {
     const data = await res.json()
 
     expect(res.status).toBe(200)
+    expect(data.disclosureDecisionId).toBe('decision-property')
+    expect(data.reportBundleId).toBe('bundle-property')
     expect(data.report.statusFlags).toContain('최신 확인 필요')
     expect(data.report.property.riskFlags).toEqual([])
   })
