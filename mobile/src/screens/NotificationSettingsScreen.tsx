@@ -12,18 +12,16 @@ import {
 } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { apiClient } from '../services/apiClient';
-
-interface MobilePreferences {
-  pushEnabled: boolean;
-  messageEnabled: boolean;
-  matchEnabled: boolean;
-}
+import {
+  getEffectiveNotificationState,
+  type MobileNotificationPreferences,
+} from '../utils/notificationState';
 
 interface PreferencesResponse {
-  mobile: MobilePreferences;
+  mobile: MobileNotificationPreferences;
 }
 
-const DEFAULTS: MobilePreferences = {
+const DEFAULTS: MobileNotificationPreferences = {
   pushEnabled: true,
   messageEnabled: true,
   matchEnabled: true,
@@ -62,7 +60,7 @@ export default function NotificationSettingsScreen() {
     return () => subscription.remove();
   }, [load, refreshPermission]);
 
-  const save = async (next: MobilePreferences) => {
+  const save = async (next: MobileNotificationPreferences) => {
     const previous = preferences;
     setPreferences(next);
     setSaving(true);
@@ -99,10 +97,36 @@ export default function NotificationSettingsScreen() {
     return <View style={styles.center}><ActivityIndicator color="#B95545" /></View>;
   }
 
+  const permissionGranted = permission === Notifications.PermissionStatus.GRANTED;
+  const effective = getEffectiveNotificationState(preferences, permissionGranted);
   const rows = [
-    { label: '푸시 알림', detail: '기기의 알림 권한과 함께 사용합니다.', value: preferences.pushEnabled, onChange: togglePush },
-    { label: '새 메시지 알림', detail: '새로운 대화와 메시지를 알려드립니다.', value: preferences.messageEnabled, onChange: (value: boolean) => save({ ...preferences, messageEnabled: value }) },
-    { label: '매칭 알림', detail: '새로운 매칭 결과를 알려드립니다.', value: preferences.matchEnabled, onChange: (value: boolean) => save({ ...preferences, matchEnabled: value }) },
+    {
+      label: '푸시 알림',
+      detail: permissionGranted
+        ? '기기의 알림 권한과 함께 사용합니다.'
+        : '기기 알림 권한이 꺼져 있어 수신할 수 없습니다.',
+      value: effective.pushEnabled,
+      onChange: togglePush,
+      disabled: saving,
+    },
+    {
+      label: '새 메시지 알림',
+      detail: effective.pushEnabled
+        ? '새로운 대화와 메시지를 알려드립니다.'
+        : '푸시 알림을 켜면 사용할 수 있습니다.',
+      value: effective.messageEnabled,
+      onChange: (value: boolean) => save({ ...preferences, messageEnabled: value }),
+      disabled: saving || !effective.pushEnabled,
+    },
+    {
+      label: '매칭 알림',
+      detail: effective.pushEnabled
+        ? '새로운 매칭 결과를 알려드립니다.'
+        : '푸시 알림을 켜면 사용할 수 있습니다.',
+      value: effective.matchEnabled,
+      onChange: (value: boolean) => save({ ...preferences, matchEnabled: value }),
+      disabled: saving || !effective.pushEnabled,
+    },
   ];
 
   return (
@@ -117,7 +141,7 @@ export default function NotificationSettingsScreen() {
               <Text style={styles.label}>{row.label}</Text>
               <Text style={styles.detail}>{row.detail}</Text>
             </View>
-            <Switch value={row.value} onValueChange={row.onChange} disabled={saving} />
+            <Switch value={row.value} onValueChange={row.onChange} disabled={row.disabled} />
           </View>
         ))}
       </View>
