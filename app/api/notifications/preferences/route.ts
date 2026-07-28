@@ -1,12 +1,17 @@
 import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
-import { verifyToken } from '@/lib/auth'
-import { query } from '@/lib/db'
+import { getCurrentUser } from '@/lib/auth'
+import { query, queryOne } from '@/lib/db'
 import { NotificationType } from '@/lib/notifications'
 
 interface PrefRow {
   notification_type: NotificationType
   email_enabled: boolean
+}
+
+interface MobilePrefRow {
+  push_enabled: boolean
+  message_enabled: boolean
+  match_enabled: boolean
 }
 
 const CONFIGURABLE_TYPES: NotificationType[] = [
@@ -22,20 +27,17 @@ const CONFIGURABLE_TYPES: NotificationType[] = [
  * 알림 이메일 수신 설정 조회
  */
 export async function GET() {
-  const cookieStore = await cookies()
-  const token = cookieStore.get('auth_token')?.value
-  if (!token) {
-    return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 })
-  }
-
-  const payload = await verifyToken(token)
-  if (!payload) {
-    return NextResponse.json({ error: '유효하지 않은 토큰입니다' }, { status: 401 })
-  }
+  const user = await getCurrentUser()
+  if (!user) return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 })
 
   const rows = await query<PrefRow>(
     'SELECT notification_type, email_enabled FROM notification_preferences WHERE user_id = $1',
-    [payload.userId]
+    [user.id]
+  )
+  const mobile = await queryOne<MobilePrefRow>(
+    `SELECT push_enabled, message_enabled, match_enabled
+     FROM mobile_notification_settings WHERE user_id = $1`,
+    [user.id]
   )
 
   // 설정이 없는 타입은 기본 활성화
@@ -45,7 +47,14 @@ export async function GET() {
     preferences[type] = row ? row.email_enabled : true
   }
 
-  return NextResponse.json({ preferences })
+  return NextResponse.json({
+    preferences,
+    mobile: {
+      pushEnabled: mobile?.push_enabled ?? true,
+      messageEnabled: mobile?.message_enabled ?? true,
+      matchEnabled: mobile?.match_enabled ?? true,
+    },
+  })
 }
 
 /**
@@ -54,24 +63,17 @@ export async function GET() {
  * Body: { preferences: { new_message: true, reference_request: false, ... } }
  */
 export async function PUT(request: Request) {
-  const cookieStore = await cookies()
-  const token = cookieStore.get('auth_token')?.value
-  if (!token) {
-    return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 })
-  }
-
-  const payload = await verifyToken(token)
-  if (!payload) {
-    return NextResponse.json({ error: '유효하지 않은 토큰입니다' }, { status: 401 })
-  }
+  const user = await getCurrentUser()
+  if (!user) return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 })
 
   const body = await request.json()
   const prefs = body.preferences as Record<string, boolean> | undefined
-  if (!prefs || typeof prefs !== 'object') {
-    return NextResponse.json({ error: 'preferences 객체가 필요합니다' }, { status: 400 })
+  const mobile = body.mobile as Record<string, unknown> | undefined
+  if ((!prefs || typeof prefs !== 'object') && (!mobile || typeof mobile !== 'object')) {
+    return NextResponse.json({ error: 'preferences 또는 mobile 객체가 필요합니다' }, { status: 400 })
   }
 
-  for (const [type, enabled] of Object.entries(prefs)) {
+  for (const [type, enabled] of Object.entries(prefs ?? {})) {
     if (!CONFIGURABLE_TYPES.includes(type as NotificationType)) continue
     if (typeof enabled !== 'boolean') continue
 
@@ -80,7 +82,25 @@ export async function PUT(request: Request) {
        VALUES ($1, $2, $3)
        ON CONFLICT (user_id, notification_type)
        DO UPDATE SET email_enabled = $3, updated_at = NOW()`,
-      [payload.userId, type, enabled]
+      [user.id, type, enabled]
+    )
+  }
+
+  if (mobile) {
+    const keys = ['pushEnabled', 'messageEnabled', 'matchEnabled'] as const
+    if (keys.some(key => typeof mobile[key] !== 'boolean')) {
+      return NextResponse.json({ error: 'mobile 설정은 boolean 값이어야 합니다' }, { status: 400 })
+    }
+    await query(
+      `INSERT INTO mobile_notification_settings
+         (user_id, push_enabled, message_enabled, match_enabled)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (user_id) DO UPDATE SET
+         push_enabled = EXCLUDED.push_enabled,
+         message_enabled = EXCLUDED.message_enabled,
+         match_enabled = EXCLUDED.match_enabled,
+         updated_at = NOW()`,
+      [user.id, mobile.pushEnabled, mobile.messageEnabled, mobile.matchEnabled]
     )
   }
 

@@ -53,7 +53,7 @@ export async function getCurrentUser(): Promise<User | null> {
   if (!payload) return null
 
   const user = await queryOne<User>(
-    'SELECT * FROM users WHERE id = $1',
+    'SELECT * FROM users WHERE id = $1 AND deleted_at IS NULL',
     [payload.userId]
   )
 

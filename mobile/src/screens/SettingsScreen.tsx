@@ -17,6 +17,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { useAuth } from '../contexts/AuthContext';
 import Constants from 'expo-constants';
+import { apiClient } from '../services/apiClient';
 
 type SettingsScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Settings'>;
 
@@ -36,9 +37,7 @@ interface SettingItem {
 
 const SettingsScreen: React.FC<Props> = ({ navigation }) => {
   const { logout } = useAuth();
-  const [pushEnabled, setPushEnabled] = useState(true);
-  const [messageAlert, setMessageAlert] = useState(true);
-  const [matchAlert, setMatchAlert] = useState(true);
+  const [deleting, setDeleting] = useState(false);
 
   const handleLogout = () => {
     Alert.alert('로그아웃', '로그아웃 하시겠습니까?', [
@@ -56,8 +55,17 @@ const SettingsScreen: React.FC<Props> = ({ navigation }) => {
         {
           text: '삭제',
           style: 'destructive',
-          onPress: () => {
-            Alert.alert('안내', '계정 삭제를 원하시면 고객센터로 연락해주세요.\nsupport@ipjuhae.com');
+          onPress: async () => {
+            if (deleting) return;
+            setDeleting(true);
+            try {
+              await apiClient.delete('/account/delete');
+              await logout();
+            } catch {
+              Alert.alert('삭제 실패', '계정을 삭제하지 못했습니다. 잠시 후 다시 시도해주세요.');
+            } finally {
+              setDeleting(false);
+            }
           },
         },
       ]
@@ -65,14 +73,6 @@ const SettingsScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   const sections: { title: string; items: SettingItem[] }[] = [
-    {
-      title: '알림',
-      items: [
-        { icon: '🔔', label: '푸시 알림', type: 'toggle', value: pushEnabled, onToggle: setPushEnabled },
-        { icon: '💬', label: '새 메시지 알림', type: 'toggle', value: messageAlert, onToggle: setMessageAlert },
-        { icon: '🤝', label: '매칭 알림', type: 'toggle', value: matchAlert, onToggle: setMatchAlert },
-      ],
-    },
     {
       title: '계정',
       items: [
