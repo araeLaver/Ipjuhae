@@ -7,6 +7,7 @@ vi.mock('next/headers', () => ({
 vi.mock('@/lib/db', () => ({
   query: vi.fn(),
   queryOne: vi.fn(),
+  transaction: vi.fn(),
   default: { connect: vi.fn() },
 }))
 
@@ -41,7 +42,7 @@ import { POST as logout } from '@/app/api/auth/logout/route'
 import { GET as me } from '@/app/api/auth/me/route'
 import { DELETE as deleteAccount } from '@/app/api/account/delete/route'
 import { setAuthCookie, clearAuthCookie, getCurrentUser } from '@/lib/auth'
-import { query, queryOne } from '@/lib/db'
+import { query, queryOne, transaction } from '@/lib/db'
 import { authRateLimit } from '@/lib/rate-limit'
 
 function jsonRequest(url: string, method: string, body: Record<string, unknown>): Request {
@@ -306,36 +307,49 @@ describe('DELETE /api/account/delete', () => {
       name: userType === 'tenant' ? '세입자' : '집주인',
       user_type: userType,
     } as never)
-    vi.mocked(query).mockResolvedValue([])
+    const clientQuery = vi.fn().mockResolvedValue({ rows: [] })
+    vi.mocked(transaction).mockImplementationOnce(async (callback) => callback({
+      query: clientQuery,
+    } as never))
 
     const res = await deleteAccount()
     const data = await res.json()
 
     expect(res.status).toBe(200)
     expect(data.ok).toBe(true)
-    expect(query).toHaveBeenCalledTimes(5)
-    expect(query).toHaveBeenNthCalledWith(
+    expect(clientQuery).toHaveBeenCalledTimes(7)
+    expect(clientQuery).toHaveBeenNthCalledWith(
       1,
       expect.stringContaining('UPDATE users'),
       [`deleted_${userId}@deleted.invalid`, userId]
     )
-    expect(query).toHaveBeenNthCalledWith(
+    expect(clientQuery).toHaveBeenNthCalledWith(
       2,
       expect.stringContaining('UPDATE profiles'),
       [userId]
     )
-    expect(query).toHaveBeenNthCalledWith(
+    expect(clientQuery).toHaveBeenNthCalledWith(
       3,
       'DELETE FROM notifications WHERE user_id = $1',
       [userId]
     )
-    expect(query).toHaveBeenNthCalledWith(
+    expect(clientQuery).toHaveBeenNthCalledWith(
       4,
-      'DELETE FROM favorites WHERE user_id = $1',
+      'DELETE FROM notification_preferences WHERE user_id = $1',
       [userId]
     )
-    expect(query).toHaveBeenNthCalledWith(
+    expect(clientQuery).toHaveBeenNthCalledWith(
       5,
+      'DELETE FROM mobile_notification_settings WHERE user_id = $1',
+      [userId]
+    )
+    expect(clientQuery).toHaveBeenNthCalledWith(
+      6,
+      'DELETE FROM tenant_favorites WHERE landlord_id = $1 OR tenant_id = $1',
+      [userId]
+    )
+    expect(clientQuery).toHaveBeenNthCalledWith(
+      7,
       expect.stringContaining('UPDATE tenant_profiles'),
       [userId]
     )
@@ -349,7 +363,7 @@ describe('DELETE /api/account/delete', () => {
       name: '세입자',
       user_type: 'tenant',
     } as never)
-    vi.mocked(query).mockRejectedValueOnce(new Error('database unavailable'))
+    vi.mocked(transaction).mockRejectedValueOnce(new Error('database unavailable'))
 
     const res = await deleteAccount()
     const data = await res.json()

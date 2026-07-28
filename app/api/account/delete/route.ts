@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
-import { query } from '@/lib/db'
+import { transaction } from '@/lib/db'
 import { logger } from '@/lib/logger'
 import { clearAuthCookie } from '@/lib/auth'
 
@@ -24,43 +24,50 @@ export async function DELETE() {
   const anonymousEmail = `deleted_${userId}@deleted.invalid`
 
   try {
-    // 1. 개인정보 익명화
-    await query(
-      `UPDATE users
-       SET email = $1,
-           name = '탈퇴한 사용자',
-           phone = NULL,
-           deleted_at = NOW(),
-           updated_at = NOW()
-       WHERE id = $2`,
-      [anonymousEmail, userId]
-    )
+    await transaction(async (client) => {
+      // 1. 개인정보 익명화
+      await client.query(
+        `UPDATE users
+         SET email = $1,
+             name = '탈퇴한 사용자',
+             phone = NULL,
+             deleted_at = NOW(),
+             updated_at = NOW()
+         WHERE id = $2`,
+        [anonymousEmail, userId]
+      )
 
-    // 2. 프로필 익명화
-    await query(
-      `UPDATE profiles
-       SET name = '탈퇴한 사용자',
-           bio = NULL,
-           intro = NULL,
-           updated_at = NOW()
-       WHERE user_id = $1`,
-      [userId]
-    )
+      // 2. 프로필 익명화
+      await client.query(
+        `UPDATE profiles
+         SET name = '탈퇴한 사용자',
+             bio = NULL,
+             intro = NULL,
+             updated_at = NOW()
+         WHERE user_id = $1`,
+        [userId]
+      )
 
-    // 3. 알림 삭제
-    await query('DELETE FROM notifications WHERE user_id = $1', [userId])
+      // 3. 알림 및 알림 수신 설정 삭제
+      await client.query('DELETE FROM notifications WHERE user_id = $1', [userId])
+      await client.query('DELETE FROM notification_preferences WHERE user_id = $1', [userId])
+      await client.query('DELETE FROM mobile_notification_settings WHERE user_id = $1', [userId])
 
-    // 4. 찜 목록 삭제
-    await query('DELETE FROM favorites WHERE user_id = $1', [userId])
+      // 4. 사용자가 저장했거나 저장된 찜 목록 삭제
+      await client.query(
+        'DELETE FROM tenant_favorites WHERE landlord_id = $1 OR tenant_id = $1',
+        [userId]
+      )
 
-    // 5. 이미지가 없는 임차인 프로필 초기화
-    await query(
-      `UPDATE tenant_profiles
-       SET workplace = NULL,
-           updated_at = NOW()
-       WHERE user_id = $1`,
-      [userId]
-    )
+      // 5. 이미지가 없는 임차인 프로필 초기화
+      await client.query(
+        `UPDATE tenant_profiles
+         SET workplace = NULL,
+             updated_at = NOW()
+         WHERE user_id = $1`,
+        [userId]
+      )
+    })
 
     logger.info('계정 삭제(익명화) 완료', { userId })
 

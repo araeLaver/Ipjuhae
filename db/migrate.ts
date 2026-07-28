@@ -32,6 +32,7 @@
  * 26. migration-022-patent-trust-engine.sql    - 특허 기반 신뢰도 엔진 보강
  * 27. migration-023-report-bundles-disclosure.sql - 검증값 표준화 + 공개결정/리포트번들
  * 28. migration-024-mobile-notification-settings.sql - 모바일 알림 수신 설정
+ * 29. migration-025-account-deletion-columns.sql - 계정 삭제 지원 컬럼
  */
 
 import { Pool } from 'pg'
@@ -145,6 +146,7 @@ const migrations = [
   'migration-022-patent-trust-engine.sql',
   'migration-023-report-bundles-disclosure.sql',
   'migration-024-mobile-notification-settings.sql',
+  'migration-025-account-deletion-columns.sql',
 ]
 
 const migrationAliases: Record<string, string[]> = {
