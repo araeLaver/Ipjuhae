@@ -3,10 +3,13 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-const DEFAULT_FILES = [
+const DEFAULT_BASE_FILES = [
   'docs/modoo-startup-feature-improvement-plan-20260723.md',
   'docs/modoo-startup-patent-technical-implementation-plan-20260726.md',
 ]
+
+const DEFAULT_RECENT_DOCS_DIR = 'docs'
+const DEFAULT_RECENT_DOC_WINDOW_DAYS = 2
 
 const TERMS = [
   { term: '특허 등록', replacement: '출원일 확보 및 정규출원 보강 중' },
@@ -23,6 +26,10 @@ const TERMS = [
   { term: 'OCR prompt 전문', replacement: '대외 공개 제외' },
   { term: 'API key', replacement: '대외 공개 제외' },
   { term: 'SQL', replacement: '대외 공개 제외' },
+  { term: 'DATABASE_URL', replacement: '환경변수명 또는 대외 공개 제외' },
+  { term: 'JWT_SECRET', replacement: '환경변수명 또는 대외 공개 제외' },
+  { term: 'LAUNCH_SMOKE_TOKEN', replacement: '환경변수명 또는 대외 공개 제외' },
+  { term: 'trust.score_breakdown', replacement: '대외 공개 제외' },
 ]
 
 const ALLOWED_CONTEXT_PATTERNS = [
@@ -31,6 +38,7 @@ const ALLOWED_CONTEXT_PATTERNS = [
   /표현하지 않는다/,
   /복사하지 않는다/,
   /아닌/,
+  /아니라/,
   /오인/,
   /제공하지/,
   /제한한다/,
@@ -40,9 +48,80 @@ const ALLOWED_CONTEXT_PATTERNS = [
   /체크리스트/,
   /내부 실행계획/,
   /외부 제출 전/,
+  /환경변수/,
+  /운영 launch 전/,
+  /미설정/,
+  /설정 확인/,
+  /적용 증거/,
+  /placeholder/,
+  /<secret>/,
+  /비밀값/,
+  /실제 사용자 데이터/,
+  /원본 증빙/,
+  /첨부하지/,
+  /제출하지/,
+  /포함하지/,
 ]
 
 const EXTENSIONS = new Set(['.md', '.txt'])
+
+function parseDateFromFileName(fileName) {
+  const matches = [...fileName.matchAll(/20\d{6}/g)].map((match) => match[0])
+  const dateText = matches.at(-1)
+
+  if (!dateText) {
+    return null
+  }
+
+  const year = Number(dateText.slice(0, 4))
+  const month = Number(dateText.slice(4, 6))
+  const day = Number(dateText.slice(6, 8))
+  const date = new Date(Date.UTC(year, month - 1, day))
+
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    return null
+  }
+
+  return { date, dateText }
+}
+
+function getDefaultTargets() {
+  if (!fs.existsSync(DEFAULT_RECENT_DOCS_DIR)) {
+    return DEFAULT_BASE_FILES
+  }
+
+  const candidates = fs
+    .readdirSync(DEFAULT_RECENT_DOCS_DIR, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && EXTENSIONS.has(path.extname(entry.name)))
+    .map((entry) => {
+      const parsedDate = parseDateFromFileName(entry.name)
+      return parsedDate
+        ? {
+            filePath: path.join(DEFAULT_RECENT_DOCS_DIR, entry.name),
+            ...parsedDate,
+          }
+        : null
+    })
+    .filter(Boolean)
+
+  const latestTime = Math.max(...candidates.map((candidate) => candidate.date.getTime()))
+
+  if (!Number.isFinite(latestTime)) {
+    return DEFAULT_BASE_FILES
+  }
+
+  const oldestTime = latestTime - DEFAULT_RECENT_DOC_WINDOW_DAYS * 24 * 60 * 60 * 1000
+  const recentFiles = candidates
+    .filter((candidate) => candidate.date.getTime() >= oldestTime)
+    .sort((a, b) => a.filePath.localeCompare(b.filePath))
+    .map((candidate) => candidate.filePath)
+
+  return [...new Set([...DEFAULT_BASE_FILES, ...recentFiles])]
+}
 
 function collectFiles(targets) {
   const files = []
@@ -106,7 +185,7 @@ function scanFile(filePath) {
 
 function main() {
   const args = process.argv.slice(2)
-  const targets = args.length > 0 ? args : DEFAULT_FILES
+  const targets = args.length > 0 ? args : getDefaultTargets()
   const files = collectFiles(targets)
   const findings = files.flatMap(scanFile)
 
