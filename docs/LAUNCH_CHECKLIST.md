@@ -7,6 +7,7 @@
 - [ ] `npm run db:migrate` completed against production.
 - [ ] `JWT_SECRET` is a production-only random value of at least 32 bytes.
 - [ ] `CRON_SECRET` is a production-only random value and cron callers send `Authorization: Bearer <CRON_SECRET>`.
+- [ ] `LAUNCH_SMOKE_TOKEN` is a production-only random value of at least 32 bytes and smoke callers send `x-launch-smoke-token`.
 - [ ] `NEXT_PUBLIC_APP_URL` and `NEXT_PUBLIC_BASE_URL` are the final public HTTPS origin.
 - [ ] Docker/Koyeb routes traffic to container port `8000`.
 - [ ] `/api/health` returns `200` with `database: "ok"` after deployment.
@@ -50,16 +51,24 @@
 
 ## Verification commands
 
-Run these without production secrets where possible:
+Run these without production secrets:
 
 ```bash
 npm run assets:generate
 npm run mobile:launch-check
-npm run launch:check
+npx expo-doctor mobile
+npm --prefix mobile run typecheck
+npm --prefix mobile audit --audit-level=high
 npm run typecheck
 npm run test:run
 npm run build
 npm run docs:public-check
+```
+
+Run this only with production-equivalent required secrets or dummy values in a non-production QA environment:
+
+```bash
+npm run launch:check
 ```
 
 After deploy, verify:

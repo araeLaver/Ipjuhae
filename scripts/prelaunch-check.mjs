@@ -32,12 +32,14 @@ function validateProviders() {
     ['DB_SCHEMA', 'DB_SCHEMA is required'],
     ['JWT_SECRET', 'JWT_SECRET is required'],
     ['CRON_SECRET', 'CRON_SECRET is required for /api/cron'],
+    ['LAUNCH_SMOKE_TOKEN', 'LAUNCH_SMOKE_TOKEN is required for /api/launch/smoke'],
     ['NEXT_PUBLIC_APP_URL', 'NEXT_PUBLIC_APP_URL is required'],
     ['NEXT_PUBLIC_BASE_URL', 'NEXT_PUBLIC_BASE_URL is required'],
   ]
 
   coreChecks.forEach(([name, message]) => collectFailure(failures, requireEnv(name, message)))
   collectFailure(failures, validateLength('JWT_SECRET', 32))
+  collectFailure(failures, validateLength('LAUNCH_SMOKE_TOKEN', 32))
 
   // SMS provider must be real in production
   const smsProvider = process.env.SMS_PROVIDER

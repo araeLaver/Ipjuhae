@@ -3,9 +3,15 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
 
 const DEFAULT_API_BASE_URL = 'https://www.ipjuhae.com/api';
-const API_BASE_URL = (process.env.EXPO_PUBLIC_API_URL || DEFAULT_API_BASE_URL).replace(/\/+$/, '');
+const configuredApiUrl = Constants.expoConfig?.extra?.apiUrl;
+const API_BASE_URL = (
+  process.env.EXPO_PUBLIC_API_URL ||
+  (typeof configuredApiUrl === 'string' ? configuredApiUrl : undefined) ||
+  DEFAULT_API_BASE_URL
+).replace(/\/+$/, '');
 
 const TOKEN_KEY = 'auth_token';
 const REFRESH_TOKEN_KEY = 'refresh_token';

@@ -47,9 +47,6 @@ async function main() {
   if (app.android?.package !== 'com.ipjuhae.app') {
     fail(failures, 'android.package must be com.ipjuhae.app')
   }
-  if (app.splash?.backgroundColor !== '#F8F5EF') {
-    fail(failures, 'splash.backgroundColor must match Warm Paper #F8F5EF')
-  }
   if (app.android?.adaptiveIcon?.backgroundColor !== '#B95545') {
     fail(failures, 'android.adaptiveIcon.backgroundColor must match Coral Clay #B95545')
   }
@@ -57,8 +54,21 @@ async function main() {
   if (notificationsPlugin?.[1]?.color !== '#B95545') {
     fail(failures, 'expo-notifications color must match Coral Clay #B95545')
   }
+  const splashPlugin = app.plugins?.find((plugin) => Array.isArray(plugin) && plugin[0] === 'expo-splash-screen')
+  if (splashPlugin?.[1]?.image !== './assets/splash.png') {
+    fail(failures, 'expo-splash-screen image must be ./assets/splash.png')
+  }
+  if (splashPlugin?.[1]?.resizeMode !== 'contain') {
+    fail(failures, 'expo-splash-screen resizeMode must be contain')
+  }
+  if (splashPlugin?.[1]?.backgroundColor !== '#F8F5EF') {
+    fail(failures, 'expo-splash-screen backgroundColor must match Warm Paper #F8F5EF')
+  }
   if (!/^https:\/\/.+\/api$/.test(app.extra?.apiUrl || '')) {
     fail(failures, 'extra.apiUrl must be a production HTTPS /api origin')
+  }
+  if (app.extra?.eas?.projectId === 'your-project-id') {
+    fail(failures, 'extra.eas.projectId must not use the placeholder your-project-id')
   }
 
   await Promise.all(REQUIRED_ASSETS.map(([file, width, height]) => checkAsset(failures, file, width, height)))

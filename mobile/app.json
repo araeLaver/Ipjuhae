@@ -7,11 +7,6 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "scheme": "ipjuhae",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#F8F5EF"
-    },
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
@@ -33,11 +28,7 @@
       },
       "package": "com.ipjuhae.app",
       "versionCode": 1,
-      "permissions": [
-        "CAMERA",
-        "READ_EXTERNAL_STORAGE",
-        "VIBRATE"
-      ]
+      "permissions": ["CAMERA", "READ_EXTERNAL_STORAGE", "VIBRATE"]
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -63,12 +54,17 @@
           "icon": "./assets/notification-icon.png",
           "color": "#B95545"
         }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#F8F5EF"
+        }
       ]
     ],
     "extra": {
-      "eas": {
-        "projectId": "your-project-id"
-      },
       "apiUrl": "https://www.ipjuhae.com/api"
     },
     "platforms": ["ios", "android"]

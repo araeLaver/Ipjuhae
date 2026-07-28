@@ -15,6 +15,7 @@
 | PWA | 완료 | `/manifest.webmanifest`, 앱 아이콘, maskable icon, shortcut 구성 |
 | 공유/검색 노출 | 완료 | OpenGraph 이미지, favicon, Apple icon, sitemap/robots 정리 |
 | 모바일 앱 | 완료 | Expo 앱 설정, 아이콘/스플래시/알림 아이콘, 주요 화면 브랜드 통일 |
+| 모바일 의존성 | 완료 | Expo 57 / React Native 0.86 / React 19 기준으로 타입체크 통과, npm audit 0 vulnerabilities |
 | 모바일 API | 완료 | `EXPO_PUBLIC_API_URL` override, 업로드 모바일 헤더 반영 |
 | 운영 검증 | 완료 | `assets:generate`, `mobile:launch-check`, `launch:check` 자산 누락 검사 |
 | 법무/특허 메시지 | 완료 | 자동 안전판정이 아닌 확인 항목·검수상태·동의 기반 공유 표현 유지 |
@@ -24,6 +25,8 @@
 ```bash
 npm run assets:generate
 npm run mobile:launch-check
+npm --prefix mobile run typecheck
+npm --prefix mobile audit --audit-level=high
 npm run typecheck
 npm run test:run
 npm run build

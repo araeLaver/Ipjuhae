@@ -33,4 +33,6 @@
 ## 코드 반영 위치
 
 - `app/globals.css`: Tailwind CSS 변수의 브랜드 테마
-- Figma: `입주해 디자인 품질 개선 2026-07-26` 파일의 `Ipjuhae Tokens` 변수 컬렉션
+- Figma: `입주해 즉시출시 디자인 시스템 + Coral Sage 2026-07-27`
+  - URL: `https://www.figma.com/design/9cc8Ulmrq77B6WJqoMF0Cj`
+  - 변수 컬렉션: `Ipjuhae Tokens`
