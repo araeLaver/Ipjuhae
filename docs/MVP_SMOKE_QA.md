@@ -47,3 +47,27 @@ Manual provider-key checks for staging:
 - 알림 권한 및 preference가 실제로 연동되지 않거나 알림 설정 화면이 placeholder이면 배포를 차단합니다.
 - 사진 권한 거부 후 복구 경로가 없으면 high risk로 기록하고 store 제출 전에 수정합니다.
 - 계정 삭제가 앱 내부 또는 명확한 지원 절차로 완료되지 않으면 개인정보·store 심사 위험으로 기록합니다.
+
+## 자동 검증 커버리지 기준: 2026-07-29
+
+아래 항목은 실제 device/simulator, staging credential, production secret 없이 로컬 자동 검증으로 확인 가능합니다.
+
+- `npm run mobile:launch-check`: `mobile/app.json`, Expo 아이콘/스플래시/알림 아이콘, `expo-notifications` 설정을 정적으로 확인합니다.
+- `npm run typecheck`: Web/API TypeScript 경로를 확인합니다.
+- `(cd mobile && npm run typecheck)`: Expo mobile TypeScript 경로를 확인합니다.
+- `npm run test:run -- __tests__/api/auth.test.ts __tests__/lib/mobile-notification-state.test.ts`: 계정 삭제 API와 모바일 알림 effective state 유틸리티를 타깃 검증합니다.
+- `npm run test:run`: 전체 Vitest 회귀 테스트를 확인합니다.
+
+자동 검증으로 확인된 커버리지:
+
+- 계정 삭제 API는 미인증 요청 401, tenant/landlord 계정 익명화, `notifications`, `notification_preferences`, `mobile_notification_settings`, `tenant_favorites` 정리, 실패 시 auth cookie 보존을 테스트합니다.
+- 모바일 알림 state 유틸리티는 OS 권한 거부 시 push/message/match 비활성화, 서버 push off 시 하위 알림 비활성화, 허용 상태에서 개별 설정 반영을 테스트합니다.
+- 알림 설정 화면은 `GET/PUT /api/notifications/preferences`, `expo-notifications` 권한 조회/요청, `AppState` active 복귀 시 권한 refresh 경로를 TypeScript 검증 범위에 포함합니다.
+- 모바일 설정 화면은 `알림 설정` 실제 navigation과 `DELETE /api/account/delete` 호출 후 logout 경로를 TypeScript 검증 범위에 포함합니다.
+
+자동 검증으로 아직 대체할 수 없는 수동 QA gap:
+
+- iOS/Android 실제 OS 권한 prompt의 허용·거부 UX와 OS 설정 변경 후 복귀 refresh 동작은 staging build 또는 simulator/device에서 확인해야 합니다.
+- 알림 toggle 저장값이 앱 재실행·재로그인 뒤 유지되는지는 staging API와 실제 계정 세션으로 확인해야 합니다.
+- 계정 삭제 후 기존 token으로 보호 API 호출이 차단되고 재로그인이 차단되는지는 실제 auth/session store와 staging DB 상태로 확인해야 합니다.
+- push notification 수신 자체는 Expo push credential과 device token이 필요하므로 로컬 자동 검증 범위 밖입니다.

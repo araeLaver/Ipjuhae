@@ -17,7 +17,8 @@ Rentme는 2026-07-29 기준 TypeScript, 전체 Vitest 회귀 테스트, Next.js 
 ## Git 상태
 
 - 현재 브랜치: `feature/community-trust-docs-kakao`
-- 원격 대비 상태: `origin/feature/community-trust-docs-kakao`보다 15커밋 ahead, behind 0
+- 원격 대비 상태: `origin/feature/community-trust-docs-kakao`보다 18커밋 ahead, behind 0
+- 구성: 기존 제품/사업 변경 17커밋과 PR/release 검증 범위 정리 1커밋
 - 정리 판단: 이 문서는 제품/품질 증거 산출물로 commit 대상이다. `.claude/settings.local.json`의 `Bash(brew upgrade *)` 허용 변경은 로컬 실행 권한 설정이므로 제품 PR 산출물에서 제외한다.
 - 최근 커밋:
   - `fb28345 fix: 계정 삭제 DB 흐름을 원자적으로 처리`
@@ -25,9 +26,11 @@ Rentme는 2026-07-29 기준 TypeScript, 전체 Vitest 회귀 테스트, Next.js 
   - `56e40e7 feat: 모바일 알림 및 계정 삭제 흐름 연결`
   - `200d6f2 test: 모바일 권한 및 알림 회귀 체크리스트 보강`
   - `87a6b9d DOW-629 공개자료 guard 최신 후보 자동 포함`
-- 검증 전 미커밋 tracked diff:
+- CTO 검토 시점 미커밋 tracked diff:
+  - `docs/product-quality-evidence-20260729.md`: 원격 대비 ahead 수와 검증 증거 정정
+  - `docs/MVP_SMOKE_QA.md`: 자동 검증 커버리지와 수동 QA gap 추가
   - `.claude/settings.local.json`: `Bash(brew upgrade *)` 허용 항목 추가
-- 검증 전 tracked diff 규모: `1`개 파일, `2 insertions`, `1 deletion`
+- 정리 판단: 위 문서 2개는 PR/release 준비 증거로 commit 대상이다. `.claude/settings.local.json`은 로컬 실행 권한 설정이므로 제품 PR 산출물에서 제외한다.
 
 ## 주요 변경 증거
 
@@ -41,7 +44,7 @@ Rentme는 2026-07-29 기준 TypeScript, 전체 Vitest 회귀 테스트, Next.js 
 
 ## PR/Release Note 요약
 
-원격 대비 15커밋은 다음 단위로 묶어 설명할 수 있다.
+기존 원격 대비 제품/사업 변경 17커밋은 다음 단위로 묶어 설명할 수 있으며, 별도 1커밋은 PR/release 검증 범위와 수동 QA gap을 문서화한다.
 
 1. 제품 신뢰/공시 surface 보강
    - 신뢰 disclosure controls, public data guard, report aggregate API, consent 접근 기록, admin validation values surface를 보강했다.
@@ -98,7 +101,7 @@ PR 설명에는 다음 문장을 사용할 수 있다.
 
 오늘 실행 범위에서는 운영 배포, 운영 DB migration, production secret 변경, 외부 provider 설정을 수행하지 않았다. 운영 launch 전에는 기존 blocked 작업 [DOW-365](/DOW/issues/DOW-365)의 Fly secrets 및 운영 DB migration evidence 확인이 계속 필요하다.
 
-현재 제품 코드 기준 검증은 통과했지만, 브랜치가 원격보다 15커밋 앞서 있으므로 외부 demo 또는 PR 전에는 커밋 묶음의 의도와 release note를 한 번 더 정리해야 한다. 오늘 확인된 미커밋 변경은 `.claude/settings.local.json`의 로컬 권한 설정뿐이라 제품 build/test 증거와 분리 가능하다.
+현재 제품 코드 기준 검증은 통과했으며, 원격 대비 기존 17개 제품/사업 변경과 1개 PR/release 정리 커밋의 의도 및 release note를 이 문서에 정리했다. 오늘 확인된 미커밋 변경은 `.claude/settings.local.json`의 로컬 권한 설정뿐이라 제품 build/test 증거와 분리 가능하다.
 
 ## 외부 증빙용 제품 진행 요약
 
@@ -111,5 +114,5 @@ Rentme는 세입자 신뢰 프로필, 임대인 매물 관리, 매칭, 메시지
 ## 다음 액션
 
 - [DOW-365](/DOW/issues/DOW-365): Fly secrets 및 운영 DB migration evidence 확인을 unblock한다.
-- 원격보다 15커밋 앞선 브랜치 상태를 PR/release note 단위로 정리한다.
+- 원격보다 앞선 기존 17개 제품/사업 변경과 1개 PR/release 정리 커밋을 PR 본문에 반영한다.
 - `.claude/settings.local.json` 로컬 권한 변경은 제품 코드 변경과 분리해 commit 포함 여부를 결정한다.
