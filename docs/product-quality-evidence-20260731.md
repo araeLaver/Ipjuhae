@@ -79,13 +79,13 @@ Rentme는 2026-07-31 기준 TypeScript, 전체 Vitest 회귀 테스트, Next.js 
 
 확인된 blocker는 다음과 같다.
 
-- `DATABASE_URL`, `DB_SCHEMA`
-- `JWT_SECRET`, `CRON_SECRET`, `LAUNCH_SMOKE_TOKEN`
-- `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_BASE_URL`
-- `SMS_PROVIDER`
-- `EMAIL_PROVIDER` 또는 `SMTP_HOST`/`SMTP_USER`/`SMTP_PASS`
-- `STORAGE_PROVIDER=s3`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`
-- `VERIFICATION_PROVIDER`
+- production DB 접속 및 schema 선택 설정
+- 인증, scheduled job, launch smoke 접근 제어용 secret 설정
+- public app/base URL 설정
+- SMS provider 설정
+- email provider 또는 SMTP 접속 설정
+- object storage provider 및 bucket/access credential 설정
+- verification provider 설정
 
 운영 secret, 운영 DB, 외부 provider 설정은 보드 승인 없이 변경하지 않는 경계에 해당하므로 오늘 실행에서는 설정하지 않았다.
 
