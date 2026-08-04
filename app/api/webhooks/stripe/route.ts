@@ -156,8 +156,12 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
 }
 
 async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
-  const periodEnd = typeof subscription.current_period_end === 'number'
-    ? new Date(subscription.current_period_end * 1000).toISOString()
+  const currentPeriodEnd = subscription.items.data.reduce<number | null>(
+    (latest, item) => latest === null ? item.current_period_end : Math.max(latest, item.current_period_end),
+    null
+  )
+  const periodEnd = currentPeriodEnd !== null
+    ? new Date(currentPeriodEnd * 1000).toISOString()
     : null
   const isActive = subscription.status === 'active'
 
@@ -208,7 +212,8 @@ async function handleSubscriptionCanceled(subscription: Stripe.Subscription) {
 }
 
 async function handlePaymentFailed(invoice: Stripe.Invoice) {
-  const subscriptionId = (invoice as { subscription: string | null }).subscription
+  const subscription = invoice.parent?.subscription_details?.subscription
+  const subscriptionId = typeof subscription === 'string' ? subscription : subscription?.id
   if (!subscriptionId) return
 
   logger.warn('Payment failed', {
