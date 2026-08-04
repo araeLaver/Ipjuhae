@@ -37,32 +37,32 @@ interface MonthlyStatRow {
   messages: string
 }
 
-// GET /api/landlord/stats - 집주???�계 조회
+// GET /api/landlord/stats - 집주인 통계 조회
 export async function GET() {
   try {
     const cookieStore = await cookies()
     const token = cookieStore.get('auth_token')?.value
 
     if (!token) {
-      return NextResponse.json({ error: '로그?�이 ?�요?�니?? }, { status: 401 })
+      return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 })
     }
 
     const payload = verifyToken(token)
     if (!payload) {
-      return NextResponse.json({ error: '?�효?��? ?��? ?�큰?�니?? }, { status: 401 })
+      return NextResponse.json({ error: '유효하지 않은 토큰입니다' }, { status: 401 })
     }
 
-    // 집주???�인
+    // 집주인 확인
     const userResult = await query<UserRow>(
       'SELECT user_type FROM users WHERE id = $1',
       [payload.userId]
     )
 
     if (userResult.length === 0 || userResult[0].user_type !== 'landlord') {
-      return NextResponse.json({ error: '집주?�만 ?�근?????�습?�다' }, { status: 403 })
+      return NextResponse.json({ error: '집주인만 접근할 수 있습니다' }, { status: 403 })
     }
 
-    // 매물 ?�계
+    // 매물 통계
     const propertyStats = await query<PropertyStatsRow>(
       `SELECT
         COUNT(*) as total_properties,
@@ -75,7 +75,7 @@ export async function GET() {
       [payload.userId]
     )
 
-    // 즐겨찾기 받�? ??
+    // 즐겨찾기 받은 수
     const favoriteCount = await query<FavoriteCountRow>(
       `SELECT COUNT(*) as total_favorites
        FROM tenant_favorites
@@ -83,7 +83,7 @@ export async function GET() {
       [payload.userId]
     )
 
-    // 메시지 ?�계
+    // 메시지 통계
     const messageStats = await query<MessageCountRow>(
       `SELECT
         COUNT(*) FILTER (
@@ -96,12 +96,12 @@ export async function GET() {
       [payload.userId]
     )
 
-    // 최근 ?�동 (최근 10�?
-    // 참고: ?�제 ?�동 로그 ?�이블이 ?�으므�??�?�방 ?�성/메시지�??�동?�로 ?�시
+    // 최근 활동 (최근 10개)
+    // 참고: 실제 활동 로그 테이블이 없으므로 대화방 생성/메시지를 활동으로 표시
     const recentMessages = await query<RecentActivityRow>(
       `SELECT
         'message_received' as type,
-        COALESCE(p.name, '?????�음') || '?�이 메시지�?보냈?�니?? as description,
+        COALESCE(p.name, '알 수 없음') || '님이 메시지를 보냈습니다' as description,
         m.created_at
       FROM messages m
       JOIN conversations c ON m.conversation_id = c.id
@@ -112,8 +112,8 @@ export async function GET() {
       [payload.userId]
     )
 
-    // ?�별 ?�계 (최근 6개월)
-    // ?�재??메시지 ?�만 계산 (조회??로그 ?�이블이 ?�음)
+    // 월별 통계 (최근 6개월)
+    // 현재는 메시지 수만 계산 (조회수 로그 테이블이 없음)
     const monthlyStats = await query<MonthlyStatRow>(
       `SELECT
         TO_CHAR(DATE_TRUNC('month', m.created_at), 'YYYY-MM') as month,
@@ -157,8 +157,7 @@ export async function GET() {
       })),
     })
   } catch (error) {
-    console.error('?�계 조회 ?�류:', error)
-    return NextResponse.json({ error: '?�계�?불러?�는???�패?�습?�다' }, { status: 500 })
+    console.error('통계 조회 오류:', error)
+    return NextResponse.json({ error: '통계를 불러오는데 실패했습니다' }, { status: 500 })
   }
 }
-

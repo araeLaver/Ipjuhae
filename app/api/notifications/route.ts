@@ -23,10 +23,10 @@ interface CountRow {
 export async function GET(request: Request) {
   const cookieStore = await cookies()
   const token = cookieStore.get('auth_token')?.value
-  if (!token) return NextResponse.json({ error: '로그?�이 ?�요?�니?? }, { status: 401 })
+  if (!token) return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 })
 
   const payload = verifyToken(token)
-  if (!payload) return NextResponse.json({ error: '?�효?��? ?��? ?�큰?�니?? }, { status: 401 })
+  if (!payload) return NextResponse.json({ error: '유효하지 않은 토큰입니다' }, { status: 401 })
 
   const { searchParams } = new URL(request.url)
   const cursor = searchParams.get('cursor')       // created_at ISO string
@@ -69,8 +69,7 @@ export async function GET(request: Request) {
       nextCursor,
     })
   } catch (error) {
-    console.error('?�림 목록 조회 ?�류:', error)
-    return NextResponse.json({ error: '?�림??불러?�는???�패?�습?�다' }, { status: 500 })
+    console.error('알림 목록 조회 오류:', error)
+    return NextResponse.json({ error: '알림을 불러오는데 실패했습니다' }, { status: 500 })
   }
 }
-

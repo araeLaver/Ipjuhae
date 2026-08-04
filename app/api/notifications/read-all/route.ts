@@ -6,10 +6,10 @@ import { query } from '@/lib/db'
 export async function PATCH(_request: Request) {
   const cookieStore = await cookies()
   const token = cookieStore.get('auth_token')?.value
-  if (!token) return NextResponse.json({ error: '로그?�이 ?�요?�니?? }, { status: 401 })
+  if (!token) return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 })
 
   const payload = verifyToken(token)
-  if (!payload) return NextResponse.json({ error: '?�효?��? ?��? ?�큰?�니?? }, { status: 401 })
+  if (!payload) return NextResponse.json({ error: '유효하지 않은 토큰입니다' }, { status: 401 })
 
   try {
     const result = await query<{ count: string }>(
@@ -28,8 +28,7 @@ export async function PATCH(_request: Request) {
       markedCount: parseInt(result[0]?.count || '0'),
     })
   } catch (error) {
-    console.error('?�체 ?�음 처리 ?�류:', error)
-    return NextResponse.json({ error: '처리???�패?�습?�다' }, { status: 500 })
+    console.error('전체 읽음 처리 오류:', error)
+    return NextResponse.json({ error: '처리에 실패했습니다' }, { status: 500 })
   }
 }
-
