@@ -105,7 +105,7 @@ CREATE TABLE IF NOT EXISTS contract_check_items (
   item_key TEXT NOT NULL,
   label TEXT NOT NULL,
   verification_status TEXT NOT NULL DEFAULT 'MISSING',
-  evidence_id UUID REFERENCES trust_evidence_items(id),
+  evidence_id UUID REFERENCES trust_evidence_nodes(id),
   source_type TEXT,
   source_name TEXT,
   source_ref TEXT,
