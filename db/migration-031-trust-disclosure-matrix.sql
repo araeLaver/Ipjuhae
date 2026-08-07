@@ -10,11 +10,39 @@ UPDATE trust_disclosure_policies
 ALTER TABLE trust_disclosure_policies
   DROP CONSTRAINT IF EXISTS ck_trust_disclosure_stage_purpose_level;
 ALTER TABLE trust_disclosure_policies
+  DROP CONSTRAINT IF EXISTS ck_trust_disclosure_verification_level;
+ALTER TABLE trust_disclosure_policies
   ADD CONSTRAINT ck_trust_disclosure_verification_level
     CHECK (verification_level BETWEEN 0 AND 2);
 
+-- Drop the legacy 5-column unique constraint regardless of its auto-generated
+-- name. PostgreSQL truncates auto names to 63 bytes, so the original became
+-- trust_disclosure_policies_version_subject_type_recipient_ro_key rather than
+-- the full ..._transaction_stage_purpose_key the earlier attempt tried to drop.
+DO $$
+DECLARE
+  legacy_conname text;
+BEGIN
+  SELECT c.conname INTO legacy_conname
+  FROM pg_constraint c
+  JOIN pg_class t ON t.oid = c.conrelid
+  JOIN pg_namespace n ON n.oid = t.relnamespace
+  WHERE t.relname = 'trust_disclosure_policies'
+    AND n.nspname = current_schema()
+    AND c.contype = 'u'
+    AND (
+      SELECT array_agg(a.attname ORDER BY a.attname)
+      FROM pg_attribute a
+      WHERE a.attrelid = t.oid AND a.attnum = ANY(c.conkey)
+    ) = ARRAY['purpose', 'recipient_role', 'subject_type', 'transaction_stage', 'version']::name[];
+
+  IF legacy_conname IS NOT NULL THEN
+    EXECUTE format('ALTER TABLE trust_disclosure_policies DROP CONSTRAINT %I', legacy_conname);
+  END IF;
+END $$;
+
 ALTER TABLE trust_disclosure_policies
-  DROP CONSTRAINT IF EXISTS trust_disclosure_policies_version_subject_type_recipient_role_transaction_stage_purpose_key;
+  DROP CONSTRAINT IF EXISTS uq_trust_disclosure_policies_matrix;
 ALTER TABLE trust_disclosure_policies
   ADD CONSTRAINT uq_trust_disclosure_policies_matrix
     UNIQUE (version, subject_type, recipient_role, transaction_stage, purpose, verification_level);
@@ -77,6 +105,8 @@ UPDATE trust_disclosure_packages
    SET verification_level = 0
  WHERE verification_level IS NULL;
 
+ALTER TABLE trust_disclosure_packages
+  DROP CONSTRAINT IF EXISTS ck_trust_disclosure_package_verification_level;
 ALTER TABLE trust_disclosure_packages
   ADD CONSTRAINT ck_trust_disclosure_package_verification_level
     CHECK (verification_level BETWEEN 0 AND 2);
