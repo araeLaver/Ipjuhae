@@ -19,8 +19,6 @@ export function generateToken(userId: string, userType?: string): string {
     {
       userId,
       userType,
-      iss: process.env.JWT_ISSUER || 'rentme',
-      aud: process.env.JWT_AUDIENCE || 'rentme-api',
       tokenType: process.env.JWT_TOKEN_TYPE || 'access',
     },
     getJwtSecret(),
