@@ -146,7 +146,8 @@ export async function verifyJwtToken(
 
   const encoder = new TextEncoder()
   const data = encoder.encode(`${headerSegment}.${payloadSegment}`)
-  const signature = base64UrlToBytes(signatureSegment)
+  // Uint8Array.from guarantees an ArrayBuffer-backed view for Web Crypto's BufferSource type.
+  const signature = Uint8Array.from(base64UrlToBytes(signatureSegment))
 
   const key = await crypto.subtle.importKey(
     'raw',

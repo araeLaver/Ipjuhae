@@ -69,15 +69,14 @@ export function calculateTrustScore(input: TrustScoreInput): TrustScoreBreakdown
       return acc
     }, 0)
 
-    referenceScore = totalReferencePoints / referenceResponses.length
+    referenceScore = totalReferencePoints
   }
 
-  const clampedReferenceScore = Math.max(-20, Math.min(30, referenceScore))
   const clampedTotal = Math.max(
     0,
     Math.min(
       120,
-      profileScore + employmentScore + incomeScore + creditScore + clampedReferenceScore
+      profileScore + employmentScore + incomeScore + creditScore + referenceScore
     )
   )
 
@@ -86,7 +85,7 @@ export function calculateTrustScore(input: TrustScoreInput): TrustScoreBreakdown
     employment: employmentScore,
     income: incomeScore,
     credit: creditScore,
-    reference: clampedReferenceScore,
+    reference: referenceScore,
     total: clampedTotal,
   }
 }
@@ -102,15 +101,15 @@ export function getTrustScoreLabel(score: number): string {
   const level = getTrustScoreLevel(score)
   switch (level) {
     case 'excellent':
-      return '최고'
+      return '우수'
     case 'good':
-      return '좋음'
+      return '양호'
     case 'fair':
       return '보통'
     case 'low':
-      return '낮음'
+      return '시작'
     default:
-      return '낮음'
+      return '시작'
   }
 }
 

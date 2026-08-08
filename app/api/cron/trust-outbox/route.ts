@@ -10,7 +10,11 @@ export async function GET(request: Request) {
     return jsonSuccess(request, await dispatchTrustOutbox(50))
   } catch (error) {
     console.error('Trust outbox dispatch failed:', error)
-    return jsonError(request, 500, 'Trust outbox dispatch failed', 'TRUST_OUTBOX_FAILED')
+    // TEMP DIAGNOSTIC (cron-secret-gated; caller already authenticated above):
+    // surface the real pg error so we can pinpoint the runtime cause. Remove after fix.
+    const e = error as { message?: string; code?: string; detail?: string; table?: string; column?: string; routine?: string }
+    const detail = [e.message, e.code && `code=${e.code}`, e.detail && `detail=${e.detail}`, e.table && `table=${e.table}`, e.column && `column=${e.column}`, e.routine && `routine=${e.routine}`].filter(Boolean).join(' | ')
+    return jsonError(request, 500, `Trust outbox dispatch failed: ${detail}`, 'TRUST_OUTBOX_FAILED')
   }
 }
 

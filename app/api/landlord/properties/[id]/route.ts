@@ -5,7 +5,7 @@ import { query } from '@/lib/db'
 import { z } from 'zod'
 import { sanitizeUserInput } from '@/lib/sanitize'
 
-// 매물 ?�정 ?�키�?
+// 매물 수정 스키마
 const updatePropertySchema = z.object({
   title: z.string().min(1).max(100).optional(),
   description: z.string().max(2000).optional(),
@@ -65,7 +65,7 @@ interface UserRow {
   user_type: 'tenant' | 'landlord'
 }
 
-// GET /api/landlord/properties/[id] - 매물 ?�세 조회
+// GET /api/landlord/properties/[id] - 매물 상세 조회
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -76,35 +76,35 @@ export async function GET(
     const token = cookieStore.get('auth_token')?.value
 
     if (!token) {
-      return NextResponse.json({ error: '로그?�이 ?�요?�니?? }, { status: 401 })
+      return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 })
     }
 
     const payload = verifyToken(token)
     if (!payload) {
-      return NextResponse.json({ error: '?�효?��? ?��? ?�큰?�니?? }, { status: 401 })
+      return NextResponse.json({ error: '유효하지 않은 토큰입니다' }, { status: 401 })
     }
 
-    // 집주???�인
+    // 집주인 확인
     const userResult = await query<UserRow>(
       'SELECT user_type FROM users WHERE id = $1',
       [payload.userId]
     )
 
     if (userResult.length === 0 || userResult[0].user_type !== 'landlord') {
-      return NextResponse.json({ error: '집주?�만 ?�근?????�습?�다' }, { status: 403 })
+      return NextResponse.json({ error: '집주인만 접근할 수 있습니다' }, { status: 403 })
     }
 
-    // 매물 조회 (본인 ?�유�?
+    // 매물 조회 (본인 소유만)
     const propertyResult = await query<PropertyRow>(
       'SELECT * FROM properties WHERE id = $1 AND landlord_id = $2',
       [propertyId, payload.userId]
     )
 
     if (propertyResult.length === 0) {
-      return NextResponse.json({ error: '매물??찾을 ???�습?�다' }, { status: 404 })
+      return NextResponse.json({ error: '매물을 찾을 수 없습니다' }, { status: 404 })
     }
 
-    // ?��?지 조회
+    // 이미지 조회
     const images = await query<ImageRow>(
       'SELECT * FROM property_images WHERE property_id = $1 ORDER BY sort_order',
       [propertyId]
@@ -123,12 +123,12 @@ export async function GET(
       images,
     })
   } catch (error) {
-    console.error('매물 조회 ?�류:', error)
-    return NextResponse.json({ error: '매물??불러?�는???�패?�습?�다' }, { status: 500 })
+    console.error('매물 조회 오류:', error)
+    return NextResponse.json({ error: '매물을 불러오는데 실패했습니다' }, { status: 500 })
   }
 }
 
-// PUT /api/landlord/properties/[id] - 매물 ?�정
+// PUT /api/landlord/properties/[id] - 매물 수정
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -139,32 +139,32 @@ export async function PUT(
     const token = cookieStore.get('auth_token')?.value
 
     if (!token) {
-      return NextResponse.json({ error: '로그?�이 ?�요?�니?? }, { status: 401 })
+      return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 })
     }
 
     const payload = verifyToken(token)
     if (!payload) {
-      return NextResponse.json({ error: '?�효?��? ?��? ?�큰?�니?? }, { status: 401 })
+      return NextResponse.json({ error: '유효하지 않은 토큰입니다' }, { status: 401 })
     }
 
-    // 집주???�인
+    // 집주인 확인
     const userResult = await query<UserRow>(
       'SELECT user_type FROM users WHERE id = $1',
       [payload.userId]
     )
 
     if (userResult.length === 0 || userResult[0].user_type !== 'landlord') {
-      return NextResponse.json({ error: '집주?�만 ?�근?????�습?�다' }, { status: 403 })
+      return NextResponse.json({ error: '집주인만 접근할 수 있습니다' }, { status: 403 })
     }
 
-    // 매물 ?�유�??�인
+    // 매물 소유권 확인
     const ownerCheck = await query<PropertyRow>(
       'SELECT id FROM properties WHERE id = $1 AND landlord_id = $2',
       [propertyId, payload.userId]
     )
 
     if (ownerCheck.length === 0) {
-      return NextResponse.json({ error: '매물??찾을 ???�습?�다' }, { status: 404 })
+      return NextResponse.json({ error: '매물을 찾을 수 없습니다' }, { status: 404 })
     }
 
     const body = await request.json()
@@ -179,7 +179,7 @@ export async function PUT(
 
     const data = validation.data
 
-    // ?�적?�로 ?�데?�트 쿼리 ?�성
+    // 동적으로 업데이트 쿼리 생성
     const updates: string[] = []
     const values: unknown[] = []
     let paramIndex = 1
@@ -254,7 +254,7 @@ export async function PUT(
     }
 
     if (updates.length === 0) {
-      return NextResponse.json({ error: '?�정???�용???�습?�다' }, { status: 400 })
+      return NextResponse.json({ error: '수정할 내용이 없습니다' }, { status: 400 })
     }
 
     updates.push(`updated_at = NOW()`)
@@ -277,12 +277,12 @@ export async function PUT(
       },
     })
   } catch (error) {
-    console.error('매물 ?�정 ?�류:', error)
-    return NextResponse.json({ error: '매물 ?�정???�패?�습?�다' }, { status: 500 })
+    console.error('매물 수정 오류:', error)
+    return NextResponse.json({ error: '매물 수정에 실패했습니다' }, { status: 500 })
   }
 }
 
-// DELETE /api/landlord/properties/[id] - 매물 ??��
+// DELETE /api/landlord/properties/[id] - 매물 삭제
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -293,38 +293,37 @@ export async function DELETE(
     const token = cookieStore.get('auth_token')?.value
 
     if (!token) {
-      return NextResponse.json({ error: '로그?�이 ?�요?�니?? }, { status: 401 })
+      return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 })
     }
 
     const payload = verifyToken(token)
     if (!payload) {
-      return NextResponse.json({ error: '?�효?��? ?��? ?�큰?�니?? }, { status: 401 })
+      return NextResponse.json({ error: '유효하지 않은 토큰입니다' }, { status: 401 })
     }
 
-    // 집주???�인
+    // 집주인 확인
     const userResult = await query<UserRow>(
       'SELECT user_type FROM users WHERE id = $1',
       [payload.userId]
     )
 
     if (userResult.length === 0 || userResult[0].user_type !== 'landlord') {
-      return NextResponse.json({ error: '집주?�만 ?�근?????�습?�다' }, { status: 403 })
+      return NextResponse.json({ error: '집주인만 접근할 수 있습니다' }, { status: 403 })
     }
 
-    // 매물 ??�� (본인 ?�유�?
+    // 매물 삭제 (본인 소유만)
     const result = await query<PropertyRow>(
       'DELETE FROM properties WHERE id = $1 AND landlord_id = $2 RETURNING id',
       [propertyId, payload.userId]
     )
 
     if (result.length === 0) {
-      return NextResponse.json({ error: '매물??찾을 ???�습?�다' }, { status: 404 })
+      return NextResponse.json({ error: '매물을 찾을 수 없습니다' }, { status: 404 })
     }
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('매물 ??�� ?�류:', error)
-    return NextResponse.json({ error: '매물 ??��???�패?�습?�다' }, { status: 500 })
+    console.error('매물 삭제 오류:', error)
+    return NextResponse.json({ error: '매물 삭제에 실패했습니다' }, { status: 500 })
   }
 }
-

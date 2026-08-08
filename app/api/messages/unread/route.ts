@@ -7,22 +7,22 @@ interface CountRow {
   unread_count: string
 }
 
-// GET /api/messages/unread - ?�읽?� 메시지 ??조회
+// GET /api/messages/unread - 안읽은 메시지 수 조회
 export async function GET() {
   try {
     const cookieStore = await cookies()
     const token = cookieStore.get('auth_token')?.value
 
     if (!token) {
-      return NextResponse.json({ error: '로그?�이 ?�요?�니?? }, { status: 401 })
+      return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 })
     }
 
     const payload = verifyToken(token)
     if (!payload) {
-      return NextResponse.json({ error: '?�효?��? ?��? ?�큰?�니?? }, { status: 401 })
+      return NextResponse.json({ error: '유효하지 않은 토큰입니다' }, { status: 401 })
     }
 
-    // ?�용?��? 참여???�?�방???�읽?� 메시지 ??조회
+    // 사용자가 참여한 대화방의 안읽은 메시지 수 조회
     const result = await query<CountRow>(
       `SELECT COUNT(*) as unread_count
        FROM messages m
@@ -37,8 +37,7 @@ export async function GET() {
 
     return NextResponse.json({ unreadCount })
   } catch (error) {
-    console.error('?�읽?� 메시지 ??조회 ?�류:', error)
-    return NextResponse.json({ error: '?�읽?� 메시지 ?��? 불러?�는???�패?�습?�다' }, { status: 500 })
+    console.error('안읽은 메시지 수 조회 오류:', error)
+    return NextResponse.json({ error: '안읽은 메시지 수를 불러오는데 실패했습니다' }, { status: 500 })
   }
 }
-
