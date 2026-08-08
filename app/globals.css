@@ -65,6 +65,41 @@
   }
 }
 
+/*
+ * 주체별 테마 — 역할 화면의 accent/tint를 덮어씀 (로고 심볼은 역할 무관 오렌지 유지).
+ * 세입자는 기본 감빛이라 별도 오버라이드 없음.
+ */
+@layer base {
+  [data-role='landlord'] {
+    --primary: 38 71% 42%; /* 오커 #B7801F */
+    --primary-foreground: 0 0% 100%;
+    --ring: 38 71% 42%;
+    --secondary: 39 71% 95%; /* tint #FDF6E9 */
+    --secondary-foreground: 36 45% 22%;
+  }
+  .dark [data-role='landlord'] {
+    --primary: 40 74% 52%;
+    --primary-foreground: 30 25% 10%;
+    --ring: 40 74% 52%;
+    --secondary: 36 18% 20%;
+    --secondary-foreground: 39 60% 86%;
+  }
+  [data-role='realtor'] {
+    --primary: 152 32% 36%; /* 세이지 #3F7A5E */
+    --primary-foreground: 0 0% 100%;
+    --ring: 152 32% 36%;
+    --secondary: 150 20% 95%; /* tint #EFF4F0 */
+    --secondary-foreground: 152 30% 20%;
+  }
+  .dark [data-role='realtor'] {
+    --primary: 152 40% 50%;
+    --primary-foreground: 152 30% 10%;
+    --ring: 152 40% 50%;
+    --secondary: 150 12% 20%;
+    --secondary-foreground: 150 30% 86%;
+  }
+}
+
 @layer base {
   * {
     @apply border-border;

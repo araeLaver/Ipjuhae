@@ -15,5 +15,9 @@ export const metadata: Metadata = {
 }
 
 export default function LandlordLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>
+  return (
+    <div data-role="landlord" className="contents">
+      {children}
+    </div>
+  )
 }
