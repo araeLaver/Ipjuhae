@@ -18,12 +18,12 @@ async function getListings() {
 }
 
 export const metadata = {
-  title: 'Listing search | Rentme',
+  title: 'Listing search | 입주해',
   description: 'Search real, live listings by region and budget.',
   openGraph: {
-    title: 'Listing search | Rentme',
+    title: 'Listing search | 입주해',
     description: 'Search real, live listings by region and budget.',
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Rentme listing list' }],
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: '입주해 listing list' }],
   },
 }
 
@@ -35,7 +35,7 @@ export default async function ListingsPage() {
       <div className="space-y-8">
         <div className="rounded-lg bg-background p-6 shadow-soft">
           <div className="max-w-3xl space-y-3">
-            <p className="text-sm font-semibold text-primary">Rentme Search</p>
+            <p className="text-sm font-semibold text-primary">입주해 Search</p>
             <h1 className="text-3xl font-bold tracking-normal sm:text-4xl">Listing Search</h1>
             <p className="text-muted-foreground">
               Browse real listings and compare by region, budget, and conditions.

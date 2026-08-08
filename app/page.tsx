@@ -8,12 +8,12 @@ import { Button } from '@/components/ui/button'
 import type { Listing } from '@/lib/schemas/listing'
 
 export const metadata: Metadata = {
-  title: 'Rentme - 안전한 임대의 시작',
-  description: 'Rentme는 실제 등록된 매물 데이터로 임대 과정을 빠르게 탐색하고 매칭할 수 있는 플랫폼입니다.',
+  title: '입주해 - 안전한 임대의 시작',
+  description: '입주해는 실제 등록된 매물 데이터로 임대 과정을 빠르게 탐색하고 매칭할 수 있는 플랫폼입니다.',
   openGraph: {
-    title: 'Rentme - 안전한 임대의 시작',
-    description: 'Rentme는 실제 등록된 매물 데이터로 임대 과정을 빠르게 탐색하고 매칭할 수 있는 플랫폼입니다.',
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Rentme 플랫폼 안내' }],
+    title: '입주해 - 안전한 임대의 시작',
+    description: '입주해는 실제 등록된 매물 데이터로 임대 과정을 빠르게 탐색하고 매칭할 수 있는 플랫폼입니다.',
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: '입주해 플랫폼 안내' }],
   },
 }
 
@@ -52,7 +52,7 @@ export default async function HomePage() {
                 신뢰받는 매물 찾기
               </h1>
               <p className="max-w-xl text-lg leading-8 text-muted-foreground">
-                임차인과 임대인 모두를 위한 매칭 플랫폼, Rentme로 더 빠르게 안전한 계약을 시작하세요.
+                임차인과 임대인 모두를 위한 매칭 플랫폼, 입주해로 더 빠르게 안전한 계약을 시작하세요.
               </p>
             </div>
 

@@ -56,7 +56,7 @@ export function Header({ user }: HeaderProps) {
           <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-2">
               <Home className="h-6 w-6 text-primary" />
-              <span className="text-xl font-bold">RentMe</span>
+              <span className="text-xl font-bold">입주해</span>
               {user?.userType === 'landlord' && (
                 <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">Landlord</span>
               )}
