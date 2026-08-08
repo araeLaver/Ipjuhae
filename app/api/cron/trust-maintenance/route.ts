@@ -12,11 +12,7 @@ export async function GET(request: Request) {
     return jsonSuccess(request, await runTrustMaintenance(getRequestContext(request)))
   } catch (error) {
     console.error('Trust maintenance failed:', error)
-    // TEMP DIAGNOSTIC (cron-secret-gated; caller already authenticated above):
-    // surface the real pg error so we can pinpoint the runtime cause. Remove after fix.
-    const e = error as { message?: string; code?: string; detail?: string; table?: string; column?: string; routine?: string }
-    const detail = [e.message, e.code && `code=${e.code}`, e.detail && `detail=${e.detail}`, e.table && `table=${e.table}`, e.column && `column=${e.column}`, e.routine && `routine=${e.routine}`].filter(Boolean).join(' | ')
-    return jsonError(request, 500, `Trust maintenance failed: ${detail}`, 'TRUST_MAINTENANCE_FAILED')
+    return jsonError(request, 500, 'Trust maintenance failed', 'TRUST_MAINTENANCE_FAILED')
   }
 }
 
