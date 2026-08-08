@@ -84,7 +84,7 @@ export default function AdminUsersPage() {
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               userType === t
                 ? 'bg-blue-600 text-white'
-                : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
+                : 'bg-white border border-gray-300 text-gray-600 hover:bg-muted/50'
             }`}
           >
             {t === 'all' ? '전체' : typeLabel(t)}
@@ -95,7 +95,7 @@ export default function AdminUsersPage() {
       {/* Table */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b border-gray-200">
+          <thead className="bg-muted/50 border-b border-gray-200">
             <tr>
               {['이메일', '이름', '유형', '신뢰점수', '프로필', '가입일', ''].map(h => (
                 <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
@@ -106,7 +106,7 @@ export default function AdminUsersPage() {
           </thead>
           <tbody className="divide-y divide-gray-100">
             {users.map(u => (
-              <tr key={u.id} className="hover:bg-gray-50 transition-colors">
+              <tr key={u.id} className="hover:bg-muted/50 transition-colors">
                 <td className="px-4 py-3 text-gray-800 max-w-xs truncate">{u.email}</td>
                 <td className="px-4 py-3 text-gray-600">{u.name ?? '—'}</td>
                 <td className="px-4 py-3">

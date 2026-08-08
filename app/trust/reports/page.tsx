@@ -123,7 +123,7 @@ export default function ContractReportsPage() {
                 <Link key={report.id} href={'/trust/reports/' + report.id} className="group block rounded-2xl border border-stone-200 bg-white/90 p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-orange-400 hover:shadow-lg">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <span className="rounded-full bg-stone-100 px-2.5 py-1 text-[11px] font-bold text-stone-600">{STATUS_LABEL[report.status] ?? report.status}</span>
+                      <span className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-bold text-stone-600">{STATUS_LABEL[report.status] ?? report.status}</span>
                       <h3 className="mt-3 text-lg font-bold group-hover:text-orange-800">{report.title}</h3>
                       <p className="mt-1 text-sm text-stone-500">{report.contract_address || '주소 미입력'} · {report.requester_role}</p>
                     </div>
@@ -145,7 +145,7 @@ export default function ContractReportsPage() {
 }
 
 function Metric({ label, value, tone }: { label: string; value: number; tone: 'stone' | 'green' | 'orange' }) {
-  const style = tone === 'green' ? 'bg-emerald-50 text-emerald-800' : tone === 'orange' ? 'bg-orange-50 text-orange-800' : 'bg-stone-100 text-stone-700'
+  const style = tone === 'green' ? 'bg-emerald-50 text-emerald-800' : tone === 'orange' ? 'bg-orange-50 text-orange-800' : 'bg-muted text-stone-700'
   return <div className={'rounded-xl px-3 py-2 ' + style}><strong className="block text-lg">{value ?? 0}</strong>{label}</div>
 }
 

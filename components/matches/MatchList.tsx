@@ -85,7 +85,7 @@ export function MatchListRow({ item, rank, isLast }: MatchListRowProps) {
           <span
             className={cn(
               'text-[10px] rounded px-1 py-0.5',
-              breakdown.budget > 0 ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-400',
+              breakdown.budget > 0 ? 'bg-green-50 text-green-700' : 'bg-muted text-gray-400',
             )}
           >
             예산 {breakdown.budget}/40
@@ -93,7 +93,7 @@ export function MatchListRow({ item, rank, isLast }: MatchListRowProps) {
           <span
             className={cn(
               'text-[10px] rounded px-1 py-0.5',
-              breakdown.region > 0 ? 'bg-blue-50 text-blue-700' : 'bg-gray-100 text-gray-400',
+              breakdown.region > 0 ? 'bg-blue-50 text-blue-700' : 'bg-muted text-gray-400',
             )}
           >
             지역 {breakdown.region}/30
@@ -101,7 +101,7 @@ export function MatchListRow({ item, rank, isLast }: MatchListRowProps) {
           <span
             className={cn(
               'text-[10px] rounded px-1 py-0.5',
-              breakdown.moveIn > 0 ? 'bg-purple-50 text-purple-700' : 'bg-gray-100 text-gray-400',
+              breakdown.moveIn > 0 ? 'bg-purple-50 text-purple-700' : 'bg-muted text-gray-400',
             )}
           >
             입주일 {breakdown.moveIn}/20
@@ -109,7 +109,7 @@ export function MatchListRow({ item, rank, isLast }: MatchListRowProps) {
           <span
             className={cn(
               'text-[10px] rounded px-1 py-0.5',
-              breakdown.pet > 0 ? 'bg-orange-50 text-orange-700' : 'bg-gray-100 text-gray-400',
+              breakdown.pet > 0 ? 'bg-orange-50 text-orange-700' : 'bg-muted text-gray-400',
             )}
           >
             반려동물 {breakdown.pet}/10
