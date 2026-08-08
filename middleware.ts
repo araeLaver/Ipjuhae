@@ -1,34 +1,80 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { Ratelimit } from '@upstash/ratelimit'
-import { Redis } from '@upstash/redis'
+import { Redis } from '@upstash/redis/cloudflare'
 import { getRequestContext } from '@/lib/request-context'
-import { isJwtStrictMode, verifyJwtToken } from '@/lib/jwt'
 
+/**
+ * Edge Runtime에서는 jsonwebtoken을 사용할 수 없으므로
+ * Web Crypto API를 사용하여 JWT HS256 서명을 검증합니다.
+ */
 async function verifyAndDecodeJwt(
   token: string
 ): Promise<{ userId: string; userType?: string } | null> {
   try {
-    const strictMode = isJwtStrictMode()
-    const payload = await verifyJwtToken(token, {
-      strict: strictMode,
-      requireJti: strictMode,
-    })
-    if (payload) {
-      return { userId: payload.userId, userType: payload.userType }
-    }
-    if (strictMode) return null
+    const secret = process.env.JWT_SECRET
+    const effectiveSecret = secret
+      ? secret
+      : process.env.NODE_ENV === 'production'
+        ? null
+        : 'dev-only-secret-do-not-use-in-production'
 
-    const fallback = await verifyJwtToken(token, {
-      strict: false,
-    })
-    if (!fallback) return null
-    return { userId: fallback.userId, userType: fallback.userType }
+    if (!effectiveSecret) return null
+    return decodeWithSecret(token, effectiveSecret)
   } catch {
     return null
   }
 }
 
+async function decodeWithSecret(
+  token: string,
+  secret: string
+): Promise<{ userId: string; userType?: string } | null> {
+  const parts = token.split('.')
+  if (parts.length !== 3) return null
+
+  const [header, payload, signature] = parts
+
+  // 헤더 검증: HS256만 허용
+  try {
+    const headerJson = JSON.parse(atob(header.replace(/-/g, '+').replace(/_/g, '/')))
+    if (headerJson.alg !== 'HS256') return null
+  } catch {
+    return null
+  }
+
+  // 만료 시간 확인
+  let payloadData: { userId: string; userType?: string; exp?: number }
+  try {
+    payloadData = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')))
+    if (!payloadData.exp || payloadData.exp * 1000 < Date.now()) return null
+  } catch {
+    return null
+  }
+
+  // 서명 검증
+  const encoder = new TextEncoder()
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['verify']
+  )
+
+  const data = encoder.encode(`${header}.${payload}`)
+  const sig = Uint8Array.from(
+    atob(signature.replace(/-/g, '+').replace(/_/g, '/')),
+    (c) => c.charCodeAt(0)
+  )
+
+  const valid = await crypto.subtle.verify('HMAC', key, sig, data)
+  if (!valid) return null
+
+  return { userId: payloadData.userId, userType: payloadData.userType }
+}
+
+// ── Rate Limiting: Redis (분산) or 인메모리 (폴백) ────────────────────
 const useRedis = !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
 
 const apiLimiter = useRedis
@@ -49,6 +95,7 @@ const authLimiter = useRedis
     })
   : null
 
+/** 인메모리 Rate Limit 폴백 (Redis 미설정 시) */
 const rateLimitStore = new Map<string, { count: number; resetAt: number }>()
 
 function checkRateLimitLocal(key: string, limit: number, windowMs: number): boolean {
@@ -79,6 +126,7 @@ async function checkRateLimit(
     }
     return { allowed: true }
   }
+  // 인메모리 폴백
   const limit = isAuth ? 10 : 60
   const allowed = checkRateLimitLocal(key, limit, 60_000)
   return { allowed, retryAfter: 60 }
@@ -92,11 +140,13 @@ function getIp(request: NextRequest): string {
   return '127.0.0.1'
 }
 
+/** CSRF: mutation 요청에 대해 Origin 헤더를 검증합니다 */
 function checkCsrf(request: NextRequest): boolean {
   const method = request.method
   const isMutation = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)
   if (!isMutation) return true
 
+  // 모바일 앱(커스텀 헤더 사용) API 요청은 CSRF 검증 우회
   if (request.headers.get('x-mobile-client') === 'true') {
     return true
   }
@@ -105,6 +155,7 @@ function checkCsrf(request: NextRequest): boolean {
   const origin = request.headers.get('origin')
   const referer = request.headers.get('referer')
 
+  // 개발 환경에서는 origin 검사 완화
   if (process.env.NODE_ENV !== 'production') return true
 
   if (origin) {
@@ -113,6 +164,7 @@ function checkCsrf(request: NextRequest): boolean {
   if (referer) {
     return referer.startsWith(appUrl)
   }
+
   return false
 }
 
@@ -121,6 +173,7 @@ export async function middleware(request: NextRequest) {
   const ip = getIp(request)
   const { requestId, traceId } = getRequestContext(request)
 
+  // ── 잘못된 Server Action 요청 차단 (봇/스캐너 방어) ─────────────
   if (request.headers.get('next-action')) {
     const blocked = NextResponse.json(
       { error: 'Server Actions are not supported', request_id: requestId, trace_id: traceId },
@@ -133,12 +186,13 @@ export async function middleware(request: NextRequest) {
     return blocked
   }
 
+  // ── Rate Limiting (Redis 분산 or 인메모리 폴백) ─────────────────
   if (pathname.startsWith('/api/auth')) {
     const { allowed, retryAfter } = await checkRateLimit(`auth:${ip}`, true)
     if (!allowed) {
       const response = NextResponse.json(
         {
-          error: 'Rate limit exceeded',
+          error: '요청 한도 초과',
           code: 'RATE_LIMIT_EXCEEDED',
           request_id: requestId,
           trace_id: traceId,
@@ -155,7 +209,7 @@ export async function middleware(request: NextRequest) {
     if (!allowed) {
       const response = NextResponse.json(
         {
-          error: 'Rate limit exceeded',
+          error: '요청 한도 초과',
           code: 'RATE_LIMIT_EXCEEDED',
           request_id: requestId,
           trace_id: traceId,
@@ -169,12 +223,13 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // ── CSRF Protection ─────────────────────────────────────────────
   if (pathname.startsWith('/api/')) {
     const csrfValid = checkCsrf(request)
     if (!csrfValid) {
       const response = NextResponse.json(
         {
-          error: 'Invalid CSRF token',
+          error: 'CSRF 검증 실패',
           code: 'CSRF_INVALID',
           request_id: requestId,
           trace_id: traceId,
@@ -197,12 +252,16 @@ export async function middleware(request: NextRequest) {
   const isAuthenticated = !!jwtPayload
   const userType = jwtPayload?.userType
 
+  // ── Set SameSite=Strict cookie policy via response headers ──────
   const response = NextResponse.next()
+  // SameSite 쿠키 정책은 Set-Cookie 헤더에 포함되므로
+  // 기존 쿠키에 대해서는 API 응답 시 적용 (여기서는 CSRF 방어 헌더만 추가)
   response.headers.set('X-Content-Type-Options', 'nosniff')
   response.headers.set('x-request-id', requestId)
   response.headers.set('x-trace-id', traceId)
   response.headers.set('Cache-Control', 'no-store')
 
+  // Public routes — always allow
   if (
     pathname.startsWith('/reference/survey') ||
     pathname.startsWith('/terms') ||
@@ -210,55 +269,66 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/api') ||
     pathname.startsWith('/auth/callback') ||
     pathname.startsWith('/listings') ||
-    pathname.startsWith('/properties')
+    pathname.startsWith('/properties') // 공개 매물 검색
   ) {
     return response
   }
 
+  // ── 인증 필요 경로 ──────────────────────────────────────────────
   const protectedPrefixes = ['/profile', '/onboarding', '/landlord', '/admin', '/verify-phone']
-  const isProtected = protectedPrefixes.some((prefix) => pathname.startsWith(prefix))
+  const isProtected = protectedPrefixes.some((p) => pathname.startsWith(p))
 
   if (isProtected && !isAuthenticated) {
     const loginUrl = request.nextUrl.clone()
     loginUrl.pathname = '/login'
     loginUrl.searchParams.set('redirect', pathname)
-    const redirectResponse = NextResponse.redirect(loginUrl)
-    redirectResponse.headers.set('x-request-id', requestId)
-    redirectResponse.headers.set('x-trace-id', traceId)
-    return redirectResponse
+    const response = NextResponse.redirect(loginUrl)
+    response.headers.set('x-request-id', requestId)
+    response.headers.set('x-trace-id', traceId)
+    return response
   }
 
+  // ── 권한 기반 라우팅 ────────────────────────────────────────────
+  // /admin/* → admin 전용
   if (pathname.startsWith('/admin') && userType !== 'admin') {
-    const redirectResponse = NextResponse.redirect(new URL('/', request.url))
-    redirectResponse.headers.set('x-request-id', requestId)
-    redirectResponse.headers.set('x-trace-id', traceId)
-    return redirectResponse
+    const response = NextResponse.redirect(new URL('/', request.url))
+    response.headers.set('x-request-id', requestId)
+    response.headers.set('x-trace-id', traceId)
+    return response
   }
 
-  if (pathname.startsWith('/landlord') && userType !== 'landlord' && userType !== 'admin') {
-    const redirectResponse = NextResponse.redirect(new URL('/profile', request.url))
-    redirectResponse.headers.set('x-request-id', requestId)
-    redirectResponse.headers.set('x-trace-id', traceId)
-    return redirectResponse
+  // /landlord/* → landlord 또는 admin만
+  if (
+    pathname.startsWith('/landlord') &&
+    userType !== 'landlord' &&
+    userType !== 'admin'
+  ) {
+    const response = NextResponse.redirect(new URL('/profile', request.url))
+    response.headers.set('x-request-id', requestId)
+    response.headers.set('x-trace-id', traceId)
+    return response
   }
 
+  // /onboarding/* → tenant만 (landlord는 /landlord/onboarding)
   if (pathname.startsWith('/onboarding') && userType === 'landlord') {
-    const redirectResponse = NextResponse.redirect(new URL('/landlord/onboarding', request.url))
-    redirectResponse.headers.set('x-request-id', requestId)
-    redirectResponse.headers.set('x-trace-id', traceId)
-    return redirectResponse
+    const response = NextResponse.redirect(new URL('/landlord/onboarding', request.url))
+    response.headers.set('x-request-id', requestId)
+    response.headers.set('x-trace-id', traceId)
+    return response
   }
 
+  // ── 이미 로그인한 경우 auth 페이지 접근 시 리다이렉트 ────────────
   const authPages = ['/login', '/signup']
-  const isAuthPage = authPages.some((path) => pathname === path || pathname.startsWith(`${path}/`))
+  const isAuthPage = authPages.some((p) => pathname === p || pathname.startsWith(p + '/'))
 
   if (isAuthPage && isAuthenticated) {
+    // user_type에 맞는 홈으로 리다이렉트
     const destination =
       userType === 'landlord' ? '/landlord' : userType === 'admin' ? '/admin' : '/profile'
-    const redirectResponse = NextResponse.redirect(new URL(destination, request.url))
-    redirectResponse.headers.set('x-request-id', requestId)
-    redirectResponse.headers.set('x-trace-id', traceId)
-    return redirectResponse
+    const response = NextResponse.redirect(new URL(destination, request.url))
+    response.headers.set('x-request-id', requestId)
+    response.headers.set('x-trace-id', traceId)
+    return response
   }
 
   return response
