@@ -23,7 +23,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   }
 
   return (
-    <div className="min-h-screen flex bg-gray-50">
+    <div className="min-h-screen flex bg-muted/50">
       <aside className="w-56 shrink-0 bg-white border-r border-gray-200 flex flex-col">
         <div className="h-14 flex items-center px-5 border-b border-gray-200">
           <span className="text-sm font-semibold text-gray-800">Admin</span>
@@ -33,7 +33,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <Link
               key={href}
               href={href}
-              className="flex items-center px-3 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+              className="flex items-center px-3 py-2 rounded-lg text-sm text-gray-600 hover:bg-muted hover:text-gray-900 transition-colors"
             >
               {label}
             </Link>

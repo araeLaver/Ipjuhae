@@ -60,7 +60,7 @@ export default function TrustCardsPage() {
                   <h2 className="mt-2 text-xl font-bold text-stone-900">{card.title}</h2>
                   <p className="mt-1 text-sm text-stone-500">{card.report_title}</p>
                 </div>
-                <span className="rounded-lg bg-stone-100 px-2 py-1 font-mono text-xs text-stone-500">{card.token_prefix}...</span>
+                <span className="rounded-lg bg-muted px-2 py-1 font-mono text-xs text-stone-500">{card.token_prefix}...</span>
               </div>
               <dl className="mt-5 grid gap-2 text-sm text-stone-600">
                 <div className="flex justify-between gap-3"><dt>공개 목적</dt><dd className="text-right font-medium">{card.purpose}</dd></div>

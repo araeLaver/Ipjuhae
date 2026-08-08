@@ -40,7 +40,7 @@ export default async function AdminAnalyticsPage() {
           </div>
         ) : (
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="bg-muted/50 border-b border-gray-200">
               <tr>
                 <th className="text-left px-6 py-3 font-semibold text-gray-600">이벤트명</th>
                 <th className="text-right px-6 py-3 font-semibold text-gray-600">횟수</th>
@@ -49,7 +49,7 @@ export default async function AdminAnalyticsPage() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {events.map((row) => (
-                <tr key={row.event_name} className="hover:bg-gray-50 transition-colors">
+                <tr key={row.event_name} className="hover:bg-muted/50 transition-colors">
                   <td className="px-6 py-4 font-mono text-gray-800">{row.event_name}</td>
                   <td className="px-6 py-4 text-right font-bold text-blue-700">
                     {parseInt(row.count).toLocaleString('ko-KR')}

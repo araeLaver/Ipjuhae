@@ -220,7 +220,7 @@ export default function AdminDisputesPage() {
               setOffset(0)
               loadDisputes()
             }}
-            className="px-4 py-2 text-sm rounded-md border bg-gray-50 hover:bg-gray-100"
+            className="px-4 py-2 text-sm rounded-md border bg-muted/50 hover:bg-muted"
           >
             Search
           </button>
@@ -265,7 +265,7 @@ export default function AdminDisputesPage() {
                       <div className="text-xs text-muted-foreground max-w-xs break-words">{dispute.detail}</div>
                     </td>
                     <td className="px-3 py-2">
-                      <span className="inline-flex text-xs rounded-md px-2 py-1 bg-slate-100 text-slate-700">
+                      <span className="inline-flex text-xs rounded-md px-2 py-1 bg-muted text-slate-700">
                         {STATUS_LABELS[dispute.status]}
                       </span>
                     </td>
@@ -277,7 +277,7 @@ export default function AdminDisputesPage() {
                               key={next}
                               disabled={updating === dispute.id}
                               onClick={() => onUpdateStatus(dispute, next)}
-                              className="px-2 py-1 text-[11px] rounded-md border hover:bg-slate-50 disabled:opacity-40"
+                              className="px-2 py-1 text-[11px] rounded-md border hover:bg-muted/50 disabled:opacity-40"
                             >
                               {next}
                             </button>

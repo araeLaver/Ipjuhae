@@ -58,7 +58,7 @@ export default function TodayStats() {
           disabled={loading}
           className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium
                      text-gray-600 bg-white border border-gray-200 rounded-lg
-                     hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                     hover:bg-muted/50 disabled:opacity-50 transition-colors"
         >
           <svg
             className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`}
@@ -84,7 +84,7 @@ export default function TodayStats() {
       {loading && !data ? (
         <div className="grid grid-cols-2 gap-4">
           {[0, 1].map(i => (
-            <div key={i} className="rounded-xl p-5 bg-gray-100 animate-pulse h-24" />
+            <div key={i} className="rounded-xl p-5 bg-muted animate-pulse h-24" />
           ))}
         </div>
       ) : (

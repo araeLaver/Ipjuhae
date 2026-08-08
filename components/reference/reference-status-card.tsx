@@ -28,7 +28,7 @@ interface ReferenceStatusCardProps {
 const statusConfig: Record<string, { label: string; color: string; icon: React.ElementType }> = {
   pending: {
     label: '대기',
-    color: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+    color: 'bg-muted text-gray-700 dark:bg-gray-800 dark:text-gray-300',
     icon: Clock,
   },
   sent: {

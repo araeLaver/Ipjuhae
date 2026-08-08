@@ -100,7 +100,7 @@ export default function AdminDocumentsPage() {
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               statusFilter === s
                 ? 'bg-blue-600 text-white'
-                : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
+                : 'bg-white border border-gray-300 text-gray-600 hover:bg-muted/50'
             }`}
           >
             {s === 'pending' ? '대기' : s === 'processing' ? '처리중' : s === 'approved' ? '승인' : '거절'}

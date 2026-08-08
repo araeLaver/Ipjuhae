@@ -71,7 +71,7 @@ export default function PublicTrustCardPage() {
                     <article key={subject + item.label} className="rounded-2xl border border-stone-200 bg-white p-5">
                       <div className="flex items-center justify-between gap-3">
                         <strong>{item.label}</strong>
-                        <span className="rounded-full bg-stone-100 px-2 py-1 text-[10px] font-bold">{item.verification_status}</span>
+                        <span className="rounded-full bg-muted px-2 py-1 text-[10px] font-bold">{item.verification_status}</span>
                       </div>
                       <p className="mt-4 text-sm font-medium text-stone-800">{display(item.public_value) || item.missing_reason || '공개된 값 없음'}</p>
                       <p className="mt-2 text-xs leading-5 text-stone-500">출처 {item.source_name || '-'} · 기준일 {item.source_observed_at ? new Date(item.source_observed_at).toLocaleDateString('ko-KR') : '-'}</p>

@@ -68,7 +68,7 @@ async function getUserDetail(id: string) {
 
 function Badge({ ok }: { ok: boolean }) {
   return (
-    <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${ok ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+    <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${ok ? 'bg-green-100 text-green-700' : 'bg-muted text-gray-500'}`}>
       {ok ? '완료' : '미인증'}
     </span>
   )
@@ -82,7 +82,7 @@ function DocStatus({ status }: { status: string }) {
     rejected: 'bg-red-100 text-red-700',
   }
   return (
-    <span className={`px-2 py-0.5 rounded text-xs font-medium ${map[status] ?? 'bg-gray-100 text-gray-500'}`}>
+    <span className={`px-2 py-0.5 rounded text-xs font-medium ${map[status] ?? 'bg-muted text-gray-500'}`}>
       {status}
     </span>
   )
@@ -106,7 +106,7 @@ export default async function AdminUserDetailPage({
           ← 목록
         </Link>
         <h1 className="text-xl font-bold text-gray-900">{user.name ?? user.email}</h1>
-        <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
+        <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-gray-600">
           {user.user_type}
         </span>
       </div>

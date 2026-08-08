@@ -64,7 +64,7 @@ const EVENT_OPTIONS: Array<{ label: string; value: ConsentEvent['event_type'] | 
 function eventTypeClass(type: ConsentEvent['event_type']) {
   if (type === 'granted') return 'bg-green-100 text-green-700'
   if (type === 'updated') return 'bg-blue-100 text-blue-700'
-  return 'bg-gray-100 text-gray-700'
+  return 'bg-muted text-gray-700'
 }
 
 function formatPayload(payload: Record<string, unknown> | null) {

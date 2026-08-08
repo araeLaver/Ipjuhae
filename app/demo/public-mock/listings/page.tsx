@@ -58,7 +58,7 @@ export default function PublicMockListingsPage() {
             <div className="grid gap-4 md:grid-cols-3">
               {publicMockListings.map((listing) => (
                 <article key={listing.id} className="overflow-hidden rounded-lg border bg-background shadow-soft">
-                  <div className="relative flex aspect-[4/3] items-center justify-center bg-slate-100">
+                  <div className="relative flex aspect-[4/3] items-center justify-center bg-muted">
                     <div className="absolute left-3 top-3 rounded-md bg-amber-500 px-2 py-1 text-xs font-bold text-white shadow-sm">
                       DEMO / 가상 데이터
                     </div>

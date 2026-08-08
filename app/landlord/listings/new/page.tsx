@@ -335,7 +335,7 @@ export default function NewListingPage() {
               />
               <label
                 htmlFor="photo-upload"
-                className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 py-8 text-center hover:border-blue-400 hover:bg-blue-50 transition-colors"
+                className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-muted/50 py-8 text-center hover:border-blue-400 hover:bg-blue-50 transition-colors"
               >
                 <span className="text-2xl mb-2">📷</span>
                 <span className="text-sm font-medium text-gray-700">
