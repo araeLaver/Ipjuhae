@@ -1,0 +1,58 @@
+name: Sync production DATABASE_URL from Fly runtime
+
+# One-time/occasional reconciliation: copy the DATABASE_URL that the Fly runtime
+# actually uses into the GitHub `production` environment secret, so db-migrate.yml
+# (and anything else reading the production-env DATABASE_URL) targets the SAME
+# database the app serves from. Fixes the divergence that left the runtime DB
+# missing migrations. Value is read from the running app via flyctl and never
+# printed (only its host is shown).
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type SYNC to proceed'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    name: Copy Fly runtime DATABASE_URL into the production environment secret
+    if: ${{ github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 10
+    steps:
+      - name: Verify confirmation
+        env:
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: |
+          if [ "$CONFIRMATION" != "SYNC" ]; then
+            echo "::error::Confirmation must be exactly SYNC."
+            exit 1
+          fi
+
+      - name: Set up Fly CLI
+        uses: superfly/flyctl-actions/setup-flyctl@ed8efb33836e8b2096c7fd3ba1c8afe303ebbff1
+
+      - name: Read runtime DATABASE_URL and write it to the production-env secret
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          raw="$(flyctl ssh console -a ipjuhae-production -C 'printenv DATABASE_URL' 2>/dev/null || true)"
+          url="$(printf '%s' "$raw" | tr -d '\r' | grep -oE 'postgres(ql)?://[^[:space:]]+' | head -n1)"
+          if [ -z "$url" ]; then
+            echo "::error::Could not read DATABASE_URL from the Fly runtime."
+            exit 1
+          fi
+          echo "::add-mask::$url"
+          host="$(printf '%s' "$url" | sed -E 's#^postgres(ql)?://[^@]+@##; s#[/?].*$##')"
+          echo "Setting production-env DATABASE_URL to the runtime DB host: $host"
+          printf '%s' "$url" | gh secret set DATABASE_URL --env production --repo "$REPO" --body-file -
+          echo "Done. db-migrate.yml now targets the same DB the app uses."
