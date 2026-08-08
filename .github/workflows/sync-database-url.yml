@@ -54,5 +54,5 @@ jobs:
           echo "::add-mask::$url"
           host="$(printf '%s' "$url" | sed -E 's#^postgres(ql)?://[^@]+@##; s#[/?].*$##')"
           echo "Setting production-env DATABASE_URL to the runtime DB host: $host"
-          printf '%s' "$url" | gh secret set DATABASE_URL --env production --repo "$REPO" --body-file -
+          printf '%s' "$url" | gh secret set DATABASE_URL --env production --repo "$REPO"
           echo "Done. db-migrate.yml now targets the same DB the app uses."
