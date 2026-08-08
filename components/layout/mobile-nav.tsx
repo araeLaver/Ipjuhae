@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { Home, LogOut } from 'lucide-react'
+import { LogOut } from 'lucide-react'
+import { LogoSymbol } from '@/components/brand/logo-symbol'
 import { Avatar } from '@/components/ui/avatar'
 import { Sheet } from '@/components/ui/sheet'
 import { ThemeToggle } from './theme-toggle'
@@ -19,7 +20,7 @@ export function MobileNav({ open, onClose, user, navLinks, onLogout }: MobileNav
     <Sheet open={open} onClose={onClose}>
       <div className="flex flex-col gap-6">
         <Link href="/" className="flex items-center gap-2" onClick={onClose}>
-          <Home className="h-6 w-6 text-primary" />
+          <LogoSymbol className="h-7 w-7" />
           <span className="text-xl font-bold">입주해</span>
         </Link>
 
