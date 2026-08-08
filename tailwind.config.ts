@@ -68,7 +68,7 @@ const config: Config = {
         'scale-in': 'scale-in 0.3s ease-out forwards',
       },
       fontFamily: {
-        sans: ['Inter', 'Noto Sans KR', 'system-ui', 'sans-serif'],
+        sans: ['Pretendard Variable', 'Pretendard', 'Noto Sans KR', 'system-ui', 'sans-serif'],
       },
     },
   },
