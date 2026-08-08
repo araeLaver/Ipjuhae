@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Home, Menu, LogOut, User, Shield, FileText, Eye, MessageSquare } from 'lucide-react'
+import { Menu, LogOut, User, Shield, FileText, Eye, MessageSquare } from 'lucide-react'
+import { LogoSymbol } from '@/components/brand/logo-symbol'
 import { Button } from '@/components/ui/button'
 import { Avatar } from '@/components/ui/avatar'
 import { DropdownMenu, DropdownMenuItem } from '@/components/ui/dropdown-menu'
@@ -55,7 +56,7 @@ export function Header({ user }: HeaderProps) {
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-2">
-              <Home className="h-6 w-6 text-primary" />
+              <LogoSymbol className="h-7 w-7" />
               <span className="text-xl font-bold">입주해</span>
               {user?.userType === 'landlord' && (
                 <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">Landlord</span>
