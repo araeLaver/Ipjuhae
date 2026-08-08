@@ -1,0 +1,91 @@
+name: DB Migration (Fly runtime DB)
+
+# Applies repo migrations to the DATABASE the Fly runtime actually uses, by
+# reading its DATABASE_URL from the running app via flyctl (using the existing
+# FLY_API_TOKEN). This exists because the Fly runtime DB diverged from the
+# GitHub production-environment DATABASE_URL used by db-migrate.yml, leaving the
+# trust tables (migrations 024+) absent at runtime.
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'plan (read-only) or apply'
+        required: true
+        default: plan
+        type: choice
+        options:
+          - plan
+          - apply
+      confirmation:
+        description: 'For apply mode only, type MIGRATE'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  migrate-runtime:
+    name: Migrate the Fly runtime DB
+    if: ${{ github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 15
+    concurrency:
+      group: production-database-migration
+      cancel-in-progress: false
+
+    steps:
+      - name: Verify operator confirmation
+        if: ${{ inputs.mode == 'apply' }}
+        env:
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: |
+          if [ "$CONFIRMATION" != "MIGRATE" ]; then
+            echo "::error::Confirmation must be exactly MIGRATE."
+            exit 1
+          fi
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Set up Fly CLI
+        uses: superfly/flyctl-actions/setup-flyctl@ed8efb33836e8b2096c7fd3ba1c8afe303ebbff1
+
+      - name: Run migrations against the Fly runtime DB
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          MODE: ${{ inputs.mode }}
+          DB_SCHEMA: ipjuhae
+        run: |
+          set -euo pipefail
+          # Read the runtime DATABASE_URL from inside the running app. The value
+          # stays in a local shell variable and is masked from logs; only its
+          # host is printed so the operator can confirm the target DB.
+          raw="$(flyctl ssh console -a ipjuhae-production -C 'printenv DATABASE_URL' 2>/dev/null || true)"
+          DATABASE_URL="$(printf '%s' "$raw" | tr -d '\r' | grep -oE 'postgres(ql)?://[^[:space:]]+' | head -n1)"
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::Could not read DATABASE_URL from the Fly runtime."
+            exit 1
+          fi
+          echo "::add-mask::$DATABASE_URL"
+          export DATABASE_URL
+          host="$(printf '%s' "$DATABASE_URL" | sed -E 's#^postgres(ql)?://[^@]+@##; s#[/?].*$##')"
+          echo "Runtime DB host: $host"
+          if [ "$MODE" = "apply" ]; then
+            npm run db:migrate
+          else
+            npm run db:migrate -- --plan
+          fi
