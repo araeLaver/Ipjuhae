@@ -1,59 +1,67 @@
+/* 입주해 브랜드 폰트 — Pretendard */
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * 입주해 브랜드 시스템 v1.0 (1a · 온기)
+ * 핵심: 감빛 오렌지 #f0663f, 앰버 #e8a33d, 버터 #fff3dc, 크림 #fbf6ef, 잉크 #262220
+ * 값은 shadcn HSL 토큰으로 매핑됨.
+ */
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 36 50% 97%; /* 크림 #fbf6ef */
+    --foreground: 20 12% 14%; /* 잉크 #262220 */
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 20 12% 14%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 168 76% 42%;
+    --popover-foreground: 20 12% 14%;
+    --primary: 14 85% 59%; /* 감빛 오렌지 #f0663f */
     --primary-foreground: 0 0% 100%;
-    --secondary: 170 30% 95%;
-    --secondary-foreground: 168 76% 25%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 38 92% 50%;
-    --accent-foreground: 38 92% 15%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --success: 142 76% 36%;
+    --secondary: 39 100% 93%; /* 버터 #fff3dc */
+    --secondary-foreground: 24 30% 22%;
+    --muted: 37 40% 92%; /* 라이트 크림 #f3ede3 */
+    --muted-foreground: 32 10% 49%; /* 토프 #8a7e70 */
+    --accent: 36 79% 57%; /* 앰버 #e8a33d */
+    --accent-foreground: 30 45% 16%;
+    --destructive: 355 64% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 152 32% 36%; /* 세이지 그린 #3f7a5e */
     --success-foreground: 0 0% 100%;
-    --warning: 38 92% 50%;
-    --warning-foreground: 38 92% 15%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 168 76% 42%;
-    --radius: 0.5rem;
+    --warning: 36 79% 57%; /* 앰버 */
+    --warning-foreground: 30 45% 16%;
+    --border: 36 30% 82%; /* 웜 보더 #e0d3bf */
+    --input: 36 30% 82%;
+    --ring: 14 85% 59%;
+    --radius: 0.875rem; /* 14px — 카드·버튼 기준 */
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 168 76% 50%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 170 30% 15%;
-    --secondary-foreground: 168 76% 80%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 38 92% 50%;
-    --accent-foreground: 38 92% 95%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --success: 142 76% 36%;
-    --success-foreground: 0 0% 100%;
-    --warning: 38 92% 50%;
-    --warning-foreground: 38 92% 15%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 168 76% 50%;
+    --background: 24 12% 10%;
+    --foreground: 36 40% 94%;
+    --card: 24 12% 13%;
+    --card-foreground: 36 40% 94%;
+    --popover: 24 12% 13%;
+    --popover-foreground: 36 40% 94%;
+    --primary: 14 88% 62%;
+    --primary-foreground: 20 20% 10%;
+    --secondary: 28 18% 20%;
+    --secondary-foreground: 39 60% 88%;
+    --muted: 26 12% 20%;
+    --muted-foreground: 34 15% 66%;
+    --accent: 36 80% 60%;
+    --accent-foreground: 30 40% 12%;
+    --destructive: 355 60% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 152 40% 50%;
+    --success-foreground: 20 20% 10%;
+    --warning: 36 80% 60%;
+    --warning-foreground: 30 40% 12%;
+    --border: 28 12% 22%;
+    --input: 28 12% 22%;
+    --ring: 14 88% 62%;
   }
 }
 

@@ -75,7 +75,7 @@ export function WaitlistSection() {
             서비스 출시 알림 신청
           </h2>
           <p className="mt-4 text-muted-foreground text-lg leading-relaxed">
-            임주해 서비스 출시 시 가장 먼저 알림을 받으세요.
+            입주해 서비스 출시 시 가장 먼저 알림을 받으세요.
             <br />
             <span className="text-primary font-medium">사전 신청자에게 3개월 프리미엄 무료 혜택</span>을 드립니다.
           </p>

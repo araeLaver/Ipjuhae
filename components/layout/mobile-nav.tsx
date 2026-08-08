@@ -20,7 +20,7 @@ export function MobileNav({ open, onClose, user, navLinks, onLogout }: MobileNav
       <div className="flex flex-col gap-6">
         <Link href="/" className="flex items-center gap-2" onClick={onClose}>
           <Home className="h-6 w-6 text-primary" />
-          <span className="text-xl font-bold">RentMe</span>
+          <span className="text-xl font-bold">입주해</span>
         </Link>
 
         {user && (

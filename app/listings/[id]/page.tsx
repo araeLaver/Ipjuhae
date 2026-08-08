@@ -58,13 +58,13 @@ async function getListing(id: string) {
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const listing = await getListing(id)
-  if (!listing) return { title: 'Listing not found | Rentme' }
+  if (!listing) return { title: 'Listing not found | 입주해' }
   const desc = listing.description ?? `${listing.address} detail`
   return {
-    title: `${listing.address} | Rentme`,
+    title: `${listing.address} | 입주해`,
     description: desc,
     openGraph: {
-      title: `${listing.address} | Rentme`,
+      title: `${listing.address} | 입주해`,
       description: desc,
       images: [{ url: '/og-image.png', width: 1200, height: 630, alt: `${listing.address} listing` }],
     },

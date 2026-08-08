@@ -12,7 +12,7 @@ export function CtaSection() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="max-w-3xl mx-auto rounded-2xl bg-gradient-to-r from-primary to-emerald-500 p-10 md:p-14 text-center text-white"
+          className="max-w-3xl mx-auto rounded-2xl bg-gradient-to-r from-primary to-accent p-10 md:p-14 text-center text-white"
         >
           <h2 className="text-3xl md:text-4xl font-bold">지금 바로 시작하세요</h2>
           <p className="mt-4 text-lg text-white/80">

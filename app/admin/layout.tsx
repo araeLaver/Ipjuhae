@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import { getCurrentUser } from '@/lib/auth'
 import Link from 'next/link'
 
-export const metadata = { title: 'Admin | Rentme' }
+export const metadata = { title: 'Admin | 입주해' }
 
 const adminNav = [
   { href: '/admin', label: 'Dashboard' },
