@@ -56,7 +56,7 @@ export function ListingCard({ listing }: ListingCardProps) {
 
   return (
     <Link
-      href={`/listings/${listing.id}`}
+      href={`/properties/${listing.id}`}
       aria-label={`${listing.address} listing detail`}
     >
       <Card className="hover:shadow-md transition-shadow cursor-pointer h-full group">
