@@ -72,8 +72,8 @@ export async function GET(
     const conversation = conversationResult[0]
 
     const { searchParams } = new URL(request.url)
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '50')
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1') || 1)
+    const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') || '50') || 50))
     const offset = (page - 1) * limit
 
     // 메시지 목록 조회 (최신순)
