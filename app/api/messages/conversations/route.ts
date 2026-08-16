@@ -51,8 +51,8 @@ export async function GET(request: Request) {
     }
 
     const { searchParams } = new URL(request.url)
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '20')
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1') || 1)
+    const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') || '20') || 20))
     const offset = (page - 1) * limit
 
     // 사용자의 대화방 목록 조회 (집주인 또는 세입자)
