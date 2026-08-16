@@ -4,6 +4,7 @@ import { verifyToken } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { z } from 'zod'
 import { sanitizeUserInput } from '@/lib/sanitize'
+import { PLAN_LIMITS, resolveLandlordPlan } from '@/lib/plans'
 
 // 매물 생성/수정 스키마
 const propertySchema = z.object({
@@ -165,6 +166,24 @@ export async function POST(request: Request) {
 
     if (userResult.length === 0 || userResult[0].user_type !== 'landlord') {
       return NextResponse.json({ error: '집주인만 접근할 수 있습니다' }, { status: 403 })
+    }
+
+    // Enforce the plan's listing limit server-side (the client-facing counts
+    // were display-only; creation was previously unlimited on any plan).
+    const plan = await resolveLandlordPlan(payload.userId)
+    const maxProperties = PLAN_LIMITS[plan].maxProperties
+    const countRow = await query<{ count: string }>(
+      'SELECT COUNT(*) AS count FROM properties WHERE landlord_id = $1',
+      [payload.userId]
+    )
+    if (Number(countRow[0]?.count ?? 0) >= maxProperties) {
+      return NextResponse.json(
+        {
+          error: `${PLAN_LIMITS[plan].label} 플랜은 매물을 최대 ${maxProperties}개까지 등록할 수 있습니다. 플랜을 업그레이드해주세요.`,
+          code: 'PLAN_LIMIT_REACHED',
+        },
+        { status: 403 }
+      )
     }
 
     const body = await request.json()
