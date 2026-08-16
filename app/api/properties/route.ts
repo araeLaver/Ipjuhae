@@ -87,23 +87,27 @@ export async function GET(request: Request) {
       values.push(maxRent)
     }
     if (options.length > 0) {
-      conditions.push(`p.options @> $${idx++}`)
-      values.push(JSON.stringify(options))
+      // p.options is text[]; pass a real array and cast (a JSON string here
+      // produced a "malformed array literal" 500).
+      conditions.push(`p.options @> $${idx++}::text[]`)
+      values.push(options)
     }
     if (q) {
       conditions.push(`(p.title ILIKE $${idx} OR p.address ILIKE $${idx})`)
       values.push(`%${q}%`)
       idx++
     }
-    if (cursor) {
-      conditions.push(`p.${sort} ${order === 'DESC' ? '<' : '>'} $${idx++}`)
-      values.push(cursor)
-    }
+    // Offset pagination: the previous single-column keyset cursor was incorrect
+    // against the featured/boost ordering (rows skipped/duplicated). The client
+    // treats nextCursor as an opaque token, so we encode the next offset here.
+    const offset = Math.max(0, Number.parseInt(cursor ?? '0', 10) || 0)
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
 
     values.push(limit + 1)
-    const limitIdx = idx
+    const limitIdx = idx++
+    values.push(offset)
+    const offsetIdx = idx
 
     const rows = await query<PropertyListRow>(
       `SELECT
@@ -133,14 +137,14 @@ export async function GET(request: Request) {
       LEFT JOIN property_images pi ON pi.property_id = p.id AND pi.is_main = TRUE
       LEFT JOIN profiles lp ON lp.user_id = p.landlord_id
       ${whereClause}
-      ORDER BY p.is_featured DESC, p.boost_score DESC, p.${sort} ${order}
-      LIMIT $${limitIdx}`,
+      ORDER BY p.is_featured DESC, p.boost_score DESC, p.${sort} ${order}, p.id ${order}
+      LIMIT $${limitIdx} OFFSET $${offsetIdx}`,
       values
     )
 
     const hasMore = rows.length > limit
     const properties = hasMore ? rows.slice(0, limit) : rows
-    const nextCursor = hasMore ? properties[properties.length - 1][sort as keyof PropertyListRow] : null
+    const nextCursor = hasMore ? String(offset + limit) : null
 
     const response = NextResponse.json({
       properties: properties.map(p => ({
