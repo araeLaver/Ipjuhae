@@ -99,8 +99,10 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
         )
       : { rows: [] as { id: string }[] }
 
-    const expiresAt =
-      typeof session.expires_at === 'number' ? new Date(session.expires_at * 1000).toISOString() : getDefaultExpiresAt()
+    // Use the SUBSCRIPTION's billing-period end, not session.expires_at (which
+    // is the checkout link's own ~24h expiry — using it made every paid plan
+    // lapse a day after payment).
+    const expiresAt = await resolveSubscriptionExpiry(paymentRef)
 
     if (existingByRef.rows.length > 0) {
       const targetId = existingByRef.rows[0].id
@@ -155,14 +157,31 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
   })
 }
 
-async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
+function subscriptionPeriodEnd(subscription: Stripe.Subscription): string | null {
   const currentPeriodEnd = subscription.items.data.reduce<number | null>(
-    (latest, item) => latest === null ? item.current_period_end : Math.max(latest, item.current_period_end),
+    (latest, item) => (latest === null ? item.current_period_end : Math.max(latest, item.current_period_end)),
     null
   )
-  const periodEnd = currentPeriodEnd !== null
-    ? new Date(currentPeriodEnd * 1000).toISOString()
-    : null
+  return currentPeriodEnd !== null ? new Date(currentPeriodEnd * 1000).toISOString() : null
+}
+
+// Resolve a subscription's real billing-period end for `expires_at`. Falls back
+// to a default only if the subscription can't be retrieved.
+async function resolveSubscriptionExpiry(subscriptionId: string | null): Promise<string> {
+  if (subscriptionId && stripe) {
+    try {
+      const sub = await stripe.subscriptions.retrieve(subscriptionId)
+      const end = subscriptionPeriodEnd(sub)
+      if (end) return end
+    } catch (error) {
+      logger.error('Failed to retrieve subscription for expiry', { subscriptionId, error })
+    }
+  }
+  return getDefaultExpiresAt()
+}
+
+async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
+  const periodEnd = subscriptionPeriodEnd(subscription)
   const isActive = subscription.status === 'active'
 
   const result = await query<{ id: string }>(

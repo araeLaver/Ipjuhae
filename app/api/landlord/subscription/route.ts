@@ -3,6 +3,7 @@ import { query, queryOne } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
 import { logger } from '@/lib/logger'
 import { isStripeEnabled } from '@/lib/stripe'
+import { PLAN_LIMITS } from '@/lib/plans'
 
 interface Subscription {
   id: string
@@ -10,19 +11,6 @@ interface Subscription {
   started_at: string
   expires_at: string | null
   is_active: boolean
-}
-
-interface PlanLimits {
-  maxProperties: number
-  maxFeatured: number
-  label: string
-  price: number
-}
-
-const PLAN_LIMITS: Record<string, PlanLimits> = {
-  free:  { maxProperties: 3,   maxFeatured: 0, label: '무료',      price: 0 },
-  basic: { maxProperties: 10,  maxFeatured: 2, label: '베이직',    price: 19900 },
-  pro:   { maxProperties: 999, maxFeatured: 5, label: '프로',      price: 49900 },
 }
 
 /**
@@ -115,7 +103,21 @@ export async function POST(request: Request) {
       )
     }
 
-    // Stripe 미설정: 데모 모드 (즉시 적용)
+    // Never grant a paid plan for free in production. If Stripe is unconfigured
+    // there it is a misconfiguration — fail closed instead of handing out
+    // entitlements without payment.
+    if (process.env.NODE_ENV === 'production') {
+      logger.error('Paid subscription requested but Stripe is not configured in production', {
+        landlordId: user.id,
+        plan,
+      })
+      return NextResponse.json(
+        { error: '결제 시스템이 준비되지 않았습니다. 잠시 후 다시 시도해주세요.', code: 'PAYMENTS_UNAVAILABLE' },
+        { status: 503 }
+      )
+    }
+
+    // Stripe 미설정 (비프로덕션): 데모 모드 (즉시 적용)
     await query(
       'UPDATE landlord_subscriptions SET is_active = false WHERE landlord_id = $1',
       [user.id]
