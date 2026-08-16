@@ -71,7 +71,7 @@ export default async function HomePage() {
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
-              <Link href="/listings">
+              <Link href="/properties">
                 <Button size="lg">
                   매물 둘러보기
                   <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />

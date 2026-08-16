@@ -42,11 +42,13 @@ export const createListingSchema = z.object({
 export type CreateListingInput = z.infer<typeof createListingSchema>
 
 export interface Listing {
-  id: number
+  id: string
   landlord_id: string
   monthly_rent: number
   deposit: number
   address: string
+  region?: string | null
+  property_type?: string | null
   area_sqm: number | null
   floor: number | null
   photo_urls: string[]

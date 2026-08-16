@@ -31,8 +31,33 @@ function isNextResponse(v: unknown): v is NextResponse {
 
 export async function GET() {
   try {
+    // Unified catalog: the public browse now reads the canonical `properties`
+    // table (what landlords manage from their dashboard), mapped to the Listing
+    // shape. properties store amounts in 원(BIGINT); the Listing/UI model uses
+    // 만원, so convert by /10000. Only 'available' listings are shown.
     const listings = await query<Listing>(
-      `SELECT * FROM listings ORDER BY created_at DESC`
+      `SELECT
+         p.id::text AS id,
+         p.landlord_id,
+         (p.monthly_rent / 10000)::int AS monthly_rent,
+         (p.deposit / 10000)::int AS deposit,
+         p.address,
+         p.region,
+         p.property_type,
+         p.area_sqm::float8 AS area_sqm,
+         p.floor,
+         p.available_from,
+         p.created_at,
+         p.updated_at,
+         COALESCE(
+           (SELECT array_agg(image_url ORDER BY sort_order)
+              FROM property_images WHERE property_id = p.id),
+           '{}'
+         ) AS photo_urls
+       FROM properties p
+       WHERE p.status = 'available'
+       ORDER BY p.is_featured DESC, p.boost_score DESC, p.created_at DESC
+       LIMIT 60`
     )
     const response = NextResponse.json({ listings })
     response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120')
