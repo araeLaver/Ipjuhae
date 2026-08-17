@@ -1286,6 +1286,58 @@ export async function generateTransactionRecommendations(transactionId: string, 
       recommendations.push({ type: 'human_review', value: { subject_type: score.type, action: 'manual_assessment' }, reasonCodes: ['TRUST_REVIEW_REQUIRED'], dependencies: [score.derivedNodeId] })
     }
   }
+
+  // 거래조건 도출 v1 (잠정 규칙 — 보증금/월세·주택 안전점수 기반; 확정 산식은 추후 교체).
+  // 금액 단위는 만원. 확정 산식/임계값은 법무·변리사 검토 후 대체 예정.
+  const terms = (context.terms as Record<string, unknown> | null) ?? {}
+  const deposit = typeof terms.deposit === 'number' ? terms.deposit : null
+  const monthlyRent = typeof terms.monthlyRent === 'number' ? terms.monthlyRent : null
+  const propertyScore = scores.find((s) => s.type === 'property')?.score ?? null
+  const propertyDerived = scores.find((s) => s.type === 'property')?.derivedNodeId
+
+  if (deposit != null) {
+    const jeonseLike = (monthlyRent ?? 0) <= 10 && deposit >= 3000
+    const band = deposit >= 30000 ? 'high' : deposit >= 10000 ? 'medium' : 'low'
+    recommendations.push({
+      type: 'deposit_band',
+      value: {
+        label: '보증금 노출 검토',
+        detail: `보증금 ${deposit.toLocaleString()}만원 · 노출 ${band === 'high' ? '높음' : band === 'medium' ? '보통' : '낮음'}. ${band === 'low' ? '표준 확인으로 진행하세요.' : '선순위 권리관계·등기부를 계약 당일 재확인하세요.'}`,
+        deposit_manwon: deposit,
+        exposure_band: band,
+      },
+      reasonCodes: ['DEPOSIT_EXPOSURE_BAND'],
+      dependencies: propertyDerived ? [propertyDerived] : [],
+    })
+    if (jeonseLike || (propertyScore != null && propertyScore < 75)) {
+      recommendations.push({
+        type: 'insurance_recommendation',
+        value: {
+          label: '보증보험 가입 권장',
+          detail: jeonseLike
+            ? '전세형(높은 보증금·낮은 월세) 거래로, 전세보증금 반환보증 가입을 권장합니다.'
+            : '주택 안전 점검 결과 보증보험 적격 여부 확인을 권장합니다.',
+          reason: jeonseLike ? 'high_deposit_low_rent' : 'property_safety',
+        },
+        reasonCodes: ['DEPOSIT_GUARANTEE_RECOMMENDED'],
+        dependencies: propertyDerived ? [propertyDerived] : [],
+      })
+    }
+    recommendations.push({
+      type: 'special_terms',
+      value: {
+        label: '표준 특약 확인',
+        items: [
+          '등기부등본 계약 당일 재확인',
+          '선순위 권리관계(근저당·전세권) 확인',
+          deposit >= 10000 ? '전세보증금 반환보증 특약 명시' : '보증금 반환 조건·시점 명시',
+        ],
+      },
+      reasonCodes: ['STANDARD_SPECIAL_TERMS'],
+      dependencies: [],
+    })
+  }
+
   if (recommendations.length === 0) {
     recommendations.push({ type: 'standard_checklist', value: { action: 'continue_with_standard_contract_checks' }, reasonCodes: ['NO_HIGH_RISK_SIGNAL'], dependencies: scores.map((score) => score.derivedNodeId) })
   }

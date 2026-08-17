@@ -9,7 +9,18 @@ import { Card } from '@/components/ui/card'
 import { Spinner } from '@/components/ui/spinner'
 
 interface Txn { id: string; stage: string | null; terms: Record<string, unknown> | null; created_at: string }
-interface Rec { id: string; recommendation_type?: string; title?: string; detail?: string; body?: string; severity?: string }
+interface Rec { id: string; recommendation_type?: string; value?: Record<string, unknown> | null }
+
+const REC_LABEL: Record<string, string> = {
+  deposit_band: '보증금 노출 검토',
+  insurance_recommendation: '보증보험 권장',
+  special_terms: '표준 특약 확인',
+  additional_evidence: '추가 증빙 필요',
+  insurance_check: '보증보험 확인',
+  deposit_review: '보증금 검토',
+  human_review: '전문가 검토',
+  standard_checklist: '표준 확인 절차',
+}
 
 export default function TransactionDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
@@ -89,14 +100,25 @@ export default function TransactionDetailPage({ params }: { params: Promise<{ id
               </Card>
             ) : (
               <ul className="space-y-2">
-                {recs.map((r) => (
-                  <li key={r.id}>
-                    <Card className="p-4">
-                      <p className="text-sm font-semibold">{r.title ?? r.recommendation_type ?? '확인 항목'}</p>
-                      {(r.detail || r.body) && <p className="mt-1 text-sm text-muted-foreground">{r.detail ?? r.body}</p>}
-                    </Card>
-                  </li>
-                ))}
+                {recs.map((r) => {
+                  const v = r.value ?? {}
+                  const label = (v.label as string) || REC_LABEL[r.recommendation_type ?? ''] || r.recommendation_type || '확인 항목'
+                  const detail = v.detail as string | undefined
+                  const items = Array.isArray(v.items) ? (v.items as string[]) : null
+                  return (
+                    <li key={r.id}>
+                      <Card className="p-4">
+                        <p className="text-sm font-semibold">{label}</p>
+                        {detail && <p className="mt-1 text-sm text-muted-foreground">{detail}</p>}
+                        {items && (
+                          <ul className="mt-2 list-disc space-y-0.5 pl-5 text-sm text-muted-foreground">
+                            {items.map((it, i) => <li key={i}>{it}</li>)}
+                          </ul>
+                        )}
+                      </Card>
+                    </li>
+                  )
+                })}
               </ul>
             )}
 
