@@ -24,6 +24,8 @@ const tenantLinks = [
   { href: '/profile/consent/events', label: 'Consent Events' },
   { href: '/profile/access-logs', label: 'Access Logs' },
   { href: '/messages', label: 'Messages' },
+  { href: '/trust-center', label: '신뢰센터' },
+  { href: '/trust/transactions', label: '거래' },
   { href: '/community', label: '커뮤니티' },
 ]
 
@@ -33,6 +35,8 @@ const landlordLinks = [
   { href: '/landlord/properties', label: 'Properties' },
   { href: '/landlord/favorites', label: 'Favorites' },
   { href: '/landlord/messages', label: 'Messages' },
+  { href: '/trust-center', label: '신뢰센터' },
+  { href: '/trust/transactions', label: '거래' },
   { href: '/community', label: '커뮤니티' },
   { href: '/landlord/subscription', label: 'Subscription' },
   { href: '/profile/consent', label: 'Consent' },
