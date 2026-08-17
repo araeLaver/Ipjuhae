@@ -86,7 +86,7 @@ export default function PrivacyPage() {
             <p>
               개인정보 보호와 관련한 문의는 아래 연락처로 문의해 주시기 바랍니다.
             </p>
-            <p>이메일: privacy@rentme.kr</p>
+            <p>이메일: privacy@ipjuhae.com</p>
           </section>
 
           <p className="text-xs text-muted-foreground pt-4 border-t">

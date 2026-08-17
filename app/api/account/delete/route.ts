@@ -39,6 +39,13 @@ export async function DELETE() {
       await client.query('DELETE FROM notifications WHERE user_id = $1', [userId])
       await client.query('DELETE FROM favorites WHERE user_id = $1', [userId])
 
+      // Sensitive verification data (소득·재직·신용) must be erased, not retained.
+      await client.query('DELETE FROM verifications WHERE user_id = $1', [userId])
+
+      // Landlord references this tenant collected hold third-party contact PII
+      // (landlord name/phone/email); reference_responses cascade via FK.
+      await client.query('DELETE FROM landlord_references WHERE user_id = $1', [userId])
+
       await client.query(
         `UPDATE tenant_profiles
          SET workplace = NULL,
