@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { DataScoreCard } from '@/components/trust/data-score-card'
 import Link from 'next/link'
 import { Header } from '@/components/layout/header'
 import { Button } from '@/components/ui/button'
@@ -93,6 +94,8 @@ export default function TrustCenterPage() {
         </section>
 
         {error ? <div className="mt-6 rounded-2xl border border-red-300 bg-red-50 p-4 text-sm text-red-700">{error}</div> : null}
+
+        <DataScoreCard />
 
         <section className="mt-7 grid gap-4 md:grid-cols-3">
           <Metric
