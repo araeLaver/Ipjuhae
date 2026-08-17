@@ -3,6 +3,18 @@
 -- recommendations for the pilot. Weights remain provisional and manual review
 -- is still required; the approval_reference documents the pilot nature so the
 -- gate can be re-blocked or re-approved with evidence after legal/fairness review.
+
+-- The migration-029 audit trigger requires app.compliance_actor_id to attribute
+-- the change; set it (transaction-local) to an admin (or first user) before updating.
+SELECT set_config(
+  'app.compliance_actor_id',
+  COALESCE(
+    (SELECT id::text FROM users WHERE user_type = 'admin' ORDER BY created_at LIMIT 1),
+    (SELECT id::text FROM users ORDER BY created_at LIMIT 1)
+  ),
+  true
+);
+
 UPDATE trust_compliance_gates
    SET status = 'approved',
        approval_reference = 'pilot-approval-2026-08: operator decision; provisional weights; manual review required',
