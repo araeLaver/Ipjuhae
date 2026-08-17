@@ -1779,3 +1779,70 @@ export async function runTrustMaintenance(trace: RequestTrace = {}) {
     retentionQueued: retentionQueued.length,
   }
 }
+
+const DATA_SCORE_EXPECTED_FIELDS: Record<string, string[]> = {
+  tenant: ['identity_verified', 'employment_verified', 'income_requirement_met', 'credit_verified', 'relationship_verified', 'payment_reliable'],
+  landlord: ['identity_verified', 'ownership_verified', 'registry_clear'],
+  property: ['owner_matched', 'registry_clear', 'senior_claim_safe'],
+}
+
+export interface DataScoreResult {
+  score: number
+  modelVersion: string
+  dimensions: { clarity: number; completeness: number; recency: number; consistency: number; verifiability: number }
+  weights: Record<string, number>
+  factCount: number
+}
+
+// DATA SCORE — evidence-quality metric over the 5 criteria
+// (출처명확성·완전성·최신성·일관성·검증가능성). Pilot uses equal weights. This scores
+// the QUALITY of a subject's evidence, not a judgment about the person, so it is
+// intentionally NOT behind the automated_scoring gate.
+export async function calculateDataScore(subjectType: TrustSubjectType, subjectId: string): Promise<DataScoreResult> {
+  const rows = await query<{
+    field_name: string
+    status: string
+    observed_at: string | null
+    valid_until: string | null
+    human_reviewed: boolean | null
+    object_hash: string | null
+    reliability: string | number | null
+  }>(
+    `SELECT f.field_name, f.status, e.observed_at, e.valid_until, e.human_reviewed, e.object_hash, s.reliability
+       FROM trust_fact_nodes f
+       JOIN trust_evidence_nodes e ON e.id = f.evidence_id
+       LEFT JOIN trust_source_registry s ON s.id = e.source_id
+      WHERE f.subject_type = $1 AND f.subject_id = $2
+        AND f.status IN ('ACTIVE', 'CONFIRMED', 'REVISED')`,
+    [subjectType, subjectId]
+  )
+
+  const weights = { clarity: 0.2, completeness: 0.2, recency: 0.2, consistency: 0.2, verifiability: 0.2 }
+  const empty = { clarity: 0, completeness: 0, recency: 0, consistency: 0, verifiability: 0 }
+  if (rows.length === 0) {
+    return { score: 0, modelVersion: 'data-score-pilot-1.0', dimensions: empty, weights, factCount: 0 }
+  }
+
+  const now = Date.now()
+  const RECENCY_WINDOW_MS = 180 * 24 * 60 * 60 * 1000
+  const expected = DATA_SCORE_EXPECTED_FIELDS[subjectType] ?? []
+
+  const clarity = rows.reduce((a, r) => a + (r.reliability != null ? Number(r.reliability) : 0), 0) / rows.length
+  const present = new Set(rows.map((r) => r.field_name))
+  const completeness = expected.length
+    ? [...present].filter((f) => expected.includes(f)).length / expected.length
+    : present.size > 0 ? 1 : 0
+  const recency = rows.filter((r) => {
+    const notExpired = !r.valid_until || new Date(r.valid_until).getTime() > now
+    const observed = r.observed_at ? new Date(r.observed_at).getTime() : 0
+    return notExpired && observed > 0 && now - observed <= RECENCY_WINDOW_MS
+  }).length / rows.length
+  const consistency = rows.filter((r) => r.status !== 'REVISED').length / rows.length
+  const verifiability = rows.filter((r) => r.human_reviewed === true || Boolean(r.object_hash)).length / rows.length
+
+  const dimensions = { clarity, completeness, recency, consistency, verifiability }
+  const score = Math.round(
+    100 * (clarity * weights.clarity + completeness * weights.completeness + recency * weights.recency + consistency * weights.consistency + verifiability * weights.verifiability)
+  )
+  return { score, modelVersion: 'data-score-pilot-1.0', dimensions, weights, factCount: rows.length }
+}
