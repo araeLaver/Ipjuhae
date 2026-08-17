@@ -58,6 +58,10 @@ async function main() {
   const baseUrl = normalizeUrl(
     requireEnv('LAUNCH_SMOKE_BASE_URL', requireEnv('APP_URL', requireEnv('NEXT_PUBLIC_APP_URL', 'http://localhost:3000')))
   )
+  const sameOriginHeaders = {
+    origin: baseUrl,
+    referer: `${baseUrl}/`,
+  }
   const token = process.env.LAUNCH_SMOKE_TOKEN
 
   const commonHeaders = token ? { 'x-launch-smoke-token': token } : undefined
@@ -91,6 +95,7 @@ async function main() {
     method: 'POST',
     status: 400,
     body: { phoneNumber: 'invalid' },
+    headers: sameOriginHeaders,
     assert: (payload) => !!payload?.error,
   }))
 
