@@ -16,7 +16,7 @@ interface Me { id: string; userType: string | null }
 const TENANT_FIELDS: { field: string; label: string; hint: string }[] = [
   { field: 'identity_verified', label: '신원 확인', hint: '신분증·본인확인 자료' },
   { field: 'employment_verified', label: '재직 확인', hint: '재직증명서·건강보험 자격득실' },
-  { field: 'income_requirement_met', label: '소득 요건', hint: '소득금액증명·급여명세' },
+  { field: 'income_verified', label: '소득 확인', hint: '소득금액증명·급여명세' },
   { field: 'credit_verified', label: '신용 확인', hint: '신용점수·연체 이력 자료' },
   { field: 'relationship_verified', label: '관계·레퍼런스', hint: '이전 임대인 레퍼런스' },
   { field: 'payment_reliable', label: '납부 신뢰', hint: '임대료·공과금 납부 이력' },
