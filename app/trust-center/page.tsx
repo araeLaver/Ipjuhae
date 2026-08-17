@@ -81,9 +81,14 @@ export default function TrustCenterPage() {
               <h1 className="font-serif text-4xl font-black leading-[1.05] sm:text-6xl">내 신뢰의 근거와<br />사용 경로를 한곳에서.</h1>
               <p className="mt-5 max-w-xl text-sm leading-6 text-[#18342e]/70 sm:text-base">점수만 보여주지 않습니다. 어떤 사실이 사용됐고, 누구에게 무엇이 공개됐으며, 정정이 어디까지 전파됐는지 확인합니다.</p>
             </div>
-            <Button onClick={() => void load()} disabled={loading} className="gap-2 bg-[#18342e] text-[#f8f4e8] hover:bg-[#244b42]">
-              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /> 새로고침
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <a href="/trust/evidence" className="inline-flex items-center gap-2 rounded-md bg-[#de6b48] px-4 py-2 text-sm font-semibold text-[#f8f4e8] hover:bg-[#c65a3a]">
+                검증 자료 제출
+              </a>
+              <Button onClick={() => void load()} disabled={loading} className="gap-2 bg-[#18342e] text-[#f8f4e8] hover:bg-[#244b42]">
+                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /> 새로고침
+              </Button>
+            </div>
           </div>
         </section>
 
