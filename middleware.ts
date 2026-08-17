@@ -151,18 +151,39 @@ function checkCsrf(request: NextRequest): boolean {
     return true
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || ''
-  const origin = request.headers.get('origin')
-  const referer = request.headers.get('referer')
-
   // 개발 환경에서는 origin 검사 완화
   if (process.env.NODE_ENV !== 'production') return true
 
+  // Same-origin is the real CSRF invariant: the Origin/Referer host must match
+  // the host the request actually arrived on. Comparing to the request's own
+  // Host header (plus NEXT_PUBLIC_APP_URL) tolerates www/non-www and any
+  // canonical domain — the previous exact NEXT_PUBLIC_APP_URL match rejected
+  // legitimate same-origin requests whenever www/non-www differed.
+  const stripWww = (h: string | null | undefined): string | null => (h ? h.replace(/^www\./, '') : null)
+  const hostOf = (u: string | null | undefined): string | null => {
+    if (!u) return null
+    try {
+      return new URL(u).host
+    } catch {
+      return null
+    }
+  }
+
+  const allowedHosts = new Set(
+    [stripWww(request.headers.get('host')), stripWww(hostOf(process.env.NEXT_PUBLIC_APP_URL))].filter(
+      (h): h is string => Boolean(h)
+    )
+  )
+
+  const origin = request.headers.get('origin')
+  const referer = request.headers.get('referer')
   if (origin) {
-    return origin === appUrl || origin.startsWith(appUrl)
+    const h = stripWww(hostOf(origin))
+    return h != null && allowedHosts.has(h)
   }
   if (referer) {
-    return referer.startsWith(appUrl)
+    const h = stripWww(hostOf(referer))
+    return h != null && allowedHosts.has(h)
   }
 
   return false
