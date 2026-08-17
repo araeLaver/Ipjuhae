@@ -48,6 +48,7 @@ const migrations = [
   'migration-031-trust-disclosure-matrix.sql',
   'migration-032-community.sql',
   'migration-033-automated-scoring-pilot.sql',
+  'migration-034-admin-and-gate-approve.sql',
 ] as const
 
 const args = process.argv.slice(2)
