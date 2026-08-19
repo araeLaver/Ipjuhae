@@ -40,6 +40,15 @@ export function getOAuthConfig(provider: AuthProvider): OAuthConfig {
   return providers[provider]()
 }
 
+/** A provider is usable only if its client id is configured. */
+export function isProviderEnabled(provider: AuthProvider): boolean {
+  return Boolean(getOAuthConfig(provider).clientId)
+}
+
+export function getEnabledProviders(): AuthProvider[] {
+  return (Object.keys(providers) as AuthProvider[]).filter(isProviderEnabled)
+}
+
 function getRedirectUri(provider: AuthProvider): string {
   const base = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
   return `${base}/api/auth/social/${provider}/callback`
