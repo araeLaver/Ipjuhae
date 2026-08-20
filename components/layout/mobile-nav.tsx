@@ -30,7 +30,7 @@ export function MobileNav({ open, onClose, user, navLinks, onLogout }: MobileNav
             <div>
               <p className="text-sm font-medium truncate max-w-[180px]">{user.email}</p>
               <p className="text-xs text-muted-foreground">
-                {user.userType === 'landlord' ? 'Landlord' : 'Tenant'}
+                {user.userType === 'landlord' ? '집주인' : '세입자'}
               </p>
             </div>
           </div>
@@ -51,7 +51,7 @@ export function MobileNav({ open, onClose, user, navLinks, onLogout }: MobileNav
 
         <div className="flex items-center gap-2 px-3 py-2">
           <ThemeToggle />
-          <span className="text-sm text-muted-foreground">Theme</span>
+          <span className="text-sm text-muted-foreground">테마</span>
         </div>
 
         {user && (
@@ -63,7 +63,7 @@ export function MobileNav({ open, onClose, user, navLinks, onLogout }: MobileNav
             className="flex items-center gap-2 px-3 py-2.5 text-sm text-destructive rounded-md hover:bg-destructive/10 transition-colors mt-auto"
           >
             <LogOut className="h-4 w-4" />
-            Logout
+            로그아웃
           </button>
         )}
       </div>

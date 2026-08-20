@@ -25,24 +25,24 @@ type ListingForSearch = Listing & {
 }
 
 const PROPERTY_TYPE_LABELS: Record<string, string> = {
-  apartment: 'Apartment',
-  villa: 'Villa',
-  officetel: 'Officetel',
-  oneroom: 'One-room',
-  house: 'House',
-  other: 'Other',
+  apartment: '아파트',
+  villa: '빌라',
+  officetel: '오피스텔',
+  oneroom: '원룸',
+  house: '주택',
+  other: '기타',
 }
 
 const ALL_FILTER_VALUE = 'all'
-const NO_REGION_LABEL = 'All'
-const NO_REGION_TEXT = 'Region not set'
+const NO_REGION_LABEL = '전체'
+const NO_REGION_TEXT = '지역 미정'
 const DEFAULT_MATCH_SCORE = 0
 
 const sortOptions = [
-  { value: 'recommended', label: 'Recommended' },
-  { value: 'rent-low', label: 'Lowest rent first' },
-  { value: 'deposit-low', label: 'Lowest deposit first' },
-  { value: 'area-large', label: 'Largest area first' },
+  { value: 'recommended', label: '추천순' },
+  { value: 'rent-low', label: '월세 낮은순' },
+  { value: 'deposit-low', label: '보증금 낮은순' },
+  { value: 'area-large', label: '면적 넓은순' },
 ]
 
 function deriveRegionFromAddress(address: string): string {
@@ -140,31 +140,31 @@ export function ListingSearch({ listings, compact = false }: ListingSearchProps)
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 id="listing-search-heading" className={compact ? 'text-xl font-bold' : 'text-2xl font-bold'}>
-            Listing search
+            매물 검색
           </h2>
-          <p className="text-sm text-muted-foreground">Search by address and filters.</p>
+          <p className="text-sm text-muted-foreground">주소와 필터로 검색하세요.</p>
         </div>
-        <p className="text-sm font-medium text-muted-foreground">{filteredListings.length} listings</p>
+        <p className="text-sm font-medium text-muted-foreground">매물 {filteredListings.length}개</p>
       </div>
 
       <div className="rounded-lg border bg-background p-4 shadow-soft">
         <div className="grid gap-3 md:grid-cols-[1.4fr_repeat(4,minmax(0,1fr))_auto] md:items-end">
           <div className="space-y-2">
-            <Label htmlFor="listing-query">Search</Label>
+            <Label htmlFor="listing-query">검색</Label>
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 id="listing-query"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Address, region, keyword"
+                placeholder="주소, 지역, 키워드"
                 className="pl-9"
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label>Region</Label>
+            <Label>지역</Label>
             <Select value={region} onValueChange={setRegion}>
               <SelectTrigger>
                 <SelectValue />
@@ -180,7 +180,7 @@ export function ListingSearch({ listings, compact = false }: ListingSearchProps)
           </div>
 
           <div className="space-y-2">
-            <Label>Type</Label>
+            <Label>유형</Label>
             <Select value={propertyType} onValueChange={setPropertyType}>
               <SelectTrigger>
                 <SelectValue />
@@ -196,13 +196,13 @@ export function ListingSearch({ listings, compact = false }: ListingSearchProps)
           </div>
 
           <div className="space-y-2">
-            <Label>Max rent</Label>
+            <Label>최대 월세</Label>
             <Select value={maxRent} onValueChange={setMaxRent}>
               <SelectTrigger>
-                <SelectValue placeholder="All" />
+                <SelectValue placeholder="전체" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="all">전체</SelectItem>
                 <SelectItem value="60">60만원</SelectItem>
                 <SelectItem value="80">80만원</SelectItem>
                 <SelectItem value="100">100만원</SelectItem>
@@ -212,7 +212,7 @@ export function ListingSearch({ listings, compact = false }: ListingSearchProps)
           </div>
 
           <div className="space-y-2">
-            <Label>Sort</Label>
+            <Label>정렬</Label>
             <Select value={sort} onValueChange={setSort}>
               <SelectTrigger>
                 <SelectValue />
@@ -227,9 +227,9 @@ export function ListingSearch({ listings, compact = false }: ListingSearchProps)
             </Select>
           </div>
 
-          <Button type="button" variant="outline" onClick={resetFilters} className="md:w-10 md:px-0" aria-label="Reset filters">
+          <Button type="button" variant="outline" onClick={resetFilters} className="md:w-10 md:px-0" aria-label="필터 초기화">
             <SlidersHorizontal className="h-4 w-4" />
-            <span className="ml-2 md:hidden">Reset</span>
+            <span className="ml-2 md:hidden">초기화</span>
           </Button>
         </div>
       </div>
@@ -238,16 +238,16 @@ export function ListingSearch({ listings, compact = false }: ListingSearchProps)
         <div
           className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed bg-background py-16 text-muted-foreground"
           role="status"
-          aria-label="No listing"
+          aria-label="매물 없음"
         >
           <Building className="h-12 w-12" aria-hidden="true" />
-          <p className="text-lg font-medium text-foreground">No matching listing found.</p>
+          <p className="text-lg font-medium text-foreground">조건에 맞는 매물이 없습니다.</p>
           <Button type="button" variant="outline" onClick={resetFilters}>
-            Reset
+            초기화
           </Button>
         </div>
       ) : (
-        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-label="Listing list">
+        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-label="매물 목록">
           {filteredListings.map((listing) => (
             <li key={listing.id}>
               <ListingCard listing={listing} />

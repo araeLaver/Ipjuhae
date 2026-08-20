@@ -15,7 +15,7 @@ export function Footer() {
             <Link href="/signup" className="hover:text-foreground transition-colors">회원가입</Link>
           </div>
           <p className="text-xs text-muted-foreground">
-            &copy; {new Date().getFullYear()} 입주해. All rights reserved.
+            &copy; {new Date().getFullYear()} 입주해. 모든 권리 보유.
           </p>
         </div>
       </div>

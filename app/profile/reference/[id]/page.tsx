@@ -32,13 +32,13 @@ function getStatusBadgeColor(status: string) {
 function statusLabel(status: string) {
   switch (status) {
     case 'completed':
-      return 'Completed'
+      return '완료'
     case 'sent':
-      return 'Sent'
+      return '발송됨'
     case 'expired':
-      return 'Expired'
+      return '만료됨'
     case 'pending':
-      return 'Pending'
+      return '대기 중'
     default:
       return status
   }
@@ -47,21 +47,21 @@ function statusLabel(status: string) {
 function disputeStatusLabel(status: ReferenceDispute['status']) {
   switch (status) {
     case 'reviewing':
-      return 'Reviewing'
+      return '검토 중'
     case 'accepted':
-      return 'Accepted'
+      return '수용됨'
     case 'rejected':
-      return 'Rejected'
+      return '반려됨'
     case 'completed':
-      return 'Completed'
+      return '완료'
     case 'pending':
-      return 'Pending'
+      return '대기 중'
     case 'corrected':
-      return 'Corrected'
+      return '정정됨'
     case 'withheld':
-      return 'Withheld'
+      return '보류됨'
     case 'deleted':
-      return 'Deleted'
+      return '삭제됨'
   }
 }
 
@@ -97,12 +97,12 @@ export default function ReferenceDetailPage() {
       const payload = (await response.json()) as Partial<ReferencePayload & { error?: string }>
 
       if (!response.ok) {
-        setError((payload as { error?: string }).error || 'Failed to load reference.')
+        setError((payload as { error?: string }).error || '추천서를 불러오지 못했습니다.')
         return
       }
 
       if (!payload.reference) {
-        setError('Reference data not found.')
+        setError('추천서 데이터를 찾을 수 없습니다.')
         return
       }
 
@@ -119,7 +119,7 @@ export default function ReferenceDetailPage() {
 
   const createDispute = async () => {
     if (!reason || !detail) {
-      toast.error('Please fill in both reason and detail.')
+      toast.error('사유와 상세 내용을 모두 입력해주세요.')
       return
     }
 
@@ -133,13 +133,13 @@ export default function ReferenceDetailPage() {
       const data = (await response.json()) as { dispute?: ReferenceDispute; error?: string }
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to create appeal.')
+        throw new Error(data.error || '이의 제기 등록에 실패했습니다.')
       }
 
       setDisputes((prev) => [data.dispute!, ...prev])
       setReason('')
       setDetail('')
-      toast.success('Appeal request submitted.')
+      toast.success('이의 제기가 접수되었습니다.')
     } catch (error) {
       toast.error((error as Error).message)
     } finally {
@@ -151,7 +151,7 @@ export default function ReferenceDetailPage() {
     return (
       <PageContainer maxWidth="md">
         <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">Loading...</p>
+          <p className="text-sm text-muted-foreground">불러오는 중...</p>
         </div>
       </PageContainer>
     )
@@ -160,9 +160,9 @@ export default function ReferenceDetailPage() {
   if (error || !reference) {
     return (
       <PageContainer maxWidth="md">
-        <p className="text-sm text-destructive">{error || 'Reference not found.'}</p>
+        <p className="text-sm text-destructive">{error || '추천서를 찾을 수 없습니다.'}</p>
         <Link href="/profile/reference" className="inline-block mt-4 text-sm underline">
-          Back to list
+          목록으로 돌아가기
         </Link>
       </PageContainer>
     )
@@ -176,11 +176,11 @@ export default function ReferenceDetailPage() {
       <div className="space-y-6">
         <div className="space-y-2">
           <Link href="/profile/reference" className="text-sm text-muted-foreground underline">
-            Reference list
+            추천서 목록
           </Link>
-          <h1 className="text-2xl font-bold">Reference details</h1>
+          <h1 className="text-2xl font-bold">추천서 상세</h1>
           <p className="text-sm text-muted-foreground">
-            {reference.landlord_name || 'Landlord'} | {reference.landlord_phone}
+            {reference.landlord_name || '집주인'} | {reference.landlord_phone}
           </p>
           <p className={`inline-flex rounded-full px-2 py-1 text-xs ${getStatusBadgeColor(reference.status)}`}>
             {statusLabel(reference.status)}
@@ -189,45 +189,45 @@ export default function ReferenceDetailPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Timing</CardTitle>
+            <CardTitle>진행 일정</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
-            <p>Sent: {new Date(reference.request_sent_at || reference.created_at).toLocaleString('en-US')}</p>
-            {reference.completed_at && <p>Completed: {new Date(reference.completed_at).toLocaleString('en-US')}</p>}
+            <p>발송: {new Date(reference.request_sent_at || reference.created_at).toLocaleString('ko-KR')}</p>
+            {reference.completed_at && <p>완료: {new Date(reference.completed_at).toLocaleString('ko-KR')}</p>}
             {reference.token_expires_at && (
-              <p>Expires: {new Date(reference.token_expires_at).toLocaleString('en-US')}</p>
+              <p>만료: {new Date(reference.token_expires_at).toLocaleString('ko-KR')}</p>
             )}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Reference response</CardTitle>
+            <CardTitle>추천서 응답</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             {response ? (
               <div className="space-y-2">
-                <p>Rent payment: {response.rent_payment} / 5</p>
-                <p>Property condition: {response.property_condition} / 5</p>
-                <p>Neighbor issues: {response.neighbor_issues} / 5</p>
-                <p>Checkout condition: {response.checkout_condition} / 5</p>
-                <p>Would recommend: {response.would_recommend ? 'Yes' : 'No'}</p>
-                {response.comment ? <p className="text-muted-foreground">Comment: {response.comment}</p> : null}
+                <p>임대료 납부: {response.rent_payment} / 5</p>
+                <p>매물 상태: {response.property_condition} / 5</p>
+                <p>이웃 관련 문제: {response.neighbor_issues} / 5</p>
+                <p>퇴거 시 상태: {response.checkout_condition} / 5</p>
+                <p>추천 여부: {response.would_recommend ? '예' : '아니오'}</p>
+                {response.comment ? <p className="text-muted-foreground">코멘트: {response.comment}</p> : null}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">No response yet.</p>
+              <p className="text-sm text-muted-foreground">아직 응답이 없습니다.</p>
             )}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex items-center justify-between">
-            <CardTitle>Appeal history</CardTitle>
+            <CardTitle>이의 제기 내역</CardTitle>
             {response ? (
               canCreateDispute ? (
-                <span className="text-xs text-green-700">Appeal can be requested.</span>
+                <span className="text-xs text-green-700">이의 제기가 가능합니다.</span>
               ) : (
-                <span className="text-xs text-muted-foreground">Appeal is not available for this response.</span>
+                <span className="text-xs text-muted-foreground">이 응답에는 이의 제기를 할 수 없습니다.</span>
               )
             ) : null}
           </CardHeader>
@@ -243,15 +243,15 @@ export default function ReferenceDetailPage() {
                   </div>
                   <p className="text-sm text-muted-foreground mt-1">{dispute.detail}</p>
                   <p className="text-xs text-muted-foreground mt-2">
-                    Requested at {new Date(dispute.created_at).toLocaleString('en-US')}
+                    요청 일시 {new Date(dispute.created_at).toLocaleString('ko-KR')}
                   </p>
                   {dispute.review_comment && (
-                    <p className="text-xs text-muted-foreground mt-1">Reviewer comment: {dispute.review_comment}</p>
+                    <p className="text-xs text-muted-foreground mt-1">검토자 코멘트: {dispute.review_comment}</p>
                   )}
                 </div>
               ))
             ) : (
-              <p className="text-sm text-muted-foreground">No appeal has been registered.</p>
+              <p className="text-sm text-muted-foreground">등록된 이의 제기가 없습니다.</p>
             )}
           </CardContent>
         </Card>
@@ -259,19 +259,19 @@ export default function ReferenceDetailPage() {
         {canCreateDispute ? (
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Register appeal</CardTitle>
+              <CardTitle className="text-base">이의 제기 등록</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="space-y-2">
-                <Label>Reason</Label>
+                <Label>사유</Label>
                 <Input value={reason} onChange={(e) => setReason(e.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label>Detail</Label>
+                <Label>상세 내용</Label>
                 <Textarea value={detail} onChange={(e) => setDetail(e.target.value)} rows={6} />
               </div>
               <Button onClick={createDispute} disabled={submitting}>
-                {submitting ? 'Submitting...' : 'Submit appeal'}
+                {submitting ? '제출 중...' : '이의 제기 제출'}
               </Button>
             </CardContent>
           </Card>

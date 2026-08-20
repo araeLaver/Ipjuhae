@@ -3,9 +3,9 @@ import { test, expect } from './fixtures'
 test.describe('인증 흐름', () => {
   test('랜딩페이지 접근 가능', async ({ page }) => {
     await page.goto('/')
-    await expect(page).toHaveTitle(/세입자 프로필 기반 부동산 매칭 플랫폼/)
-    await expect(page.getByRole('heading', { name: '입주해' })).toBeVisible()
-    await expect(page.getByRole('link', { name: '매물 검색' })).toBeVisible()
+    await expect(page).toHaveTitle(/입주해 - 안전한 임대의 시작/)
+    await expect(page.getByRole('heading', { name: '신뢰받는 매물 찾기' })).toBeVisible()
+    await expect(page.getByRole('link', { name: '매물 둘러보기' })).toBeVisible()
   })
 
   test('회원가입 페이지 접근 가능', async ({ page }) => {
