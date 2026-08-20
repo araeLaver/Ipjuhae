@@ -4,7 +4,7 @@
   "description": "세입자 프로필 플랫폼",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "NODE_ENV=production next build",
     "start": "node server.js",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
