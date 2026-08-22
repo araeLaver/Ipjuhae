@@ -1,6 +1,4 @@
-﻿import { randomUUID } from 'crypto'
-
-export interface ApiRequestContext {
+﻿export interface ApiRequestContext {
   requestId: string
   traceId: string
 }
@@ -23,7 +21,8 @@ function extractTraceIdFromTraceParent(traceParent: string): string | null {
 
 function generateId(prefix: string): string {
   try {
-    return `${prefix}_${randomUUID()}`
+    // Web-standard crypto — works on both Edge and Node runtimes (no `node:crypto` import)
+    return `${prefix}_${globalThis.crypto.randomUUID()}`
   } catch {
     const fallback = `${Date.now().toString(36)}-${Math.random().toString(16).slice(2)}`
     return `${prefix}_${fallback}`

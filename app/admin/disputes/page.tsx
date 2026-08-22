@@ -39,26 +39,26 @@ type StatusFilter = 'all' | AdminDispute['status']
 type UpdateStatus = AdminDispute['status']
 
 const STATUS_OPTIONS: Array<{ value: StatusFilter; label: string }> = [
-  { value: 'all', label: 'All' },
-  { value: 'pending', label: 'Pending' },
-  { value: 'reviewing', label: 'Reviewing' },
-  { value: 'accepted', label: 'Accepted' },
-  { value: 'rejected', label: 'Rejected' },
-  { value: 'corrected', label: 'Corrected' },
-  { value: 'withheld', label: 'Withheld' },
-  { value: 'completed', label: 'Completed' },
-  { value: 'deleted', label: 'Deleted' },
+  { value: 'all', label: '전체' },
+  { value: 'pending', label: '대기' },
+  { value: 'reviewing', label: '검토 중' },
+  { value: 'accepted', label: '수용' },
+  { value: 'rejected', label: '반려' },
+  { value: 'corrected', label: '정정' },
+  { value: 'withheld', label: '보류' },
+  { value: 'completed', label: '완료' },
+  { value: 'deleted', label: '삭제' },
 ]
 
 const STATUS_LABELS: Record<AdminDispute['status'], string> = {
-  pending: 'Pending',
-  reviewing: 'Reviewing',
-  accepted: 'Accepted',
-  rejected: 'Rejected',
-  corrected: 'Corrected',
-  withheld: 'Withheld',
-  completed: 'Completed',
-  deleted: 'Deleted',
+  pending: '대기',
+  reviewing: '검토 중',
+  accepted: '수용',
+  rejected: '반려',
+  corrected: '정정',
+  withheld: '보류',
+  completed: '완료',
+  deleted: '삭제',
 }
 
 const STATUS_TRANSITIONS: Record<AdminDispute['status'], UpdateStatus[]> = {
@@ -106,7 +106,7 @@ export default function AdminDisputesPage() {
       const payload = (await response.json()) as ListResponse | { error?: string }
 
       if (!response.ok) {
-        const apiError = (payload as { error?: string }).error || 'Failed to load disputes.'
+        const apiError = (payload as { error?: string }).error || '이의 제기 목록을 불러오지 못했습니다.'
         if (response.status === 403) {
           router.push('/admin')
         }
@@ -131,13 +131,13 @@ export default function AdminDisputesPage() {
   }, [status, limit, offset])
 
   const onUpdateStatus = async (dispute: AdminDispute, nextStatus: UpdateStatus) => {
-    const comment = window.prompt('Review comment (optional). Leave empty if not needed.', dispute.review_comment ?? '')
+    const comment = window.prompt('검토 의견 (선택). 필요 없으면 비워두세요.', dispute.review_comment ?? '')
     if (comment === null) {
       return
     }
 
     if (!allowedActions[dispute.id]?.includes(nextStatus)) {
-      alert(`Invalid transition: ${dispute.status} -> ${nextStatus}`)
+      alert(`잘못된 상태 전환입니다: ${dispute.status} -> ${nextStatus}`)
       return
     }
 
@@ -156,7 +156,7 @@ export default function AdminDisputesPage() {
       const payload = (await response.json()) as { dispute?: AdminDispute; error?: string }
 
       if (!response.ok) {
-        throw new Error(payload.error || 'Failed to update status')
+        throw new Error(payload.error || '상태 변경에 실패했습니다')
       }
 
       setDisputes((prev) =>
@@ -173,8 +173,8 @@ export default function AdminDisputesPage() {
     return (
       <PageContainer>
         <div className="space-y-4">
-          <h1 className="text-2xl font-bold">Reference disputes</h1>
-          <p className="text-muted-foreground">Loading...</p>
+          <h1 className="text-2xl font-bold">추천서 이의 제기</h1>
+          <p className="text-muted-foreground">불러오는 중...</p>
         </div>
       </PageContainer>
     )
@@ -183,10 +183,10 @@ export default function AdminDisputesPage() {
   return (
     <PageContainer>
       <div className="space-y-5">
-        <h1 className="text-2xl font-bold">Dispute Management</h1>
+        <h1 className="text-2xl font-bold">이의 제기 관리</h1>
 
         <div className="flex flex-wrap gap-3 items-center">
-          <label className="text-sm text-muted-foreground">Status</label>
+          <label className="text-sm text-muted-foreground">상태</label>
           <select
             value={status}
             onChange={(e) => {
@@ -211,7 +211,7 @@ export default function AdminDisputesPage() {
           >
             {[20, 30, 50].map((value) => (
               <option key={value} value={value}>
-                {value} / page
+                {value}건 / 페이지
               </option>
             ))}
           </select>
@@ -222,7 +222,7 @@ export default function AdminDisputesPage() {
             }}
             className="px-4 py-2 text-sm rounded-md border bg-muted/50 hover:bg-muted"
           >
-            Search
+            검색
           </button>
         </div>
 
@@ -232,12 +232,12 @@ export default function AdminDisputesPage() {
           <table className="w-full text-sm">
             <thead className="bg-muted/60">
               <tr className="text-left">
-                <th className="px-3 py-2">Created</th>
-                <th className="px-3 py-2">Requester</th>
-                <th className="px-3 py-2">Reference</th>
-                <th className="px-3 py-2">Reason</th>
-                <th className="px-3 py-2">Status</th>
-                <th className="px-3 py-2">Actions</th>
+                <th className="px-3 py-2">등록일</th>
+                <th className="px-3 py-2">요청자</th>
+                <th className="px-3 py-2">추천서</th>
+                <th className="px-3 py-2">사유</th>
+                <th className="px-3 py-2">상태</th>
+                <th className="px-3 py-2">작업</th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -253,11 +253,11 @@ export default function AdminDisputesPage() {
                       {dispute.requester_email ?? dispute.requester_user_id ?? '-'}
                     </td>
                     <td className="px-3 py-2 text-sm">
-                      <div>{dispute.tenant_name ?? 'Tenant'}</div>
+                      <div>{dispute.tenant_name ?? '세입자'}</div>
                       <div className="text-xs text-muted-foreground">
                         {dispute.landlord_name
-                          ? `${dispute.landlord_name} (Reference)`
-                          : `Reference ID: ${dispute.landlord_reference_id}`}
+                          ? `${dispute.landlord_name} (추천서)`
+                          : `추천서 ID: ${dispute.landlord_reference_id}`}
                       </div>
                     </td>
                     <td className="px-3 py-2 text-sm">
@@ -279,12 +279,12 @@ export default function AdminDisputesPage() {
                               onClick={() => onUpdateStatus(dispute, next)}
                               className="px-2 py-1 text-[11px] rounded-md border hover:bg-muted/50 disabled:opacity-40"
                             >
-                              {next}
+                              {STATUS_LABELS[next]}
                             </button>
                           ))}
                         </div>
                       ) : (
-                        <span className="text-xs text-muted-foreground">No further action</span>
+                        <span className="text-xs text-muted-foreground">추가 작업 없음</span>
                       )}
                     </td>
                   </tr>
@@ -294,7 +294,7 @@ export default function AdminDisputesPage() {
               {!loading && disputes.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-4 py-12 text-center text-sm text-muted-foreground">
-                    No disputes found.
+                    이의 제기가 없습니다.
                   </td>
                 </tr>
               ) : null}
@@ -308,14 +308,14 @@ export default function AdminDisputesPage() {
             disabled={offset === 0 || loading}
             className="px-4 py-2 border rounded-md text-sm disabled:opacity-40"
           >
-            Prev
+            이전
           </button>
           <button
             onClick={() => setOffset((prev) => prev + limit)}
             disabled={!hasMore || loading}
             className="px-4 py-2 border rounded-md text-sm disabled:opacity-40"
           >
-            Next
+            다음
           </button>
         </div>
       </div>

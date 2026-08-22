@@ -6,12 +6,12 @@ import { Badge } from '@/components/ui/badge'
 import type { Listing } from '@/lib/schemas/listing'
 
 const PROPERTY_TYPE_LABELS: Record<string, string> = {
-  apartment: 'Apartment',
-  villa: 'Villa',
-  officetel: 'Officetel',
-  oneroom: 'One-room',
-  house: 'House',
-  other: 'Other',
+  apartment: '아파트',
+  villa: '빌라',
+  officetel: '오피스텔',
+  oneroom: '원룸',
+  house: '주택',
+  other: '기타',
 }
 
 type ListingForCard = Listing & {
@@ -23,9 +23,9 @@ type ListingForCard = Listing & {
   match_score?: number | null
 }
 
-const NO_REGION_TEXT = 'Region not set'
-const NO_LOCATION_TEXT = 'Address not set'
-const NO_MATCH_TEXT = 'Matching data in preparation'
+const NO_REGION_TEXT = '지역 미정'
+const NO_LOCATION_TEXT = '주소 미정'
+const NO_MATCH_TEXT = '매칭 정보 준비 중'
 
 function formatRent(amount: number): string {
   if (amount >= 10000) return `${Math.floor(amount / 10000)}억 ${amount % 10000}만원`
@@ -50,21 +50,21 @@ export function ListingCard({ listing }: ListingCardProps) {
   const tags = listing.tags ?? []
   const propertyType = listing.property_type ?? 'other'
   const nearestStation = listing.nearest_station ?? regionLabel
-  const commuteNote = listing.commute_note ?? 'Please check transport details'
+  const commuteNote = listing.commute_note ?? '교통 정보를 확인하세요'
   const showMatchScore = typeof listing.match_score === 'number'
-  const matchText = showMatchScore ? `${listing.match_score}% Match` : NO_MATCH_TEXT
+  const matchText = showMatchScore ? `${listing.match_score}% 매칭` : NO_MATCH_TEXT
 
   return (
     <Link
       href={`/properties/${listing.id}`}
-      aria-label={`${listing.address} listing detail`}
+      aria-label={`${listing.address} 매물 상세`}
     >
       <Card className="hover:shadow-md transition-shadow cursor-pointer h-full group">
         <div className="relative w-full h-44 bg-muted rounded-t-xl overflow-hidden">
           {mainPhoto ? (
             <Image
               src={mainPhoto}
-              alt={`${listing.address} listing image`}
+              alt={`${listing.address} 매물 이미지`}
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
               className="object-cover group-hover:scale-105 transition-transform duration-300"
@@ -72,7 +72,7 @@ export function ListingCard({ listing }: ListingCardProps) {
           ) : (
             <div
               className="w-full h-full flex items-center justify-center"
-              aria-label="No listing image"
+              aria-label="매물 이미지 없음"
             >
               <Home className="h-10 w-10 text-muted-foreground" aria-hidden="true" />
             </div>
@@ -97,12 +97,12 @@ export function ListingCard({ listing }: ListingCardProps) {
           </p>
           <p className="text-xs text-muted-foreground flex items-center gap-1 line-clamp-1">
             <TrainFront className="h-3 w-3 flex-shrink-0" aria-hidden="true" />
-            {nearestStation} around {commuteNote}
+            {nearestStation} 인근 {commuteNote}
           </p>
 
           <div>
-            <p className="font-bold text-primary">Deposit {formatRent(listing.deposit)}</p>
-            <p className="text-sm text-muted-foreground">Monthly {listing.monthly_rent}만원</p>
+            <p className="font-bold text-primary">보증금 {formatRent(listing.deposit)}</p>
+            <p className="text-sm text-muted-foreground">월세 {listing.monthly_rent}만원</p>
           </div>
 
           <div className="flex flex-wrap gap-1 pt-1">
@@ -118,7 +118,7 @@ export function ListingCard({ listing }: ListingCardProps) {
               {listing.area_sqm}㎡
               {listing.floor != null && ` · ${listing.floor}층`}
             </span>
-            <span>Move-in: {listing.available_from ?? 'Ask'}</span>
+            <span>입주: {listing.available_from ?? '문의'}</span>
           </div>
         </CardContent>
       </Card>

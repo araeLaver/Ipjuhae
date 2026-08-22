@@ -140,8 +140,8 @@ export default function TrustProductAdminPage() {
                   <div className="flex items-start justify-between gap-3"><strong className="break-all">{String(intake.original_filename)}</strong><span className="text-xs text-[#f2a65a]">{String(intake.scan_status)}</span></div>
                   <p className="mt-2 font-mono text-[10px] text-[#7f8b84]">{String(intake.file_sha256)}</p>
                   <div className="mt-3 flex gap-2">
-                    <button onClick={() => void patch({ resource: 'document_intake', id: intake.id, scanStatus: 'clean', scanEngine: 'manual-admin', scanSignatureVersion: 'manual-1', quarantineReason: null })} className="rounded-full border border-emerald-700 px-3 py-1 text-[11px] text-emerald-300">clean</button>
-                    <button onClick={() => void patch({ resource: 'document_intake', id: intake.id, scanStatus: 'quarantined', scanEngine: 'manual-admin', scanSignatureVersion: 'manual-1', quarantineReason: '운영자 격리' })} className="rounded-full border border-red-800 px-3 py-1 text-[11px] text-red-300">quarantine</button>
+                    <button onClick={() => void patch({ resource: 'document_intake', id: intake.id, scanStatus: 'clean', scanEngine: 'manual-admin', scanSignatureVersion: 'manual-1', quarantineReason: null })} className="rounded-full border border-emerald-700 px-3 py-1 text-[11px] text-emerald-300">정상 처리</button>
+                    <button onClick={() => void patch({ resource: 'document_intake', id: intake.id, scanStatus: 'quarantined', scanEngine: 'manual-admin', scanSignatureVersion: 'manual-1', quarantineReason: '운영자 격리' })} className="rounded-full border border-red-800 px-3 py-1 text-[11px] text-red-300">격리</button>
                   </div>
                 </div>
               ))}

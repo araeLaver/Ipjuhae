@@ -40,25 +40,25 @@ interface ConsentEventFilter {
 }
 
 const TARGET_ROLE_OPTIONS: Array<{ label: string; value: ConsentTargetRole | 'all' }> = [
-  { label: 'all', value: 'all' },
-  { label: 'tenant', value: 'tenant' },
-  { label: 'landlord', value: 'landlord' },
-  { label: 'broker', value: 'broker' },
-  { label: 'admin', value: 'admin' },
+  { label: '전체', value: 'all' },
+  { label: '임차인', value: 'tenant' },
+  { label: '임대인', value: 'landlord' },
+  { label: '중개사', value: 'broker' },
+  { label: '관리자', value: 'admin' },
 ]
 
 const PURPOSE_OPTIONS: Array<{ label: string; value: ConsentPurpose | 'all' }> = [
-  { label: 'all', value: 'all' },
-  { label: 'tenant_profile_view', value: 'tenant_profile_view' },
-  { label: 'landlord_profile_view', value: 'landlord_profile_view' },
-  { label: 'property_view', value: 'property_view' },
+  { label: '전체', value: 'all' },
+  { label: '임차인 프로필 조회', value: 'tenant_profile_view' },
+  { label: '임대인 프로필 조회', value: 'landlord_profile_view' },
+  { label: '매물 조회', value: 'property_view' },
 ]
 
 const EVENT_OPTIONS: Array<{ label: string; value: ConsentEvent['event_type'] | 'all' }> = [
-  { label: 'all', value: 'all' },
-  { label: 'granted', value: 'granted' },
-  { label: 'updated', value: 'updated' },
-  { label: 'revoked', value: 'revoked' },
+  { label: '전체', value: 'all' },
+  { label: '동의', value: 'granted' },
+  { label: '수정', value: 'updated' },
+  { label: '폐기', value: 'revoked' },
 ]
 
 function eventTypeClass(type: ConsentEvent['event_type']) {
@@ -160,23 +160,23 @@ export default function ConsentEventsPage() {
       <div className="space-y-5">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Consent Event History</h1>
+            <h1 className="text-2xl font-bold">동의 이벤트 내역</h1>
             <p className="text-sm text-muted-foreground">
               모든 동의 이벤트의 이벤트 유형, 대상 역할, 변경 내역을 한곳에서 확인합니다.
             </p>
           </div>
           <Link href="/profile/consent">
-            <Button variant="outline">Consent Settings</Button>
+            <Button variant="outline">동의 설정</Button>
           </Link>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Filter</CardTitle>
+            <CardTitle>필터</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-3 md:grid-cols-5">
             <div className="space-y-1">
-              <label className="text-sm text-muted-foreground">Role</label>
+              <label className="text-sm text-muted-foreground">역할</label>
               <select
                 value={filters.targetRole}
                 onChange={(e) => setFilters((prev) => ({ ...prev, targetRole: e.target.value as ConsentTargetRole | 'all' }))}
@@ -191,7 +191,7 @@ export default function ConsentEventsPage() {
             </div>
 
             <div className="space-y-1">
-              <label className="text-sm text-muted-foreground">Purpose</label>
+              <label className="text-sm text-muted-foreground">목적</label>
               <select
                 value={filters.purpose}
                 onChange={(e) => setFilters((prev) => ({ ...prev, purpose: e.target.value as ConsentPurpose | 'all' }))}
@@ -206,7 +206,7 @@ export default function ConsentEventsPage() {
             </div>
 
             <div className="space-y-1">
-              <label className="text-sm text-muted-foreground">Event</label>
+              <label className="text-sm text-muted-foreground">이벤트</label>
               <select
                 value={filters.eventType}
                 onChange={(e) => setFilters((prev) => ({ ...prev, eventType: e.target.value as ConsentEvent['event_type'] | 'all' }))}
@@ -221,16 +221,16 @@ export default function ConsentEventsPage() {
             </div>
 
             <div className="space-y-1">
-              <label className="text-sm text-muted-foreground">Consent ID</label>
+              <label className="text-sm text-muted-foreground">동의 ID</label>
               <Input
                 value={filters.consentId}
                 onChange={(e) => setFilters((prev) => ({ ...prev, consentId: e.target.value }))}
-                placeholder="Filter by consent id"
+                placeholder="동의 ID로 검색"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-sm text-muted-foreground">Page size</label>
+              <label className="text-sm text-muted-foreground">페이지 크기</label>
               <select
                 value={filters.limit}
                 onChange={(e) => setFilters((prev) => ({ ...prev, limit: Number(e.target.value) }))}
@@ -253,8 +253,8 @@ export default function ConsentEventsPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
-              <span>Events</span>
-              <span className="text-sm text-muted-foreground font-normal">Total: {total}</span>
+              <span>이벤트</span>
+              <span className="text-sm text-muted-foreground font-normal">전체: {total}</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -267,14 +267,14 @@ export default function ConsentEventsPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="text-left text-muted-foreground border-b">
-                      <th className="py-2 pr-4">Time</th>
-                      <th className="py-2 pr-4">Type</th>
-                      <th className="py-2 pr-4">Target Role</th>
-                      <th className="py-2 pr-4">Purpose</th>
-                      <th className="py-2 pr-4">From</th>
-                      <th className="py-2 pr-4">To</th>
-                      <th className="py-2 pr-4">Consent ID</th>
-                      <th className="py-2 pr-4">Reason</th>
+                      <th className="py-2 pr-4">시각</th>
+                      <th className="py-2 pr-4">유형</th>
+                      <th className="py-2 pr-4">대상 역할</th>
+                      <th className="py-2 pr-4">목적</th>
+                      <th className="py-2 pr-4">변경 전</th>
+                      <th className="py-2 pr-4">변경 후</th>
+                      <th className="py-2 pr-4">동의 ID</th>
+                      <th className="py-2 pr-4">사유</th>
                     </tr>
                   </thead>
                   <tbody>

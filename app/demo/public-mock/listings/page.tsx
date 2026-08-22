@@ -49,7 +49,7 @@ export default function PublicMockListingsPage() {
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-xl font-bold">Synthetic listings</h2>
+                <h2 className="text-xl font-bold">가상 매물</h2>
                 <p className="text-sm text-muted-foreground">번지, 동·호수, 연락처, user ID를 제외한 fixture 3건</p>
               </div>
               <Badge variant="outline">{publicMockListings.length}건</Badge>

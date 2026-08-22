@@ -1,6 +1,8 @@
 # 렌트미 (RentMe) TODO
 
-## 현재 완성도: ~100% (인프라 안정화 및 프로덕션 준비 완료)
+## 현재 완성도: 프로덕션 준비 대부분 완료 — 런치 게이팅 항목 잔존
+
+> 잔여 게이팅(2026-08-22 재점검): Trust 마이그레이션(028/029/033) 프로덕션 적용 검증, Sentry 에러 모니터링(현재 noop), 인증 E2E 커버리지 등. 상세는 아래 항목 참고. (og-image, edge crypto import, admin/데모 현지화는 2026-08-22 처리 완료)
 
 ---
 
@@ -68,7 +70,7 @@
 - [x] 레퍼런스 토큰 보안 강화 (crypto.randomBytes, 7일 만료)
 - [x] 입력값 sanitization (XSS 방지 - lib/sanitize.ts)
 - [x] DB 마이그레이션 전략 (db/migrate.ts)
-- [x] 에러 로깅 연동 (Sentry)
+- [ ] 에러 로깅 연동 (Sentry) — 현재 instrumentation.ts에서 noop 비활성화 상태(DSN 미설정, Koyeb nano 컴파일 타임아웃 회피). 활성화 시 인스턴스 small↑ 필요
 - [x] 환경변수 프로덕션 설정
 - [x] SMS 프로바이더 연동 (NHN Cloud / Twilio)
 - [x] 이메일 프로바이더 연동 (Resend / SendGrid)

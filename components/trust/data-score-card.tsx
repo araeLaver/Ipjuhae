@@ -33,7 +33,7 @@ export function DataScoreCard() {
     <section className="mt-7 rounded-2xl border border-[#18342e]/12 bg-[#f8f4e8] p-6">
       <div className="flex items-end justify-between">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#b64d31]">DATA SCORE</p>
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#b64d31]">데이터 점수</p>
           <p className="mt-1 text-sm text-[#18342e]/70">내 검증 자료의 품질 (출처·완전성·최신성·일관성·검증가능성)</p>
         </div>
         <div className="text-right">

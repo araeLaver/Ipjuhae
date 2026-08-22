@@ -48,7 +48,7 @@ test.describe('네비게이션', () => {
   test('헤더 로고 클릭시 홈으로 이동', async ({ page }) => {
     await page.goto('/login')
 
-    await page.getByRole('link', { name: 'RentMe', exact: true }).click()
+    await page.getByRole('link', { name: '입주해 입주해', exact: true }).click()
 
     await expect(page).toHaveURL('/')
   })
