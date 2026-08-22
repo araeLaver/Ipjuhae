@@ -11,7 +11,7 @@ const adminNav = [
   { href: '/admin/patents', label: '특허 문서' },
   { href: '/admin/disputes', label: '이의 제기' },
   { href: '/admin/access-logs', label: '접근 로그' },
-  { href: '/admin/trust', label: 'Trust Engine' },
+  { href: '/admin/trust', label: 'Trust 엔진' },
   { href: '/admin/trust/operations', label: 'Trust 운영' },
 ]
 
