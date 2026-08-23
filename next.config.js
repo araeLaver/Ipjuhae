@@ -59,14 +59,22 @@ const nextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
+              // script/style 'unsafe-inline' 유지: nonce 전환은 정적 페이지를
+              // 동적 렌더링으로 바꾸는 트레이드오프가 있어 별도 결정으로 분리.
               `script-src ${scriptSources.join(' ')}`,
               "style-src 'self' 'unsafe-inline'",
               "font-src 'self' data:",
+              // img-src는 'https:' 유지: 소셜 로그인 프로필 이미지(kakao/naver/
+              // google CDN)를 렌더하므로 특정 호스트로 좁히면 아바타가 깨진다.
               "img-src 'self' data: blob: https:",
-              "connect-src 'self' wss: ws: https://vitals.vercel-insights.com",
+              // ws: 제거(https 페이지에서 평문 ws는 브라우저가 어차피 차단).
+              "connect-src 'self' wss: https://vitals.vercel-insights.com",
+              // 순수 추가 하드닝(회귀 위험 없음):
+              "object-src 'none'", // 플러그인/<object>·<embed> 주입 차단
               "frame-ancestors 'none'",
               "base-uri 'self'",
               "form-action 'self'",
+              "upgrade-insecure-requests", // 혼합 콘텐츠 방지(전 리소스 https)
             ].join('; '),
           },
         ],
