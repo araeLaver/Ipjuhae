@@ -47,6 +47,17 @@ async function signupAsTenant(page: import('@playwright/test').Page, email: stri
   ])
 }
 
+// The login page may default to magic-link or password mode. Ensure the
+// password form is shown regardless (the switch button only exists in magic mode).
+async function ensurePasswordMode(page: import('@playwright/test').Page) {
+  await page.goto('/login')
+  const toPassword = page.getByRole('button', { name: '비밀번호로 로그인' })
+  if (await toPassword.isVisible().catch(() => false)) {
+    await toPassword.click()
+  }
+  await page.locator('#password').waitFor({ state: 'visible' })
+}
+
 // Session source of truth — deterministic, unlike redirect-target assertions.
 async function sessionEmail(page: import('@playwright/test').Page): Promise<string | null> {
   const res = await page.request.get('/api/auth/me')
@@ -72,8 +83,7 @@ test.describe('인증 종단 흐름 (격리 DB 필요)', () => {
     expect(await sessionEmail(page)).toBeNull()
 
     // --- 비밀번호 로그인: 세션이 다시 성립해야 한다 ---
-    await page.goto('/login')
-    await page.getByRole('button', { name: '비밀번호로 로그인' }).click()
+    await ensurePasswordMode(page)
     await page.locator('#email').fill(email)
     await page.locator('#password').fill(password)
     await Promise.all([
@@ -91,8 +101,7 @@ test.describe('인증 종단 흐름 (격리 DB 필요)', () => {
     await signupAsTenant(page, email, password)
     await page.context().clearCookies()
 
-    await page.goto('/login')
-    await page.getByRole('button', { name: '비밀번호로 로그인' }).click()
+    await ensurePasswordMode(page)
     await page.locator('#email').fill(email)
     await page.locator('#password').fill(wrongPassword())
     await page.locator('form').getByRole('button', { name: '로그인', exact: true }).click()

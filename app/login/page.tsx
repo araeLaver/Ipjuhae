@@ -40,7 +40,11 @@ function LoginContent() {
   const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
   const [isMagicLinkSent, setIsMagicLinkSent] = useState(false)
-  const [mode, setMode] = useState<'password' | 'magic'>('magic')
+  // 무료 베타 기본값: 비밀번호 로그인. 매직 링크는 이메일 프로바이더(EMAIL_PROVIDER)
+  // 설정 후에만 정상 동작하므로, 미설정 상태에서 첫 로그인이 막히지 않도록 기본을
+  // 비밀번호로 둔다. 이메일 연결 후 'magic'으로 되돌리면 된다. (매직 링크 옵션은
+  // 화면의 '매직 링크로 로그인' 버튼으로 그대로 접근 가능)
+  const [mode, setMode] = useState<'password' | 'magic'>('password')
   const [cooldown, setCooldown] = useState(0)
   const [formData, setFormData] = useState({
     email: '',
