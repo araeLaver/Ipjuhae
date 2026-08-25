@@ -109,13 +109,12 @@ export default function PropertyDetailPage() {
     setIsSendingMessage(true)
     try {
       // Create or find conversation with landlord
-      const res = await fetch('/api/messages', {
+      const res = await fetch('/api/messages/conversations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          receiverId: property.landlordId,
-          content: `안녕하세요! "${property.title}" 매물에 관심이 있어서 연락드립니다.`,
-          propertyId: property.id,
+          targetUserId: property.landlordId,
+          initialMessage: `안녕하세요! "${property.title}" 매물에 관심이 있어서 연락드립니다.`,
         }),
       })
       const data = await res.json()

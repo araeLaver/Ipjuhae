@@ -61,9 +61,10 @@ export async function GET(
         p.*,
         lp.name as landlord_name,
         lp.bio as landlord_bio,
-        lp.profile_image_url as landlord_profile_image
+        u.profile_image as landlord_profile_image
       FROM properties p
       LEFT JOIN profiles lp ON lp.user_id = p.landlord_id
+      LEFT JOIN users u ON u.id = p.landlord_id
       WHERE p.id = $1 AND p.status != 'hidden'`,
       [propertyId]
     )
