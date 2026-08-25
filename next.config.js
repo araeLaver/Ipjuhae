@@ -62,8 +62,10 @@ const nextConfig = {
               // script/style 'unsafe-inline' 유지: nonce 전환은 정적 페이지를
               // 동적 렌더링으로 바꾸는 트레이드오프가 있어 별도 결정으로 분리.
               `script-src ${scriptSources.join(' ')}`,
-              "style-src 'self' 'unsafe-inline'",
-              "font-src 'self' data:",
+              // 브랜드 폰트 Pretendard를 jsdelivr CDN에서 로드(app/globals.css @import).
+              // 이 호스트가 없으면 CSP가 스타일시트를 차단해 폰트가 시스템 폰트로 폴백된다.
+              "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
+              "font-src 'self' data: https://cdn.jsdelivr.net",
               // img-src는 'https:' 유지: 소셜 로그인 프로필 이미지(kakao/naver/
               // google CDN)를 렌더하므로 특정 호스트로 좁히면 아바타가 깨진다.
               "img-src 'self' data: blob: https:",
