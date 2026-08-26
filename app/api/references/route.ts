@@ -87,7 +87,9 @@ export async function POST(request: Request) {
         const surveyUrl = `${baseUrl}/reference/survey/${token}`
         const tenantName = profile?.name || 'tenant'
 
-        sendReferenceRequestSMS(landlordPhone, tenantName, surveyUrl)
+        // best-effort 발송(비차단). SMS 미설정(운영 mock) 시 reject되므로 .catch로
+        // unhandled rejection을 막는다. 레퍼런스 요청 자체는 성공 처리.
+        sendReferenceRequestSMS(landlordPhone, tenantName, surveyUrl).catch(() => {})
         if (landlordEmail) {
           sendReferenceRequestEmail(landlordEmail, tenantName, surveyUrl).catch(() => {})
         }
