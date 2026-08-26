@@ -52,7 +52,7 @@ export async function GET(request: Request) {
         p.trust_score,
         p.bio
       FROM tenant_favorites f
-      JOIN profiles p ON f.tenant_id = p.user_id
+      LEFT JOIN profiles p ON f.tenant_id = p.user_id
       WHERE f.landlord_id = $1
       ORDER BY f.created_at DESC
       LIMIT $2 OFFSET $3`,
