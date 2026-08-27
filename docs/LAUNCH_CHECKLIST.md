@@ -1,11 +1,54 @@
 # Rentme MVP Launch Checklist
 
+> 운영값을 로컬 파일, 터미널 출력, 이슈 댓글에 복사하지 않습니다. 보드 승인 후 GitHub `production` environment와 실제 배포 runtime에 직접 등록하고, 아래 검증에서는 값이 아닌 존재 여부와 검사 결과만 기록합니다.
+
+## 운영 환경변수 승인 게이트
+
+아래 표의 모든 행이 승인되어야 production launch rehearsal을 시작할 수 있습니다. 승인자는 공급자 선택과 비용·약관을 확인하고, DevOps는 secret 저장 위치와 runtime 반영 여부를 확인합니다.
+
+| 구분 | 필수 설정 | 승인 기준 | 담당 승인 |
+| --- | --- | --- | --- |
+| Database | `DATABASE_URL`, `DB_SCHEMA=ipjuhae` | 운영 전용 DB, TLS/접근제어, migration 대상 schema 확인 | 보드 + DevOps |
+| 인증 | `JWT_SECRET` | 운영 전용 무작위 값, 최소 32자, 다른 secret과 재사용 금지 | 보드 + DevOps |
+| 신뢰 공개 | `DISCLOSURE_SIGNING_KEY` | 운영 전용 무작위 값, 최소 32자, `JWT_SECRET`과 분리 | 보드 + DevOps |
+| Cron | `CRON_SECRET` | 운영 전용 무작위 값, GitHub Actions 호출값과 runtime 값 일치 | 보드 + DevOps |
+| 공개 URL | `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_BASE_URL` | 동일한 최종 public HTTPS origin, preview/localhost 금지 | 보드 + DevOps |
+| SMS | `SMS_PROVIDER=nhn` + `NHN_SMS_APP_KEY`, `NHN_SMS_SECRET_KEY`, `NHN_SMS_SENDER`; 또는 `SMS_PROVIDER=twilio` + `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER` | 실발송 계정, 발신번호 등록, 비용·개인정보 처리 조건 확인 | 보드 |
+| Email | `EMAIL_PROVIDER=resend` + `RESEND_API_KEY`; `sendgrid` + `SENDGRID_API_KEY`; 또는 `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS` | 운영 발신 도메인/주소 인증, 반송 처리 및 비용 확인 | 보드 |
+| Storage | `STORAGE_PROVIDER=s3`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | 운영 bucket, 최소 권한, 암호화·보존 정책 확인. R2 사용 시 `S3_ENDPOINT`, 공개 제공 시 `S3_PUBLIC_URL`도 확인 | 보드 + DevOps |
+| Verification | `VERIFICATION_PROVIDER=codef` + `CODEF_CLIENT_ID`, `CODEF_CLIENT_SECRET`, `CODEF_PUBLIC_KEY`; 또는 `nice` + `NICE_CLIENT_ID`, `NICE_CLIENT_SECRET` | 운영 계약·자격증명, 사용자 고지와 개인정보 처리 조건 확인 | 보드 |
+
+### 승인 및 주입 절차
+
+1. 보드가 SMS, email, storage, verification 공급자와 운영 계약 범위를 승인합니다.
+2. DevOps가 승인된 값을 GitHub `production` environment와 배포 runtime secret에 등록합니다. `.env.local`이나 이슈 댓글에는 운영값을 저장하지 않습니다.
+3. `DATABASE_URL`이 실제 runtime DB를 가리키는지 확인하고 `npm run db:migrate`를 승인된 절차로 실행합니다.
+4. runtime에서 아래 명령을 실행하되 secret 값은 출력하지 않고 성공/실패와 누락된 변수 이름만 기록합니다.
+
+```bash
+npm run launch:check
+```
+
+5. `launch:check` 통과 후에만 `npm run launch:verify`, 배포, `npm run launch:smoke` 순서로 진행합니다.
+
+### 결과 기록 템플릿
+
+```md
+- 실행 환경: production runtime / GitHub `production` environment
+- 실행 시각: YYYY-MM-DD HH:mm KST
+- 공급자 선택: SMS=<provider>, Email=<provider>, Storage=<provider>, Verification=<provider>
+- `npm run launch:check`: PASS 또는 FAIL
+- 누락 항목: 없음 또는 환경변수 이름만 기록
+- 검증자: <담당자>
+```
+
 ## Required before launch
 
 - [ ] `DATABASE_URL` points at the production Postgres database.
 - [ ] `DB_SCHEMA=ipjuhae` unless the production schema name has intentionally changed.
 - [ ] `npm run db:migrate` completed against production.
 - [ ] `JWT_SECRET` is a production-only random value of at least 32 bytes.
+- [ ] `DISCLOSURE_SIGNING_KEY` is a separate production-only random value of at least 32 bytes and is not reused as `JWT_SECRET`.
 - [ ] `CRON_SECRET` is a production-only random value and cron callers send `Authorization: Bearer <CRON_SECRET>`.
 - [ ] `NEXT_PUBLIC_APP_URL` and `NEXT_PUBLIC_BASE_URL` are the final public HTTPS origin.
 - [ ] Docker/Koyeb routes traffic to container port `8000`.
