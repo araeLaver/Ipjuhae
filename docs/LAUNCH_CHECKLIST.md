@@ -18,6 +18,19 @@
 | Storage | `STORAGE_PROVIDER=s3`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | 운영 bucket, 최소 권한, 암호화·보존 정책 확인. R2 사용 시 `S3_ENDPOINT`, 공개 제공 시 `S3_PUBLIC_URL`도 확인 | 보드 + DevOps |
 | Verification | `VERIFICATION_PROVIDER=codef` + `CODEF_CLIENT_ID`, `CODEF_CLIENT_SECRET`, `CODEF_PUBLIC_KEY`; 또는 `nice` + `NICE_CLIENT_ID`, `NICE_CLIENT_SECRET` | 운영 계약·자격증명, 사용자 고지와 개인정보 처리 조건 확인 | 보드 |
 
+### CTO 기술 승인안
+
+2026-08-28 KST 기준 production rehearsal의 기본 공급자 조합은 아래 기준으로 승인합니다. 단, 비용·계약·개인정보 처리 조건과 실제 credential 발급은 보드 승인 후 진행합니다.
+
+| 구분 | 기본 승인안 | 승인 조건 |
+| --- | --- | --- |
+| SMS | `SMS_PROVIDER=nhn` 우선, 이미 Twilio 운영 계약이 있으면 `twilio` 허용 | 국내 발신번호 등록, 실발송 테스트 번호 1개, 실패/과금 모니터링 가능 |
+| Email | `EMAIL_PROVIDER=resend` 우선, 기존 SendGrid 운영 계정이 있으면 `sendgrid` 허용 | 발신 도메인 인증, bounce/spam 이벤트 확인, magic link 도달 테스트 가능 |
+| Storage | `STORAGE_PROVIDER=s3` | 운영 전용 bucket, 앱 전용 access key, 공개 URL/CDN 정책 확정, 서버측 암호화 사용 |
+| Verification | `VERIFICATION_PROVIDER=nice` 우선, CODEF 계약·심사 범위가 이미 확정되면 `codef` 허용 | 운영 계약, 사용자 고지/동의 문구, 외부 조회 목적과 보존 정책 확인 |
+
+이 승인안은 기술적으로 허용 가능한 기본 조합을 고정하기 위한 것입니다. 실제 운영값 주입 전에는 보드가 공급자 계약·비용·개인정보 처리 조건을 확인해야 합니다.
+
 ### 승인 및 주입 절차
 
 1. 보드가 SMS, email, storage, verification 공급자와 운영 계약 범위를 승인합니다.
