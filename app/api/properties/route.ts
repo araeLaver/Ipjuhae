@@ -134,6 +134,7 @@ export async function GET(request: Request) {
         pi.image_url as main_image_url,
         lp.name as landlord_name
       FROM properties p
+      INNER JOIN users u ON u.id = p.landlord_id AND u.deleted_at IS NULL
       LEFT JOIN property_images pi ON pi.property_id = p.id AND pi.is_main = TRUE
       LEFT JOIN profiles lp ON lp.user_id = p.landlord_id
       ${whereClause}

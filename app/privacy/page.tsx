@@ -41,6 +41,7 @@ export default function PrivacyPage() {
               <li>본인 인증 시: 휴대폰 번호</li>
               <li>프로필 작성 시: 이름, 연령대, 가구 유형, 생활 패턴 정보</li>
               <li>인증 시: 재직 회사명, 소득 구간, 신용 등급, 서류 이미지</li>
+              <li>매물 등록 시: 도로명·지번 주소, 상세주소(동·호수 등)</li>
             </ul>
           </section>
 
@@ -54,12 +55,18 @@ export default function PrivacyPage() {
               <li>대금 결제 및 재화 공급에 관한 기록: 5년</li>
               <li>소비자 불만 또는 분쟁 처리 기록: 3년</li>
             </ul>
+            <p>
+              매물 주소는 매물 중개·검색 제공을 위해 회원 탈퇴 또는 매물 삭제 시까지 보유합니다. 계약 점검 리포트와 연결된 매물 행은 참조 무결성을 위해 남길 수 있으나, 공개를 중단하고 주소와 상세주소는 즉시 비식별화합니다.
+            </p>
           </section>
 
           <section>
             <h2 className="text-lg font-semibold text-foreground">4. 개인정보의 제3자 제공</h2>
             <p>
               회사는 원칙적으로 회원의 동의 없이 개인정보를 제3자에게 제공하지 않습니다. 다만, 집주인이 세입자 프로필을 열람하는 경우 회원이 공개 설정한 정보에 한해 제공됩니다.
+            </p>
+            <p>
+              공개 매물 화면에는 검색에 필요한 일반 주소만 표시하며, 동·호수 등 상세주소는 공개 API와 화면에 제공하지 않습니다. 상세주소는 매물 소유자의 관리 화면에서만 확인할 수 있습니다.
             </p>
           </section>
 
@@ -90,7 +97,7 @@ export default function PrivacyPage() {
           </section>
 
           <p className="text-xs text-muted-foreground pt-4 border-t">
-            시행일: 2025년 1월 1일
+            시행일: 2026년 8월 27일
           </p>
         </div>
       </main>

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyToken } from '@/lib/auth'
-import { query } from '@/lib/db'
+import { query, transaction } from '@/lib/db'
 import { z } from 'zod'
 import { sanitizeUserInput } from '@/lib/sanitize'
 
@@ -311,11 +311,33 @@ export async function DELETE(
       return NextResponse.json({ error: '집주인만 접근할 수 있습니다' }, { status: 403 })
     }
 
-    // 매물 삭제 (본인 소유만)
-    const result = await query<PropertyRow>(
-      'DELETE FROM properties WHERE id = $1 AND landlord_id = $2 RETURNING id',
-      [propertyId, payload.userId]
-    )
+    // 계약 점검 리포트가 참조하는 매물은 FK 무결성을 유지하면서 위치정보를 파기한다.
+    // 참조가 없는 매물만 물리 삭제한다.
+    const result = await transaction(async (client) => {
+      const linkedReport = await client.query(
+        'SELECT 1 FROM contract_check_reports WHERE property_id = $1 LIMIT 1',
+        [propertyId]
+      )
+
+      if (linkedReport.rows.length > 0) {
+        return client.query<PropertyRow>(
+          `UPDATE properties
+           SET status = 'hidden',
+               address = '삭제된 비공개 매물',
+               address_detail = NULL,
+               region = NULL,
+               updated_at = NOW()
+           WHERE id = $1 AND landlord_id = $2
+           RETURNING id`,
+          [propertyId, payload.userId]
+        ).then(({ rows }) => rows)
+      }
+
+      return client.query<PropertyRow>(
+        'DELETE FROM properties WHERE id = $1 AND landlord_id = $2 RETURNING id',
+        [propertyId, payload.userId]
+      ).then(({ rows }) => rows)
+    })
 
     if (result.length === 0) {
       return NextResponse.json({ error: '매물을 찾을 수 없습니다' }, { status: 404 })

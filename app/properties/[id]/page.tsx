@@ -20,7 +20,6 @@ interface PropertyDetail {
   title: string
   description: string | null
   address: string
-  addressDetail: string | null
   region: string | null
   deposit: number
   monthlyRent: number
@@ -244,7 +243,6 @@ export default function PropertyDetailPage() {
               <p className="text-muted-foreground flex items-center gap-1 mt-1">
                 <MapPin className="h-4 w-4" />
                 {property.address}
-                {property.addressDetail && ` ${property.addressDetail}`}
               </p>
             </div>
 

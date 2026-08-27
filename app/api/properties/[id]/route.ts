@@ -64,7 +64,7 @@ export async function GET(
         u.profile_image as landlord_profile_image
       FROM properties p
       LEFT JOIN profiles lp ON lp.user_id = p.landlord_id
-      LEFT JOIN users u ON u.id = p.landlord_id
+      INNER JOIN users u ON u.id = p.landlord_id AND u.deleted_at IS NULL
       WHERE p.id = $1 AND p.status != 'hidden'`,
       [propertyId]
     )
@@ -137,7 +137,6 @@ export async function GET(
         title: property.title,
         description: property.description,
         address: property.address,
-        addressDetail: property.address_detail,
         region: property.region,
         deposit: parseInt(property.deposit),
         monthlyRent: parseInt(property.monthly_rent),

@@ -7,6 +7,7 @@ vi.mock('next/headers', () => ({
 vi.mock('@/lib/db', () => ({
   query: vi.fn(),
   queryOne: vi.fn(),
+  transaction: vi.fn(),
   default: { connect: vi.fn() },
 }))
 
@@ -36,7 +37,7 @@ import { GET as getPropertyDetail } from '@/app/api/properties/[id]/route'
 import { GET as listLandlordProperties, POST as createProperty } from '@/app/api/landlord/properties/route'
 import { PUT as updateProperty, DELETE as deleteProperty } from '@/app/api/landlord/properties/[id]/route'
 import { verifyToken, getCurrentUser } from '@/lib/auth'
-import { query, queryOne } from '@/lib/db'
+import { query, queryOne, transaction } from '@/lib/db'
 
 const landlordId = '11111111-1111-4111-8111-111111111111'
 const propertyId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
@@ -106,6 +107,10 @@ describe('GET /api/properties (public search)', () => {
     expect(data.properties[0].propertyType).toBe('oneroom')
     expect(data.hasMore).toBe(false)
     expect(data.nextCursor).toBeNull()
+    expect(query).toHaveBeenCalledWith(
+      expect.stringContaining('u.deleted_at IS NULL'),
+      expect.any(Array),
+    )
   })
 
   it('passes region, type, and price range filters to DB', async () => {
@@ -154,7 +159,7 @@ describe('GET /api/properties/[id] (public detail)', () => {
   it('returns camelCase property with images and landlord info', async () => {
     vi.mocked(getCurrentUser).mockResolvedValue(null as never)
     vi.mocked(queryOne).mockResolvedValue({
-      ...sampleProperty, landlord_name: '\ud64d\uae38\ub3d9', landlord_bio: null, landlord_profile_image: null,
+      ...sampleProperty, address_detail: '101동 202호', landlord_name: '\ud64d\uae38\ub3d9', landlord_bio: null, landlord_profile_image: null,
     })
     vi.mocked(query).mockResolvedValue([])
 
@@ -167,7 +172,12 @@ describe('GET /api/properties/[id] (public detail)', () => {
     expect(res.status).toBe(200)
     expect(data.property.monthlyRent).toBe(700000)
     expect(data.property.landlord.name).toBe('\ud64d\uae38\ub3d9')
+    expect(data.property).not.toHaveProperty('addressDetail')
     expect(data.isFavorited).toBe(false)
+    expect(queryOne).toHaveBeenCalledWith(
+      expect.stringContaining('u.deleted_at IS NULL'),
+      [propertyId],
+    )
   })
 
   it('returns 404 for hidden or missing property', async () => {
@@ -179,6 +189,50 @@ describe('GET /api/properties/[id] (public detail)', () => {
       paramsFor('missing') as never
     )
     expect(res.status).toBe(404)
+  })
+})
+
+describe('DELETE /api/landlord/properties/[id]', () => {
+  beforeEach(() => { vi.clearAllMocks(); mockLandlordAuth() })
+
+  it('physically deletes a property without a linked report', async () => {
+    vi.mocked(query).mockResolvedValueOnce([{ user_type: 'landlord' }])
+    const clientQuery = vi.fn()
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [{ id: propertyId }] })
+    vi.mocked(transaction).mockImplementation(async (fn) => fn({ query: clientQuery } as never))
+
+    const res = await deleteProperty(
+      new Request(`http://localhost:3000/api/landlord/properties/${propertyId}`, { method: 'DELETE' }),
+      paramsFor(propertyId) as never,
+    )
+
+    expect(res.status).toBe(200)
+    expect(clientQuery).toHaveBeenNthCalledWith(
+      2,
+      expect.stringContaining('DELETE FROM properties'),
+      [propertyId, landlordId],
+    )
+  })
+
+  it('hides and anonymizes a property referenced by a contract report', async () => {
+    vi.mocked(query).mockResolvedValueOnce([{ user_type: 'landlord' }])
+    const clientQuery = vi.fn()
+      .mockResolvedValueOnce({ rows: [{ exists: 1 }] })
+      .mockResolvedValueOnce({ rows: [{ id: propertyId }] })
+    vi.mocked(transaction).mockImplementation(async (fn) => fn({ query: clientQuery } as never))
+
+    const res = await deleteProperty(
+      new Request(`http://localhost:3000/api/landlord/properties/${propertyId}`, { method: 'DELETE' }),
+      paramsFor(propertyId) as never,
+    )
+
+    expect(res.status).toBe(200)
+    expect(clientQuery).toHaveBeenNthCalledWith(
+      2,
+      expect.stringMatching(/status = 'hidden'[\s\S]*address_detail = NULL/),
+      [propertyId, landlordId],
+    )
   })
 })
 

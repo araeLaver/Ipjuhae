@@ -15,6 +15,19 @@ export async function DELETE() {
 
   try {
     await transaction(async (client) => {
+      // 매물 행은 계약 점검 리포트의 참조 무결성을 위해 보존하되,
+      // 공개를 즉시 중단하고 위치 개인정보는 복원할 수 없는 값으로 치환한다.
+      await client.query(
+        `UPDATE properties
+         SET status = 'hidden',
+             address = '탈퇴 회원 비공개 매물',
+             address_detail = NULL,
+             region = NULL,
+             updated_at = NOW()
+         WHERE landlord_id = $1`,
+        [userId]
+      )
+
       await client.query(
         `UPDATE users
          SET email = $1,
