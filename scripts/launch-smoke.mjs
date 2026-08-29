@@ -61,6 +61,7 @@ async function main() {
   const token = process.env.LAUNCH_SMOKE_TOKEN
 
   const commonHeaders = token ? { 'x-launch-smoke-token': token } : undefined
+  const mutationHeaders = { origin: new URL(baseUrl).origin }
   const checks = []
 
   checks.push(await runCheck({
@@ -91,6 +92,7 @@ async function main() {
     method: 'POST',
     status: 400,
     body: { phoneNumber: 'invalid' },
+    headers: mutationHeaders,
     assert: (payload) => !!payload?.error,
   }))
 
