@@ -23,7 +23,7 @@ export async function getAdminUser(): Promise<AdminUser | null> {
   if (!payload) return null
 
   const user = await queryOne<AdminUser>(
-    'SELECT id, email, name, user_type FROM users WHERE id = $1',
+    'SELECT id, email, name, user_type FROM users WHERE id = $1 AND deleted_at IS NULL',
     [payload.userId]
   )
 

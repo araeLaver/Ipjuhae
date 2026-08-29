@@ -114,7 +114,10 @@ export async function getCurrentUser(): Promise<User | null> {
 
   if (await isTokenRevoked(payload.jti)) return null
 
-  const user = await queryOne<User>('SELECT * FROM users WHERE id = $1', [payload.userId])
+  const user = await queryOne<User>(
+    'SELECT * FROM users WHERE id = $1 AND deleted_at IS NULL',
+    [payload.userId]
+  )
 
   return user
 }

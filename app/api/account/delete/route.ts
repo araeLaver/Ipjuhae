@@ -28,11 +28,16 @@ export async function DELETE() {
         [userId]
       )
 
+      // password_hash를 무효값으로 바꿔 탈퇴 계정으로의 로그인을 차단한다
+      // (bcrypt 형식이 아니므로 어떤 비밀번호와도 매칭되지 않음).
       await client.query(
         `UPDATE users
          SET email = $1,
              name = '탈퇴한 사용자',
-             phone = NULL,
+             phone_number = NULL,
+             phone_verified = FALSE,
+             profile_image = NULL,
+             password_hash = 'deleted',
              deleted_at = NOW(),
              updated_at = NOW()
          WHERE id = $2`,
