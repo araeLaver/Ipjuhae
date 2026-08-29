@@ -1,5 +1,6 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Providers } from '@/components/providers'
+import { ServiceWorkerRegistrar } from '@/components/service-worker-registrar'
 import './globals.css'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://www.ipjuhae.com'
@@ -38,6 +39,17 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: '입주해',
+  },
+}
+
+export const viewport: Viewport = {
+  themeColor: '#f0663f',
+  width: 'device-width',
+  initialScale: 1,
 }
 
 const organizationJsonLd = {
@@ -64,6 +76,7 @@ export default function RootLayout({
         />
       </head>
       <body className="font-sans antialiased">
+        <ServiceWorkerRegistrar />
         <Providers>
           <main className="min-h-screen">
             {children}
