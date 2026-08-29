@@ -12,7 +12,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#fbf6ef"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.ipjuhae.app",
@@ -63,7 +65,8 @@
           "icon": "./assets/notification-icon.png",
           "color": "#f0663f"
         }
-      ]
+      ],
+      "expo-asset"
     ],
     "extra": {
       "eas": {
@@ -71,6 +74,9 @@
       },
       "apiUrl": "https://www.ipjuhae.com/api"
     },
-    "platforms": ["ios", "android"]
+    "platforms": [
+      "ios",
+      "android"
+    ]
   }
 }

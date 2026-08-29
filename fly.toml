@@ -8,6 +8,9 @@ primary_region = "nrt"
 [build]
   dockerfile = "Dockerfile"
 
+# 주의: 이 앱은 단일 머신으로 운영한다 (2026-08-29 scale count 1).
+# Socket.IO/SSE 상태가 인스턴스 로컬이라 2대 이상이면 실시간 메시징이
+# 분리된다. 스케일아웃하려면 먼저 Redis 어댑터(Upstash)를 붙일 것.
 [http_service]
   internal_port = 8000
   force_https = true
