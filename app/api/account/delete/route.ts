@@ -55,7 +55,10 @@ export async function DELETE() {
       )
 
       await client.query('DELETE FROM notifications WHERE user_id = $1', [userId])
-      await client.query('DELETE FROM favorites WHERE user_id = $1', [userId])
+      await client.query(
+        'DELETE FROM tenant_favorites WHERE landlord_id = $1 OR tenant_id = $1',
+        [userId]
+      )
 
       // Sensitive verification data (소득·재직·신용) must be erased, not retained.
       await client.query('DELETE FROM verifications WHERE user_id = $1', [userId])
