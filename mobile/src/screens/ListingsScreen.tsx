@@ -17,8 +17,8 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { CompositeNavigationProp } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { RootStackParamList, MainTabParamList } from '../navigation/AppNavigator';
-import { apiClient } from '../services/apiClient';
-import { Listing, PaginatedResponse } from '../types';
+import * as api from '../services/api';
+import { Listing } from '../types';
 
 type ListingsScreenNavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<MainTabParamList, 'Listings'>,
@@ -33,45 +33,28 @@ const ListingsScreen: React.FC<Props> = ({ navigation }) => {
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [page, setPage] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
 
-  const fetchListings = useCallback(async (pageNum: number = 0, refresh = false) => {
+  // GET /api/listings has no pagination — it returns a single { listings }
+  // page (up to 60 rows), amounts already in 만원.
+  const fetchListings = useCallback(async () => {
     try {
-      const data = await apiClient.get<PaginatedResponse<Listing>>(
-        `/listings?page=${pageNum}&size=20`
-      );
-      if (refresh || pageNum === 0) {
-        setListings(data.content);
-      } else {
-        setListings((prev) => [...prev, ...data.content]);
-      }
-      setHasMore(pageNum < data.totalPages - 1);
-      setPage(pageNum);
+      setListings(await api.fetchListings());
     } catch (error) {
       console.log('Failed to fetch listings:', error);
     } finally {
       setLoading(false);
       setRefreshing(false);
-      setLoadingMore(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchListings(0);
+    fetchListings();
   }, [fetchListings]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await fetchListings(0, true);
+    await fetchListings();
   }, [fetchListings]);
-
-  const loadMore = useCallback(async () => {
-    if (loadingMore || !hasMore) return;
-    setLoadingMore(true);
-    await fetchListings(page + 1);
-  }, [fetchListings, loadingMore, hasMore, page]);
 
   const formatPrice = (deposit: number, rent: number) => {
     if (deposit >= 10000) {
@@ -101,9 +84,9 @@ const ListingsScreen: React.FC<Props> = ({ navigation }) => {
             {formatPrice(item.deposit, item.monthlyRent)}
           </Text>
           <View style={styles.listingMeta}>
-            <Text style={styles.metaText}>{item.propertyType}</Text>
-            <Text style={styles.metaText}>{item.areaSqm}m²</Text>
-            <Text style={styles.metaText}>{item.roomCount}방</Text>
+            {!!item.propertyType && <Text style={styles.metaText}>{item.propertyType}</Text>}
+            {item.areaSqm != null && <Text style={styles.metaText}>{item.areaSqm}m²</Text>}
+            {item.floor != null && <Text style={styles.metaText}>{item.floor}층</Text>}
           </View>
         </View>
       </TouchableOpacity>
@@ -126,11 +109,6 @@ const ListingsScreen: React.FC<Props> = ({ navigation }) => {
         renderItem={renderListing}
         contentContainerStyle={styles.listContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        onEndReached={loadMore}
-        onEndReachedThreshold={0.5}
-        ListFooterComponent={
-          loadingMore ? <ActivityIndicator size="small" color="#2563EB" style={styles.footer} /> : null
-        }
         ListEmptyComponent={
           <Text style={styles.emptyText}>등록된 매물이 없습니다</Text>
         }

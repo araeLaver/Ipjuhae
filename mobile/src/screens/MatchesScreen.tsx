@@ -15,17 +15,12 @@ import {
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
-import { apiClient } from '../services/apiClient';
-import { Listing } from '../types';
+import * as api from '../services/api';
+import { MatchedListing } from '../services/api';
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Matches'>;
 };
-
-interface MatchedListing extends Listing {
-  matchScore?: number;
-  matchReasons?: string[];
-}
 
 const MatchesScreen: React.FC<Props> = ({ navigation }) => {
   const [matches, setMatches] = useState<MatchedListing[]>([]);
@@ -34,8 +29,8 @@ const MatchesScreen: React.FC<Props> = ({ navigation }) => {
 
   const loadMatches = useCallback(async () => {
     try {
-      const data = await apiClient.get<MatchedListing[]>('/matches');
-      setMatches(data);
+      // GET /api/matches returns { matches: [{ listing, score, reasons, ... }] }
+      setMatches(await api.fetchMatches());
     } catch (error) {
       console.log('Failed to load matches:', error);
     } finally {

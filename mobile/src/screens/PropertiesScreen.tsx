@@ -17,7 +17,7 @@ import {
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/AppNavigator';
-import { apiClient } from '../services/apiClient';
+import * as api from '../services/api';
 import { Listing } from '../types';
 
 type PropertiesScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Properties'>;
@@ -40,8 +40,8 @@ const PropertiesScreen: React.FC<Props> = ({ navigation }) => {
 
   const loadProperties = useCallback(async () => {
     try {
-      const data = await apiClient.get<Listing[]>('/landlord/properties');
-      setProperties(data);
+      // GET /api/landlord/properties returns { properties, pagination } (원 단위)
+      setProperties(await api.fetchLandlordProperties());
     } catch (error) {
       console.log('Failed to load properties:', error);
     } finally {
@@ -64,7 +64,8 @@ const PropertiesScreen: React.FC<Props> = ({ navigation }) => {
   const handleToggleStatus = async (listing: Listing) => {
     const newStatus = listing.status === 'available' ? 'hidden' : 'available';
     try {
-      await apiClient.put(`/listings/${listing.id}/status`, { status: newStatus });
+      // PUT /api/landlord/properties/[id] accepts a partial update ({ status }).
+      await api.updatePropertyStatus(listing.id, newStatus);
       setProperties(prev =>
         prev.map(p => (p.id === listing.id ? { ...p, status: newStatus } : p))
       );
@@ -81,7 +82,7 @@ const PropertiesScreen: React.FC<Props> = ({ navigation }) => {
         style: 'destructive',
         onPress: async () => {
           try {
-            await apiClient.delete(`/listings/${listing.id}`);
+            await api.deleteProperty(listing.id);
             setProperties(prev => prev.filter(p => p.id !== listing.id));
           } catch (error) {
             Alert.alert('오류', '삭제에 실패했습니다.');

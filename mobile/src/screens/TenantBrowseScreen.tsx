@@ -11,11 +11,12 @@ import {
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/AppNavigator';
-import { apiClient } from '../services/apiClient';
+import * as api from '../services/api';
 import { TenantProfile } from '../types';
 
 type TenantBrowseScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'TenantBrowse'>;
@@ -31,8 +32,8 @@ const TenantBrowseScreen: React.FC<Props> = ({ navigation }) => {
 
   const loadTenants = useCallback(async () => {
     try {
-      const data = await apiClient.get<TenantProfile[]>('/landlord/tenants');
-      setTenants(data);
+      // GET /api/landlord/tenants returns { tenants, next_cursor, total_count }
+      setTenants(await api.fetchTenants());
     } catch (error) {
       console.log('Failed to load tenants:', error);
     } finally {
@@ -66,15 +67,24 @@ const TenantBrowseScreen: React.FC<Props> = ({ navigation }) => {
     return `${min!.toLocaleString()}만~`;
   };
 
+  const handleContact = async (item: TenantProfile) => {
+    try {
+      // Create (or reuse) the 1:1 conversation on the server first —
+      // ChatRoom needs a real conversation id.
+      const conversationId = await api.startConversation(item.userId);
+      navigation.navigate('ChatRoom', {
+        conversationId,
+        otherUserName: item.name,
+      });
+    } catch {
+      Alert.alert('오류', '대화방을 열 수 없습니다.');
+    }
+  };
+
   const renderTenant = ({ item }: { item: TenantProfile }) => (
     <TouchableOpacity
       style={styles.card}
-      onPress={() =>
-        navigation.navigate('ChatRoom', {
-          conversationId: 0,
-          otherUserName: item.name,
-        })
-      }
+      onPress={() => handleContact(item)}
     >
       <View style={styles.cardHeader}>
         <View style={styles.avatarCircle}>

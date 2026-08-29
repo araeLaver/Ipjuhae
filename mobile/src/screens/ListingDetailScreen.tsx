@@ -17,7 +17,7 @@ import {
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/AppNavigator';
-import { apiClient } from '../services/apiClient';
+import * as api from '../services/api';
 import { Listing } from '../types';
 
 type Props = {
@@ -35,7 +35,9 @@ const ListingDetailScreen: React.FC<Props> = ({ navigation, route }) => {
 
   const loadListing = useCallback(async () => {
     try {
-      const data = await apiClient.get<Listing>(`/listings/${listingId}`);
+      // Detail lives at /api/properties/[id] (the legacy /api/listings/[id]
+      // reads a different table and does not match catalog ids).
+      const data = await api.fetchListingDetail(listingId);
       setListing(data);
     } catch {
       Alert.alert('오류', '매물 정보를 불러올 수 없습니다.');
@@ -50,12 +52,21 @@ const ListingDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   }, [loadListing]);
 
   const handleContact = async () => {
+    if (!listing?.landlordId) {
+      Alert.alert('오류', '집주인 정보를 찾을 수 없습니다.');
+      return;
+    }
     try {
-      await apiClient.post('/messages/conversations', {
-        listingId,
-        message: `"${listing?.title}" 매물에 대해 문의드립니다.`,
+      // The server creates conversations by target user, not by listing:
+      // POST /api/messages/conversations { targetUserId, initialMessage }.
+      const conversationId = await api.startConversation(
+        listing.landlordId,
+        `"${listing.title}" 매물에 대해 문의드립니다.`
+      );
+      navigation.navigate('ChatRoom', {
+        conversationId,
+        otherUserName: listing.landlordName || '집주인',
       });
-      Alert.alert('완료', '메시지가 전송되었습니다.');
     } catch {
       Alert.alert('오류', '메시지 전송에 실패했습니다.');
     }
@@ -125,11 +136,11 @@ const ListingDetailScreen: React.FC<Props> = ({ navigation, route }) => {
           </View>
 
           <View style={styles.detailGrid}>
-            <DetailItem label="유형" value={listing.propertyType} />
+            <DetailItem label="유형" value={listing.propertyType || '-'} />
             <DetailItem label="면적" value={listing.areaSqm ? `${listing.areaSqm}m²` : '-'} />
-            <DetailItem label="방" value={`${listing.roomCount}개`} />
-            <DetailItem label="욕실" value={`${listing.bathroomCount}개`} />
-            <DetailItem label="층" value={listing.floor ? `${listing.floor}/${listing.totalFloor}층` : '-'} />
+            <DetailItem label="방" value={listing.roomCount != null ? `${listing.roomCount}개` : '-'} />
+            <DetailItem label="욕실" value={listing.bathroomCount != null ? `${listing.bathroomCount}개` : '-'} />
+            <DetailItem label="층" value={listing.floor ? `${listing.floor}/${listing.totalFloor ?? '-'}층` : '-'} />
             <DetailItem label="조회" value={`${listing.viewCount}회`} />
           </View>
 

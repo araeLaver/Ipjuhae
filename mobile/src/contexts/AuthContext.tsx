@@ -4,6 +4,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { apiClient } from '../services/apiClient';
+import * as api from '../services/api';
 import { User } from '../types';
 
 interface AuthContextType {
@@ -29,7 +30,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(null);
         return;
       }
-      const userData = await apiClient.get<User>('/auth/me');
+      // /api/auth/me wraps the user: { user: { id, email, name, userType } }
+      const userData = await api.fetchMe();
       setUser(userData);
     } catch {
       setUser(null);
@@ -45,28 +47,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [refreshUser]);
 
   const login = async (email: string, password: string) => {
-    const response = await apiClient.post<{ token: string; user: User }>('/auth/login', {
-      email,
-      password,
-    });
-    await apiClient.setTokens(response.token);
-    setUser(response.user);
+    // /api/auth/login returns { success, userId, token, user: { user_type } } —
+    // the embedded user is partial, so fetch the full user from /auth/me.
+    const token = await api.login(email, password);
+    await apiClient.setTokens(token);
+    setUser(await api.fetchMe());
   };
 
-  const register = async (email: string, password: string, name: string, userType: string) => {
-    const response = await apiClient.post<{ token: string; user: User }>('/auth/signup', {
-      email,
-      password,
-      name,
-      userType,
-    });
-    await apiClient.setTokens(response.token);
-    setUser(response.user);
+  const register = async (email: string, password: string, _name: string, userType: string) => {
+    // /api/auth/signup only accepts email/password/userType (name is set later
+    // via the profile flow) and returns { success, userId, token, userType }.
+    const token = await api.signup(email, password, userType);
+    await apiClient.setTokens(token);
+    setUser(await api.fetchMe());
   };
 
   const logout = async () => {
     try {
-      await apiClient.post('/auth/logout');
+      await api.logout();
     } finally {
       await apiClient.clearTokens();
       setUser(null);

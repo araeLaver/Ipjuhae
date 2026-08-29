@@ -44,6 +44,10 @@ class ApiClient {
 
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
+      // Several deployed routes (messages, landlord/properties, listings POST)
+      // read the `auth_token` cookie directly instead of the Authorization
+      // header, so send the token both ways.
+      headers['Cookie'] = `auth_token=${token}`;
     }
 
     const response = await fetch(`${this.baseUrl}${url}`, {
@@ -95,7 +99,8 @@ class ApiClient {
     const response = await fetch(`${this.baseUrl}${url}`, {
       method: 'POST',
       headers: {
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(token ? { Authorization: `Bearer ${token}`, Cookie: `auth_token=${token}` } : {}),
+        'x-mobile-client': 'true',
       },
       body: formData,
     });

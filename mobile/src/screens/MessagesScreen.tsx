@@ -17,7 +17,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { CompositeNavigationProp, useFocusEffect } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { RootStackParamList, MainTabParamList } from '../navigation/AppNavigator';
-import { apiClient } from '../services/apiClient';
+import * as api from '../services/api';
 import { Conversation } from '../types';
 
 type MessagesScreenNavigationProp = CompositeNavigationProp<
@@ -36,8 +36,8 @@ const MessagesScreen: React.FC<Props> = ({ navigation }) => {
 
   const loadConversations = useCallback(async () => {
     try {
-      const data = await apiClient.get<Conversation[]>('/messages/conversations');
-      setConversations(data);
+      // GET /api/messages/conversations returns { conversations, pagination }
+      setConversations(await api.fetchConversations());
     } catch (error) {
       console.log('Failed to load conversations:', error);
     } finally {

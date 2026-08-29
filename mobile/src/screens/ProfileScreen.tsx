@@ -18,7 +18,7 @@ import { CompositeNavigationProp, useFocusEffect } from '@react-navigation/nativ
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { RootStackParamList, MainTabParamList } from '../navigation/AppNavigator';
 import { useAuth } from '../contexts/AuthContext';
-import { apiClient } from '../services/apiClient';
+import * as api from '../services/api';
 import { TenantProfile, VerificationStatus } from '../types';
 
 type ProfileScreenNavigationProp = CompositeNavigationProp<
@@ -39,9 +39,10 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
   const loadProfile = useCallback(async () => {
     try {
       if (user?.userType === 'tenant') {
+        // /api/profile → { profile } (snake_case); /api/verifications → { verification }
         const [prof, verif] = await Promise.all([
-          apiClient.get<TenantProfile>('/profile'),
-          apiClient.get<VerificationStatus>('/verifications'),
+          api.fetchTenantProfile(),
+          api.fetchVerificationStatus(),
         ]);
         setProfile(prof);
         setVerifications(verif);

@@ -28,12 +28,12 @@ import SettingsScreen from '../screens/SettingsScreen';
 export type RootStackParamList = {
   Auth: undefined;
   Main: undefined;
-  ListingDetail: { listingId: number };
+  ListingDetail: { listingId: string };
   Matches: undefined;
   Verification: undefined;
   Properties: undefined;
   TenantBrowse: undefined;
-  ChatRoom: { conversationId: number; otherUserName: string };
+  ChatRoom: { conversationId: string; otherUserName: string };
   ProfileEdit: undefined;
   References: undefined;
   NotificationSettings: undefined;

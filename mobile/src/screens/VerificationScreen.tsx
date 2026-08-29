@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
-import { apiClient } from '../services/apiClient';
+import * as api from '../services/api';
 import { VerificationStatus } from '../types';
 import { pickImage } from '../services/imageService';
 
@@ -53,8 +53,8 @@ const VerificationScreen: React.FC<Props> = ({ navigation }) => {
 
   const loadVerifications = useCallback(async () => {
     try {
-      const data = await apiClient.get<VerificationStatus>('/verifications');
-      setVerifications(data);
+      // GET /api/verifications returns { verification } (snake_case row)
+      setVerifications(await api.fetchVerificationStatus());
     } catch (error) {
       console.log('Failed to load verifications:', error);
     }
@@ -70,17 +70,16 @@ const VerificationScreen: React.FC<Props> = ({ navigation }) => {
     setRefreshing(false);
   }, [loadVerifications]);
 
-  const handleUpload = async (type: string) => {
+  const handleUpload = async (type: 'employment' | 'income' | 'credit') => {
     const image = await pickImage();
     if (!image) return;
 
     setUploading(type);
     try {
-      await apiClient.uploadFile(`/verifications/documents`, {
-        uri: image.uri,
-        name: `${type}_doc.jpg`,
-        type: 'image/jpeg',
-      });
+      // The server has no binary upload endpoint for verification documents:
+      // POST /api/verifications/documents takes JSON { documentType, fileName }
+      // and queues the document for review (same as the web flow).
+      await api.submitVerificationDocument(type, `${type}_doc.jpg`);
       Alert.alert('완료', '서류가 제출되었습니다. 검토 후 인증이 완료됩니다.');
       await loadVerifications();
     } catch {

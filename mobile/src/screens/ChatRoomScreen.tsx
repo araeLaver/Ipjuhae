@@ -16,15 +16,13 @@ import {
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
-import { apiClient } from '../services/apiClient';
+import * as api from '../services/api';
 import { Message } from '../types';
-import { useAuth } from '../contexts/AuthContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ChatRoom'>;
 
 const ChatRoomScreen: React.FC<Props> = ({ route }) => {
   const { conversationId } = route.params;
-  const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(true);
@@ -34,8 +32,8 @@ const ChatRoomScreen: React.FC<Props> = ({ route }) => {
 
   const loadMessages = useCallback(async () => {
     try {
-      const data = await apiClient.get<Message[]>(`/messages/${conversationId}`);
-      setMessages(data);
+      // GET /api/messages/conversations/[id] returns { conversation, messages }
+      setMessages(await api.fetchMessages(conversationId));
     } catch (error) {
       console.log('Failed to load messages:', error);
     } finally {
@@ -60,10 +58,8 @@ const ChatRoomScreen: React.FC<Props> = ({ route }) => {
     setInputText('');
 
     try {
-      const newMsg = await apiClient.post<Message>('/messages', {
-        conversationId,
-        content: text,
-      });
+      // POST /api/messages/conversations/[id] { content } → { message }
+      const newMsg = await api.sendMessage(conversationId, text);
       setMessages(prev => [...prev, newMsg]);
       setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
     } catch (error) {
@@ -98,7 +94,7 @@ const ChatRoomScreen: React.FC<Props> = ({ route }) => {
   };
 
   const renderMessage = ({ item, index }: { item: Message; index: number }) => {
-    const isMine = item.senderId === user?.id;
+    const isMine = item.isMine;
     const showDate = shouldShowDateHeader(index);
 
     return (

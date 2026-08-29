@@ -1,104 +1,107 @@
 /**
  * Shared types for Rentme Mobile
+ *
+ * NOTE: server ids are UUID strings (Postgres uuid), not numbers.
+ * Amounts (deposit / monthlyRent / maintenanceFee) are normalized to 만원
+ * by the API layer (services/api.ts) regardless of what the server returns.
  */
 
 export type UserType = 'tenant' | 'landlord' | 'admin';
 
 export interface User {
-  id: number;
+  id: string;
   email: string;
   name?: string;
   userType: UserType;
   phone?: string;
-  phoneVerified: boolean;
+  phoneVerified?: boolean;
   profileImage?: string;
-  createdAt: string;
+  createdAt?: string;
 }
 
 export interface TenantProfile {
-  userId: number;
+  userId: string;
   name: string;
-  ageRange?: string;
-  familyType?: string;
+  ageRange?: string | null;
+  familyType?: string | null;
   pets?: string[];
   smoking?: boolean;
-  stayTime?: string;
-  duration?: string;
-  noiseLevel?: string;
-  bio?: string;
-  intro?: string;
+  stayTime?: string | null;
+  duration?: string | null;
+  noiseLevel?: string | null;
+  bio?: string | null;
+  intro?: string | null;
   trustScore: number;
   isComplete: boolean;
+  // Not provided by the current server endpoints (/api/profile, /api/landlord/tenants).
   budgetMin?: number;
   budgetMax?: number;
   preferredDistricts?: string[];
   moveInDate?: string;
 }
 
-export interface LandlordProfile {
-  userId: number;
-  name: string;
-  phone?: string;
-  propertyCount: number;
-  propertyRegions?: string[];
-}
-
 export interface Listing {
-  id: number;
-  landlordId: number;
+  id: string;
+  landlordId?: string;
+  landlordName?: string | null;
   title: string;
   address: string;
-  addressDetail?: string;
-  region: string;
+  addressDetail?: string | null;
+  region?: string | null;
+  /** 만원 */
   deposit: number;
+  /** 만원 */
   monthlyRent: number;
+  /** 만원 */
   maintenanceFee?: number;
-  propertyType: string;
-  roomCount: number;
-  bathroomCount: number;
-  floor?: number;
-  totalFloor?: number;
-  areaSqm?: number;
+  propertyType?: string | null;
+  roomCount?: number;
+  bathroomCount?: number;
+  floor?: number | null;
+  totalFloor?: number | null;
+  areaSqm?: number | null;
   options?: string[];
-  description?: string;
+  description?: string | null;
   status: 'available' | 'reserved' | 'rented' | 'hidden';
-  availableFrom?: string;
+  availableFrom?: string | null;
   viewCount: number;
   images: PropertyImage[];
-  createdAt: string;
+  createdAt?: string;
 }
 
 export interface PropertyImage {
-  id: number;
+  id: string;
   imageUrl: string;
-  thumbnailUrl?: string;
+  thumbnailUrl?: string | null;
   sortOrder: number;
   isMain: boolean;
 }
 
 export interface Conversation {
-  id: number;
+  id: string;
   otherUser: {
-    id: number;
+    id: string;
     name: string;
     profileImage?: string;
     userType: UserType;
   };
-  lastMessage?: string;
+  lastMessage?: string | null;
   lastMessageAt?: string;
   unreadCount: number;
 }
 
 export interface Message {
-  id: number;
-  senderId: number;
+  id: string;
+  senderId: string;
   content: string;
   isRead: boolean;
+  /** Provided by the server; more reliable than comparing senderId locally. */
+  isMine: boolean;
   createdAt: string;
 }
 
 export interface Notification {
-  id: number;
+  id: string;
   type: string;
   title: string;
   message: string;
@@ -110,11 +113,11 @@ export interface VerificationStatus {
   employmentVerified: boolean;
   incomeVerified: boolean;
   creditVerified: boolean;
-  creditGrade?: number;
+  creditGrade?: number | null;
 }
 
 export interface Reference {
-  id: number;
+  id: string;
   landlordName: string;
   landlordPhone?: string;
   status: 'pending' | 'sent' | 'completed' | 'expired';
@@ -127,12 +130,4 @@ export interface DashboardStats {
   totalViews: number;
   totalFavorites: number;
   unreadMessages: number;
-}
-
-export interface PaginatedResponse<T> {
-  content: T[];
-  totalElements: number;
-  totalPages: number;
-  page: number;
-  size: number;
 }

@@ -17,8 +17,8 @@ import { CompositeNavigationProp, useFocusEffect } from '@react-navigation/nativ
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { RootStackParamList, MainTabParamList } from '../navigation/AppNavigator';
 import { useAuth } from '../contexts/AuthContext';
-import { apiClient } from '../services/apiClient';
-import { TenantProfile, DashboardStats } from '../types';
+import * as api from '../services/api';
+import { DashboardStats } from '../types';
 
 type HomeScreenNavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<MainTabParamList, 'Home'>,
@@ -39,12 +39,11 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
   const loadData = useCallback(async () => {
     try {
       if (user?.userType === 'tenant') {
-        const profile = await apiClient.get<TenantProfile>('/profile');
-        setTrustScore(profile.trustScore);
-        setProfileComplete(profile.isComplete);
+        const profile = await api.fetchTenantProfile();
+        setTrustScore(profile?.trustScore ?? 0);
+        setProfileComplete(profile?.isComplete ?? false);
       } else if (user?.userType === 'landlord') {
-        const dashStats = await apiClient.get<DashboardStats>('/landlord/stats');
-        setStats(dashStats);
+        setStats(await api.fetchLandlordStats());
       }
     } catch (error) {
       console.log('Failed to load home data:', error);
