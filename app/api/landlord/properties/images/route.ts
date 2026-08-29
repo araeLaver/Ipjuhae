@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import { verifyToken } from '@/lib/auth'
+import { verifyTokenAllowed } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { uploadFile } from '@/lib/storage'
 import { validateImage } from '@/lib/image'
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 })
     }
 
-    const payload = verifyToken(token)
+    const payload = await verifyTokenAllowed(token)
     if (!payload) {
       return NextResponse.json({ error: '유효하지 않은 토큰입니다' }, { status: 401 })
     }
@@ -162,7 +162,7 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 })
     }
 
-    const payload = verifyToken(token)
+    const payload = await verifyTokenAllowed(token)
     if (!payload) {
       return NextResponse.json({ error: '유효하지 않은 토큰입니다' }, { status: 401 })
     }

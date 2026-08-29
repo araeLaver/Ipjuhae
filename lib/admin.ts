@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers'
-import { verifyToken } from './auth'
+import { verifyTokenAllowed } from './auth'
 import { queryOne } from './db'
 import { query } from './db'
 
@@ -19,7 +19,7 @@ export async function getAdminUser(): Promise<AdminUser | null> {
   const token = cookieStore.get('auth_token')?.value
   if (!token) return null
 
-  const payload = verifyToken(token)
+  const payload = await verifyTokenAllowed(token)
   if (!payload) return null
 
   const user = await queryOne<AdminUser>(

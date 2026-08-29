@@ -13,6 +13,7 @@ vi.mock('@/lib/db', () => ({
 vi.mock('@/lib/auth', () => ({
   getCurrentUser: vi.fn(),
   verifyToken: vi.fn(),
+  verifyTokenAllowed: vi.fn(),
 }))
 
 vi.mock('@/lib/analytics', () => ({
@@ -25,7 +26,7 @@ import { POST as createConversation } from '@/app/api/messages/conversations/rou
 import { GET as searchTenants } from '@/app/api/landlord/tenants/route'
 import { POST as createListing } from '@/app/api/listings/route'
 import { PUT as saveTenantProfile } from '@/app/api/tenant/profile/route'
-import { getCurrentUser, verifyToken } from '@/lib/auth'
+import { getCurrentUser, verifyTokenAllowed } from '@/lib/auth'
 import { trackServer } from '@/lib/analytics'
 import { query, queryOne } from '@/lib/db'
 
@@ -142,7 +143,7 @@ describe('MVP API smoke flows', () => {
   })
 
   it('listing creation can feed tenant matches and start a conversation', async () => {
-    vi.mocked(verifyToken).mockReturnValue({ userId: landlordId, userType: 'landlord' } as never)
+    vi.mocked(verifyTokenAllowed).mockResolvedValue({ userId: landlordId, userType: 'landlord' } as never)
     vi.mocked(query).mockResolvedValueOnce([
       {
         id: 7,
@@ -213,7 +214,7 @@ describe('MVP API smoke flows', () => {
 
     vi.clearAllMocks()
     mockAuthCookie()
-    vi.mocked(verifyToken).mockReturnValue({ userId: landlordId, userType: 'landlord' } as never)
+    vi.mocked(verifyTokenAllowed).mockResolvedValue({ userId: landlordId, userType: 'landlord' } as never)
     vi.mocked(query)
       .mockResolvedValueOnce([{ user_type: 'landlord' }])
       .mockResolvedValueOnce([{ user_type: 'tenant' }])

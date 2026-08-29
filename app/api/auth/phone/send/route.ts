@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { query } from '@/lib/db'
+import { generateOtpCode, hashOtpCode } from '@/lib/otp'
 import { sendOTP } from '@/lib/sms'
 import { PhoneVerification } from '@/types/database'
 
@@ -11,8 +12,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: '올바른 휴대폰 번호를 입력해주세요' }, { status: 400 })
     }
 
-    // 6자리 인증번호 생성
-    const code = String(Math.floor(100000 + Math.random() * 900000))
+    // 6자리 인증번호 생성 (CSPRNG)
+    const code = generateOtpCode()
 
     // 3분 후 만료
     const expiresAt = new Date(Date.now() + 3 * 60 * 1000).toISOString()
@@ -23,10 +24,10 @@ export async function POST(request: Request) {
       [phoneNumber]
     )
 
-    // 새 코드 저장
+    // 새 코드 저장 — 평문이 아닌 HMAC 해시만 남긴다
     await query<PhoneVerification>(
       'INSERT INTO phone_verifications (phone_number, code, expires_at) VALUES ($1, $2, $3)',
-      [phoneNumber, code, expiresAt]
+      [phoneNumber, hashOtpCode(phoneNumber, code), expiresAt]
     )
 
     const smsResult = await sendOTP(phoneNumber, code)

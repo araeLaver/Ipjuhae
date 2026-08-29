@@ -20,7 +20,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const [notifResult, otpResult] = await Promise.all([
+    const [notifResult, otpResult, revokedResult] = await Promise.all([
       // 30일 이상 된 읽은 알림 삭제
       query<{ count: string }>(
         `WITH deleted AS (
@@ -42,14 +42,25 @@ export async function GET(request: Request) {
          SELECT COUNT(*)::text AS count FROM deleted`,
         []
       ),
+      // 원 토큰이 만료된 무효화 항목 삭제 (더 이상 거부 목록이 필요 없음)
+      query<{ count: string }>(
+        `WITH deleted AS (
+           DELETE FROM revoked_tokens
+           WHERE expires_at < NOW()
+           RETURNING jti
+         )
+         SELECT COUNT(*)::text AS count FROM deleted`,
+        []
+      ),
     ])
 
     const deletedNotifs = parseInt(notifResult[0]?.count ?? '0')
     const deletedOtps = parseInt(otpResult[0]?.count ?? '0')
+    const deletedRevoked = parseInt(revokedResult[0]?.count ?? '0')
 
-    logger.info('Cron cleanup 완료', { deletedNotifs, deletedOtps })
+    logger.info('Cron cleanup 완료', { deletedNotifs, deletedOtps, deletedRevoked })
 
-    return NextResponse.json({ ok: true, deletedNotifs, deletedOtps })
+    return NextResponse.json({ ok: true, deletedNotifs, deletedOtps, deletedRevoked })
   } catch (error) {
     logger.error('Cron cleanup 오류', { error })
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

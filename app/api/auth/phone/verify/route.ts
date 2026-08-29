@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
+import { hashOtpCode } from '@/lib/otp'
 import { PhoneVerification } from '@/types/database'
 
 export async function POST(request: Request) {
@@ -15,7 +16,7 @@ export async function POST(request: Request) {
       `SELECT * FROM phone_verifications
        WHERE phone_number = $1 AND code = $2 AND verified = FALSE AND expires_at > NOW()
        ORDER BY created_at DESC LIMIT 1`,
-      [phoneNumber, code]
+      [phoneNumber, hashOtpCode(phoneNumber, String(code))]
     )
 
     if (!record) {

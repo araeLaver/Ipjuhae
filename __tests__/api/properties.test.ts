@@ -14,6 +14,7 @@ vi.mock('@/lib/db', () => ({
 vi.mock('@/lib/auth', () => ({
   getCurrentUser: vi.fn(),
   verifyToken: vi.fn(),
+  verifyTokenAllowed: vi.fn(),
 }))
 
 vi.mock('@/lib/analytics', () => ({
@@ -36,7 +37,7 @@ import { GET as publicSearchProperties } from '@/app/api/properties/route'
 import { GET as getPropertyDetail } from '@/app/api/properties/[id]/route'
 import { GET as listLandlordProperties, POST as createProperty } from '@/app/api/landlord/properties/route'
 import { PUT as updateProperty, DELETE as deleteProperty } from '@/app/api/landlord/properties/[id]/route'
-import { verifyToken, getCurrentUser } from '@/lib/auth'
+import { verifyTokenAllowed, getCurrentUser } from '@/lib/auth'
 import { query, queryOne, transaction } from '@/lib/db'
 
 const landlordId = '11111111-1111-4111-8111-111111111111'
@@ -74,7 +75,7 @@ function mockLandlordAuth() {
       name === 'auth_token' ? { value: 'test-token' } : undefined
     ),
   } as unknown as Awaited<ReturnType<typeof cookies>>)
-  vi.mocked(verifyToken).mockReturnValue({ userId: landlordId, userType: 'landlord' } as never)
+  vi.mocked(verifyTokenAllowed).mockResolvedValue({ userId: landlordId, userType: 'landlord' } as never)
 }
 
 function jsonRequest(url: string, method: string, body: Record<string, unknown>): Request {

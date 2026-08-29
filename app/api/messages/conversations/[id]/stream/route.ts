@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers'
-import { verifyToken } from '@/lib/auth'
+import { verifyTokenAllowed } from '@/lib/auth'
 import { query } from '@/lib/db'
 
 interface MessageRow {
@@ -33,7 +33,7 @@ export async function GET(
     return new Response('Unauthorized', { status: 401 })
   }
 
-  const payload = verifyToken(token)
+  const payload = await verifyTokenAllowed(token)
   if (!payload) {
     return new Response('Unauthorized', { status: 401 })
   }
