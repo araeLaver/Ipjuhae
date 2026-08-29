@@ -1,10 +1,11 @@
+import { logger } from '@/lib/logger'
 import Stripe from 'stripe'
 
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY
 // Runtime-only validation: build-time throw causes next build to fail locally and in CI
 // without STRIPE_SECRET_KEY. isStripeEnabled() + route-level checks handle this at runtime.
 if (!stripeSecretKey && process.env.NODE_ENV === 'production' && !process.env.SKIP_ENV_VALIDATION) {
-  console.warn('[stripe] STRIPE_SECRET_KEY is not set — Stripe features will return 503')
+  logger.warn('[stripe] STRIPE_SECRET_KEY is not set — Stripe features will return 503')
 }
 
 export const stripe = stripeSecretKey

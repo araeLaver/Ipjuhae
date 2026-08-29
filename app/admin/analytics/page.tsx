@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { query } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
@@ -20,7 +21,7 @@ async function getEventStats(): Promise<EventRow[]> {
       ORDER BY COUNT(*) DESC
     `)
   } catch (err) {
-    console.error('[admin/analytics] failed to query analytics_events', err)
+    logger.error('[admin/analytics] failed to query analytics_events', { error: err })
     return []
   }
 }

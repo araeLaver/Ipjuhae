@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
@@ -153,7 +154,7 @@ export async function GET(request: Request, { params }: RouteParams) {
       trace_id: traceId,
     })
   } catch (error) {
-    console.error('Get tenant detail error:', error)
+    logger.error('Get tenant detail error', { error })
     return NextResponse.json(
       { error: '세입자 조회 중 오류가 발생했습니다', request_id: requestId, trace_id: traceId },
       { status: 500 }

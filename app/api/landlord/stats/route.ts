@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyTokenAllowed } from '@/lib/auth'
@@ -157,7 +158,7 @@ export async function GET() {
       })),
     })
   } catch (error) {
-    console.error('통계 조회 오류:', error)
+    logger.error('통계 조회 오류', { error })
     return NextResponse.json({ error: '통계를 불러오는데 실패했습니다' }, { status: 500 })
   }
 }

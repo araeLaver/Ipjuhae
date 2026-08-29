@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { query, queryOne } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
 import { LandlordReference, Profile } from '@/types/database'
@@ -22,7 +23,7 @@ export async function GET(request: Request) {
 
     return jsonSuccess(request, { references })
   } catch (error) {
-    console.error('Get references error:', error)
+    logger.error('Get references error', { error })
     return jsonError(request, 500, 'Failed to load reference list', 'REFERENCE_LIST_FAILED')
   }
 }
@@ -105,7 +106,7 @@ export async function POST(request: Request) {
 
         return jsonSuccess(request, response, 201)
       } catch (error) {
-        console.error('Create reference error:', error)
+        logger.error('Create reference error', { error })
         return jsonError(request, 500, 'Failed to create reference request', 'REFERENCE_CREATE_FAILED')
       }
     },

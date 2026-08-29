@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { getCurrentUser } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { calculateTrustScore, type TrustSubjectType } from '@/lib/trust-engine'
@@ -67,7 +68,7 @@ export async function POST(request: Request, params: Params) {
         if (isComplianceGateError(error)) {
           return jsonError(request, 503, 'Automated trust scoring is unavailable', error.code)
         }
-        console.error('Trust score calculation failed:', error)
+        logger.error('Trust score calculation failed', { error })
         return jsonError(request, 500, 'Failed to calculate trust result', 'TRUST_SCORE_FAILED')
       }
     },

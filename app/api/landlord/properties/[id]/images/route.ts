@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyTokenAllowed } from '@/lib/auth'
@@ -160,7 +161,7 @@ export async function POST(
 
     return NextResponse.json({ image: result[0] })
   } catch (error) {
-    console.error('이미지 업로드 오류:', error)
+    logger.error('이미지 업로드 오류', { error })
     return NextResponse.json({ error: '이미지 업로드에 실패했습니다' }, { status: 500 })
   }
 }
@@ -234,7 +235,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('이미지 삭제 오류:', error)
+    logger.error('이미지 삭제 오류', { error })
     return NextResponse.json({ error: '이미지 삭제에 실패했습니다' }, { status: 500 })
   }
 }
@@ -316,7 +317,7 @@ export async function PUT(
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('이미지 업데이트 오류:', error)
+    logger.error('이미지 업데이트 오류', { error })
     return NextResponse.json({ error: '이미지 업데이트에 실패했습니다' }, { status: 500 })
   }
 }

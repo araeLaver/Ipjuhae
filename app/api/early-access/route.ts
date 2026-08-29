@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
 
@@ -46,7 +47,7 @@ export async function POST(request: Request) {
         { status: 409 }
       )
     }
-    console.error('[early-access POST]', error)
+    logger.error('[early-access POST]', { error })
     return NextResponse.json({ error: '서버 오류가 발생했습니다' }, { status: 500 })
   }
 }
@@ -58,7 +59,7 @@ export async function GET() {
     )
     return NextResponse.json({ count: parseInt(result?.count ?? '0', 10) })
   } catch (error) {
-    console.error('[early-access GET]', error)
+    logger.error('[early-access GET]', { error })
     return NextResponse.json({ error: '서버 오류가 발생했습니다' }, { status: 500 })
   }
 }

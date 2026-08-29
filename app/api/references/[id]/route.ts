@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { query, queryOne } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
 import { LandlordReference, ReferenceDispute, ReferenceResponse } from '@/types/database'
@@ -43,7 +44,7 @@ export async function GET(request: Request, { params }: RouteParams) {
       disputes,
     })
   } catch (error) {
-    console.error('Get reference error:', error)
+    logger.error('Get reference error', { error })
     return jsonError(request, 500, 'Failed to load reference detail', 'REFERENCE_DETAIL_FAILED')
   }
 }
@@ -76,7 +77,7 @@ export async function DELETE(request: Request, { params }: RouteParams) {
       message: 'Reference request deleted',
     })
   } catch (error) {
-    console.error('Delete reference error:', error)
+    logger.error('Delete reference error', { error })
     return jsonError(request, 500, 'Failed to delete reference', 'REFERENCE_DELETE_FAILED')
   }
 }

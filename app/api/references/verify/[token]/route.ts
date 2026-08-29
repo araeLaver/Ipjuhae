@@ -1,4 +1,5 @@
 ﻿import { NextResponse } from 'next/server'
+import { logger } from '@/lib/logger'
 import { query, queryOne, transaction } from '@/lib/db'
 import { LandlordReference, Profile, ReferenceResponse } from '@/types/database'
 import { referenceSurveySchema } from '@/lib/validations'
@@ -310,7 +311,7 @@ export async function GET(request: Request, { params }: RouteParams) {
       referenceId: reference.id,
     })
   } catch (error) {
-    console.error('Verify token error:', error)
+    logger.error('Verify token error', { error })
     return jsonError(request, 500, 'Failed to check reference token', 'REFERENCE_TOKEN_CHECK_FAILED')
   }
 }
@@ -419,7 +420,7 @@ export async function POST(request: Request, { params }: RouteParams) {
       },
     })
   } catch (error) {
-    console.error('Submit survey error:', error)
+    logger.error('Submit survey error', { error })
     return jsonError(request, 500, 'Failed to submit reference survey', 'REFERENCE_SUBMIT_FAILED')
   }
 }
@@ -544,7 +545,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
       },
     })
   } catch (error) {
-    console.error('Update survey error:', error)
+    logger.error('Update survey error', { error })
     return jsonError(request, 500, 'Failed to update reference survey', 'REFERENCE_UPDATE_FAILED')
   }
 }

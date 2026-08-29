@@ -6,6 +6,7 @@ vi.mock('@/lib/db', () => ({
 
 import { trackServer } from '@/lib/analytics'
 import { query } from '@/lib/db'
+import { logger } from '@/lib/logger'
 
 describe('server analytics', () => {
   beforeEach(() => {
@@ -14,7 +15,7 @@ describe('server analytics', () => {
   })
 
   it('swallows DB persistence failures without logging in test/local fallback mode', async () => {
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {})
     vi.mocked(query).mockRejectedValueOnce(new Error('getaddrinfo ENOTFOUND db'))
 
     await expect(trackServer('page_view', { path: '/login' })).resolves.toBeUndefined()
@@ -23,25 +24,24 @@ describe('server analytics', () => {
       expect.stringContaining('INSERT INTO analytics_events'),
       ['page_view', JSON.stringify({ path: '/login' }), null, null],
     )
-    expect(consoleError).not.toHaveBeenCalled()
+    expect(loggerError).not.toHaveBeenCalled()
 
-    consoleError.mockRestore()
+    loggerError.mockRestore()
   })
 
   it('can opt back into DB failure logging for diagnostics', async () => {
     process.env.ANALYTICS_LOG_DB_ERRORS = 'true'
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {})
     const error = new Error('connection refused')
     vi.mocked(query).mockRejectedValueOnce(error)
 
     await trackServer('page_view')
 
-    expect(consoleError).toHaveBeenCalledWith(
+    expect(loggerError).toHaveBeenCalledWith(
       '[analytics:trackServer] failed to track event',
-      'page_view',
-      error,
+      { event: 'page_view', error },
     )
 
-    consoleError.mockRestore()
+    loggerError.mockRestore()
   })
 })

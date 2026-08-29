@@ -166,7 +166,7 @@ export async function GET(
       trace_id: traceId,
     })
   } catch (error) {
-    console.error('매물 상세 조회 실패', error)
+    logger.error('매물 상세 조회 실패', { error })
     return NextResponse.json(
       { error: '매물 조회 중 오류가 발생했습니다', request_id: requestId, trace_id: traceId },
       { status: 500 }

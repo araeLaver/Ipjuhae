@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
 import { hashPassword, generateToken, setAuthCookie } from '@/lib/auth'
@@ -101,7 +102,7 @@ export async function POST(request: Request) {
       userType
     })
   } catch (error) {
-    console.error('Signup error:', error)
+    logger.error('Signup error', { error })
     return NextResponse.json(
       { error: '회원가입 중 오류가 발생했습니다' },
       { status: 500 }

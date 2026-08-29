@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { query, queryOne } from '@/lib/db'
@@ -65,7 +66,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Magic link POST error:', error)
+    logger.error('Magic link POST error', { error })
     return NextResponse.json(
       { error: '이메일 발송 중 오류가 발생했습니다' },
       { status: 500 }
@@ -139,7 +140,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.redirect(new URL(destination, request.url))
   } catch (error) {
-    console.error('Magic link GET error:', error)
+    logger.error('Magic link GET error', { error })
     return NextResponse.redirect(new URL('/auth/login?error=server_error', request.url))
   }
 }

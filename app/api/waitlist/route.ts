@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
 
@@ -9,7 +10,7 @@ export async function GET() {
     )
     return NextResponse.json({ count: parseInt(result?.count ?? '0', 10) })
   } catch (error) {
-    console.error('[waitlist GET]', error)
+    logger.error('[waitlist GET]', { error })
     return NextResponse.json({ error: '서버 오류가 발생했습니다' }, { status: 500 })
   }
 }
@@ -56,7 +57,7 @@ export async function POST(request: Request) {
     ) {
       return NextResponse.json({ error: '이미 신청하신 이메일입니다' }, { status: 409 })
     }
-    console.error('[waitlist POST]', error)
+    logger.error('[waitlist POST]', { error })
     return NextResponse.json({ error: '서버 오류가 발생했습니다' }, { status: 500 })
   }
 }

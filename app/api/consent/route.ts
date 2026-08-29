@@ -1,4 +1,5 @@
 ﻿import { transaction } from '@/lib/db'
+import { logger } from '@/lib/logger'
 import { getCurrentUser } from '@/lib/auth'
 import { consentRevokeSchema, consentUpsertSchema } from '@/lib/validations'
 import { normalizeConsentFields } from '@/lib/consent'
@@ -70,7 +71,7 @@ export async function GET(request: Request) {
 
     return jsonSuccess(request, { consents })
   } catch (error) {
-    console.error('Get consent error:', error)
+    logger.error('Get consent error', { error })
     return jsonError(request, 500, 'Failed to load consents', 'CONSENT_LIST_FAILED')
   }
 }
@@ -173,7 +174,7 @@ export async function POST(request: Request) {
 
     return response
   } catch (error) {
-    console.error('Set consent error:', error)
+    logger.error('Set consent error', { error })
     return jsonError(request, 500, 'Failed to save consent', 'CONSENT_UPDATE_FAILED')
   }
 }
@@ -257,7 +258,7 @@ export async function DELETE(request: Request) {
 
     return response
   } catch (error) {
-    console.error('Revoke consent error:', error)
+    logger.error('Revoke consent error', { error })
     return jsonError(request, 500, 'Failed to revoke consent', 'CONSENT_REVOKE_FAILED')
   }
 }

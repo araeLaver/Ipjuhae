@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyTokenAllowed } from '@/lib/auth'
@@ -37,7 +38,7 @@ export async function GET() {
 
     return NextResponse.json({ unreadCount })
   } catch (error) {
-    console.error('안읽은 메시지 수 조회 오류:', error)
+    logger.error('안읽은 메시지 수 조회 오류', { error })
     return NextResponse.json({ error: '안읽은 메시지 수를 불러오는데 실패했습니다' }, { status: 500 })
   }
 }

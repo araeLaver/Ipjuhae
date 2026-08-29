@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
@@ -336,7 +337,7 @@ export async function GET(request: Request) {
     })
 
     Promise.allSettled(accessLogRows).catch((error) => {
-      console.error('access audit batch failed', error)
+      logger.error('access audit batch failed', { error })
     })
 
     // ---------- Next cursor ----------
@@ -361,7 +362,7 @@ export async function GET(request: Request) {
       total_count: totalCount,
     })
   } catch (error) {
-    console.error('Get tenants error:', error)
+    logger.error('Get tenants error', { error })
     return NextResponse.json({ error: '세입자 목록 조회 중 오류가 발생했습니다' }, { status: 500 })
   }
 }

@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyTokenAllowed } from '@/lib/auth'
@@ -29,7 +30,7 @@ export async function PATCH(_request: Request, { params }: Params) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('알림 읽음 처리 오류:', error)
+    logger.error('알림 읽음 처리 오류', { error })
     return NextResponse.json({ error: '처리에 실패했습니다' }, { status: 500 })
   }
 }

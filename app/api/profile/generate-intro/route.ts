@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
 import { queryOne } from '@/lib/db'
@@ -27,7 +28,7 @@ export async function POST() {
 
     return NextResponse.json({ intro })
   } catch (error) {
-    console.error('Generate intro error:', error)
+    logger.error('Generate intro error', { error })
     return NextResponse.json(
       { error: '자기소개서 생성 중 오류가 발생했습니다' },
       { status: 500 }

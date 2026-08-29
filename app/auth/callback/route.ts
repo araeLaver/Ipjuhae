@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase'
 import { queryOne, query } from '@/lib/db'
@@ -12,7 +13,7 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get('code')
 
   if (!code) {
-    if (isDev) console.log('[auth/callback] No code parameter — redirecting to login')
+    if (isDev) logger.info('[auth/callback] No code parameter — redirecting to login')
     return NextResponse.redirect(new URL('/login?error=missing_code', origin))
   }
 
@@ -21,12 +22,12 @@ export async function GET(request: NextRequest) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (error || !data.user?.email) {
-      console.error('Magic link auth error:', error?.message)
+      logger.error('Magic link auth error', { error: error?.message })
       return NextResponse.redirect(new URL('/login?error=auth_failed', origin))
     }
 
     const email = data.user.email
-    if (isDev) console.log('[auth/callback] Authenticated email:', email)
+    if (isDev) logger.info('[auth/callback] Authenticated email', { email })
 
     // Check if user already exists in local DB
     let user = await queryOne<User>(
@@ -46,7 +47,7 @@ export async function GET(request: NextRequest) {
         [email]
       )
       user = rows[0]
-      if (isDev) console.log('[auth/callback] New user created:', user.id)
+      if (isDev) logger.info('[auth/callback] New user created', { userId: user.id })
     }
 
     // Generate app JWT and set cookie
@@ -59,17 +60,17 @@ export async function GET(request: NextRequest) {
         userId: user.id,
         properties: { method: 'magic_link', email },
       })
-      if (isDev) console.log('[auth/callback] New user → redirecting to /onboarding/basic')
+      if (isDev) logger.info('[auth/callback] New user → redirecting to /onboarding/basic')
       return NextResponse.redirect(new URL('/onboarding/basic', origin))
     }
 
     const destination =
       user.user_type === 'landlord' ? '/landlord' :
       user.user_type === 'admin' ? '/admin' : '/profile'
-    if (isDev) console.log('[auth/callback] Existing user → redirecting to', destination)
+    if (isDev) logger.info('[auth/callback] Existing user → redirecting to', { destination })
     return NextResponse.redirect(new URL(destination, origin))
   } catch (err) {
-    console.error('Auth callback error:', err)
+    logger.error('Auth callback error', { error: err })
     return NextResponse.redirect(new URL('/login?error=server_error', origin))
   }
 }

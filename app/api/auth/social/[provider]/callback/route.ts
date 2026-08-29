@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { NextRequest, NextResponse } from 'next/server'
 import { queryOne } from '@/lib/db'
 import { generateToken, setAuthCookie } from '@/lib/auth'
@@ -82,7 +83,7 @@ export async function GET(
 
     return clearState(NextResponse.redirect(`${base}/signup/social?${signupParams.toString()}`))
   } catch (err) {
-    console.error('OAuth callback error:', err)
+    logger.error('OAuth callback error', { error: err })
     return clearState(NextResponse.redirect(`${base}/login?error=oauth_failed`))
   }
 }

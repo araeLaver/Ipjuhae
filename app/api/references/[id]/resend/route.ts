@@ -2,6 +2,7 @@
  * POST /api/references/[id]/resend
  * 만료된 레퍼런스 재발송 — 새 토큰 발급 + SMS 재전송
  */
+import { logger } from '@/lib/logger'
 import { NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
@@ -76,7 +77,7 @@ export async function POST(request: Request, { params }: RouteParams) {
       ...(process.env.NODE_ENV !== 'production' && { surveyUrl }),
     })
   } catch (error) {
-    console.error('Resend reference error:', error)
+    logger.error('Resend reference error', { error })
     return NextResponse.json({ error: '재발송 중 오류가 발생했습니다' }, { status: 500 })
   }
 }

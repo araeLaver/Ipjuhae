@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { NextResponse } from 'next/server'
 import { query } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
@@ -51,7 +52,7 @@ export async function POST(request: Request) {
       imageUrl: result.url
     })
   } catch (error) {
-    console.error('Profile image upload error:', error)
+    logger.error('Profile image upload error', { error })
     return NextResponse.json(
       { error: '이미지 업로드 중 오류가 발생했습니다' },
       { status: 500 }
@@ -75,7 +76,7 @@ export async function DELETE() {
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Profile image delete error:', error)
+    logger.error('Profile image delete error', { error })
     return NextResponse.json(
       { error: '이미지 삭제 중 오류가 발생했습니다' },
       { status: 500 }

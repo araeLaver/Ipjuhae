@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { getCurrentUser } from '@/lib/auth'
 import { calculateDataScore } from '@/lib/trust-engine'
 import { jsonError, jsonSuccess } from '@/lib/api-response'
@@ -18,7 +19,7 @@ export async function GET(request: Request) {
     const result = await calculateDataScore(subjectType, user.id)
     return jsonSuccess(request, result)
   } catch (error) {
-    console.error('Data score failed:', error)
+    logger.error('Data score failed', { error })
     return jsonError(request, 500, 'Failed to compute data score', 'DATA_SCORE_FAILED')
   }
 }

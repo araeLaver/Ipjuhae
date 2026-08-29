@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { NextResponse } from 'next/server'
 import { query } from '@/lib/db'
 import { getAdminUser } from '@/lib/admin'
@@ -74,7 +75,7 @@ export async function POST(request: Request) {
       errors: errors.length > 0 ? errors : undefined,
     })
   } catch (error) {
-    console.error('[admin/waitlist/invite POST]', error)
+    logger.error('[admin/waitlist/invite POST]', { error })
     return NextResponse.json({ error: '초대 처리 실패' }, { status: 500 })
   }
 }

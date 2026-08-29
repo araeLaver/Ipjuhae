@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { NextResponse } from 'next/server'
 import { query } from '@/lib/db'
 import { getAdminUser } from '@/lib/admin'
@@ -67,7 +68,7 @@ export async function GET() {
       })),
     })
   } catch (error) {
-    console.error('Admin stats error:', error)
+    logger.error('Admin stats error', { error })
     return NextResponse.json({ error: '통계 조회 실패' }, { status: 500 })
   }
 }

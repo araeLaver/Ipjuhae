@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
 import { generateToken, setAuthCookie } from '@/lib/auth'
@@ -74,7 +75,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, userId: user.id, userType: validUserType })
   } catch (error) {
-    console.error('Social signup error:', error)
+    logger.error('Social signup error', { error })
     return NextResponse.json({ error: '소셜 회원가입 중 오류가 발생했습니다' }, { status: 500 })
   }
 }

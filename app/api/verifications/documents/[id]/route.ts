@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { NextResponse } from 'next/server'
 import { queryOne } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
@@ -26,7 +27,7 @@ export async function GET(
 
     return NextResponse.json(doc)
   } catch (error) {
-    console.error('Document status error:', error)
+    logger.error('Document status error', { error })
     return NextResponse.json({ error: '서류 조회 중 오류가 발생했습니다' }, { status: 500 })
   }
 }

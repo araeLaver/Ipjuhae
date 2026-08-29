@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { NextResponse } from 'next/server'
 import { trackServer } from '@/lib/analytics'
 import type { EventName } from '@/lib/analytics'
@@ -47,7 +48,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ ok: true }, { status: 200 })
   } catch (err) {
-    console.error('[api/analytics/event] unexpected error', err)
+    logger.error('[api/analytics/event] unexpected error', { error: err })
     // Return 200 regardless — analytics must not block
     return NextResponse.json({ ok: false }, { status: 200 })
   }

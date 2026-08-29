@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { NextResponse } from 'next/server'
 import { query } from '@/lib/db'
 
@@ -33,7 +34,7 @@ export async function GET() {
       date: dateStr,
     })
   } catch (error) {
-    console.error('Admin today stats error:', error)
+    logger.error('Admin today stats error', { error })
     return NextResponse.json({ error: '통계 조회 실패' }, { status: 500 })
   }
 }

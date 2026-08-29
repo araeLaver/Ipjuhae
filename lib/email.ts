@@ -310,7 +310,7 @@ export async function sendMagicLink(email: string, token: string, baseUrl: strin
     logger.info('=== Magic Link URL ===')
     logger.info(`받는 사람: ${email}`)
     logger.info(`Magic Link URL: ${magicLinkUrl}`)
-    console.log('\n🔗 Magic Link URL:', magicLinkUrl, '\n')
+    logger.info('🔗 Magic Link URL', { magicLinkUrl })
   }
   return
 }

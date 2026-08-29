@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { NextResponse } from 'next/server'
 import { query } from '@/lib/db'
 import { generateOtpCode, hashOtpCode } from '@/lib/otp'
@@ -44,7 +45,7 @@ export async function POST(request: Request) {
       code: process.env.NODE_ENV !== 'production' ? code : undefined,
     })
   } catch (error) {
-    console.error('Phone send error:', error)
+    logger.error('Phone send error', { error })
     return NextResponse.json({ error: '인증번호 발송 중 오류가 발생했습니다' }, { status: 500 })
   }
 }

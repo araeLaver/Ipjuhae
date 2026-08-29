@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { getCurrentUser } from '@/lib/auth'
 import { getTrustReport } from '@/lib/trust-engine'
 import { jsonError, jsonSuccess } from '@/lib/api-response'
@@ -8,7 +9,7 @@ export async function GET(request: Request) {
   try {
     return jsonSuccess(request, await getTrustReport(user.id))
   } catch (error) {
-    console.error('Trust report failed:', error)
+    logger.error('Trust report failed', { error })
     return jsonError(request, 500, 'Failed to load trust report', 'TRUST_REPORT_FAILED')
   }
 }

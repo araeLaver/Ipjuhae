@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
 import { getAdminUser } from '@/lib/admin'
@@ -63,7 +64,7 @@ export async function GET(request: Request) {
       },
     })
   } catch (error) {
-    console.error('[admin/waitlist GET]', error)
+    logger.error('[admin/waitlist GET]', { error })
     return NextResponse.json({ error: '조회 실패' }, { status: 500 })
   }
 }

@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
@@ -59,7 +60,7 @@ export async function GET() {
       profileImage: userRecord?.profile_image || null,
     })
   } catch (error) {
-    console.error('Get profile error:', error)
+    logger.error('Get profile error', { error })
     return NextResponse.json({ error: '프로필 조회 중 오류가 발생했습니다' }, { status: 500 })
   }
 }
@@ -129,7 +130,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ profile })
   } catch (error) {
-    console.error('Save profile error:', error)
+    logger.error('Save profile error', { error })
     return NextResponse.json({ error: '프로필 저장 중 오류가 발생했습니다' }, { status: 500 })
   }
 }

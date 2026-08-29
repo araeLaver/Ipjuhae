@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
@@ -27,7 +28,7 @@ export async function GET() {
 
     return NextResponse.json({ verification })
   } catch (error) {
-    console.error('Get verification error:', error)
+    logger.error('Get verification error', { error })
     return NextResponse.json({ error: '인증 정보 조회 중 오류가 발생했습니다' }, { status: 500 })
   }
 }

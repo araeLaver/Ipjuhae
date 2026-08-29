@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyTokenAllowed } from '@/lib/auth'
@@ -83,7 +84,7 @@ export async function POST(request: Request) {
       ...(errors.length > 0 ? { warnings: errors } : {}),
     })
   } catch (error) {
-    console.error('[POST /api/listings/upload]', error)
+    logger.error('[POST /api/listings/upload]', { error })
     return NextResponse.json({ error: '사진 업로드에 실패했습니다' }, { status: 500 })
   }
 }

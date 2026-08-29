@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { query } from '@/lib/db'
 import { AccessTargetType, ConsentTargetRole } from '@/types/database'
 
@@ -44,6 +45,6 @@ export async function recordAccessAudit(input: AccessAuditInput): Promise<void> 
       ]
     )
   } catch (error) {
-    console.error('Access audit insert failed:', error)
+    logger.error('Access audit insert failed', { error })
   }
 }

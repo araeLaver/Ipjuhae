@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { z } from 'zod'
 import { getCurrentUser } from '@/lib/auth'
 import { createDisclosurePackage } from '@/lib/trust-engine'
@@ -34,7 +35,7 @@ export async function POST(request: Request) {
         const disclosure = await createDisclosurePackage(parsed.data, user.id, { ...context, ip: getClientIp(request) })
         return jsonSuccess(request, { disclosure }, 201)
       } catch (error) {
-        console.error('Disclosure decision failed:', error)
+        logger.error('Disclosure decision failed', { error })
         const code = error instanceof Error ? error.message : 'DISCLOSURE_FAILED'
         return jsonError(request, code.includes('NOT_FOUND') ? 404 : code.includes('FORBIDDEN') || code.includes('MISMATCH') ? 403 : 400, 'Unable to create minimum disclosure package', code)
       }

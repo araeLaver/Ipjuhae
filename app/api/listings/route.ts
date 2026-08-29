@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyTokenAllowed } from '@/lib/auth'
@@ -63,7 +64,7 @@ export async function GET() {
     response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120')
     return response
   } catch (error) {
-    console.error('[GET /api/listings]', error)
+    logger.error('[GET /api/listings]', { error })
     return NextResponse.json({ error: '매물 목록을 불러오지 못했습니다' }, { status: 500 })
   }
 }
@@ -132,7 +133,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ listing: rows[0] }, { status: 201 })
   } catch (error) {
-    console.error('[POST /api/listings]', error)
+    logger.error('[POST /api/listings]', { error })
     return NextResponse.json({ error: '매물 등록에 실패했습니다' }, { status: 500 })
   }
 }

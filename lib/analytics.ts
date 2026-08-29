@@ -1,4 +1,5 @@
 import { query } from './db'
+import { logger } from './logger'
 
 const isDev = process.env.NODE_ENV === 'development'
 
@@ -41,7 +42,7 @@ export async function trackServer(event: EventName, options: TrackOptions = {}):
     const mergedProps = { ...(properties ?? {}), ...extraProps }
 
     if (isDev) {
-      console.log(`[analytics:server] ${event}`, { userId, ...mergedProps })
+      logger.info(`[analytics:server] ${event}`, { userId, ...mergedProps })
     }
 
     await query(
@@ -51,7 +52,7 @@ export async function trackServer(event: EventName, options: TrackOptions = {}):
     )
   } catch (err) {
     if (shouldLogServerAnalyticsError()) {
-      console.error('[analytics:trackServer] failed to track event', event, err)
+      logger.error('[analytics:trackServer] failed to track event', { event, error: err })
     }
   }
 }
@@ -84,7 +85,7 @@ export function track(event: EventName, options: TrackOptions = {}): void {
       })
     }
   } catch (err) {
-    console.error('[analytics:track] failed to track event', event, err)
+    logger.error('[analytics:track] failed to track event', { event, error: err })
   }
 }
 

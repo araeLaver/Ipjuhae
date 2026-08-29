@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { query, queryOne } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
 import { AccessTargetType, User, AccessAuditLog } from '@/types/database'
@@ -162,7 +163,7 @@ export async function GET(request: Request) {
       },
     })
   } catch (error) {
-    console.error('Get access logs error:', error)
+    logger.error('Get access logs error', { error })
     return jsonError(request, 500, 'Failed to load access logs', 'ACCESS_LOGS_FAILED')
   }
 }

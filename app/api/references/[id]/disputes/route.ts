@@ -1,4 +1,5 @@
 ﻿import { z } from 'zod'
+import { logger } from '@/lib/logger'
 import { query, queryOne } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
 import { LandlordReference, ReferenceDispute, ReferenceResponse } from '@/types/database'
@@ -68,7 +69,7 @@ export async function GET(_request: Request, { params }: RouteParams) {
 
     return jsonSuccess(_request, { disputes })
   } catch (error) {
-    console.error('Get disputes error:', error)
+    logger.error('Get disputes error', { error })
     return jsonError(_request, 500, 'Failed to list disputes', 'REFERENCE_DISPUTE_LIST_FAILED')
   }
 }
@@ -133,7 +134,7 @@ export async function POST(request: Request, { params }: RouteParams) {
 
     return jsonSuccess(request, { dispute }, 201)
   } catch (error) {
-    console.error('Create dispute error:', error)
+    logger.error('Create dispute error', { error })
     return jsonError(request, 500, 'Failed to create dispute', 'REFERENCE_DISPUTE_CREATE_FAILED')
   }
 }
@@ -235,7 +236,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
       message: 'Dispute status updated',
     })
   } catch (error) {
-    console.error('Update dispute error:', error)
+    logger.error('Update dispute error', { error })
     return jsonError(request, 500, 'Failed to update dispute', 'REFERENCE_DISPUTE_UPDATE_FAILED')
   }
 }

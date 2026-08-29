@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyTokenAllowed } from '@/lib/auth'
@@ -123,7 +124,7 @@ export async function GET(
       images,
     })
   } catch (error) {
-    console.error('매물 조회 오류:', error)
+    logger.error('매물 조회 오류', { error })
     return NextResponse.json({ error: '매물을 불러오는데 실패했습니다' }, { status: 500 })
   }
 }
@@ -277,7 +278,7 @@ export async function PUT(
       },
     })
   } catch (error) {
-    console.error('매물 수정 오류:', error)
+    logger.error('매물 수정 오류', { error })
     return NextResponse.json({ error: '매물 수정에 실패했습니다' }, { status: 500 })
   }
 }
@@ -345,7 +346,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('매물 삭제 오류:', error)
+    logger.error('매물 삭제 오류', { error })
     return NextResponse.json({ error: '매물 삭제에 실패했습니다' }, { status: 500 })
   }
 }

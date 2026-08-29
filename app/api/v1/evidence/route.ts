@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { z } from 'zod'
 import { getCurrentUser } from '@/lib/auth'
 import { queryOne } from '@/lib/db'
@@ -73,7 +74,7 @@ export async function POST(request: Request) {
         const result = await createEvidenceFact(data, user.id, { ...context, ip: getClientIp(request) })
         return jsonSuccess(request, result, 201)
       } catch (error) {
-        console.error('Trust evidence create failed:', error)
+        logger.error('Trust evidence create failed', { error })
         return jsonError(request, 500, 'Failed to create verification evidence', 'TRUST_EVIDENCE_CREATE_FAILED')
       }
     },

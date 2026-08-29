@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { z } from 'zod'
 import { getCurrentUser } from '@/lib/auth'
 import { requestFactCorrection } from '@/lib/trust-engine'
@@ -29,7 +30,7 @@ export async function POST(request: Request) {
         const result = await requestFactCorrection(parsed.data.factId, user.id, parsed.data.reason, parsed.data.proposedValue, parsed.data.evidenceIds, { ...context, ip: getClientIp(request) })
         return jsonSuccess(request, result, 202)
       } catch (error) {
-        console.error('Correction request failed:', error)
+        logger.error('Correction request failed', { error })
         const code = error instanceof Error ? error.message : 'TRUST_CORRECTION_FAILED'
         return jsonError(request, code.includes('FORBIDDEN') ? 403 : code.includes('NOT_FOUND') ? 404 : 500, 'Failed to start correction chain', code)
       }

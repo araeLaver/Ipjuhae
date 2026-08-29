@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyTokenAllowed } from '@/lib/auth'
@@ -132,7 +133,7 @@ export async function GET(
       },
     })
   } catch (error) {
-    console.error('메시지 조회 오류:', error)
+    logger.error('메시지 조회 오류', { error })
     return NextResponse.json({ error: '메시지를 불러오는데 실패했습니다' }, { status: 500 })
   }
 }
@@ -228,7 +229,7 @@ export async function POST(
 
     return NextResponse.json({ message: sentMessage })
   } catch (error) {
-    console.error('메시지 전송 오류:', error)
+    logger.error('메시지 전송 오류', { error })
     return NextResponse.json({ error: '메시지 전송에 실패했습니다' }, { status: 500 })
   }
 }

@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { runTrustMaintenance } from '@/lib/trust-engine'
 import { getRequestContext } from '@/lib/request-context'
 import { jsonError, jsonSuccess } from '@/lib/api-response'
@@ -11,7 +12,7 @@ export async function GET(request: Request) {
   try {
     return jsonSuccess(request, await runTrustMaintenance(getRequestContext(request)))
   } catch (error) {
-    console.error('Trust maintenance failed:', error)
+    logger.error('Trust maintenance failed', { error })
     return jsonError(request, 500, 'Trust maintenance failed', 'TRUST_MAINTENANCE_FAILED')
   }
 }

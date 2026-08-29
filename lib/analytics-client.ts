@@ -8,6 +8,8 @@
  * PostHog-ready: swap the prod implementation when PostHog is integrated.
  */
 
+import { logger } from './logger'
+
 export type EventName =
   | 'page_view'
   | 'user_signup'
@@ -69,7 +71,7 @@ export function track(event: EventName, options: TrackClientOptions = {}): void 
       })
     }
   } catch (err) {
-    console.error('[analytics:track] failed to track event', event, err)
+    logger.error('[analytics:track] failed to track event', { event, error: err })
   }
 }
 

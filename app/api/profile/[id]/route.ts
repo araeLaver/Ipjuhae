@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
 import { Profile, Verification, ReferenceResponse } from '@/types/database'
@@ -130,7 +131,7 @@ export async function GET(
       trace_id: traceId,
     })
   } catch (error) {
-    console.error('Get public profile error:', error)
+    logger.error('Get public profile error', { error })
     return NextResponse.json(
       { error: '프로필 조회 중 오류가 발생했습니다', request_id: requestId, trace_id: traceId },
       { status: 500 }

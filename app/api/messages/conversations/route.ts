@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyTokenAllowed } from '@/lib/auth'
@@ -117,7 +118,7 @@ export async function GET(request: Request) {
       },
     })
   } catch (error) {
-    console.error('대화방 목록 조회 오류:', error)
+    logger.error('대화방 목록 조회 오류', { error })
     return NextResponse.json({ error: '대화방 목록을 불러오는데 실패했습니다' }, { status: 500 })
   }
 }
@@ -232,7 +233,7 @@ export async function POST(request: Request) {
       isNew: existingConversation.length === 0,
     })
   } catch (error) {
-    console.error('대화방 생성 오류:', error)
+    logger.error('대화방 생성 오류', { error })
     return NextResponse.json({ error: '대화방 생성에 실패했습니다' }, { status: 500 })
   }
 }

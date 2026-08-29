@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { dispatchTrustOutbox } from '@/lib/trust-outbox'
 import { jsonError, jsonSuccess } from '@/lib/api-response'
 
@@ -9,7 +10,7 @@ export async function GET(request: Request) {
   try {
     return jsonSuccess(request, await dispatchTrustOutbox(50))
   } catch (error) {
-    console.error('Trust outbox dispatch failed:', error)
+    logger.error('Trust outbox dispatch failed', { error })
     return jsonError(request, 500, 'Trust outbox dispatch failed', 'TRUST_OUTBOX_FAILED')
   }
 }

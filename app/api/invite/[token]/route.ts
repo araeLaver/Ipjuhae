@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { NextResponse } from 'next/server'
 import { queryOne } from '@/lib/db'
 
@@ -36,7 +37,7 @@ export async function GET(
       signedUp: !!row.signed_up_at,
     })
   } catch (error) {
-    console.error('[invite validate]', error)
+    logger.error('[invite validate]', { error })
     return NextResponse.json({ valid: false }, { status: 500 })
   }
 }

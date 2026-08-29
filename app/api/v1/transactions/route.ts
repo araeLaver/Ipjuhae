@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { z } from 'zod'
 import { getCurrentUser } from '@/lib/auth'
 import { query } from '@/lib/db'
@@ -61,7 +62,7 @@ export async function POST(request: Request) {
         const result = await createTrustTransaction(parsed.data, user.id, getRequestContext(request))
         return jsonSuccess(request, { transaction: result }, 201)
       } catch (error) {
-        console.error('Trust transaction create failed:', error)
+        logger.error('Trust transaction create failed', { error })
         return jsonError(request, 500, 'Failed to create transaction context', 'TRUST_TRANSACTION_CREATE_FAILED')
       }
     },

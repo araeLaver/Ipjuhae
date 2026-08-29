@@ -5,6 +5,7 @@
  * 없으면 /public/uploads/ 에 로컬 저장 후 URL 반환
  */
 
+import { logger } from '@/lib/logger'
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 import { writeFile, mkdir } from 'fs/promises'
 import path from 'path'
@@ -117,7 +118,7 @@ export async function uploadListingPhoto(
       if (process.env.NODE_ENV === 'production') {
         throw err instanceof Error ? err : new Error('S3 업로드에 실패했습니다.')
       }
-      console.error('[upload] S3 업로드 실패, 로컬 저장소로 fallback:', err)
+      logger.error('[upload] S3 업로드 실패, 로컬 저장소로 fallback', { error: err })
       return await uploadToLocal(buffer, key)
     }
   }
