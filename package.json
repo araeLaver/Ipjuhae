@@ -19,7 +19,8 @@
     "db:migrate": "npx tsx db/migrate.ts",
     "trust:backfill": "tsx db/backfill-trust-ledger.ts",
     "trust:smoke": "node scripts/trust-platform-smoke.mjs",
-    "patent:evidence": "node scripts/generate-patent-evidence.mjs"
+    "patent:evidence": "node scripts/generate-patent-evidence.mjs",
+    "rental-risk:validate": "tsx scripts/build-rental-risk-validation.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1019.0",

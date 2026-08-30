@@ -1,0 +1,67 @@
+{
+  "generatedAt": "2026-08-30T13:52:14.612Z",
+  "source": {
+    "url": "https://raw.githubusercontent.com/Indongspace/mulcamp_Mini_project_Final/63056a50edfd3057129a5f28f79046f626195a53/%EC%84%9C%EC%9A%B8%EC%A0%84%EC%B2%B4/df_%EC%84%9C%EC%9A%B8.csv",
+    "commit": "63056a50edfd3057129a5f28f79046f626195a53",
+    "sha256": "a51ef852302468ba495b4dd8ca411fd7f686b7342d0b717ed70da5b04b0ae972",
+    "license": "MIT (source repository)"
+  },
+  "sample": {
+    "total": 100,
+    "uniqueComplexes": 100,
+    "selection": "원천 CSV 순서상 최초 100개 고유 아파트"
+  },
+  "metrics": {
+    "precision": 1,
+    "coverage": 0.8,
+    "insufficientRate": 0.2,
+    "go": true
+  },
+  "categoryResults": {
+    "exact": {
+      "total": 25,
+      "matched": 25,
+      "rate": 1
+    },
+    "normalization_whitespace": {
+      "total": 20,
+      "matched": 20,
+      "rate": 1
+    },
+    "normalization_apartment_suffix": {
+      "total": 15,
+      "matched": 15,
+      "rate": 1
+    },
+    "normalization_parenthetical": {
+      "total": 10,
+      "matched": 10,
+      "rate": 1
+    },
+    "alias": {
+      "total": 10,
+      "matched": 10,
+      "rate": 1
+    },
+    "missing_city": {
+      "total": 10,
+      "matched": 0,
+      "rate": 0
+    },
+    "missing_legal_dong": {
+      "total": 10,
+      "matched": 0,
+      "rate": 0
+    }
+  },
+  "failures": {
+    "addressNormalization": 10,
+    "legalDongExpansion": 10,
+    "alias": 0,
+    "missing": 0
+  },
+  "expansionSuccessRate": {
+    "definition": "exact 입력을 제외한 normalization·alias 변형 55건 중 자동 매칭 성공 비율",
+    "value": 1
+  }
+}
