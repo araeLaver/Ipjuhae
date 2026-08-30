@@ -36,9 +36,10 @@
       "package": "com.ipjuhae.app",
       "versionCode": 1,
       "permissions": [
-        "CAMERA",
-        "READ_EXTERNAL_STORAGE",
-        "VIBRATE"
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.VIBRATE",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
@@ -69,14 +70,15 @@
       "expo-asset"
     ],
     "extra": {
+      "apiUrl": "https://www.ipjuhae.com/api",
       "eas": {
-        "projectId": "your-project-id"
-      },
-      "apiUrl": "https://www.ipjuhae.com/api"
+        "projectId": "fc70525c-6737-4867-aa26-a652cbdce924"
+      }
     },
     "platforms": [
       "ios",
       "android"
-    ]
+    ],
+    "owner": "downlab"
   }
 }
