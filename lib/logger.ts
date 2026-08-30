@@ -27,6 +27,11 @@ const SENSITIVE_KEYS = new Set([
   'ssn', 'residentnumber', 'residentregistrationnumber', 'accountnumber',
 ])
 
+const EMAIL_PATTERN = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi
+const PHONE_PATTERN = /\b(?:\+?82[-.\s]?)?0?1[016789][-.\s]?\d{3,4}[-.\s]?\d{4}\b/g
+const SECRET_ASSIGNMENT_PATTERN = /\b(password|token|access[_-]?token|refresh[_-]?token|authorization|otp|verification[_-]?code|code)\s*[:=]\s*([^\s,;&"'`)\]}]+)/gi
+const BEARER_PATTERN = /\bBearer\s+[A-Za-z0-9._~+/=-]+/gi
+
 function maskValue(key: string, value: string): string {
   const k = key.toLowerCase()
   if (k === 'email') {
@@ -39,17 +44,38 @@ function maskValue(key: string, value: string): string {
   return '***'
 }
 
+function redactText(value: string): string {
+  return value
+    .replace(EMAIL_PATTERN, (match) => maskValue('email', match))
+    .replace(PHONE_PATTERN, (match) => maskValue('phone', match.replace(/\D/g, '')))
+    .replace(BEARER_PATTERN, 'Bearer ***')
+    .replace(SECRET_ASSIGNMENT_PATTERN, (_match, key) => `${key}=***`)
+}
+
+function redactValue(key: string, value: unknown, depth: number): unknown {
+  if (SENSITIVE_KEYS.has(key.toLowerCase())) {
+    return typeof value === 'string' && value.length > 0 ? maskValue(key, redactText(value)) : '***'
+  }
+  if (value instanceof Error) {
+    return redactPii(formatError(value) ?? {}, depth + 1)
+  }
+  if (typeof value === 'string') {
+    return redactText(value)
+  }
+  if (Array.isArray(value)) {
+    return depth > 4 ? value : value.map((item) => redactValue(key, item, depth + 1))
+  }
+  if (value && typeof value === 'object') {
+    return depth > 4 ? value : redactPii(value as Record<string, unknown>, depth + 1)
+  }
+  return value
+}
+
 function redactPii(meta: Record<string, unknown>, depth = 0): Record<string, unknown> {
   if (depth > 4) return meta
   const out: Record<string, unknown> = {}
   for (const [key, value] of Object.entries(meta)) {
-    if (SENSITIVE_KEYS.has(key.toLowerCase())) {
-      out[key] = typeof value === 'string' && value.length > 0 ? maskValue(key, value) : '***'
-    } else if (value && typeof value === 'object' && !Array.isArray(value) && !(value instanceof Error)) {
-      out[key] = redactPii(value as Record<string, unknown>, depth + 1)
-    } else {
-      out[key] = value
-    }
+    out[key] = redactValue(key, value, depth)
   }
   return out
 }
@@ -63,10 +89,11 @@ function log(level: LogLevel, message: string, meta?: Record<string, unknown>) {
   if (processedMeta) {
     processedMeta = redactPii(processedMeta)
   }
+  const processedMessage = redactText(message)
 
   const entry: LogEntry = {
     level,
-    message,
+    message: processedMessage,
     meta: processedMeta,
     timestamp: new Date().toISOString(),
   }
@@ -77,7 +104,7 @@ function log(level: LogLevel, message: string, meta?: Record<string, unknown>) {
   } else {
     // 개발: 가독성 좋은 포맷
     const prefix = `[${level.toUpperCase()}]`
-    console[level](`${prefix} ${message}`, meta || '')
+    console[level](`${prefix} ${processedMessage}`, processedMeta || '')
   }
 }
 
