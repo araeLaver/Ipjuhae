@@ -13,7 +13,7 @@
    ```bash
    cd mobile
    npx eas login          # Expo 계정
-   npx eas init           # app.json의 extra.eas.projectId 자동 채움 (현재 placeholder)
+   npx eas project:info   # 연결 확인: downlab/ipjuhae (projectId는 app.json에 설정됨)
    ```
 2. **Apple Developer Program** (연 $99) — iOS 배포용. 가입 후:
    ```bash
