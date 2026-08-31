@@ -16,7 +16,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import * as api from '../services/api';
 import { VerificationStatus } from '../types';
-import { pickImage } from '../services/imageService';
+import { pickImage, takePhoto } from '../services/imageService';
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Verification'>;
@@ -46,6 +46,9 @@ const VERIF_ITEMS = [
   },
 ];
 
+type VerificationType = 'employment' | 'income' | 'credit';
+type ImageSource = 'camera' | 'library';
+
 const VerificationScreen: React.FC<Props> = ({ navigation }) => {
   const [verifications, setVerifications] = useState<VerificationStatus | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -70,12 +73,12 @@ const VerificationScreen: React.FC<Props> = ({ navigation }) => {
     setRefreshing(false);
   }, [loadVerifications]);
 
-  const handleUpload = async (type: 'employment' | 'income' | 'credit') => {
-    const image = await pickImage();
-    if (!image) return;
-
+  const handleUpload = async (type: VerificationType, source: ImageSource) => {
     setUploading(type);
     try {
+      const image = source === 'camera' ? await takePhoto() : await pickImage();
+      if (!image) return;
+
       // The server has no binary upload endpoint for verification documents:
       // POST /api/verifications/documents takes JSON { documentType, fileName }
       // and queues the document for review (same as the web flow).
@@ -87,6 +90,20 @@ const VerificationScreen: React.FC<Props> = ({ navigation }) => {
     } finally {
       setUploading(null);
     }
+  };
+
+  const chooseImageSource = (type: VerificationType) => {
+    Alert.alert('서류 제출', '서류를 가져올 방법을 선택해주세요.', [
+      {
+        text: '카메라 촬영',
+        onPress: () => handleUpload(type, 'camera'),
+      },
+      {
+        text: '갤러리 선택',
+        onPress: () => handleUpload(type, 'library'),
+      },
+      { text: '취소', style: 'cancel' },
+    ]);
   };
 
   const isVerified = (key: string) => {
@@ -133,7 +150,7 @@ const VerificationScreen: React.FC<Props> = ({ navigation }) => {
               {!done && (
                 <TouchableOpacity
                   style={[styles.uploadButton, isUploading && styles.uploadButtonDisabled]}
-                  onPress={() => handleUpload(item.key)}
+                  onPress={() => chooseImageSource(item.key)}
                   disabled={isUploading}
                 >
                   <Text style={styles.uploadButtonText}>
