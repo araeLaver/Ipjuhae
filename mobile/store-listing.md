@@ -41,9 +41,12 @@
 - Feature graphic: `assets/play-feature-graphic.png` (1024x500 PNG)
 
 ## 필수 URL/정보
-- 개인정보처리방침: https://www.ipjuhae.com/privacy
+- 개인정보처리방침: https://www.ipjuhae.com/privacy (보호책임자: 김다운 / privacy@ipjuhae.com)
 - 지원(문의): https://www.ipjuhae.com (또는 지원 이메일 — 결정 필요)
-- 심사용 테스트 계정: (제출 직전 생성해 기입)
+- 심사용 테스트 계정: `store-review@test.ipjuhae.com` / `Review2026ipjuhae` (2026-08-31 생성, 프로덕션 활성)
+
+## 스크린샷 (준비됨)
+- `assets/store-screenshots/01-login.png` / `02-home.png` / `03-profile.png` (1200×2400, Play 2:1 규격 패딩)
 
 ## 데이터 수집 공시 (Data Safety / App Privacy)
 | 항목 | 수집 | 목적 | 연결됨 |
