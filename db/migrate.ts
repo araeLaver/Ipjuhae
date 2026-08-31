@@ -52,6 +52,7 @@ const migrations = [
   'migration-035-approve-admin-gate.sql',
   'migration-036-otp-hash-and-token-revocation.sql',
   'migration-037-users-deleted-at.sql',
+  'migration-038-push-tokens.sql',
 ] as const
 
 const args = process.argv.slice(2)

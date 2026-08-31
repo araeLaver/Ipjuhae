@@ -2,14 +2,13 @@
  * Settings Screen — app preferences and account management
  */
 
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Switch,
   Alert,
   Linking,
 } from 'react-native';
@@ -36,9 +35,6 @@ interface SettingItem {
 
 const SettingsScreen: React.FC<Props> = ({ navigation }) => {
   const { logout } = useAuth();
-  const [pushEnabled, setPushEnabled] = useState(true);
-  const [messageAlert, setMessageAlert] = useState(true);
-  const [matchAlert, setMatchAlert] = useState(true);
 
   const handleLogout = () => {
     Alert.alert('로그아웃', '로그아웃 하시겠습니까?', [
@@ -68,9 +64,7 @@ const SettingsScreen: React.FC<Props> = ({ navigation }) => {
     {
       title: '알림',
       items: [
-        { icon: '🔔', label: '푸시 알림', type: 'toggle', value: pushEnabled, onToggle: setPushEnabled },
-        { icon: '💬', label: '새 메시지 알림', type: 'toggle', value: messageAlert, onToggle: setMessageAlert },
-        { icon: '🤝', label: '매칭 알림', type: 'toggle', value: matchAlert, onToggle: setMatchAlert },
+        { icon: '🔔', label: '푸시 알림 설정', type: 'link', onPress: () => navigation.navigate('NotificationSettings') },
       ],
     },
     {
@@ -78,7 +72,6 @@ const SettingsScreen: React.FC<Props> = ({ navigation }) => {
       items: [
         { icon: '✏️', label: '프로필 편집', type: 'link', onPress: () => navigation.navigate('ProfileEdit') },
         { icon: '🔒', label: '비밀번호 변경', type: 'link', onPress: () => Alert.alert('안내', '비밀번호 변경은 웹에서 가능합니다.') },
-        { icon: '📱', label: '알림 설정', type: 'link', onPress: () => navigation.navigate('NotificationSettings') },
       ],
     },
     {
@@ -107,14 +100,6 @@ const SettingsScreen: React.FC<Props> = ({ navigation }) => {
     >
       <Text style={styles.settingIcon}>{item.icon}</Text>
       <Text style={[styles.settingLabel, item.danger && styles.dangerText]}>{item.label}</Text>
-      {item.type === 'toggle' && (
-        <Switch
-          value={item.value}
-          onValueChange={item.onToggle}
-          trackColor={{ false: '#D1D5DB', true: '#93C5FD' }}
-          thumbColor={item.value ? '#2563EB' : '#F3F4F6'}
-        />
-      )}
       {item.type === 'link' && <Text style={styles.chevron}>›</Text>}
     </TouchableOpacity>
   );

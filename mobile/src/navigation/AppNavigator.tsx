@@ -23,6 +23,7 @@ import PropertiesScreen from '../screens/PropertiesScreen';
 import TenantBrowseScreen from '../screens/TenantBrowseScreen';
 import ChatRoomScreen from '../screens/ChatRoomScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import NotificationSettingsScreen from '../screens/NotificationSettingsScreen';
 
 // Types
 export type RootStackParamList = {
@@ -188,7 +189,7 @@ const AppNavigator = () => {
             />
             <Stack.Screen
               name="NotificationSettings"
-              component={PlaceholderScreen}
+              component={NotificationSettingsScreen}
               options={{ headerShown: true, headerTitle: '알림 설정', headerTintColor: '#2563EB' }}
             />
             <Stack.Screen
