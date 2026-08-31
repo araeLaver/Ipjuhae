@@ -14,6 +14,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "launch:check": "node scripts/prelaunch-check.mjs",
+    "launch:check:dry-run": "node --env-file=.env.launch-check.example scripts/prelaunch-check.mjs",
     "launch:verify": "npm run launch:check && npm run typecheck && npm run test:run && npm run build",
     "launch:smoke": "node scripts/launch-smoke.mjs",
     "db:migrate": "npx tsx db/migrate.ts",

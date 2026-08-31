@@ -44,6 +44,19 @@ npm run launch:check
 
 5. `launch:check` 통과 후에만 `npm run launch:verify`, 배포, `npm run launch:smoke` 순서로 진행합니다.
 
+### 로컬 dry-run 프로파일
+
+일일 품질 점검처럼 운영 secret이 없는 환경에서는 아래 명령으로 `launch:check` 검증 로직만 확인합니다.
+
+```bash
+npm run launch:check:dry-run
+```
+
+- `.env.launch-check.example`은 non-secret placeholder만 담은 추적 파일입니다.
+- dry-run은 외부 DB, S3, SMS, email, NICE/CODEF credential의 실제 존재나 계약 상태를 증명하지 않습니다.
+- production rehearsal에서는 반드시 실제 runtime secret 주입 후 `npm run launch:check`를 실행합니다.
+- 기본 `npm run launch:check`는 `placeholder`, `not-a-real`, `replace-with`, `example.invalid`, `localhost` 같은 placeholder 흔적을 production 값으로 인정하지 않습니다.
+
 ### 결과 기록 템플릿
 
 ```md
@@ -95,11 +108,13 @@ npm run launch:check
 Run these without production secrets where possible:
 
 ```bash
-npm run launch:check
+npm run launch:check:dry-run
 npm run typecheck
 npm run test:run
 npm run build
 ```
+
+`npm run launch:check`는 production secret 주입이 끝난 runtime 또는 GitHub `production` environment에서만 실행합니다.
 
 After deploy, verify:
 

@@ -93,9 +93,11 @@ provider별 콘솔에서 Kakao, Naver, Google client id/secret을 발급하고 `
 상세 체크리스트는 [docs/LAUNCH_CHECKLIST.md](docs/LAUNCH_CHECKLIST.md)를 사용합니다. 최소 검증 명령:
 
 ```bash
+npm run launch:check:dry-run
 npm run typecheck
 npm run test:run
 npm run build
 ```
 
 프로덕션 secret이 없는 환경에서는 provider 연동 테스트 대신 mock fallback 여부와 503/데모 응답이 명확한지 확인합니다.
+`launch:check:dry-run`은 `.env.launch-check.example`의 non-secret placeholder로 검증 로직만 확인합니다. 실제 production launch rehearsal에서는 승인된 runtime secret을 주입한 뒤 `npm run launch:check`를 별도로 실행합니다.

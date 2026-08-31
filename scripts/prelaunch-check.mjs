@@ -21,6 +21,30 @@ function collectFailure(failures, message) {
   if (message) failures.push(message)
 }
 
+const launchCheckMode = process.env.LAUNCH_CHECK_MODE === 'dry-run' ? 'dry-run' : 'production'
+
+function validateNotPlaceholder(name) {
+  if (launchCheckMode === 'dry-run') return null
+
+  const value = process.env[name] || ''
+  const normalized = value.toLowerCase()
+  const placeholderMarkers = [
+    'placeholder',
+    'not-a-real',
+    'replace-with',
+    'your-',
+    'your_',
+    'example.invalid',
+    'localhost',
+  ]
+
+  if (placeholderMarkers.some((marker) => normalized.includes(marker))) {
+    return `${name} looks like a placeholder; use an approved production value or run launch:check:dry-run`
+  }
+
+  return null
+}
+
 function validateProviders() {
   const failures = []
 
@@ -38,6 +62,7 @@ function validateProviders() {
   coreChecks.forEach(([name, message]) => collectFailure(failures, requireEnv(name, message)))
   collectFailure(failures, validateLength('JWT_SECRET', 32))
   collectFailure(failures, validateLength('DISCLOSURE_SIGNING_KEY', 32))
+  coreChecks.forEach(([name]) => collectFailure(failures, validateNotPlaceholder(name)))
 
   // SMS provider must be real in production
   const smsProvider = process.env.SMS_PROVIDER
@@ -47,10 +72,16 @@ function validateProviders() {
     collectFailure(failures, requireEnv('NHN_SMS_APP_KEY', 'NHN_SMS_APP_KEY is required for SMS_PROVIDER=nhn'))
     collectFailure(failures, requireEnv('NHN_SMS_SECRET_KEY', 'NHN_SMS_SECRET_KEY is required for SMS_PROVIDER=nhn'))
     collectFailure(failures, requireEnv('NHN_SMS_SENDER', 'NHN_SMS_SENDER is required for SMS_PROVIDER=nhn'))
+    ;['NHN_SMS_APP_KEY', 'NHN_SMS_SECRET_KEY', 'NHN_SMS_SENDER'].forEach((name) =>
+      collectFailure(failures, validateNotPlaceholder(name))
+    )
   } else if (smsProvider === 'twilio') {
     collectFailure(failures, requireEnv('TWILIO_ACCOUNT_SID', 'TWILIO_ACCOUNT_SID is required for SMS_PROVIDER=twilio'))
     collectFailure(failures, requireEnv('TWILIO_AUTH_TOKEN', 'TWILIO_AUTH_TOKEN is required for SMS_PROVIDER=twilio'))
     collectFailure(failures, requireEnv('TWILIO_PHONE_NUMBER', 'TWILIO_PHONE_NUMBER is required for SMS_PROVIDER=twilio'))
+    ;['TWILIO_ACCOUNT_SID', 'TWILIO_AUTH_TOKEN', 'TWILIO_PHONE_NUMBER'].forEach((name) =>
+      collectFailure(failures, validateNotPlaceholder(name))
+    )
   }
 
   // Email: either provider-based or SMTP transport can be used
@@ -72,10 +103,15 @@ function validateProviders() {
 
   if (emailProvider === 'resend') {
     collectFailure(failures, requireEnv('RESEND_API_KEY', 'RESEND_API_KEY is required for EMAIL_PROVIDER=resend'))
+    collectFailure(failures, validateNotPlaceholder('RESEND_API_KEY'))
   }
   if (emailProvider === 'sendgrid') {
     collectFailure(failures, requireEnv('SENDGRID_API_KEY', 'SENDGRID_API_KEY is required for EMAIL_PROVIDER=sendgrid'))
+    collectFailure(failures, validateNotPlaceholder('SENDGRID_API_KEY'))
   }
+  ;['SMTP_HOST', 'SMTP_USER', 'SMTP_PASS'].forEach((name) => {
+    if (process.env[name]) collectFailure(failures, validateNotPlaceholder(name))
+  })
 
   // File storage
   const storageProvider = process.env.STORAGE_PROVIDER
@@ -90,6 +126,9 @@ function validateProviders() {
   collectFailure(
     failures,
     requireEnv('S3_SECRET_ACCESS_KEY', 'S3_SECRET_ACCESS_KEY is required for production storage')
+  )
+  ;['S3_BUCKET', 'S3_ACCESS_KEY_ID', 'S3_SECRET_ACCESS_KEY'].forEach((name) =>
+    collectFailure(failures, validateNotPlaceholder(name))
   )
 
   // Verification provider
@@ -107,6 +146,9 @@ function validateProviders() {
       failures,
       requireEnv('CODEF_PUBLIC_KEY', 'CODEF_PUBLIC_KEY is required for VERIFICATION_PROVIDER=codef')
     )
+    ;['CODEF_CLIENT_ID', 'CODEF_CLIENT_SECRET', 'CODEF_PUBLIC_KEY'].forEach((name) =>
+      collectFailure(failures, validateNotPlaceholder(name))
+    )
   }
   if (verificationProvider === 'nice') {
     collectFailure(
@@ -116,6 +158,9 @@ function validateProviders() {
     collectFailure(
       failures,
       requireEnv('NICE_CLIENT_SECRET', 'NICE_CLIENT_SECRET is required for VERIFICATION_PROVIDER=nice')
+    )
+    ;['NICE_CLIENT_ID', 'NICE_CLIENT_SECRET'].forEach((name) =>
+      collectFailure(failures, validateNotPlaceholder(name))
     )
   }
 
@@ -139,7 +184,10 @@ function main() {
     process.exit(1)
   }
 
-  console.info('✅ launch:check passed')
+  console.info(`✅ launch:check passed (${launchCheckMode})`)
+  if (launchCheckMode === 'dry-run') {
+    console.info('ℹ️ dry-run uses non-secret placeholders and does not prove production credentials are configured')
+  }
   process.exit(0)
 }
 
