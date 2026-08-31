@@ -275,4 +275,16 @@ describe('POST /api/auth/logout', () => {
     expect(data.success).toBe(true)
     expect(clearAuthCookie).toHaveBeenCalledOnce()
   })
+
+  it('removes all push tokens for the authenticated user', async () => {
+    const auth = await import('@/lib/auth')
+    vi.spyOn(auth, 'getRequestToken').mockResolvedValueOnce('valid-token')
+    vi.spyOn(auth, 'verifyTokenAllowed').mockResolvedValueOnce({ userId: 'user-1' })
+    vi.spyOn(auth, 'revokeToken').mockResolvedValueOnce()
+
+    const res = await logout()
+
+    expect(res.status).toBe(200)
+    expect(query).toHaveBeenCalledWith('DELETE FROM push_tokens WHERE user_id = $1', ['user-1'])
+  })
 })

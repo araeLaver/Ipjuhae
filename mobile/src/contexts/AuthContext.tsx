@@ -5,6 +5,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { apiClient } from '../services/apiClient';
 import * as api from '../services/api';
+import { disableNotifications } from '../services/notificationService';
 import { User } from '../types';
 
 interface AuthContextType {
@@ -64,6 +65,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     try {
+      // 인증 token을 지우기 전에 현재 계정의 push token을 해제한다.
+      await disableNotifications().catch(() => undefined);
       await api.logout();
     } finally {
       await apiClient.clearTokens();

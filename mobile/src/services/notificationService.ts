@@ -122,14 +122,21 @@ export async function enableNotifications(): Promise<PushState> {
 export async function disableNotifications(): Promise<PushState> {
   await AsyncStorage.setItem(PUSH_PREFERENCE_KEY, 'false');
   let error: string | null = null;
+  const token = await AsyncStorage.getItem(PUSH_TOKEN_KEY);
   try {
-    const token = await AsyncStorage.getItem(PUSH_TOKEN_KEY);
     if (token) {
       await apiClient.delete(`/notifications/push-token?token=${encodeURIComponent(token)}`);
-      await AsyncStorage.removeItem(PUSH_TOKEN_KEY);
     }
   } catch {
     error = '이 기기의 서버 토큰 정리를 완료하지 못했습니다. 다음 연결 때 다시 처리해 주세요.';
+  }
+  try {
+    // 서버 요청이 실패해도 기기 자체의 push token을 폐기해
+    // 로그아웃 후 이전 계정 알림이 수신되는 것을 막는다.
+    await Notifications.unregisterForNotificationsAsync();
+    await AsyncStorage.removeItem(PUSH_TOKEN_KEY);
+  } catch {
+    error ??= '기기의 푸시 토큰을 폐기하지 못했습니다. 다시 시도해 주세요.';
   }
   const permissions = await Notifications.getPermissionsAsync();
   return {
