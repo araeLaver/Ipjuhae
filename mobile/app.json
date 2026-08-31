@@ -35,6 +35,11 @@
       },
       "package": "com.ipjuhae.app",
       "versionCode": 1,
+      "blockedPermissions": [
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.SYSTEM_ALERT_WINDOW"
+      ],
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.VIBRATE"
