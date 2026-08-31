@@ -4,7 +4,7 @@
 
 - Expo SDK 52 / React Native 0.76, 화면 15개(로그인·가입, 탐색, 매물, 매칭, 메시지/채팅, 프로필, 인증, 설정).
 - API: `https://www.ipjuhae.com/api` (Bearer 토큰 + `x-mobile-client: true` — 서버 지원 확인됨).
-- 에셋 완비: `assets/` (icon / adaptive-icon / splash / notification-icon / favicon) — 웹 브랜드 아이콘에서 생성, 브랜드 컬러(#f0663f / #fbf6ef) 적용.
+- 에셋 완비: `assets/` (icon / adaptive-icon / splash / notification-icon / favicon / Play feature graphic) — 웹 브랜드 아이콘에서 생성, 브랜드 컬러(#f0663f / #fbf6ef) 적용.
 - `eas.json` 빌드 프로필: development(내부) / preview(APK 내부배포) / production(자동 버전증가).
 
 ## 출시 전 반드시 필요한 계정 작업 (사람이 해야 함)
@@ -36,6 +36,7 @@
 
 - [ ] 스크린샷 (iOS 6.7"/6.5"/5.5", Android 폰/태블릿)
 - [ ] 스토어 설명문 (짧은/긴), 키워드
+- [x] Google Play feature graphic: `assets/play-feature-graphic.png` (1024x500 PNG)
 - [ ] 개인정보처리방침 URL: https://www.ipjuhae.com/privacy
 - [ ] 앱 심사용 테스트 계정 (이메일+비밀번호)
 - [ ] 데이터 수집 공시 (App Privacy / Data Safety): 이메일·전화·프로필·메시지 수집 명시

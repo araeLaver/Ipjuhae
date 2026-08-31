@@ -37,6 +37,9 @@
 - Play: 하우스/홈 (또는 라이프스타일)
 - App Store: Lifestyle (secondary: Productivity)
 
+## Google Play 그래픽 자산
+- Feature graphic: `assets/play-feature-graphic.png` (1024x500 PNG)
+
 ## 필수 URL/정보
 - 개인정보처리방침: https://www.ipjuhae.com/privacy
 - 지원(문의): https://www.ipjuhae.com (또는 지원 이메일 — 결정 필요)
