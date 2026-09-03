@@ -2,6 +2,10 @@ import { logger } from '@/lib/logger'
 import { NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
 
+const WAITLIST_CONSENT_VERSION = 'waitlist-v2-20260903'
+
+const VALID_USER_TYPES = ['tenant', 'landlord', 'agent'] as const
+
 // GET /api/waitlist — 전체 대기자 수 반환
 export async function GET() {
   try {
@@ -15,28 +19,52 @@ export async function GET() {
   }
 }
 
-// POST /api/waitlist — 이메일 등록
+// POST /api/waitlist — 사전 신청 등록 (전화번호 필수, 이메일 선택)
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { email, user_type } = body as { email?: string; user_type?: string }
-
-    if (!email || typeof email !== 'string') {
-      return NextResponse.json({ error: '이메일을 입력해주세요' }, { status: 400 })
+    const { phone, email, user_type, name, consent } = body as {
+      phone?: string
+      email?: string
+      user_type?: string
+      name?: string
+      consent?: boolean
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(email)) {
-      return NextResponse.json({ error: '올바른 이메일 형식이 아닙니다' }, { status: 400 })
+    if (!phone || typeof phone !== 'string') {
+      return NextResponse.json({ error: '전화번호를 입력해주세요' }, { status: 400 })
     }
 
-    if (!user_type || !['tenant', 'landlord'].includes(user_type)) {
+    const normalizedPhone = phone.replace(/[^0-9]/g, '')
+    if (!/^01[016789][0-9]{7,8}$/.test(normalizedPhone)) {
+      return NextResponse.json({ error: '올바른 휴대폰 번호 형식이 아닙니다' }, { status: 400 })
+    }
+
+    let normalizedEmail: string | null = null
+    if (email !== undefined && email !== null && email !== '') {
+      if (typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return NextResponse.json({ error: '올바른 이메일 형식이 아닙니다' }, { status: 400 })
+      }
+      normalizedEmail = email.toLowerCase().trim()
+    }
+
+    if (!user_type || !VALID_USER_TYPES.includes(user_type as (typeof VALID_USER_TYPES)[number])) {
       return NextResponse.json({ error: '사용자 유형을 선택해주세요' }, { status: 400 })
     }
 
+    if (consent !== true) {
+      return NextResponse.json(
+        { error: '개인정보 수집·이용에 동의해주세요' },
+        { status: 400 }
+      )
+    }
+
+    const trimmedName = typeof name === 'string' ? name.trim().slice(0, 50) : null
+
     await query(
-      'INSERT INTO waitlist (email, user_type) VALUES ($1, $2)',
-      [email.toLowerCase().trim(), user_type]
+      `INSERT INTO waitlist (phone, email, user_type, name, consent_at, consent_version)
+       VALUES ($1, $2, $3, $4, NOW(), $5)`,
+      [normalizedPhone, normalizedEmail, user_type, trimmedName || null, WAITLIST_CONSENT_VERSION]
     )
 
     const result = await queryOne<{ count: string }>(
@@ -48,14 +76,14 @@ export async function POST(request: Request) {
       { status: 201 }
     )
   } catch (error: unknown) {
-    // 중복 이메일 (unique constraint)
+    // 중복 전화번호/이메일 (unique constraint)
     if (
       error &&
       typeof error === 'object' &&
       'code' in error &&
       (error as { code: string }).code === '23505'
     ) {
-      return NextResponse.json({ error: '이미 신청하신 이메일입니다' }, { status: 409 })
+      return NextResponse.json({ error: '이미 신청하신 연락처입니다' }, { status: 409 })
     }
     logger.error('[waitlist POST]', { error })
     return NextResponse.json({ error: '서버 오류가 발생했습니다' }, { status: 500 })

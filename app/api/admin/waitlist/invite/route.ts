@@ -22,7 +22,7 @@ export async function POST(request: Request) {
       // 특정 ID 선택 초대
       targetRows = await query<{ id: number; email: string; user_type: string }>(
         `SELECT id, email, user_type FROM waitlist
-         WHERE id = ANY($1) AND invited_at IS NULL`,
+         WHERE id = ANY($1) AND invited_at IS NULL AND email IS NOT NULL`,
         [ids]
       )
     } else {
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
       const inviteCount = Math.min(count || 10, 100)
       targetRows = await query<{ id: number; email: string; user_type: string }>(
         `SELECT id, email, user_type FROM waitlist
-         WHERE invited_at IS NULL
+         WHERE invited_at IS NULL AND email IS NOT NULL
          ORDER BY created_at ASC
          LIMIT $1`,
         [inviteCount]

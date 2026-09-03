@@ -1,10 +1,11 @@
 import { MetadataRoute } from 'next'
-import { query } from '@/lib/db'
 
 const BASE_URL = 'https://www.ipjuhae.com'
 
+// 사전 대기열 모집 기간: 랜딩과 정책 페이지만 노출한다.
+// 서비스 공개 시 이전 라우트(listings/matches/properties 등)를 복원할 것.
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const staticRoutes: MetadataRoute.Sitemap = [
+  return [
     {
       url: BASE_URL,
       lastModified: new Date(),
@@ -12,57 +13,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 1,
     },
     {
-      url: `${BASE_URL}/listings`,
-      lastModified: new Date(),
-      changeFrequency: 'daily',
-      priority: 0.9,
-    },
-    {
-      url: `${BASE_URL}/matches`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.8,
-    },
-    {
-      url: `${BASE_URL}/signup`,
+      url: `${BASE_URL}/privacy`,
       lastModified: new Date(),
       changeFrequency: 'monthly',
-      priority: 0.7,
+      priority: 0.3,
     },
     {
-      url: `${BASE_URL}/login`,
+      url: `${BASE_URL}/terms`,
       lastModified: new Date(),
       changeFrequency: 'monthly',
-      priority: 0.6,
+      priority: 0.3,
     },
   ]
-
-  let dynamicRoutes: MetadataRoute.Sitemap = []
-  try {
-    const properties = await query<{ id: string; updated_at: string }>(
-      'SELECT id, updated_at FROM properties ORDER BY updated_at DESC LIMIT 500'
-    )
-    const profiles = await query<{ user_id: string; updated_at: string }>(
-      "SELECT user_id, updated_at FROM profiles WHERE is_complete = true ORDER BY updated_at DESC LIMIT 500"
-    )
-
-    dynamicRoutes = [
-      ...properties.map((property) => ({
-        url: `${BASE_URL}/properties/${property.id}`,
-        lastModified: new Date(property.updated_at),
-        changeFrequency: 'weekly' as const,
-        priority: 0.7,
-      })),
-      ...profiles.map((p) => ({
-        url: `${BASE_URL}/profile/${p.user_id}`,
-        lastModified: new Date(p.updated_at),
-        changeFrequency: 'weekly' as const,
-        priority: 0.6,
-      })),
-    ]
-  } catch {
-    // DB unavailable at build time — return static only
-  }
-
-  return [...staticRoutes, ...dynamicRoutes]
 }

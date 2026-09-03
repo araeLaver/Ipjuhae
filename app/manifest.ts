@@ -6,7 +6,8 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: '입주해',
     description: '신뢰할 수 있는 세입자 프로필로 집주인과 세입자를 매칭하는 서비스',
     id: '/',
-    start_url: '/',
+    // 사전 모집 기간: 설치형 앱은 랜딩이 아닌 서비스 홈으로 진입
+    start_url: '/home',
     scope: '/',
     display: 'standalone',
     orientation: 'portrait',

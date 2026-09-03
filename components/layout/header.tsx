@@ -61,7 +61,7 @@ export function Header({ user }: HeaderProps) {
       <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur-md">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-6">
-            <Link href="/" className="flex items-center gap-2">
+            <Link href="/home" className="flex items-center gap-2">
               <LogoSymbol className="h-7 w-7" />
               <span className="text-xl font-bold">입주해</span>
               {user?.userType === 'landlord' && (
