@@ -22,9 +22,8 @@ const ROLE_LABEL: Record<Role, string> = {
   agent: '공인중개사',
 }
 
-const ROLE_DETAILS: Record<Role, { mockupLabel: string; benefits: string[] }> = {
+const ROLE_DETAILS: Record<Role, { benefits: string[] }> = {
   tenant: {
-    mockupLabel: 'Trust Card 발급 화면',
     benefits: [
       '한 번 인증하면 여러 집에 재사용할 수 있어요',
       '학력이나 직장 이름 같은 건 요구하지 않아요',
@@ -32,7 +31,6 @@ const ROLE_DETAILS: Record<Role, { mockupLabel: string; benefits: string[] }> = 
     ],
   },
   landlord: {
-    mockupLabel: '후보 비교 화면',
     benefits: [
       '후보 세입자를 같은 기준으로 비교할 수 있어요',
       '감이 아닌 근거로 결정할 수 있어요',
@@ -40,13 +38,285 @@ const ROLE_DETAILS: Record<Role, { mockupLabel: string; benefits: string[] }> = 
     ],
   },
   agent: {
-    mockupLabel: '카드 검증 화면',
     benefits: [
       '카드 진위 검증으로 중개 사고 위험을 낮춰요',
       '양쪽 말이 아닌 확인된 정보로 중개해요',
       '검증 이력이 기록으로 남아요',
     ],
   },
+}
+
+// ── MVP 화면 목업 (디자인 시안 '입주해 MVP 화면' 기준, 합성 예시 데이터) ──
+// 제품 브랜드 팔레트: 크림 #FBF6EF / 숯 #262220 / 오렌지 #F0663F / 브론즈 #B08D62
+
+function PhoneFrame({ dark = false, children }: { dark?: boolean; children: React.ReactNode }) {
+  return (
+    <div
+      className="mx-auto w-full max-w-[300px] overflow-hidden rounded-[2rem] border shadow-xl"
+      style={{
+        backgroundColor: dark ? '#262220' : '#FBF6EF',
+        borderColor: dark ? '#3a342f' : '#e5ddd2',
+      }}
+    >
+      <div
+        className="flex items-center justify-between px-5 pt-3 text-[10px] font-semibold"
+        style={{ color: dark ? '#FFF3DC99' : '#26222099' }}
+      >
+        <span>9:41</span>
+        <span>●●● ▮</span>
+      </div>
+      <div className="px-4 pb-5 pt-3">{children}</div>
+    </div>
+  )
+}
+
+/** 임차인 · A4 발급 완료 화면 */
+function TenantCardMockup() {
+  return (
+    <PhoneFrame>
+      <p className="px-1 text-lg font-extrabold" style={{ color: '#262220' }}>
+        카드가 나왔어요
+      </p>
+      <div className="mt-3 rounded-2xl p-4" style={{ backgroundColor: '#262220', color: '#FFF3DC' }}>
+        <p className="text-[10px] font-bold tracking-wider" style={{ color: '#B08D62' }}>
+          ⌂ 입주해 TRUST CARD
+        </p>
+        <div className="mt-2 flex items-end justify-between">
+          <div>
+            <span className="text-4xl font-extrabold leading-none">85</span>
+            <p className="mt-1 text-[11px]" style={{ color: '#F0663F' }}>
+              우수 · 상위 18%
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-sm font-bold">김*수</p>
+            <p className="text-[10px] opacity-60">30대 · 1인 가구</p>
+          </div>
+        </div>
+        <div className="mt-3 space-y-1.5 border-t border-white/10 pt-3 text-[11px]">
+          {[
+            ['재직 형태', '정규직'],
+            ['소득 구간', '4구간'],
+            ['납부 연체', '없음'],
+          ].map(([k, v]) => (
+            <div key={k} className="flex justify-between">
+              <span className="opacity-60">{k}</span>
+              <span className="font-semibold">{v}</span>
+            </div>
+          ))}
+        </div>
+        <div className="mt-3 flex items-center justify-between border-t border-white/10 pt-2.5 text-[10px]">
+          <span style={{ color: '#B08D62' }}>TC-2608-4471</span>
+          <span style={{ color: '#8FBF9A' }}>✓ 검증됨</span>
+        </div>
+        <p className="mt-1 text-[9px] opacity-50">08.30 발급 · 09.29 만료</p>
+      </div>
+      <div className="mt-3 flex gap-2">
+        <button
+          type="button"
+          tabIndex={-1}
+          className="flex-1 cursor-default rounded-xl py-2.5 text-xs font-bold text-white"
+          style={{ backgroundColor: '#F0663F' }}
+        >
+          카드 공유
+        </button>
+        <span
+          className="flex w-11 items-center justify-center rounded-xl border text-sm"
+          style={{ borderColor: '#e5ddd2', color: '#262220' }}
+          aria-hidden="true"
+        >
+          ▦
+        </span>
+      </div>
+      <div className="mt-3 rounded-xl border p-3" style={{ borderColor: '#e5ddd2' }}>
+        <p className="text-[10px] font-bold" style={{ color: '#26222099' }}>
+          열람 기록
+        </p>
+        <div className="mt-1.5 space-y-1.5 text-[11px]" style={{ color: '#262220' }}>
+          <p>
+            <span className="font-semibold">박 집주인 · 망원동 투룸</span>
+            <span className="opacity-50"> — 오늘 14:02 열람</span>
+          </p>
+          <p>
+            <span className="font-semibold">연남 공인중개사</span>
+            <span className="opacity-50"> — 어제 11:20 열람</span>
+          </p>
+        </div>
+      </div>
+    </PhoneFrame>
+  )
+}
+
+/** 임대인 · B1 카드 열람 화면 */
+function LandlordViewMockup() {
+  return (
+    <PhoneFrame dark>
+      <div className="flex items-center justify-between px-1" style={{ color: '#FFF3DC' }}>
+        <span className="text-sm font-bold">‹ Trust Card</span>
+        <span
+          className="rounded-full px-2 py-0.5 text-[9px] font-bold"
+          style={{ backgroundColor: '#3E5C46', color: '#BFE3C8' }}
+        >
+          검증됨
+        </span>
+      </div>
+      <div className="mt-3 flex items-center justify-between px-1" style={{ color: '#FFF3DC' }}>
+        <div className="flex items-center gap-2.5">
+          <span
+            className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold"
+            style={{ backgroundColor: '#B08D62', color: '#262220' }}
+          >
+            김
+          </span>
+          <div>
+            <p className="text-sm font-bold">김*수</p>
+            <p className="text-[10px] opacity-60">30대 · 1인 가구 · 정규직</p>
+          </div>
+        </div>
+        <div className="text-right">
+          <p className="text-2xl font-extrabold leading-none" style={{ color: '#F0663F' }}>
+            85
+          </p>
+          <p className="text-[10px] opacity-60">우수</p>
+        </div>
+      </div>
+      <div className="mt-3 rounded-xl bg-white/5 p-3">
+        <p className="text-[10px] font-bold" style={{ color: '#B08D62' }}>
+          공개된 항목
+        </p>
+        <div className="mt-1.5 space-y-1.5 text-[11px]" style={{ color: '#FFF3DC' }}>
+          {[
+            ['소득 구간', '4구간'],
+            ['재직 형태', '정규직 3년+'],
+            ['납부 연체', '없음'],
+            ['가구 구성', '1인 · 반려동물 없음'],
+          ].map(([k, v]) => (
+            <div key={k} className="flex justify-between">
+              <span className="opacity-70">✓ {k}</span>
+              <span className="font-semibold">{v}</span>
+            </div>
+          ))}
+          {[
+            ['이름 · 연락처', '관심 후 공개'],
+            ['회사명', '비공개 설정'],
+          ].map(([k, v]) => (
+            <div key={k} className="flex justify-between opacity-40">
+              <span>🔒 {k}</span>
+              <span>{v}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <p className="mt-3 rounded-xl bg-white/5 p-3 text-[11px] italic" style={{ color: '#FFF3DC' }}>
+        &ldquo;조용히 오래 살 집을 찾고 있어요. 3년 이상 계약 희망합니다.&rdquo;
+      </p>
+      <p className="mt-2 px-1 text-[9px]" style={{ color: '#FFF3DC66' }}>
+        이 카드는 09.29에 만료됩니다. 열람 사실은 상대에게 기록으로 남았습니다.
+      </p>
+      <button
+        type="button"
+        tabIndex={-1}
+        className="mt-3 w-full cursor-default rounded-xl py-2.5 text-xs font-bold"
+        style={{ backgroundColor: '#E9A23B', color: '#262220' }}
+      >
+        관심 보내기
+      </button>
+    </PhoneFrame>
+  )
+}
+
+/** 중개사 · B3 카드 진위 검증 (웹) */
+function AgentVerifyMockup() {
+  return (
+    <div
+      className="mx-auto w-full max-w-[340px] overflow-hidden rounded-2xl border shadow-xl"
+      style={{ backgroundColor: '#FBF6EF', borderColor: '#e5ddd2' }}
+    >
+      <div className="flex items-center gap-2 border-b px-4 py-2.5" style={{ borderColor: '#e5ddd2' }}>
+        <span className="flex gap-1" aria-hidden="true">
+          <span className="h-2 w-2 rounded-full bg-red-300" />
+          <span className="h-2 w-2 rounded-full bg-yellow-300" />
+          <span className="h-2 w-2 rounded-full bg-green-300" />
+        </span>
+        <span className="text-[11px] font-bold" style={{ color: '#262220' }}>
+          입주해 중개 · 카드 검증
+        </span>
+        <span className="ml-auto text-[9px]" style={{ color: '#26222066' }}>
+          연남 공인중개사
+        </span>
+      </div>
+      <div className="p-4">
+        <p className="text-sm font-extrabold" style={{ color: '#262220' }}>
+          카드 진위 검증
+        </p>
+        <div className="mt-2.5 flex gap-2">
+          <span
+            className="flex-1 rounded-lg border-2 px-3 py-2 font-mono text-xs font-bold"
+            style={{ borderColor: '#4C7A5A', color: '#262220', backgroundColor: '#fff' }}
+          >
+            TC-2608-4471
+          </span>
+          <span
+            className="flex items-center rounded-lg px-3.5 text-xs font-bold text-white"
+            style={{ backgroundColor: '#4C7A5A' }}
+          >
+            검증
+          </span>
+        </div>
+        <div className="mt-3 rounded-xl border p-3.5" style={{ borderColor: '#cfe0d2', backgroundColor: '#EFF5EE' }}>
+          <p className="text-xs font-extrabold" style={{ color: '#3E5C46' }}>
+            ✓ 유효한 카드입니다
+          </p>
+          <p className="mt-0.5 text-[10px]" style={{ color: '#3E5C4699' }}>
+            2026.08.30 발급 · 09.29 만료
+          </p>
+          <div className="mt-2.5 flex gap-2">
+            <div className="flex-1 rounded-lg bg-white p-2 text-center">
+              <p className="text-[9px]" style={{ color: '#26222066' }}>
+                종합 점수
+              </p>
+              <p className="text-lg font-extrabold" style={{ color: '#262220' }}>
+                85
+              </p>
+            </div>
+            <div className="flex-1 rounded-lg bg-white p-2 text-center">
+              <p className="text-[9px]" style={{ color: '#26222066' }}>
+                등급
+              </p>
+              <p className="text-lg font-extrabold" style={{ color: '#4C7A5A' }}>
+                우수
+              </p>
+            </div>
+          </div>
+          <div className="mt-2.5 space-y-1 text-[11px]" style={{ color: '#262220' }}>
+            {[
+              ['본인 인증', '통신사'],
+              ['재직 · 소득', '정규직 · 4구간'],
+              ['납부 이력 6개월', '연체 없음'],
+            ].map(([k, v]) => (
+              <div key={k} className="flex justify-between">
+                <span className="opacity-70">✓ {k}</span>
+                <span className="font-semibold">{v}</span>
+              </div>
+            ))}
+            <div className="flex justify-between opacity-40">
+              <span>이름 · 연락처</span>
+              <span>비공개</span>
+            </div>
+          </div>
+        </div>
+        <p className="mt-2.5 text-[9px] leading-relaxed" style={{ color: '#26222066' }}>
+          중개사 열람은 고객에게 기록으로 통지됩니다. 카드 내용을 외부에 옮기거나 저장하는 것은 약관 위반입니다.
+        </p>
+      </div>
+    </div>
+  )
+}
+
+const ROLE_MOCKUP: Record<Role, () => React.JSX.Element> = {
+  tenant: TenantCardMockup,
+  landlord: LandlordViewMockup,
+  agent: AgentVerifyMockup,
 }
 
 const PROBLEMS: { role: string; quote: string; icon: React.ReactNode }[] = [
@@ -89,10 +359,30 @@ const FLOW_STEPS = [
 ]
 
 const DATASCORE = [
-  { label: '소득 안정성', value: 30, color: '#E9A23B' },
-  { label: '납부 이력', value: 30, color: '#F0BC6E' },
-  { label: '거주 평판', value: 25, color: '#5B79B0' },
-  { label: '본인 인증', value: 15, color: '#8FA6CC' },
+  {
+    label: '소득 안정성',
+    value: 30,
+    color: '#E9A23B',
+    desc: '재직 형태와 기간, 월세 대비 소득 비율. 절대 금액이 아니라 비율만 봐요',
+  },
+  {
+    label: '납부 이력',
+    value: 30,
+    color: '#F0BC6E',
+    desc: '최근 24개월 통신·공과금 연체 여부. 금융 신용등급은 쓰지 않아요',
+  },
+  {
+    label: '거주 평판',
+    value: 25,
+    color: '#5B79B0',
+    desc: '이전 계약 완주와 정시 납부. 이력이 없어도 불이익 없이 환산해요',
+  },
+  {
+    label: '본인 인증',
+    value: 15,
+    color: '#8FA6CC',
+    desc: '통신사 또는 공동인증, 얼굴 확인. 한 번 하면 갱신 전까지 유지돼요',
+  },
 ]
 
 const NOT_COLLECTED = ['나이', '성별', '국적', '학력', '직장 이름', '가족 관계', '금융 신용등급']
@@ -459,8 +749,12 @@ export function WaitlistLanding({ initialCount }: { initialCount: number }) {
             ))}
           </div>
           <div className="mt-8 grid items-center gap-8 sm:grid-cols-2">
-            <div className="flex aspect-[4/3] items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50">
-              <p className="text-sm text-slate-400">{ROLE_DETAILS[activeRole].mockupLabel} (준비 중)</p>
+            <div>
+              {(() => {
+                const Mockup = ROLE_MOCKUP[activeRole]
+                return <Mockup />
+              })()}
+              <p className="mt-3 text-center text-xs text-slate-400">개발 중인 화면 · 합성 예시 데이터</p>
             </div>
             <ul className="space-y-4">
               {ROLE_DETAILS[activeRole].benefits.map((b) => (
@@ -499,14 +793,17 @@ export function WaitlistLanding({ initialCount }: { initialCount: number }) {
                     </div>
                   ))}
                 </div>
-                <ul className="mt-5 space-y-2.5">
+                <ul className="mt-5 space-y-3.5">
                   {DATASCORE.map((d) => (
-                    <li key={d.label} className="flex items-center gap-3 text-sm">
-                      <span className="h-3 w-3 rounded-sm" style={{ backgroundColor: d.color }} aria-hidden="true" />
-                      <span className="font-medium">{d.label}</span>
-                      <span className="ml-auto font-bold" style={{ color: AMBER }}>
-                        {d.value}점
-                      </span>
+                    <li key={d.label}>
+                      <div className="flex items-center gap-3 text-sm">
+                        <span className="h-3 w-3 rounded-sm" style={{ backgroundColor: d.color }} aria-hidden="true" />
+                        <span className="font-medium">{d.label}</span>
+                        <span className="ml-auto font-bold" style={{ color: AMBER }}>
+                          {d.value}점
+                        </span>
+                      </div>
+                      <p className="mt-0.5 pl-6 text-xs leading-relaxed text-white/50">{d.desc}</p>
                     </li>
                   ))}
                 </ul>

@@ -94,7 +94,7 @@ export default function PrivacyPage() {
               개인정보 보호와 관련한 문의는 아래 연락처로 문의해 주시기 바랍니다.
             </p>
             <p>개인정보 보호책임자: 김다운</p>
-            <p>이메일: privacy@ipjuhae.com</p>
+            <p>이메일: ipjuhae.official@gmail.com</p>
           </section>
 
           <p className="text-xs text-muted-foreground pt-4 border-t">
