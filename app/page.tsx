@@ -3,11 +3,11 @@ import { queryOne } from '@/lib/db'
 import { WaitlistLanding } from '@/components/landing/waitlist-landing'
 
 export const metadata: Metadata = {
-  title: '입주해 — 믿을 만한 세입자인지, 믿을 만한 집인지. 이제 확인할 수 있습니다',
+  title: '입주해 — 믿을 만한 세입자인지, 믿을 만한 집인지 이제 확인할 수 있습니다',
   description:
     '임차인은 증명하고, 임대인은 확인하고, 중개사는 검증합니다. 임대차 거래의 신뢰를 만드는 입주해, 지금 사전 신청하고 얼리 혜택을 받으세요.',
   openGraph: {
-    title: '입주해 — 믿을 만한 세입자인지, 믿을 만한 집인지. 이제 확인할 수 있습니다',
+    title: '입주해 — 믿을 만한 세입자인지, 믿을 만한 집인지 이제 확인할 수 있습니다',
     description:
       '임차인은 증명하고, 임대인은 확인하고, 중개사는 검증합니다. 지금 사전 신청하고 얼리 혜택을 받으세요.',
   },

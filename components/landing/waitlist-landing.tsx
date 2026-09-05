@@ -11,7 +11,7 @@ const AMBER = '#E9A23B'
 // 히어로 카피 후보 (디자인 시안 A/B/C — 기본 B)
 // A: "계약서에 도장 찍기 전에, 서로를 확인하세요"
 // C: "임대차 거래의 불신을 끝냅니다"
-const HEADLINE = ['믿을 만한 세입자인지, 믿을 만한 집인지.', '이제 확인할 수 있습니다']
+const HEADLINE = ['믿을 만한 세입자인지, 믿을 만한 집인지', '이제 확인할 수 있습니다']
 
 const COUNT_DISPLAY_THRESHOLD = 30
 
@@ -359,7 +359,7 @@ const FLOW_STEPS = [
   { step: '3', who: '공인중개사', what: '카드 진위를 검증해요', detail: '확인된 정보인지 검증해 안심 계약을 도와요' },
 ]
 
-const DATASCORE = [
+const DATASCORE_TENANT = [
   {
     label: '소득 안정성',
     value: 30,
@@ -383,6 +383,33 @@ const DATASCORE = [
     value: 15,
     color: '#8FA6CC',
     desc: '통신사 또는 공동인증, 얼굴 확인. 한 번 하면 갱신 전까지 유지돼요',
+  },
+]
+
+const DATASCORE_LANDLORD = [
+  {
+    label: '권리관계 안정',
+    value: 30,
+    color: '#E9A23B',
+    desc: '등기부 기반으로 근저당·압류 같은 권리관계를 확인해요',
+  },
+  {
+    label: '체납 이력',
+    value: 30,
+    color: '#F0BC6E',
+    desc: '세금 체납과 보증사고 기록을 확인해요',
+  },
+  {
+    label: '임대 평판',
+    value: 25,
+    color: '#5B79B0',
+    desc: '보증금 반환과 계약 분쟁 이력을 확인해요',
+  },
+  {
+    label: '소유·본인 인증',
+    value: 15,
+    color: '#8FA6CC',
+    desc: '실소유 여부와 본인 인증을 확인해요',
   },
 ]
 
@@ -780,70 +807,77 @@ export function WaitlistLanding({ initialCount }: { initialCount: number }) {
               서로의 신뢰를 100점으로 증명하는 <span style={{ color: AMBER }}>DataScore</span>
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-center leading-relaxed text-white/70">
-              한쪽만 검증받지 않습니다. 세입자는 실제 임대 생활 — 납부 습관, 계약 완주, 거주 평판 — 로,
-              임대인과 집은 임대 이력과 공적 기록으로. 양쪽 모두 같은 원칙으로 점수화하는 입주해 고유의
-              스코어링 모델입니다.
+              세입자는 납부 습관과 거주 평판으로, 임대인과 집은 임대 이력과 공적 기록으로 서로를 증명합니다.
+              <br className="hidden sm:block" />
+              임대차에 필요한 신뢰만 골라 100점으로 만든 입주해 고유의 스코어링입니다.
             </p>
             <div className="mt-12 grid gap-10 lg:grid-cols-2">
-              <div>
-                <p className="mb-3 text-sm font-bold" style={{ color: AMBER }}>
-                  세입자 DataScore 배점
-                </p>
-                <div className="flex h-14 w-full overflow-hidden rounded-xl" role="img" aria-label="세입자 DataScore 구성 비율">
-                  {DATASCORE.map((d) => (
-                    <div
-                      key={d.label}
-                      className="flex items-center justify-center text-xs font-bold text-[#0C2247]"
-                      style={{ width: `${d.value}%`, backgroundColor: d.color }}
-                    >
-                      {d.value}
-                    </div>
-                  ))}
-                </div>
-                <ul className="mt-5 space-y-3.5">
-                  {DATASCORE.map((d) => (
-                    <li key={d.label}>
-                      <div className="flex items-center gap-3 text-sm">
-                        <span className="h-3 w-3 rounded-sm" style={{ backgroundColor: d.color }} aria-hidden="true" />
-                        <span className="font-medium">{d.label}</span>
-                        <span className="ml-auto font-bold" style={{ color: AMBER }}>
-                          {d.value}점
-                        </span>
-                      </div>
-                      <p className="mt-0.5 pl-6 text-xs leading-relaxed text-white/50">{d.desc}</p>
-                    </li>
-                  ))}
-                </ul>
-                <p className="mt-4 text-xs text-white/40">구성 항목과 비율은 정식 출시 시점에 일부 조정될 수 있습니다.</p>
-              </div>
-              <div className="rounded-2xl border border-white/15 bg-white/5 p-7">
-                <h3 className="text-lg font-bold">
-                  왜 <span style={{ color: AMBER }}>DataScore</span>인가
-                </h3>
-                <ul className="mt-5 space-y-4">
-                  {[
-                    ['양방향 점수', '세입자만 검증받지 않습니다. 임대인과 집도 같은 원칙으로 점수화됩니다.'],
-                    ['블랙박스가 없는 점수', '산정 기준을 전부 공개하고, 무엇을 하면 몇 점이 오르는지까지 보여줍니다.'],
-                    ['서류 대신 점수', '원본 서류는 상대에게 가지 않습니다. 증명은 되고, 개인정보는 남지 않습니다.'],
-                    ['이력이 없어도 불이익 없음', '거주 이력이 비어 있으면 남은 항목으로 100점을 환산합니다.'],
-                    ['살아있는 점수', '매월 갱신되고, 오르내린 이유가 기록으로 남습니다.'],
-                  ].map(([t, d]) => (
-                    <li key={t} className="flex items-start gap-3">
-                      <span
-                        className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold text-[#0C2247]"
-                        style={{ backgroundColor: AMBER }}
-                        aria-hidden="true"
+              {[
+                { title: '세입자 DataScore', items: DATASCORE_TENANT },
+                { title: '임대인 · 집 DataScore', items: DATASCORE_LANDLORD },
+              ].map(({ title, items }) => (
+                <div key={title}>
+                  <p className="mb-3 text-sm font-bold" style={{ color: AMBER }}>
+                    {title}
+                  </p>
+                  <div className="flex h-14 w-full overflow-hidden rounded-xl" role="img" aria-label={`${title} 구성 비율`}>
+                    {items.map((d) => (
+                      <div
+                        key={d.label}
+                        className="flex items-center justify-center text-xs font-bold text-[#0C2247]"
+                        style={{ width: `${d.value}%`, backgroundColor: d.color }}
                       >
-                        ✓
-                      </span>
-                      <div>
-                        <p className="text-sm font-semibold text-white/90">{t}</p>
-                        <p className="mt-0.5 text-xs leading-relaxed text-white/55">{d}</p>
+                        {d.value}
                       </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+                    ))}
+                  </div>
+                  <ul className="mt-5 space-y-3.5">
+                    {items.map((d) => (
+                      <li key={d.label}>
+                        <div className="flex items-center gap-3 text-sm">
+                          <span className="h-3 w-3 rounded-sm" style={{ backgroundColor: d.color }} aria-hidden="true" />
+                          <span className="font-medium">{d.label}</span>
+                          <span className="ml-auto font-bold" style={{ color: AMBER }}>
+                            {d.value}점
+                          </span>
+                        </div>
+                        <p className="mt-0.5 pl-6 text-xs leading-relaxed text-white/50">{d.desc}</p>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+            <p className="mt-6 text-center text-xs text-white/40">
+              구성 항목과 비율은 정식 출시 시점에 일부 조정될 수 있습니다.
+            </p>
+            <div className="mt-10 rounded-2xl border border-white/15 bg-white/5 p-7">
+              <h3 className="text-lg font-bold">
+                왜 <span style={{ color: AMBER }}>DataScore</span>인가
+              </h3>
+              <ul className="mt-5 grid gap-x-8 gap-y-4 sm:grid-cols-2">
+                {[
+                  ['양방향 점수', '세입자만 검증받지 않습니다. 임대인과 집도 같은 원칙으로 점수화됩니다.'],
+                  ['블랙박스가 없는 점수', '산정 기준을 전부 공개하고, 무엇을 하면 몇 점이 오르는지까지 보여줍니다.'],
+                  ['서류 대신 점수', '원본 서류는 상대에게 가지 않습니다. 증명은 되고, 개인정보는 남지 않습니다.'],
+                  ['이력이 없어도 불이익 없음', '거주 이력이 비어 있으면 남은 항목으로 100점을 환산합니다.'],
+                  ['살아있는 점수', '매월 갱신되고, 오르내린 이유가 기록으로 남습니다.'],
+                ].map(([t, d]) => (
+                  <li key={t} className="flex items-start gap-3">
+                    <span
+                      className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold text-[#0C2247]"
+                      style={{ backgroundColor: AMBER }}
+                      aria-hidden="true"
+                    >
+                      ✓
+                    </span>
+                    <div>
+                      <p className="text-sm font-semibold text-white/90">{t}</p>
+                      <p className="mt-0.5 text-xs leading-relaxed text-white/55">{d}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
             </div>
           </FadeIn>
         </div>
