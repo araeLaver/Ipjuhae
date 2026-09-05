@@ -54,6 +54,7 @@ const migrations = [
   'migration-037-users-deleted-at.sql',
   'migration-038-push-tokens.sql',
   'migration-039-waitlist-landing.sql',
+  'migration-040-feature-requests.sql',
 ] as const
 
 const args = process.argv.slice(2)

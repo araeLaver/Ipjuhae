@@ -14,6 +14,7 @@ import {
   Sparkles,
 } from 'lucide-react'
 import { LogoSymbol } from '@/components/brand/logo-symbol'
+import { FeatureRequestForm } from '@/components/feedback/feature-request-form'
 
 // 로그인 이후 화면을 회원가입 없이 구경할 수 있는 미리보기.
 // 모든 데이터는 합성 예시이며 실제 API를 호출하지 않는다.
@@ -414,7 +415,11 @@ export function ServicePreview() {
 
         {pane.render()}
 
-        <div className="mt-10 rounded-2xl p-6 text-center text-white" style={{ backgroundColor: '#0C2247' }}>
+        <div className="mt-10">
+          <FeatureRequestForm source="preview" />
+        </div>
+
+        <div className="mt-6 rounded-2xl p-6 text-center text-white" style={{ backgroundColor: '#0C2247' }}>
           <p className="text-lg font-bold">마음에 드셨나요?</p>
           <p className="mt-1 text-sm text-white/70">사전 신청하면 오픈 시 가장 먼저 초대해드립니다.</p>
           <Link

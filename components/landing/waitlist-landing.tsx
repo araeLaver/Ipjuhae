@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { FeatureRequestForm } from '@/components/feedback/feature-request-form'
 
 // 디자인 기준: claude.ai 디자인 시안 '입주해 사전 대기열'
 // 딥 블루 #0C2247 + 앰버 포인트 #E9A23B, Pretendard, 모바일 우선 원페이지
@@ -933,6 +934,13 @@ export function WaitlistLanding({ initialCount }: { initialCount: number }) {
               </div>
             ))}
           </div>
+        </FadeIn>
+      </section>
+
+      {/* ── 기능 요구사항 소통창구 ─────────────────── */}
+      <section className="mx-auto max-w-3xl px-6 pb-20 sm:px-10 sm:pb-28">
+        <FadeIn>
+          <FeatureRequestForm source="landing" />
         </FadeIn>
       </section>
 
