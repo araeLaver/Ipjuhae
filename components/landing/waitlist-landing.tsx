@@ -370,7 +370,7 @@ const DATASCORE = [
     label: '납부 이력',
     value: 30,
     color: '#F0BC6E',
-    desc: '최근 24개월 통신·공과금 연체 여부. 금융 신용등급은 쓰지 않아요',
+    desc: '최근 24개월 통신·공과금 납부 습관을 점수로 만들어요',
   },
   {
     label: '거주 평판',
@@ -386,8 +386,6 @@ const DATASCORE = [
   },
 ]
 
-const NOT_COLLECTED = ['나이', '성별', '국적', '학력', '직장 이름', '가족 관계', '금융 신용등급']
-
 const FAQS = [
   {
     q: '무료인가요?',
@@ -402,8 +400,8 @@ const FAQS = [
     a: '지금 베타 준비 중입니다. 사전 신청자에게 준비되는 대로 순서대로 초대 메일을 보내드려요.',
   },
   {
-    q: '신용등급을 조회하는 건가요?',
-    a: '아니요. 입주해는 금융 신용등급을 조회하지도, 수집하지도 않습니다. 소득 안정성, 납부 이력, 거주 평판, 본인 인증 등 임대차에 필요한 신뢰 정보만 다뤄요.',
+    q: 'DataScore는 신용점수와 뭐가 다른가요?',
+    a: 'DataScore는 소득 안정성, 납부 이력, 거주 평판, 본인 인증 등 임대차에 필요한 신뢰 정보를 기준으로 산정되는 입주해 고유의 점수입니다. 산정 기준은 전부 공개되며, 서비스 발전에 따라 조정될 수 있어요.',
   },
   {
     q: '중개사무소도 쓸 수 있나요?',
@@ -779,8 +777,12 @@ export function WaitlistLanding({ initialCount }: { initialCount: number }) {
         <div className="mx-auto max-w-5xl px-6 sm:px-10">
           <FadeIn>
             <h2 className="text-center text-2xl font-bold sm:text-3xl">
-              100점의 <span style={{ color: AMBER }}>DataScore</span>, 딱 네 가지만 봅니다
+              세입자의 신뢰를 100점으로 증명하는 <span style={{ color: AMBER }}>DataScore</span>
             </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-center leading-relaxed text-white/70">
+              금융 신용점수가 담지 못하는 실제 임대 생활 — 납부 습관, 계약 완주, 거주 평판 — 을 점수로
+              만든 입주해 고유의 스코어링 모델입니다.
+            </p>
             <div className="mt-12 grid gap-10 lg:grid-cols-2">
               <div>
                 <div className="flex h-14 w-full overflow-hidden rounded-xl" role="img" aria-label="DataScore 구성 비율">
@@ -812,16 +814,27 @@ export function WaitlistLanding({ initialCount }: { initialCount: number }) {
               </div>
               <div className="rounded-2xl border border-white/15 bg-white/5 p-7">
                 <h3 className="text-lg font-bold">
-                  보지 <span style={{ color: AMBER }}>않는</span> 것
+                  왜 <span style={{ color: AMBER }}>DataScore</span>인가
                 </h3>
-                <p className="mt-1.5 text-sm text-white/60">아래 정보는 수집조차 하지 않습니다.</p>
-                <ul className="mt-5 grid grid-cols-2 gap-x-4 gap-y-3">
-                  {NOT_COLLECTED.map((n) => (
-                    <li key={n} className="flex items-center gap-2.5 text-sm font-medium text-white/85">
-                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs text-white/60" aria-hidden="true">
-                        ✕
+                <ul className="mt-5 space-y-4">
+                  {[
+                    ['블랙박스가 없는 점수', '산정 기준을 전부 공개하고, 무엇을 하면 몇 점이 오르는지까지 보여줍니다.'],
+                    ['서류 대신 점수', '원본 서류는 상대에게 가지 않습니다. 증명은 되고, 개인정보는 남지 않습니다.'],
+                    ['이력이 없어도 불이익 없음', '거주 이력이 비어 있으면 남은 항목으로 100점을 환산합니다.'],
+                    ['살아있는 점수', '매월 갱신되고, 오르내린 이유가 기록으로 남습니다.'],
+                  ].map(([t, d]) => (
+                    <li key={t} className="flex items-start gap-3">
+                      <span
+                        className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold text-[#0C2247]"
+                        style={{ backgroundColor: AMBER }}
+                        aria-hidden="true"
+                      >
+                        ✓
                       </span>
-                      {n}
+                      <div>
+                        <p className="text-sm font-semibold text-white/90">{t}</p>
+                        <p className="mt-0.5 text-xs leading-relaxed text-white/55">{d}</p>
+                      </div>
                     </li>
                   ))}
                 </ul>

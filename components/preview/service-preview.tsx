@@ -218,7 +218,7 @@ function TrustCenterPane() {
         {
           icon: FileText,
           title: '산정 기준은 공개돼 있어요',
-          desc: '소득 30 · 납부 30 · 평판 25 · 인증 15. 나이·성별·학력·신용등급은 수집하지 않습니다.',
+          desc: '소득 30 · 납부 30 · 평판 25 · 인증 15. 배점과 기준은 서비스 발전에 따라 조정될 수 있습니다.',
         },
       ].map((t) => (
         <SectionCard key={t.title} className="flex items-start gap-3">
