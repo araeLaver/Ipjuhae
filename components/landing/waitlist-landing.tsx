@@ -641,7 +641,7 @@ export function WaitlistLanding({ initialCount }: { initialCount: number }) {
               출시 준비 중
             </span>
             <a
-              href="/home"
+              href="/preview"
               className="rounded-full bg-white/10 px-3.5 py-1.5 text-xs font-medium text-white/90 transition hover:bg-white/20"
             >
               서비스 미리보기 →
@@ -950,7 +950,7 @@ export function WaitlistLanding({ initialCount }: { initialCount: number }) {
             <a href="/privacy" className="underline underline-offset-2 hover:text-white">
               개인정보처리방침
             </a>
-            <a href="/home" className="hover:text-white">
+            <a href="/preview" className="hover:text-white">
               서비스 미리보기
             </a>
           </div>
