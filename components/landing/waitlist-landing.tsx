@@ -839,12 +839,6 @@ export function WaitlistLanding({ initialCount }: { initialCount: number }) {
             Trust Card의 정보는 카드 주인이 허락한 범위에서, 계약 검토에 필요한 때만 공개됩니다. 전체 공개가 아니라
             선택 공개가 기본값입니다.
           </p>
-          <span
-            className="mt-6 inline-block rounded-full border px-4 py-2 text-sm font-semibold"
-            style={{ borderColor: AMBER, color: '#B87A18' }}
-          >
-            특허 출원 중
-          </span>
         </FadeIn>
       </section>
 
