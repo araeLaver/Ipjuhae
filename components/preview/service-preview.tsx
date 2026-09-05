@@ -358,12 +358,6 @@ export function ServicePreview() {
             >
               사전 신청하고 초대받기
             </Link>
-            <Link
-              href="/home"
-              className="rounded-lg border border-white/25 px-4 py-1.5 text-xs font-medium text-white/90 hover:bg-white/10"
-            >
-              매물 검색 홈
-            </Link>
           </div>
         </div>
       </div>
