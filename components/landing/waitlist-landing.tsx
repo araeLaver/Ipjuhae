@@ -401,7 +401,7 @@ const FAQS = [
   },
   {
     q: 'DataScore는 신용점수와 뭐가 다른가요?',
-    a: 'DataScore는 소득 안정성, 납부 이력, 거주 평판, 본인 인증 등 임대차에 필요한 신뢰 정보를 기준으로 산정되는 입주해 고유의 점수입니다. 산정 기준은 전부 공개되며, 서비스 발전에 따라 조정될 수 있어요.',
+    a: 'DataScore는 임대차에 필요한 신뢰 정보를 기준으로 산정되는 입주해 고유의 점수입니다. 세입자는 소득 안정성·납부 이력·거주 평판·본인 인증으로, 임대인과 집은 임대 이력과 공적 기록으로 — 양쪽 모두 점수화됩니다. 산정 기준은 전부 공개되며, 서비스 발전에 따라 조정될 수 있어요.',
   },
   {
     q: '중개사무소도 쓸 수 있나요?',
@@ -777,15 +777,19 @@ export function WaitlistLanding({ initialCount }: { initialCount: number }) {
         <div className="mx-auto max-w-5xl px-6 sm:px-10">
           <FadeIn>
             <h2 className="text-center text-2xl font-bold sm:text-3xl">
-              세입자의 신뢰를 100점으로 증명하는 <span style={{ color: AMBER }}>DataScore</span>
+              서로의 신뢰를 100점으로 증명하는 <span style={{ color: AMBER }}>DataScore</span>
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-center leading-relaxed text-white/70">
-              금융 신용점수가 담지 못하는 실제 임대 생활 — 납부 습관, 계약 완주, 거주 평판 — 을 점수로
-              만든 입주해 고유의 스코어링 모델입니다.
+              한쪽만 검증받지 않습니다. 세입자는 실제 임대 생활 — 납부 습관, 계약 완주, 거주 평판 — 로,
+              임대인과 집은 임대 이력과 공적 기록으로. 양쪽 모두 같은 원칙으로 점수화하는 입주해 고유의
+              스코어링 모델입니다.
             </p>
             <div className="mt-12 grid gap-10 lg:grid-cols-2">
               <div>
-                <div className="flex h-14 w-full overflow-hidden rounded-xl" role="img" aria-label="DataScore 구성 비율">
+                <p className="mb-3 text-sm font-bold" style={{ color: AMBER }}>
+                  세입자 DataScore 배점
+                </p>
+                <div className="flex h-14 w-full overflow-hidden rounded-xl" role="img" aria-label="세입자 DataScore 구성 비율">
                   {DATASCORE.map((d) => (
                     <div
                       key={d.label}
@@ -818,6 +822,7 @@ export function WaitlistLanding({ initialCount }: { initialCount: number }) {
                 </h3>
                 <ul className="mt-5 space-y-4">
                   {[
+                    ['양방향 점수', '세입자만 검증받지 않습니다. 임대인과 집도 같은 원칙으로 점수화됩니다.'],
                     ['블랙박스가 없는 점수', '산정 기준을 전부 공개하고, 무엇을 하면 몇 점이 오르는지까지 보여줍니다.'],
                     ['서류 대신 점수', '원본 서류는 상대에게 가지 않습니다. 증명은 되고, 개인정보는 남지 않습니다.'],
                     ['이력이 없어도 불이익 없음', '거주 이력이 비어 있으면 남은 항목으로 100점을 환산합니다.'],
