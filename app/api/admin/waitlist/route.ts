@@ -10,6 +10,15 @@ interface WaitlistRow {
   created_at: string
   invited_at: string | null
   signed_up_at: string | null
+  utm_source: string | null
+  referrer_host: string | null
+}
+
+/** 채널별 랜딩 방문 → 신청 전환 */
+interface SourceRow {
+  source: string
+  visits: string
+  signups: string
 }
 
 interface StatsRow {
@@ -38,7 +47,8 @@ export async function GET(request: Request) {
     else if (status === 'signed_up') whereClause = 'WHERE signed_up_at IS NOT NULL'
 
     const rows = await query<WaitlistRow>(
-      `SELECT id, email, user_type, created_at, invited_at, signed_up_at
+      `SELECT id, email, user_type, created_at, invited_at, signed_up_at,
+              utm_source, referrer_host
        FROM waitlist ${whereClause}
        ORDER BY created_at ASC
        LIMIT $1 OFFSET $2`,
@@ -54,8 +64,41 @@ export async function GET(request: Request) {
       FROM waitlist
     `)
 
+    // 채널별 방문·신청. 방문은 랜딩(/) page_view 기준.
+    const sources = await query<SourceRow>(`
+      WITH visits AS (
+        SELECT COALESCE(NULLIF(properties->>'utm_source', ''), 'direct') AS source,
+               COUNT(*) AS visits
+        FROM analytics_events
+        WHERE event_name = 'page_view' AND properties->>'path' = '/'
+        GROUP BY 1
+      ),
+      signups AS (
+        SELECT COALESCE(NULLIF(utm_source, ''), 'direct') AS source,
+               COUNT(*) AS signups
+        FROM waitlist
+        GROUP BY 1
+      )
+      SELECT COALESCE(v.source, s.source) AS source,
+             COALESCE(v.visits, 0)::text AS visits,
+             COALESCE(s.signups, 0)::text AS signups
+      FROM visits v
+      FULL OUTER JOIN signups s ON v.source = s.source
+      ORDER BY COALESCE(v.visits, 0) DESC, COALESCE(s.signups, 0) DESC
+    `)
+
     return NextResponse.json({
       waitlist: rows,
+      sources: sources.map((r) => {
+        const visits = parseInt(r.visits, 10)
+        const signups = parseInt(r.signups, 10)
+        return {
+          source: r.source,
+          visits,
+          signups,
+          conversionRate: visits > 0 ? Math.round((signups / visits) * 1000) / 10 : null,
+        }
+      }),
       stats: {
         total: parseInt(stats?.total ?? '0'),
         invited: parseInt(stats?.invited ?? '0'),

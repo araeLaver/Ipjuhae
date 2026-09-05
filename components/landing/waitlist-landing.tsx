@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { FeatureRequestForm } from '@/components/feedback/feature-request-form'
+import { getAttribution } from '@/lib/attribution'
 
 // 디자인 기준: claude.ai 디자인 시안 '입주해 사전 대기열'
 // 딥 블루 #0C2247 + 앰버 포인트 #E9A23B, Pretendard, 모바일 우선 원페이지
@@ -510,6 +511,7 @@ function SignupForm({ onSuccess }: { onSuccess: (count: number) => void }) {
           user_type: role,
           name: name || undefined,
           consent,
+          ...getAttribution(),
         }),
       })
       const data = (await res.json()) as { message?: string; error?: string; count?: number }
@@ -604,7 +606,7 @@ function SignupForm({ onSuccess }: { onSuccess: (count: number) => void }) {
         <span>
           개인정보 수집·이용에 동의합니다 <span className="text-[#E9A23B]">*</span>
           <span className="mt-0.5 block text-xs text-white/50">
-            수집 항목: 휴대폰 번호, 역할, 이름·이메일(선택) · 목적: 사전 신청 접수와 초대·혜택 안내(문자/이메일) ·
+            수집 항목: 휴대폰 번호, 역할, 이름·이메일(선택), 유입 경로 · 목적: 사전 신청 접수와 초대·혜택 안내(문자/이메일) ·
             서비스 정식 오픈 후 6개월 또는 동의 철회 시까지 보관 후 파기
           </span>
         </span>

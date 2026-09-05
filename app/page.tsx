@@ -11,6 +11,13 @@ export const metadata: Metadata = {
     description:
       '임차인은 증명하고, 임대인은 확인하고, 중개사는 검증합니다. 지금 사전 신청하고 얼리 혜택을 받으세요.',
   },
+  // twitter를 따로 안 주면 루트 레이아웃의 옛 문구가 그대로 나간다
+  twitter: {
+    card: 'summary_large_image',
+    title: '입주해 — 믿을 만한 세입자인지, 믿을 만한 집인지 이제 확인할 수 있습니다',
+    description:
+      '임차인은 증명하고, 임대인은 확인하고, 중개사는 검증합니다. 지금 사전 신청하고 얼리 혜택을 받으세요.',
+  },
 }
 
 export const revalidate = 60

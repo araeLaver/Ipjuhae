@@ -1,8 +1,9 @@
 import { logger } from '@/lib/logger'
 import { NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
+import { sanitizeTag } from '@/lib/attribution'
 
-const WAITLIST_CONSENT_VERSION = 'waitlist-v2-20260903'
+const WAITLIST_CONSENT_VERSION = 'waitlist-v3-20260905'
 
 const VALID_USER_TYPES = ['tenant', 'landlord', 'agent'] as const
 
@@ -30,6 +31,13 @@ export async function POST(request: Request) {
       name?: string
       consent?: boolean
     }
+
+    // 유입 경로. 값이 이상하면 조용히 버린다 — 신청 자체를 막을 이유는 없다.
+    const attribution = body as Record<string, unknown>
+    const utmSource = sanitizeTag(attribution.utm_source as string | undefined)
+    const utmMedium = sanitizeTag(attribution.utm_medium as string | undefined)
+    const utmCampaign = sanitizeTag(attribution.utm_campaign as string | undefined)
+    const referrerHost = sanitizeTag(attribution.referrer_host as string | undefined)
 
     if (!phone || typeof phone !== 'string') {
       return NextResponse.json({ error: '전화번호를 입력해주세요' }, { status: 400 })
@@ -62,9 +70,21 @@ export async function POST(request: Request) {
     const trimmedName = typeof name === 'string' ? name.trim().slice(0, 50) : null
 
     await query(
-      `INSERT INTO waitlist (phone, email, user_type, name, consent_at, consent_version)
-       VALUES ($1, $2, $3, $4, NOW(), $5)`,
-      [normalizedPhone, normalizedEmail, user_type, trimmedName || null, WAITLIST_CONSENT_VERSION]
+      `INSERT INTO waitlist
+         (phone, email, user_type, name, consent_at, consent_version,
+          utm_source, utm_medium, utm_campaign, referrer_host)
+       VALUES ($1, $2, $3, $4, NOW(), $5, $6, $7, $8, $9)`,
+      [
+        normalizedPhone,
+        normalizedEmail,
+        user_type,
+        trimmedName || null,
+        WAITLIST_CONSENT_VERSION,
+        utmSource,
+        utmMedium,
+        utmCampaign,
+        referrerHost,
+      ]
     )
 
     const result = await queryOne<{ count: string }>(
