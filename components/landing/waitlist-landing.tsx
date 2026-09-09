@@ -488,8 +488,13 @@ function SignupForm({ onSuccess }: { onSuccess: (count: number) => void }) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
-    if (!/^01[016789][0-9]{7,8}$/.test(phone.replace(/[^0-9]/g, ''))) {
-      setError('올바른 휴대폰 번호를 입력해주세요')
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setError('올바른 이메일 주소를 입력해주세요')
+      return
+    }
+    // 휴대폰은 선택. 적었을 때만 형식을 본다.
+    if (phone.trim() && !/^01[016789][0-9]{7,8}$/.test(phone.replace(/[^0-9]/g, ''))) {
+      setError('휴대폰 번호 형식을 확인해주세요')
       return
     }
     if (!role) {
@@ -506,8 +511,8 @@ function SignupForm({ onSuccess }: { onSuccess: (count: number) => void }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          phone,
-          email: email || undefined,
+          email,
+          phone: phone.trim() || undefined,
           user_type: role,
           name: name || undefined,
           consent,
@@ -544,34 +549,35 @@ function SignupForm({ onSuccess }: { onSuccess: (count: number) => void }) {
         />
       </div>
       <div>
+        <label htmlFor="wl-email" className="mb-1.5 block text-sm font-medium text-white/90">
+          이메일 <span className="text-[#E9A23B]">*</span>
+        </label>
+        <input
+          id="wl-email"
+          type="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="you@example.com"
+          autoComplete="email"
+          className="w-full rounded-lg border border-white/20 bg-white/10 px-4 py-3 text-white placeholder-white/40 outline-none transition focus:border-[#E9A23B] focus:ring-1 focus:ring-[#E9A23B]"
+        />
+        <p className="mt-1 text-xs text-white/50">베타 초대 메일을 여기로 보내드려요</p>
+      </div>
+      <div>
         <label htmlFor="wl-phone" className="mb-1.5 block text-sm font-medium text-white/90">
-          휴대폰 번호 <span className="text-[#E9A23B]">*</span>
+          휴대폰 번호 <span className="font-normal text-white/50">(선택)</span>
         </label>
         <input
           id="wl-phone"
           type="tel"
-          required
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
           placeholder="010-1234-5678"
           autoComplete="tel"
           className="w-full rounded-lg border border-white/20 bg-white/10 px-4 py-3 text-white placeholder-white/40 outline-none transition focus:border-[#E9A23B] focus:ring-1 focus:ring-[#E9A23B]"
         />
-        <p className="mt-1 text-xs text-white/50">초대와 혜택 안내를 문자로 보내드려요</p>
-      </div>
-      <div>
-        <label htmlFor="wl-email" className="mb-1.5 block text-sm font-medium text-white/90">
-          이메일 <span className="font-normal text-white/50">(선택)</span>
-        </label>
-        <input
-          id="wl-email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="you@example.com"
-          className="w-full rounded-lg border border-white/20 bg-white/10 px-4 py-3 text-white placeholder-white/40 outline-none transition focus:border-[#E9A23B] focus:ring-1 focus:ring-[#E9A23B]"
-        />
-        <p className="mt-1 text-xs text-white/50">남겨주시면 베타 초대 메일도 함께 보내드려요</p>
+        <p className="mt-1 text-xs text-white/50">남겨주시면 문자로도 알려드려요</p>
       </div>
       <fieldset>
         <legend className="mb-1.5 block text-sm font-medium text-white/90">
@@ -606,7 +612,7 @@ function SignupForm({ onSuccess }: { onSuccess: (count: number) => void }) {
         <span>
           개인정보 수집·이용에 동의합니다 <span className="text-[#E9A23B]">*</span>
           <span className="mt-0.5 block text-xs text-white/50">
-            수집 항목: 휴대폰 번호, 역할, 이름·이메일(선택), 유입 경로 · 목적: 사전 신청 접수와 초대·혜택 안내(문자/이메일) ·
+            수집 항목: 이메일, 역할, 이름·휴대폰 번호(선택), 유입 경로 · 목적: 사전 신청 접수와 초대·혜택 안내(이메일/문자) ·
             서비스 정식 오픈 후 6개월 또는 동의 철회 시까지 보관 후 파기
           </span>
         </span>

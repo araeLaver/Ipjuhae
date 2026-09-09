@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import { query, queryOne } from '@/lib/db'
 import { sanitizeTag } from '@/lib/attribution'
 
-const WAITLIST_CONSENT_VERSION = 'waitlist-v3-20260905'
+const WAITLIST_CONSENT_VERSION = 'waitlist-v4-20260910'
 
 const VALID_USER_TYPES = ['tenant', 'landlord', 'agent'] as const
 
@@ -39,21 +39,25 @@ export async function POST(request: Request) {
     const utmCampaign = sanitizeTag(attribution.utm_campaign as string | undefined)
     const referrerHost = sanitizeTag(attribution.referrer_host as string | undefined)
 
-    if (!phone || typeof phone !== 'string') {
-      return NextResponse.json({ error: '전화번호를 입력해주세요' }, { status: 400 })
+    // 이메일이 필수, 휴대폰이 선택이다. 번호를 먼저 요구하면 신청 자체를 안 한다.
+    if (!email || typeof email !== 'string') {
+      return NextResponse.json({ error: '이메일을 입력해주세요' }, { status: 400 })
+    }
+    const normalizedEmail = email.toLowerCase().trim()
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      return NextResponse.json({ error: '올바른 이메일 형식이 아닙니다' }, { status: 400 })
     }
 
-    const normalizedPhone = phone.replace(/[^0-9]/g, '')
-    if (!/^01[016789][0-9]{7,8}$/.test(normalizedPhone)) {
-      return NextResponse.json({ error: '올바른 휴대폰 번호 형식이 아닙니다' }, { status: 400 })
-    }
-
-    let normalizedEmail: string | null = null
-    if (email !== undefined && email !== null && email !== '') {
-      if (typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        return NextResponse.json({ error: '올바른 이메일 형식이 아닙니다' }, { status: 400 })
+    let normalizedPhone: string | null = null
+    if (phone !== undefined && phone !== null && phone !== '') {
+      if (typeof phone !== 'string') {
+        return NextResponse.json({ error: '올바른 휴대폰 번호 형식이 아닙니다' }, { status: 400 })
       }
-      normalizedEmail = email.toLowerCase().trim()
+      const digits = phone.replace(/[^0-9]/g, '')
+      if (digits && !/^01[016789][0-9]{7,8}$/.test(digits)) {
+        return NextResponse.json({ error: '올바른 휴대폰 번호 형식이 아닙니다' }, { status: 400 })
+      }
+      normalizedPhone = digits || null
     }
 
     if (!user_type || !VALID_USER_TYPES.includes(user_type as (typeof VALID_USER_TYPES)[number])) {
@@ -103,7 +107,11 @@ export async function POST(request: Request) {
       'code' in error &&
       (error as { code: string }).code === '23505'
     ) {
-      return NextResponse.json({ error: '이미 신청하신 연락처입니다' }, { status: 409 })
+      const constraint = (error as { constraint?: string }).constraint ?? ''
+      const message = constraint.includes('phone')
+        ? '이미 신청하신 휴대폰 번호입니다'
+        : '이미 신청하신 이메일입니다'
+      return NextResponse.json({ error: message }, { status: 409 })
     }
     logger.error('[waitlist POST]', { error })
     return NextResponse.json({ error: '서버 오류가 발생했습니다' }, { status: 500 })
