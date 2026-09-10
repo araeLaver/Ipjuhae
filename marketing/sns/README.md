@@ -2,7 +2,7 @@
 
 새 세션/새 터미널에서 이어서 작업할 때 **여기부터 읽으면 됩니다.**
 
-최종 수정: 2026-09-07
+최종 수정: 2026-09-10
 
 ---
 
@@ -38,6 +38,7 @@
 | 연재 · 임대인 노트 (#01~#06) | `marketing/sns/posts/02-series-landlord.md` |
 | 만드는 중 (일지, 번호 없음) | `marketing/sns/posts/03-log.md` |
 | 단발 · 확산용 | `marketing/sns/posts/04-solo.md` |
+| **연재 만화 「지수의 계약」 (#01~#12)** | `marketing/sns/posts/05-series-comic.md` |
 | 캐러셀·릴스커버 디자인 원본 | `marketing/sns/canvas/` (`.dc.html` 16장 + `canvas.json`) |
 | 계측 작업 기록 | `docs/WORK_LOG_20260905_ATTRIBUTION.md` |
 
