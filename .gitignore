@@ -37,3 +37,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# 디자인 캔버스 씨딩 결과물 (2MB, 원본은 .dc.html)
+marketing/sns/canvas/ipjuhae-sns-carousels.html
