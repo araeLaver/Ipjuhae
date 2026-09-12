@@ -59,6 +59,24 @@
 
 ---
 
+## 게시 이미지는 Claude Design에서 만든다
+
+**이게 기본 경로다.** 각 게시물의 「이미지 디자인 프롬프트」 블록을 통째로 복사해
+Claude Design에 붙여넣으면 된다. 블록 하나가 혼자서 완결되어 있어서 다른 곳을 같이 볼 필요가 없다.
+
+프롬프트마다 맨 위에 `[연재 고정]`이 있다. **연재명·회차와 다음 화 예고** 두 가지인데,
+이게 화마다 흔들리면 연재로 읽히지 않는다. 나머지는 캔버스에서 자유롭게 바꿔도 된다.
+
+한 화가 마음에 들게 나오면 그 화를 기준으로 삼고 다음 화 프롬프트를 같은 캔버스에 이어 붙인다.
+
+`marketing/sns/exports/`의 PNG는 프롬프트대로 렌더한 **참고본**이다 — 구도와 글자 위치 확인용이고,
+실제 게시물은 Claude Design 결과물로 간다. 원고를 고친 뒤 참고본을 다시 뽑으려면:
+
+```bash
+node scripts/generate-comic-artboards.mjs   # 만화 원고 → canvas/ComicNN.dc.html
+node scripts/export-sns-artboards.mjs       # 아트보드 전체 → exports/*.png
+```
+
 ## 디자인 캔버스를 다시 만들려면
 
 `marketing/sns/canvas/`의 `.dc.html` 파일을 고친 뒤, Claude Code에서 `/design` 스킬로 다시 씨딩하면 된다.
