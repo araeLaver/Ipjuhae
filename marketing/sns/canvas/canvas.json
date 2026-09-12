@@ -135,6 +135,94 @@
       "w": 1080,
       "h": 1350,
       "page": "page-2"
+    },
+    {
+      "file": "Comic02.dc.html",
+      "x": 1170,
+      "y": 0,
+      "w": 1080,
+      "h": 1350,
+      "page": "page-2"
+    },
+    {
+      "file": "Comic03.dc.html",
+      "x": 2340,
+      "y": 0,
+      "w": 1080,
+      "h": 1350,
+      "page": "page-2"
+    },
+    {
+      "file": "Comic04.dc.html",
+      "x": 3510,
+      "y": 0,
+      "w": 1080,
+      "h": 1350,
+      "page": "page-2"
+    },
+    {
+      "file": "Comic05.dc.html",
+      "x": 4680,
+      "y": 0,
+      "w": 1080,
+      "h": 1350,
+      "page": "page-2"
+    },
+    {
+      "file": "Comic06.dc.html",
+      "x": 5850,
+      "y": 0,
+      "w": 1080,
+      "h": 1350,
+      "page": "page-2"
+    },
+    {
+      "file": "Comic07.dc.html",
+      "x": 7020,
+      "y": 0,
+      "w": 1080,
+      "h": 1350,
+      "page": "page-2"
+    },
+    {
+      "file": "Comic08.dc.html",
+      "x": 8190,
+      "y": 0,
+      "w": 1080,
+      "h": 1350,
+      "page": "page-2"
+    },
+    {
+      "file": "Comic09.dc.html",
+      "x": 9360,
+      "y": 0,
+      "w": 1080,
+      "h": 1350,
+      "page": "page-2"
+    },
+    {
+      "file": "Comic10.dc.html",
+      "x": 10530,
+      "y": 0,
+      "w": 1080,
+      "h": 1350,
+      "page": "page-2"
+    },
+    {
+      "file": "Comic11.dc.html",
+      "x": 11700,
+      "y": 0,
+      "w": 1080,
+      "h": 1350,
+      "page": "page-2"
+    },
+    {
+      "file": "Comic12.dc.html",
+      "x": 12870,
+      "y": 0,
+      "w": 1080,
+      "h": 1350,
+      "page": "page-2"
     }
   ],
   "annotations": [

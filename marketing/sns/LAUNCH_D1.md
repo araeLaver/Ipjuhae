@@ -69,7 +69,13 @@ https://ipjuhae.com/?utm_source=x
 - **본문**: `posts/05-series-comic.md`의 `#01` 캡션
 - 채널: 인스타 + 스레드. X는 이미지 1장 + 짧은 문장으로 줄인다
 
-⚠︎ 만화는 12화 원고가 있지만 **디자인 아트보드는 #01 하나뿐**이다. #02부터는 아트보드를 먼저 만들어야 한다.
+**12화 전편(`exports/Comic01.png` ~ `Comic12.png`)이 다 나와 있다.** 이후 격일로 한 화씩 올리면
+24일치 편성이 이미 확보된 셈이다. 원고를 고치면 아래로 다시 생성한다.
+
+```bash
+node scripts/generate-comic-artboards.mjs   # 원고 → 아트보드
+node scripts/export-sns-artboards.mjs       # 아트보드 → PNG
+```
 
 ---
 
