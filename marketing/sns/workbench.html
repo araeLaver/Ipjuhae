@@ -1,0 +1,5217 @@
+<title>입주해 게시 워크벤치</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gothic+A1:wght@400;700;900&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+:root{
+  --navy:#0C2247; --amber:#E9A23B;
+  --ground:#F2F4F7; --surface:#FFFFFF; --sunken:#E9ECF2;
+  --ink:#101B31; --muted:#66718A; --faint:#939DB2; --line:rgba(12,34,71,.13);
+  --warn:#A8381F; --warn-bg:rgba(168,56,31,.09);
+  --rail:#0C2247; --rail-ink:#EAEEF6; --rail-muted:#8FA0BE;
+  --sans:'Gothic A1','Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;
+  --mono:'IBM Plex Mono','Gothic A1','Apple SD Gothic Neo',ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ground:#080E1C; --surface:#0F192C; --sunken:#0A1223;
+  --ink:#E7ECF4; --muted:#8E9BB4; --faint:#6D7B95; --line:rgba(255,255,255,.13);
+  --warn:#E89076; --warn-bg:rgba(232,144,118,.11);
+  --rail:#060B16; --rail-ink:#E7ECF4; --rail-muted:#7D8CA8;
+}}
+:root[data-theme="dark"]{
+  --ground:#080E1C; --surface:#0F192C; --sunken:#0A1223;
+  --ink:#E7ECF4; --muted:#8E9BB4; --faint:#6D7B95; --line:rgba(255,255,255,.13);
+  --warn:#E89076; --warn-bg:rgba(232,144,118,.11);
+  --rail:#060B16; --rail-ink:#E7ECF4; --rail-muted:#7D8CA8;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
+     -webkit-font-smoothing:antialiased;line-height:1.6}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--amber);outline-offset:2px;border-radius:4px}
+.shell{display:grid;grid-template-columns:288px minmax(0,1fr);min-height:100vh}
+
+.rail{background:var(--rail);color:var(--rail-ink);padding:26px 0 40px;position:sticky;top:0;height:100vh;overflow-y:auto}
+.brand{padding:0 24px 20px;border-bottom:1px solid rgba(255,255,255,.12);margin-bottom:18px}
+.brand-mark{font-size:13px;font-weight:700;letter-spacing:.16em;color:var(--amber);margin:0}
+.brand-name{font-size:23px;font-weight:900;letter-spacing:-.02em;margin:6px 0 10px}
+.brand-note{font-size:13px;color:var(--rail-muted);margin:0;line-height:1.5}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:4px 14px;margin:14px 0 0;padding:0;list-style:none;
+  font-family:var(--mono);font-size:11.5px;color:var(--rail-muted);font-variant-numeric:tabular-nums}
+.stats b{color:var(--rail-ink);font-weight:600}
+.rail-group{padding:0 14px;margin-bottom:22px}
+.rail-title{font-size:14px;font-weight:900;margin:0 0 2px;padding:0 10px}
+.rail-track{font-size:11.5px;color:var(--rail-muted);margin:0 0 8px;padding:0 10px}
+.rail-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+.rail-item{display:flex;align-items:baseline;gap:9px;width:100%;text-align:left;background:none;border:0;
+  padding:7px 10px;border-radius:7px;cursor:pointer;color:var(--rail-muted);font-size:13.5px;
+  transition:background .12s,color .12s}
+.rail-item:hover{background:rgba(255,255,255,.06);color:var(--rail-ink)}
+.rail-item[aria-current="true"]{background:var(--amber);color:#17120A;font-weight:700}
+.rail-num{font-family:var(--mono);font-size:11.5px;font-variant-numeric:tabular-nums;opacity:.8}
+.rail-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rail-flag{font-size:10px;font-weight:700;padding:1px 6px;border-radius:999px;background:rgba(232,144,118,.18);color:#F0A88E}
+.rail-item[aria-current="true"] .rail-flag{background:rgba(23,18,10,.18);color:#17120A}
+
+.main{padding:46px 48px 90px;max-width:900px}
+.pane[hidden]{display:none}
+.eyebrow{font-size:12.5px;font-weight:700;letter-spacing:.14em;color:var(--amber);margin:0 0 8px}
+.pane-title{font-size:clamp(26px,3.2vw,36px);font-weight:900;letter-spacing:-.03em;margin:0;line-height:1.2;
+  text-wrap:balance;display:flex;gap:13px;align-items:baseline;flex-wrap:wrap}
+.pane-num{font-family:var(--mono);font-weight:600;font-size:.6em;color:var(--faint);font-variant-numeric:tabular-nums}
+.topic{margin:10px 0 0;font-size:14px;color:var(--muted)}
+.warn,.noimg{display:flex;gap:12px;align-items:flex-start;margin-top:16px;padding:12px 15px;border-radius:10px}
+.warn{background:var(--warn-bg);border:1px solid color-mix(in srgb,var(--warn) 32%,transparent)}
+.noimg{background:var(--surface);border:1px dashed var(--line)}
+.warn-tag{flex:none;font-size:11.5px;font-weight:900;color:var(--warn);padding-top:2px}
+.noimg-tag{flex:none;font-size:11.5px;font-weight:900;color:var(--muted);padding-top:2px}
+.warn p,.noimg p{margin:0;font-size:13.5px;line-height:1.55}
+.noimg p{color:var(--muted)}
+
+.group-head{display:flex;align-items:baseline;gap:10px;font-size:15px;font-weight:900;color:var(--ink);
+  margin:40px 0 12px;padding-bottom:9px;border-bottom:1px solid var(--line)}
+.group-head span{font-size:12px;font-weight:400;color:var(--faint)}
+
+.unit{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:12px}
+.unit-head{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:11px 14px;
+  border-bottom:1px solid var(--line);background:var(--sunken)}
+.unit-id{display:flex;align-items:center;gap:9px;flex-wrap:wrap;min-width:0}
+.kind{font-family:var(--mono);font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:6px;
+  background:var(--navy);color:#EAEEF6;white-space:nowrap}
+.kind-multi{background:var(--amber);color:#17120A}
+.kind-text{background:transparent;color:var(--muted);border:1px solid var(--line)}
+.size{font-family:var(--mono);font-size:11.5px;color:var(--faint);font-variant-numeric:tabular-nums}
+.unit-name{font-size:13px;font-weight:700;color:var(--muted);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.copy{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:7px;padding:5px 14px;
+  font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;transition:background .12s,color .12s}
+.copy:hover{background:var(--navy);color:#EAEEF6;border-color:transparent}
+.copy[data-state="done"]{background:var(--amber);color:#17120A;border-color:transparent}
+
+.slides{list-style:none;margin:0;padding:0}
+.slide{display:flex;gap:16px;padding:13px 16px;border-bottom:1px solid var(--line)}
+.slide:last-child{border-bottom:0}
+.slide-no{flex:none;width:26px;height:26px;border-radius:7px;background:var(--sunken);color:var(--muted);
+  font-family:var(--mono);font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;
+  font-variant-numeric:tabular-nums}
+.slide-body{min-width:0;display:flex;flex-direction:column;gap:3px}
+.slide-label{margin:0;font-size:12px;color:var(--faint);letter-spacing:.02em}
+.slide-line{margin:0;font-size:14.5px;line-height:1.6;word-break:break-word}
+.slide-line .k{color:var(--faint);font-size:12.5px;margin-right:7px}
+
+.raw{border-top:1px solid var(--line)}
+.raw summary{cursor:pointer;padding:10px 16px;font-size:12.5px;font-weight:700;color:var(--muted);list-style:none}
+.raw summary::-webkit-details-marker{display:none}
+.raw summary::before{content:"▸ ";color:var(--faint)}
+.raw[open] summary::before{content:"▾ "}
+.raw .block{border-top:1px solid var(--line)}
+.block{margin:0;padding:16px 18px;overflow-x:auto;max-height:440px;overflow-y:auto;font-family:var(--mono);
+  font-size:13px;line-height:1.72;white-space:pre-wrap;word-break:break-word;color:var(--ink)}
+.block--sans{font-family:var(--sans);font-size:14.5px;line-height:1.8}
+
+.pager{display:flex;gap:10px;margin-top:40px}
+.page-btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:9px 18px;
+  font-size:13.5px;font-weight:700;cursor:pointer}
+.page-btn:hover{background:var(--navy);color:#EAEEF6;border-color:transparent}
+.page-btn[disabled]{opacity:.35;cursor:default}
+.page-btn[disabled]:hover{background:var(--surface);color:var(--ink);border-color:var(--line)}
+
+@media (max-width:900px){
+  .shell{grid-template-columns:1fr}
+  .rail{position:static;height:auto;padding-bottom:22px}
+  .rail-list{flex-direction:row;overflow-x:auto;gap:6px;padding-bottom:4px}
+  .rail-item{width:auto;white-space:nowrap}
+  .rail-name{max-width:150px}
+  .main{padding:30px 20px 70px}
+  .unit-head{flex-wrap:wrap}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="shell">
+  <aside class="rail">
+    <div class="brand">
+      <p class="brand-mark">입주해</p>
+      <p class="brand-name">게시 워크벤치</p>
+      <p class="brand-note">프롬프트를 복사해 Claude Design에 붙여넣고, 나온 이미지에 게시글을 함께 올린다.</p>
+      <ul class="stats">
+        <li>캐러셀 <b>3</b></li><li>4컷 <b>12</b></li>
+        <li>단장 <b>31</b></li><li>게시글 <b>83</b></li>
+      </ul>
+    </div>
+    
+  <section class="rail-group">
+    <h2 class="rail-title">등기부 뜯어보기</h2>
+    <p class="rail-track">도달 · 세입자</p>
+    <ol class="rail-list">
+      
+        <li><button class="rail-item" data-go="0-0" type="button">
+          <span class="rail-num">#01</span>
+          <span class="rail-name">등기부에서 볼 세 줄</span>
+          <span class="rail-flag">확인</span>
+        </button></li>
+        <li><button class="rail-item" data-go="0-1" type="button">
+          <span class="rail-num">#02</span>
+          <span class="rail-name">갑구 — 계약 상대가 진짜 주인인가</span>
+          <span class="rail-flag">확인</span>
+        </button></li>
+        <li><button class="rail-item" data-go="0-2" type="button">
+          <span class="rail-num">#03</span>
+          <span class="rail-name">을구 — 근저당과 순위</span>
+          
+        </button></li>
+        <li><button class="rail-item" data-go="0-3" type="button">
+          <span class="rail-num">#04</span>
+          <span class="rail-name">신탁 표시가 있으면 멈춘다</span>
+          <span class="rail-flag">확인</span>
+        </button></li>
+        <li><button class="rail-item" data-go="0-4" type="button">
+          <span class="rail-num">#05</span>
+          <span class="rail-name">등기부에 안 나오는 위험</span>
+          
+        </button></li>
+        <li><button class="rail-item" data-go="0-5" type="button">
+          <span class="rail-num">#06</span>
+          <span class="rail-name">계약서에 넣어달라고 할 한 줄</span>
+          <span class="rail-flag">확인</span>
+        </button></li>
+        <li><button class="rail-item" data-go="0-6" type="button">
+          <span class="rail-num">#07</span>
+          <span class="rail-name">집 보러 가서 물어볼 것</span>
+          
+        </button></li>
+        <li><button class="rail-item" data-go="0-7" type="button">
+          <span class="rail-num">#08</span>
+          <span class="rail-name">가압류·가처분이 있는 집</span>
+          <span class="rail-flag">확인</span>
+        </button></li>
+        <li><button class="rail-item" data-go="0-8" type="button">
+          <span class="rail-num">#09</span>
+          <span class="rail-name">다가구와 다세대가 다른 이유</span>
+          <span class="rail-flag">확인</span>
+        </button></li>
+        <li><button class="rail-item" data-go="0-9" type="button">
+          <span class="rail-num">#10</span>
+          <span class="rail-name">전입신고와 확정일자, 하루가 갈랐다</span>
+          <span class="rail-flag">확인</span>
+        </button></li>
+        <li><button class="rail-item" data-go="0-10" type="button">
+          <span class="rail-num">#11</span>
+          <span class="rail-name">보증보험이 거절되는 집</span>
+          <span class="rail-flag">확인</span>
+        </button></li>
+        <li><button class="rail-item" data-go="0-11" type="button">
+          <span class="rail-num">#12</span>
+          <span class="rail-name">계약 전 마지막 점검표</span>
+          
+        </button></li>
+    </ol>
+  </section>
+  <section class="rail-group">
+    <h2 class="rail-title">임대인 노트</h2>
+    <p class="rail-track">전환 · 임대인·중개사</p>
+    <ol class="rail-list">
+      
+        <li><button class="rail-item" data-go="1-0" type="button">
+          <span class="rail-num">#01</span>
+          <span class="rail-name">공실보다 연체가 비싸다</span>
+          <span class="rail-flag">확인</span>
+        </button></li>
+        <li><button class="rail-item" data-go="1-1" type="button">
+          <span class="rail-num">#02</span>
+          <span class="rail-name">물어봐도 되는 것과 안 되는 것</span>
+          
+        </button></li>
+        <li><button class="rail-item" data-go="1-2" type="button">
+          <span class="rail-num">#03</span>
+          <span class="rail-name">연체는 얼마짜리 실수인가</span>
+          <span class="rail-flag">확인</span>
+        </button></li>
+        <li><button class="rail-item" data-go="1-3" type="button">
+          <span class="rail-num">#04</span>
+          <span class="rail-name">중개사가 확인할 수 없는 것</span>
+          
+        </button></li>
+        <li><button class="rail-item" data-go="1-4" type="button">
+          <span class="rail-num">#05</span>
+          <span class="rail-name">보증금을 올리는 것 말고</span>
+          
+        </button></li>
+        <li><button class="rail-item" data-go="1-5" type="button">
+          <span class="rail-num">#06</span>
+          <span class="rail-name">좋은 세입자의 신호는 무엇인가</span>
+          
+        </button></li>
+    </ol>
+  </section>
+  <section class="rail-group">
+    <h2 class="rail-title">지수의 계약</h2>
+    <p class="rail-track">도달 · 세입자</p>
+    <ol class="rail-list">
+      
+        <li><button class="rail-item" data-go="2-0" type="button">
+          <span class="rail-num">#01</span>
+          <span class="rail-name">너무 싼 집</span>
+          
+        </button></li>
+        <li><button class="rail-item" data-go="2-1" type="button">
+          <span class="rail-num">#02</span>
+          <span class="rail-name">소유자 이름이 다르다</span>
+          
+        </button></li>
+        <li><button class="rail-item" data-go="2-2" type="button">
+          <span class="rail-num">#03</span>
+          <span class="rail-name">&quot;원래 그래요&quot;</span>
+          
+        </button></li>
+        <li><button class="rail-item" data-go="2-3" type="button">
+          <span class="rail-num">#04</span>
+          <span class="rail-name">숫자를 세어본다</span>
+          
+        </button></li>
+        <li><button class="rail-item" data-go="2-4" type="button">
+          <span class="rail-num">#05</span>
+          <span class="rail-name">앞집 사람</span>
+          
+        </button></li>
+        <li><button class="rail-item" data-go="2-5" type="button">
+          <span class="rail-num">#06</span>
+          <span class="rail-name">보험이 거절됐다</span>
+          
+        </button></li>
+        <li><button class="rail-item" data-go="2-6" type="button">
+          <span class="rail-num">#07</span>
+          <span class="rail-name">다른 집</span>
+          
+        </button></li>
+        <li><button class="rail-item" data-go="2-7" type="button">
+          <span class="rail-num">#08</span>
+          <span class="rail-name">특약을 말해본다</span>
+          
+        </button></li>
+        <li><button class="rail-item" data-go="2-8" type="button">
+          <span class="rail-num">#09</span>
+          <span class="rail-name">잔금일 아침</span>
+          
+        </button></li>
+        <li><button class="rail-item" data-go="2-9" type="button">
+          <span class="rail-num">#10</span>
+          <span class="rail-name">하루 사이에</span>
+          
+        </button></li>
+        <li><button class="rail-item" data-go="2-10" type="button">
+          <span class="rail-num">#11</span>
+          <span class="rail-name">그 한 줄이</span>
+          
+        </button></li>
+        <li><button class="rail-item" data-go="2-11" type="button">
+          <span class="rail-num">#12</span>
+          <span class="rail-name">도장</span>
+          
+        </button></li>
+    </ol>
+  </section>
+  <section class="rail-group">
+    <h2 class="rail-title">계약 전 30초</h2>
+    <p class="rail-track">릴스 · 세입자</p>
+    <ol class="rail-list">
+      
+        <li><button class="rail-item" data-go="3-0" type="button">
+          <span class="rail-num">#01</span>
+          <span class="rail-name">등기부 어디부터 볼까요</span>
+          
+        </button></li>
+        <li><button class="rail-item" data-go="3-1" type="button">
+          <span class="rail-num">#02</span>
+          <span class="rail-name">이름이 다르면 계약하지 않습니다</span>
+          
+        </button></li>
+        <li><button class="rail-item" data-go="3-2" type="button">
+          <span class="rail-num">#03</span>
+          <span class="rail-name">그 금액은 빚이 아닙니다</span>
+          
+        </button></li>
+        <li><button class="rail-item" data-go="3-3" type="button">
+          <span class="rail-num">#04</span>
+          <span class="rail-name">두 글자가 보이면 멈춥니다</span>
+          
+        </button></li>
+        <li><button class="rail-item" data-go="3-4" type="button">
+          <span class="rail-num">#05</span>
+          <span class="rail-name">하루가 갈랐습니다</span>
+          
+        </button></li>
+        <li><button class="rail-item" data-go="3-5" type="button">
+          <span class="rail-num">#06</span>
+          <span class="rail-name">나보다 앞선 사람이 몇 명입니까</span>
+          
+        </button></li>
+        <li><button class="rail-item" data-go="3-6" type="button">
+          <span class="rail-num">#07</span>
+          <span class="rail-name">등기부가 깨끗해도 안심하지 않습니다</span>
+          
+        </button></li>
+        <li><button class="rail-item" data-go="3-7" type="button">
+          <span class="rail-num">#08</span>
+          <span class="rail-name">집주인도 검증 대상입니다</span>
+          
+        </button></li>
+    </ol>
+  </section>
+  <section class="rail-group">
+    <h2 class="rail-title">만드는 중</h2>
+    <p class="rail-track">일지 · 번호 없음</p>
+    <ol class="rail-list">
+      
+        <li><button class="rail-item" data-go="4-0" type="button">
+          <span class="rail-num">·</span>
+          <span class="rail-name">스레드 · 왜 만들고 있는지</span>
+          
+        </button></li>
+        <li><button class="rail-item" data-go="4-1" type="button">
+          <span class="rail-num">·</span>
+          <span class="rail-name">스레드 · 점수 배점 공개</span>
+          
+        </button></li>
+        <li><button class="rail-item" data-go="4-2" type="button">
+          <span class="rail-num">·</span>
+          <span class="rail-name">스레드 · 실시간 카운터를 지운 이야기</span>
+          
+        </button></li>
+        <li><button class="rail-item" data-go="4-3" type="button">
+          <span class="rail-num">·</span>
+          <span class="rail-name">스레드 · 베타 모집 — 링크 1/2</span>
+          
+        </button></li>
+        <li><button class="rail-item" data-go="4-4" type="button">
+          <span class="rail-num">·</span>
+          <span class="rail-name">스레드 · 일주일 결산 — 링크 2/2</span>
+          <span class="rail-flag">확인</span>
+        </button></li>
+        <li><button class="rail-item" data-go="4-5" type="button">
+          <span class="rail-num">·</span>
+          <span class="rail-name">X · 고정 트윗</span>
+          
+        </button></li>
+        <li><button class="rail-item" data-go="4-6" type="button">
+          <span class="rail-num">·</span>
+          <span class="rail-name">X · 배점 공개</span>
+          
+        </button></li>
+        <li><button class="rail-item" data-go="4-7" type="button">
+          <span class="rail-num">·</span>
+          <span class="rail-name">X · 주간 결산</span>
+          <span class="rail-flag">확인</span>
+        </button></li>
+    </ol>
+  </section>
+  <section class="rail-group">
+    <h2 class="rail-title">단발 · 확산용</h2>
+    <p class="rail-track">번호 없음</p>
+    <ol class="rail-list">
+      
+        <li><button class="rail-item" data-go="5-0" type="button">
+          <span class="rail-num">·</span>
+          <span class="rail-name">인스타그램 · 릴스 · 양방향 (20초)</span>
+          
+        </button></li>
+        <li><button class="rail-item" data-go="5-1" type="button">
+          <span class="rail-num">·</span>
+          <span class="rail-name">스레드 · 세입자만 심사받는 게 이상하다</span>
+          
+        </button></li>
+        <li><button class="rail-item" data-go="5-2" type="button">
+          <span class="rail-num">·</span>
+          <span class="rail-name">X · 양방향</span>
+          
+        </button></li>
+    </ol>
+  </section>
+  </aside>
+  <main class="main">
+  <section class="pane" data-pane="0-0" hidden>
+    <header class="pane-head">
+      <p class="eyebrow">등기부 뜯어보기</p>
+      <h1 class="pane-title"><span class="pane-num">#01</span>등기부에서 볼 세 줄</h1>
+      
+      <div class="warn"><span class="warn-tag">올리기 전 확인</span><p>발급 수수료 금액과 근저당 비율 기준선은 뺐습니다. 넣으려면 출처 확인 후 함께 적으세요.</p></div>
+      
+    </header>
+    <h3 class="group-head">이미지<span>Claude Design에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-multi">캐러셀 8장</span>
+        <span class="size">1080 × 1350</span>
+        <span class="unit-name">인스타그램 · 캐러셀 · 등기부 3분 읽는 법</span>
+      </div>
+      <button class="copy" type="button" data-copy>프롬프트 복사</button>
+    </header>
+    
+  <ol class="slides">
+    
+      <li class="slide">
+        <span class="slide-no">1</span>
+        <div class="slide-body">
+          <p class="slide-label">표지 — 제목 위에 앰버 가로막대 140×14</p>
+          <p class="slide-line"><span class="k">제목</span>이 집, 계약해도 되는지 / 3분이면 압니다   ← 두 줄로</p><p class="slide-line"><span class="k">설명</span>등기부등본 읽는 법</p>
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">2</span>
+        <div class="slide-body">
+          
+          <p class="slide-line"><span class="k">제목</span>준비물</p><p class="slide-line"><span class="k">설명</span>등기부등본 1통. / 인터넷등기소에서 뗄 수 있습니다.</p>
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">3</span>
+        <div class="slide-body">
+          
+          <p class="slide-line"><span class="k">라벨</span>하나   (앰버 34px + 그 아래 앰버 밑줄 96×6)</p><p class="slide-line"><span class="k">제목</span>갑구 — 소유자</p><p class="slide-line"><span class="k">설명</span>계약하려는 사람과 이름이 같은지 봅니다. / 대리인이 나왔다면 위임장을 확인하세요.</p>
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">4</span>
+        <div class="slide-body">
+          
+          <p class="slide-line"><span class="k">라벨</span>둘</p><p class="slide-line"><span class="k">제목</span>을구 — 근저당</p><p class="slide-line"><span class="k">설명</span>채권최고액이 시세에 비해 얼마인지 봅니다. / 경매로 넘어가면 은행이 먼저 가져갑니다.</p>
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">5</span>
+        <div class="slide-body">
+          
+          <p class="slide-line"><span class="k">라벨</span>셋</p><p class="slide-line"><span class="k">제목</span>신탁 표시</p><p class="slide-line"><span class="k">설명</span>있으면 집주인에게 계약 권한이 없을 수 있습니다. / 여기서 멈추고 신탁원부를 확인하세요.</p>
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">6</span>
+        <div class="slide-body">
+          
+          <p class="slide-line"><span class="k">라벨</span>넷</p><p class="slide-line"><span class="k">제목</span>가압류 · 가처분</p><p class="slide-line"><span class="k">설명</span>분쟁 중인 집이라는 뜻입니다.</p>
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">7</span>
+        <div class="slide-body">
+          
+          <p class="slide-line"><span class="k">제목</span>등기부에 / 안 나오는 것</p><p class="slide-line"><span class="k">설명</span>나보다 먼저 들어온 세입자의 보증금, / 집주인이 안 낸 세금. / (빈 줄) / 둘 다 경매에서 내 보증금보다 순위가 앞섭니다.</p>
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">8</span>
+        <div class="slide-body">
+          
+          <p class="slide-line"><span class="k">제목</span>집 보러 갈 때 / 꺼내 보세요</p><p class="slide-line"><span class="k">설명</span>저장해두면 현장에서 바로 확인할 수 있습니다.</p>
+        </div>
+      </li>
+  </ol>
+    <details class="raw"><summary>프롬프트 원문</summary><pre class="block"><code>「등기부 뜯어보기」 #01 — 등기부에서 볼 세 줄
+
+[연재 고정 — 12화 내내 똑같은 자리 같은 크기로]
+표지 상단 왼쪽   &quot;등기부 뜯어보기&quot; 30px 앰버 #E9A23B  +  &quot;#01&quot; 52px 흰색 900
+마지막 장 하단   28px 앰버 #E9A23B로 다음 화를 예고할 것:
+                 다음 화 — 갑구 — 계약 상대가 진짜 주인인가
+이 두 가지가 화마다 흔들리면 연재로 읽히지 않는다. 아래 내용보다 우선한다.
+워드마크 위치는 아래 본문 지시를 따를 것.
+
+입주해(한국 임대차 신뢰 서비스) SNS 이미지를 만들어줘.
+바탕 딥네이비 #0C2247, 강조 앰버 #E9A23B, 글자 흰색. 서체는 Gothic A1(없으면 Noto Sans KR).
+차분하고 사무적인 톤. 스톡사진·이모지·그라데이션 배경·영어 문구 금지. 느낌표 쓰지 말 것.
+아래 문구를 한 글자도 바꾸지 말고 그대로 넣을 것. 한글 맞춤법과 띄어쓰기를 지킬 것.
+
+캐러셀 8장. 아트보드 8개를 가로로 나란히. 각 1080 × 1350 px.
+안전 여백: 위아래 각 120px, 좌우 각 90px 안에 모든 요소가 들어올 것.
+제목 88px 굵게, 설명 40px 흰색 72% 투명도. 2~8장 우측 상단에 &quot;2/8&quot; 형식 번호(28px, 흰색 40%).
+모든 장 좌측 하단에 &quot;입주해&quot; 워드마크(30px, 흰색 60%).
+
+1장  (표지 — 제목 위에 앰버 가로막대 140×14)
+     제목: 이 집, 계약해도 되는지 / 3분이면 압니다   ← 두 줄로
+     설명: 등기부등본 읽는 법
+
+2장  제목: 준비물
+     설명: 등기부등본 1통. / 인터넷등기소에서 뗄 수 있습니다.
+
+3장  라벨: 하나   (앰버 34px + 그 아래 앰버 밑줄 96×6)
+     제목: 갑구 — 소유자
+     설명: 계약하려는 사람과 이름이 같은지 봅니다. / 대리인이 나왔다면 위임장을 확인하세요.
+
+4장  라벨: 둘
+     제목: 을구 — 근저당
+     설명: 채권최고액이 시세에 비해 얼마인지 봅니다. / 경매로 넘어가면 은행이 먼저 가져갑니다.
+
+5장  라벨: 셋
+     제목: 신탁 표시
+     설명: 있으면 집주인에게 계약 권한이 없을 수 있습니다. / 여기서 멈추고 신탁원부를 확인하세요.
+
+6장  라벨: 넷
+     제목: 가압류 · 가처분
+     설명: 분쟁 중인 집이라는 뜻입니다.
+
+7장  제목: 등기부에 / 안 나오는 것
+     설명: 나보다 먼저 들어온 세입자의 보증금, / 집주인이 안 낸 세금. / (빈 줄) / 둘 다 경매에서 내 보증금보다 순위가 앞섭니다.
+
+8장  제목: 집 보러 갈 때 / 꺼내 보세요
+     설명: 저장해두면 현장에서 바로 확인할 수 있습니다.
+
+3~6장은 같은 레이아웃을 반복해 넘길 때 리듬이 생기게 할 것.</code></pre></details>
+  </article>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind ">1장</span>
+        <span class="size">1080 × 1350</span>
+        <span class="unit-name">스레드 · 등기부 세 줄</span>
+      </div>
+      <button class="copy" type="button" data-copy>프롬프트 복사</button>
+    </header>
+    
+    <pre class="block"><code>「등기부 뜯어보기」 #01 — 등기부에서 볼 세 줄
+
+[연재 고정 — 12화 내내 똑같은 자리 같은 크기로]
+표지 상단 왼쪽   &quot;등기부 뜯어보기&quot; 30px 앰버 #E9A23B  +  &quot;#01&quot; 52px 흰색 900
+마지막 장 하단   28px 앰버 #E9A23B로 다음 화를 예고할 것:
+                 다음 화 — 갑구 — 계약 상대가 진짜 주인인가
+이 두 가지가 화마다 흔들리면 연재로 읽히지 않는다. 아래 내용보다 우선한다.
+워드마크 위치는 아래 본문 지시를 따를 것.
+
+입주해(한국 임대차 신뢰 서비스) SNS 이미지를 만들어줘.
+바탕 딥네이비 #0C2247, 강조 앰버 #E9A23B, 글자 흰색. 서체는 Gothic A1(없으면 Noto Sans KR).
+차분하고 사무적인 톤. 스톡사진·이모지·그라데이션 배경·영어 문구 금지. 느낌표 쓰지 말 것.
+아래 문구를 한 글자도 바꾸지 말고 그대로 넣을 것. 한글 맞춤법과 띄어쓰기를 지킬 것.
+
+이미지 1장. 1080 × 1350 px (스레드 피드에 세로로 크게 뜬다).
+안전 여백: 위아래 각 120px, 좌우 각 90px. 좌측 하단에 &quot;입주해&quot; 워드마크(30px, 흰색 60%).
+
+제목(80px 굵게, 흰색): 등기부에서 / 이 세 줄만
+
+그 아래 번호 목록 세 개를 세로로 쌓을 것. 각 항목은
+  번호(하나 · 둘 · 셋) 34px 앰버 #E9A23B
+  제목 56px 흰색 굵게
+  설명 34px 흰색 65% 투명도
+항목 사이 간격 48px.
+
+  하나 / 갑구 소유자 / 계약하려는 사람과 이름이 같은지
+  둘 / 을구 근저당 / 시세 대비 비중이 얼마인지
+  셋 / 신탁 표시 / 있으면 계약 권한이 없을 수 있습니다
+
+세 번째 항목의 제목만 앰버로 강조할 것.</code></pre>
+  </article>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind ">1장</span>
+        <span class="size">1600 × 900</span>
+        <span class="unit-name">X · 연속 트윗 · 등기부에서 볼 세 줄</span>
+      </div>
+      <button class="copy" type="button" data-copy>프롬프트 복사</button>
+    </header>
+    
+    <pre class="block"><code>「등기부 뜯어보기」 #01 — 등기부에서 볼 세 줄
+
+[연재 고정 — 12화 내내 똑같은 자리 같은 크기로]
+표지 상단 왼쪽   &quot;등기부 뜯어보기&quot; 30px 앰버 #E9A23B  +  &quot;#01&quot; 52px 흰색 900
+마지막 장 하단   28px 앰버 #E9A23B로 다음 화를 예고할 것:
+                 다음 화 — 갑구 — 계약 상대가 진짜 주인인가
+이 두 가지가 화마다 흔들리면 연재로 읽히지 않는다. 아래 내용보다 우선한다.
+워드마크 위치는 아래 본문 지시를 따를 것.
+
+입주해(한국 임대차 신뢰 서비스) SNS 이미지를 만들어줘.
+바탕 딥네이비 #0C2247, 강조 앰버 #E9A23B, 글자 흰색. 서체는 Gothic A1(없으면 Noto Sans KR).
+차분하고 사무적인 톤. 스톡사진·이모지·그라데이션 배경·영어 문구 금지. 느낌표 쓰지 말 것.
+아래 문구를 한 글자도 바꾸지 말고 그대로 넣을 것. 한글 맞춤법과 띄어쓰기를 지킬 것.
+
+이미지 1장. 1600 × 900 px (X 타임라인은 가로 16:9로 자른다).
+안전 여백: 사방 각 100px. 우측 하단에 &quot;입주해&quot; 워드마크(28px, 흰색 60%).
+
+가로 이미지. 왼쪽 40%에 제목, 오른쪽 60%에 목록을 두는 2단 구성.
+
+왼쪽
+  제목 76px 굵게 흰색: 등기부에서 / 이 세 줄만
+
+오른쪽 (세 항목을 세로로, 간격 40px)
+  각 항목: 번호 30px 앰버 #E9A23B + 제목 46px 흰색 굵게 + 설명 28px 흰색 65%
+  하나 / 갑구 소유자 / 계약하려는 사람과 이름이 같은지
+  둘 / 을구 근저당 / 시세 대비 비중이 얼마인지
+  셋 / 신탁 표시 / 있으면 계약 권한이 없을 수 있습니다
+
+세 번째 항목 제목만 앰버로.</code></pre>
+  </article>
+    <h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">인스타그램 · 캐러셀 · 등기부 3분 읽는 법</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>집 보러 가기 전에 등기부등본 한 장만 떼어보세요.
+세 줄만 보면 대충 판단이 섭니다.
+
+계약하려는 사람이 진짜 소유자인지(갑구),
+대출이 얼마나 잡혀 있는지(을구),
+그리고 신탁 표시가 있는지.
+
+세 번째가 특히 중요합니다.
+집주인이라고 나온 사람이 사실은 계약 권한이 없는 경우가 여기서 나옵니다.
+
+등기부에 안 나오는 위험도 있습니다.
+먼저 들어온 세입자의 보증금, 집주인이 안 낸 세금.
+둘 다 경매에서 내 보증금보다 순위가 앞섭니다.
+
+저장해두고 현장에서 꺼내 보세요.
+
+—
+임대차 계약에서 서로를 확인할 수 있게 만들고 있습니다.
+프로필 링크에 사전 신청이 있습니다.
+
+#등기부등본 #전세사기예방 #보증금 #임대차계약 #부동산계약 #전세 #월세 #자취 #부동산상식 #집구하기 #임차인 #근저당 #확정일자 #입주해</code></pre>
+  </article>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">스레드 · 등기부 세 줄</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>등기부등본에서 딱 세 줄만 보면 됩니다.
+
+1. 갑구 소유자 이름 — 계약하려는 사람과 같은지
+2. 을구 근저당 채권최고액 — 시세 대비 비중이 얼마인지
+3. 신탁 표시 — 있으면 집주인에게 계약 권한이 없을 수 있습니다
+
+3번이 특히 중요합니다.
+집주인이라고 나온 사람이 사실은 계약 상대가 아닌 경우가 여기서 나옵니다.</code></pre>
+  </article>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">X · 연속 트윗 · 등기부에서 볼 세 줄</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>━━━ 1/6 ━━━ (여기에 이미지)
+집 보러 가기 전에 등기부등본 한 장만 떼어보세요.
+세 줄만 보면 판단이 섭니다.
+
+━━━ 2/6 ━━━
+① 갑구 — 소유자
+
+계약하려는 사람과 이름이 같은지 봅니다.
+대리인이 나왔다면 위임장을 확인하세요.
+
+━━━ 3/6 ━━━
+② 을구 — 근저당 채권최고액
+
+집주인이 이 집을 담보로 빌린 돈입니다.
+경매로 넘어가면 은행이 먼저 가져갑니다.
+
+━━━ 4/6 ━━━
+③ 신탁 표시
+
+있으면 집주인에게 계약 권한이 없을 수 있습니다.
+여기서 멈추고 신탁원부를 확인하세요.
+
+세 개 중에 이게 제일 중요합니다.
+
+━━━ 5/6 ━━━
+등기부에 안 나오는 것도 있습니다.
+
+먼저 들어온 세입자의 보증금,
+집주인이 안 낸 세금.
+
+둘 다 경매에서 내 보증금보다 순위가 앞섭니다.
+
+━━━ 6/6 ━━━
+&quot;확정일자 받았으니 괜찮다&quot;가 틀리는 이유가 이겁니다.
+근저당보다 늦으면 순위가 밀립니다.
+
+봐야 하는 건 확정일자가 아니라 순위입니다.</code></pre>
+  </article>
+    <nav class="pager">
+      <button class="page-btn" type="button" data-step="-1">← 이전</button>
+      <button class="page-btn" type="button" data-step="1">다음 →</button>
+    </nav>
+  </section>
+  <section class="pane" data-pane="0-1" hidden>
+    <header class="pane-head">
+      <p class="eyebrow">등기부 뜯어보기</p>
+      <h1 class="pane-title"><span class="pane-num">#02</span>갑구 — 계약 상대가 진짜 주인인가</h1>
+      
+      <div class="warn"><span class="warn-tag">올리기 전 확인</span><p>대리인 계약 시 필요한 서류(위임장·인감증명서)는 실무 관행입니다. 단정 대신 &quot;확인한다&quot; 톤을 유지하세요.</p></div>
+      
+    </header>
+    <h3 class="group-head">이미지<span>Claude Design에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind ">1장</span>
+        <span class="size">1080 × 1350</span>
+        <span class="unit-name">스레드 · 갑구 — 계약 상대가 진짜 주인인가</span>
+      </div>
+      <button class="copy" type="button" data-copy>프롬프트 복사</button>
+    </header>
+    
+    <pre class="block"><code>「등기부 뜯어보기」 #02 — 갑구 — 계약 상대가 진짜 주인인가
+
+[연재 고정 — 12화 내내 똑같은 자리 같은 크기로]
+상단 왼쪽   &quot;등기부 뜯어보기&quot; 30px 앰버 #E9A23B  +  &quot;#02&quot; 52px 흰색 900
+하단 왼쪽   28px 앰버 #E9A23B로 다음 화를 예고할 것:
+                 다음 화 — 을구 — 근저당과 순위
+이 두 가지가 화마다 흔들리면 연재로 읽히지 않는다. 아래 내용보다 우선한다.
+워드마크 위치는 아래 본문 지시를 따를 것.
+
+입주해(한국 임대차 신뢰 서비스) SNS 이미지를 만들어줘.
+바탕 딥네이비 #0C2247, 강조 앰버 #E9A23B, 글자 흰색. 서체는 Gothic A1(없으면 Noto Sans KR).
+차분하고 사무적인 톤. 스톡사진·이모지·그라데이션 배경·영어 문구 금지. 느낌표 쓰지 말 것.
+아래 문구를 한 글자도 바꾸지 말고 그대로 넣을 것. 한글 맞춤법과 띄어쓰기를 지킬 것.
+
+이미지 1장. 1080 × 1350 px. 안전 여백: 위아래 각 120px, 좌우 각 90px.
+
+좌측 상단: 연재명 32px 앰버 #E9A23B — 등기부 뜯어보기
+그 바로 아래: 회차 번호 120px 흰색 아주 굵게 — #02
+가운데: 제목 84px 흰색 아주 굵게, 자간 -3px — 갑구 —
+계약 상대가
+진짜 주인인가
+좌측 하단: &quot;입주해&quot; 워드마크 30px 흰색 60%
+
+연재명과 번호는 매 화 같은 자리에 같은 크기로. 표지 형식은 절대 바꾸지 말 것.</code></pre>
+  </article>
+    <h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">스레드 · 갑구 — 계약 상대가 진짜 주인인가</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>등기부 뜯어보기 #02
+
+갑구는 이 집이 누구 것인지 적힌 칸입니다.
+
+볼 건 세 가지입니다.
+
+이름. 계약서에 도장 찍을 사람과 같은지 신분증으로 대조합니다.
+당연해 보이는데, 대리인이 나오는 경우가 생각보다 많습니다.
+그때는 위임장과 인감증명서를 같이 봅니다.
+
+날짜. 소유권이 언제 넘어왔는지.
+얼마 전에 주인이 바뀌었다면 왜 바뀌었는지 한 번은 물어볼 만합니다.
+
+원인. 매매인지 상속인지 신탁인지.
+신탁이 적혀 있으면 이야기가 완전히 달라지는데, 그건 #04에서 따로 다루겠습니다.
+
+다음은 을구, 근저당입니다.</code></pre>
+  </article>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">X · 갑구 — 계약 상대가 진짜 주인인가</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>등기부 뜯어보기 #02
+
+갑구는 이 집이 누구 것인지 적힌 칸입니다.
+
+이름 — 계약서에 도장 찍을 사람과 같은가
+날짜 — 최근에 주인이 바뀌었는가
+원인 — 매매인가 상속인가 신탁인가
+
+대리인이 나왔다면 위임장을 함께 봅니다.</code></pre>
+  </article>
+    <nav class="pager">
+      <button class="page-btn" type="button" data-step="-1">← 이전</button>
+      <button class="page-btn" type="button" data-step="1">다음 →</button>
+    </nav>
+  </section>
+  <section class="pane" data-pane="0-2" hidden>
+    <header class="pane-head">
+      <p class="eyebrow">등기부 뜯어보기</p>
+      <h1 class="pane-title"><span class="pane-num">#03</span>을구 — 근저당과 순위</h1>
+      
+      
+      
+    </header>
+    <h3 class="group-head">이미지<span>Claude Design에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind ">1장</span>
+        <span class="size">1080 × 1920</span>
+        <span class="unit-name">인스타그램 · 릴스 · 등기부 (30초)</span>
+      </div>
+      <button class="copy" type="button" data-copy>프롬프트 복사</button>
+    </header>
+    
+    <pre class="block"><code>「등기부 뜯어보기」 #03 — 을구 — 근저당과 순위
+
+[연재 고정 — 12화 내내 똑같은 자리 같은 크기로]
+상단 왼쪽   &quot;등기부 뜯어보기&quot; 30px 앰버 #E9A23B  +  &quot;#03&quot; 52px 흰색 900
+하단 왼쪽   28px 앰버 #E9A23B로 다음 화를 예고할 것:
+                 다음 화 — 신탁 표시가 있으면 멈춘다
+이 두 가지가 화마다 흔들리면 연재로 읽히지 않는다. 아래 내용보다 우선한다.
+워드마크 위치는 아래 본문 지시를 따를 것.
+
+입주해(한국 임대차 신뢰 서비스) SNS 이미지를 만들어줘.
+바탕 딥네이비 #0C2247, 강조 앰버 #E9A23B, 글자 흰색. 서체는 Gothic A1(없으면 Noto Sans KR).
+차분하고 사무적인 톤. 스톡사진·이모지·그라데이션 배경·영어 문구 금지. 느낌표 쓰지 말 것.
+아래 문구를 한 글자도 바꾸지 말고 그대로 넣을 것. 한글 맞춤법과 띄어쓰기를 지킬 것.
+
+세로 영상 커버 1장. 1080 × 1920 px.
+위 250px, 아래 450px은 앱 UI에 가려지므로 반드시 비울 것.
+글자는 세로 중앙 부근(위에서 700~1300px 사이)에 배치. 좌우 여백 각 90px.
+장식 없이 글자만. 폰으로 스크롤하다 0.5초 안에 읽히는 게 목표.
+
+제목 1행: 이 집, 계약하면        ← 흰색
+제목 2행: 보증금 못 받습니다      ← 앰버 #E9A23B
+
+두 줄 모두 92px, 아주 굵게(900), 자간 -4px, 왼쪽 정렬.
+그 아래 64px 띄우고 &quot;입주해&quot; 워드마크(30px, 흰색 60%).</code></pre>
+  </article>
+    <h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">인스타그램 · 릴스 · 등기부 (30초)</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>등기부에서 제일 먼저 볼 곳은 확정일자가 아니라 순위입니다.
+
+근저당이 먼저 잡혀 있으면 확정일자를 아무리 빨리 받아도 뒤로 밀립니다.
+집 보러 가기 전에 등기부 한 장 떼어보세요.
+
+#등기부등본 #전세사기예방 #보증금 #근저당 #확정일자 #전세 #월세 #집구하기 #부동산상식 #입주해
+
+──────────── 촬영 대본 (B안 · 얼굴 없이) ────────────
+[0–2초]  등기부 클로즈업, 손가락이 한 줄을 짚음
+         자막: 이 집, 계약하면 보증금 못 받습니다
+[2–8초]  을구 근저당 항목으로 손가락 이동 / 자막: 을구 — 채권최고액
+         내레이션: 여기 이 숫자요. 집주인이 이 집을 담보로 빌린 돈입니다.
+[8–16초] 자막: 경매로 넘어가면 은행이 먼저
+         내레이션: 경매로 넘어가면 은행이 먼저 가져갑니다.
+                   이 금액이 시세에 가까울수록 나한테 남는 게 없습니다.
+[16–24초] 자막: 확정일자보다 순위가 먼저
+         내레이션: 확정일자 받았으니 괜찮다고들 하시는데,
+                   근저당보다 늦게 받았으면 순위가 밀립니다.
+[24–30초] 등기부를 덮고 폰 화면을 비춤
+         자막: 집주인 쪽도 확인할 수 있게 만들고 있습니다
+
+──────────── A안 (얼굴 노출 · 바뀌는 곳만) ────────────
+[0–2초]  정면 상반신, 등기부를 들어 보이며 &quot;이 집, 계약하면 보증금 못 받습니다&quot; → 바로 컷
+[24–30초] 다시 정면 &quot;이런 걸 계약 전에 서로 확인할 수 있게 만들고 있습니다. 프로필 링크에 사전 신청 있습니다.&quot;</code></pre>
+  </article>
+    <nav class="pager">
+      <button class="page-btn" type="button" data-step="-1">← 이전</button>
+      <button class="page-btn" type="button" data-step="1">다음 →</button>
+    </nav>
+  </section>
+  <section class="pane" data-pane="0-3" hidden>
+    <header class="pane-head">
+      <p class="eyebrow">등기부 뜯어보기</p>
+      <h1 class="pane-title"><span class="pane-num">#04</span>신탁 표시가 있으면 멈춘다</h1>
+      
+      <div class="warn"><span class="warn-tag">올리기 전 확인</span><p>신탁등기의 권한 구조와 신탁원부 열람 절차는 사안마다 다릅니다. 게시 전 확인하고, 법률 조언이 아니라 &quot;확인 절차&quot;로 서술하세요.</p></div>
+      
+    </header>
+    <h3 class="group-head">이미지<span>Claude Design에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind ">1장</span>
+        <span class="size">1080 × 1350</span>
+        <span class="unit-name">스레드 · 신탁 표시가 있으면 멈춘다</span>
+      </div>
+      <button class="copy" type="button" data-copy>프롬프트 복사</button>
+    </header>
+    
+    <pre class="block"><code>「등기부 뜯어보기」 #04 — 신탁 표시가 있으면 멈춘다
+
+[연재 고정 — 12화 내내 똑같은 자리 같은 크기로]
+상단 왼쪽   &quot;등기부 뜯어보기&quot; 30px 앰버 #E9A23B  +  &quot;#04&quot; 52px 흰색 900
+하단 왼쪽   28px 앰버 #E9A23B로 다음 화를 예고할 것:
+                 다음 화 — 등기부에 안 나오는 위험
+이 두 가지가 화마다 흔들리면 연재로 읽히지 않는다. 아래 내용보다 우선한다.
+워드마크 위치는 아래 본문 지시를 따를 것.
+
+입주해(한국 임대차 신뢰 서비스) SNS 이미지를 만들어줘.
+바탕 딥네이비 #0C2247, 강조 앰버 #E9A23B, 글자 흰색. 서체는 Gothic A1(없으면 Noto Sans KR).
+차분하고 사무적인 톤. 스톡사진·이모지·그라데이션 배경·영어 문구 금지. 느낌표 쓰지 말 것.
+아래 문구를 한 글자도 바꾸지 말고 그대로 넣을 것. 한글 맞춤법과 띄어쓰기를 지킬 것.
+
+이미지 1장. 1080 × 1350 px. 안전 여백: 위아래 각 120px, 좌우 각 90px.
+
+좌측 상단: 연재명 32px 앰버 #E9A23B — 등기부 뜯어보기
+그 바로 아래: 회차 번호 120px 흰색 아주 굵게 — #04
+가운데: 제목 84px 흰색 아주 굵게, 자간 -3px — 신탁 표시가
+있으면 멈춘다
+좌측 하단: &quot;입주해&quot; 워드마크 30px 흰색 60%
+
+연재명과 번호는 매 화 같은 자리에 같은 크기로. 표지 형식은 절대 바꾸지 말 것.</code></pre>
+  </article>
+    <h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">스레드 · 신탁 표시가 있으면 멈춘다</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>등기부 뜯어보기 #04
+
+등기부에 신탁이라고 적혀 있으면, 소유자 칸에 신탁회사 이름이 있습니다.
+집주인이라고 소개받은 사람은 등기부상 주인이 아닐 수 있다는 뜻입니다.
+
+이 경우 집을 빌려줄 권한이 누구에게 있는지가 문제가 됩니다.
+신탁회사에 있을 수도 있고, 원래 주인에게 일부 남아 있을 수도 있습니다.
+그건 등기부에 안 나오고 신탁원부라는 별도 문서를 봐야 압니다.
+
+권한 없는 사람과 계약하면 나중에 &quot;그 계약은 무효&quot;라는 말을 듣게 됩니다.
+보증금을 돌려받을 상대가 사라지는 겁니다.
+
+전세사기에서 반복해서 나오는 유형이 이겁니다.
+
+신탁 표시를 보면 저는 일단 멈춥니다.
+계약하지 말라는 게 아니라, 신탁원부를 확인하기 전에는 진도를 안 뺍니다.
+
+다음은 등기부에 아예 안 나오는 위험입니다.</code></pre>
+  </article>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">X · 신탁 표시가 있으면 멈춘다</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>등기부 뜯어보기 #04
+
+신탁이라고 적혀 있으면 소유자 칸에 신탁회사 이름이 있습니다.
+집주인이라고 소개받은 사람이 등기부상 주인이 아닐 수 있다는 뜻입니다.
+
+빌려줄 권한이 누구에게 있는지는 신탁원부를 봐야 압니다.
+
+전세사기에서 반복해 나오는 유형입니다.</code></pre>
+  </article>
+    <nav class="pager">
+      <button class="page-btn" type="button" data-step="-1">← 이전</button>
+      <button class="page-btn" type="button" data-step="1">다음 →</button>
+    </nav>
+  </section>
+  <section class="pane" data-pane="0-4" hidden>
+    <header class="pane-head">
+      <p class="eyebrow">등기부 뜯어보기</p>
+      <h1 class="pane-title"><span class="pane-num">#05</span>등기부에 안 나오는 위험</h1>
+      
+      
+      
+    </header>
+    
+    <h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">스레드 · 등기부에 안 나오는 위험</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>등기부를 떼어봐도 안 보이는 위험이 있습니다.
+
+— 나보다 먼저 들어온 세입자의 보증금
+— 집주인이 안 낸 세금
+
+둘 다 등기부에 안 나오는데,
+경매로 넘어가면 내 보증금보다 순위가 앞섭니다.
+
+등기부가 깨끗하다고 안전한 게 아닙니다.</code></pre>
+  </article>
+    <nav class="pager">
+      <button class="page-btn" type="button" data-step="-1">← 이전</button>
+      <button class="page-btn" type="button" data-step="1">다음 →</button>
+    </nav>
+  </section>
+  <section class="pane" data-pane="0-5" hidden>
+    <header class="pane-head">
+      <p class="eyebrow">등기부 뜯어보기</p>
+      <h1 class="pane-title"><span class="pane-num">#06</span>계약서에 넣어달라고 할 한 줄</h1>
+      
+      <div class="warn"><span class="warn-tag">올리기 전 확인</span><p>법률 조언으로 읽히지 않게 &quot;일반적으로 쓰이는 특약 예시&quot;라는 단서를 붙이거나 &quot;구체적인 건 전문가와 상의하세요&quot;를 더하세요.</p></div>
+      
+    </header>
+    
+    <h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">스레드 · 특약 한 줄</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>계약서에 이 한 줄을 넣어달라고 요구할 수 있습니다.
+
+&quot;임대인은 잔금일 다음 날까지
+본 부동산에 근저당권을 설정하지 않는다&quot;
+
+계약하고 잔금 치르기 전에 집주인이 대출을 받아버리면
+순위가 밀립니다.
+
+드물지만 실제로 일어나고, 이 한 줄이 막아줍니다.</code></pre>
+  </article>
+    <nav class="pager">
+      <button class="page-btn" type="button" data-step="-1">← 이전</button>
+      <button class="page-btn" type="button" data-step="1">다음 →</button>
+    </nav>
+  </section>
+  <section class="pane" data-pane="0-6" hidden>
+    <header class="pane-head">
+      <p class="eyebrow">등기부 뜯어보기</p>
+      <h1 class="pane-title"><span class="pane-num">#07</span>집 보러 가서 물어볼 것</h1>
+      
+      
+      
+    </header>
+    <h3 class="group-head">이미지<span>Claude Design에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind ">1장</span>
+        <span class="size">1080 × 1350</span>
+        <span class="unit-name">스레드 · 집주인에게 물어볼 것들</span>
+      </div>
+      <button class="copy" type="button" data-copy>프롬프트 복사</button>
+    </header>
+    
+    <pre class="block"><code>「등기부 뜯어보기」 #07 — 집 보러 가서 물어볼 것
+
+[연재 고정 — 12화 내내 똑같은 자리 같은 크기로]
+상단 왼쪽   &quot;등기부 뜯어보기&quot; 30px 앰버 #E9A23B  +  &quot;#07&quot; 52px 흰색 900
+하단 왼쪽   28px 앰버 #E9A23B로 다음 화를 예고할 것:
+                 다음 화 — 가압류·가처분이 있는 집
+이 두 가지가 화마다 흔들리면 연재로 읽히지 않는다. 아래 내용보다 우선한다.
+워드마크 위치는 아래 본문 지시를 따를 것.
+
+입주해(한국 임대차 신뢰 서비스) SNS 이미지를 만들어줘.
+바탕 딥네이비 #0C2247, 강조 앰버 #E9A23B, 글자 흰색. 서체는 Gothic A1(없으면 Noto Sans KR).
+차분하고 사무적인 톤. 스톡사진·이모지·그라데이션 배경·영어 문구 금지. 느낌표 쓰지 말 것.
+아래 문구를 한 글자도 바꾸지 말고 그대로 넣을 것. 한글 맞춤법과 띄어쓰기를 지킬 것.
+
+이미지 1장. 1080 × 1350 px (스레드 피드에 세로로 크게 뜬다).
+안전 여백: 위아래 각 120px, 좌우 각 90px. 좌측 하단에 &quot;입주해&quot; 워드마크(30px, 흰색 60%).
+
+제목(72px 굵게 흰색): 집 보러 가서 / 물어봐도 되는 것
+
+그 아래 질문 세 개를 따옴표 붙은 말풍선처럼 쌓을 것.
+각 질문 48px 흰색, 왼쪽에 앰버 세로막대 6px:
+  지금 대출이 얼마나 잡혀 있나요
+  저보다 먼저 들어온 세입자가 있나요
+  보증금은 언제 어떻게 돌려주시나요
+
+맨 아래 한 줄 40px 앰버 #E9A23B: 이런 걸 묻는 사람이 월세도 제때 냅니다</code></pre>
+  </article>
+    <h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">스레드 · 집주인에게 물어볼 것들</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>집을 보러 가서 집주인에게 물어봐도 되는 것들.
+
+— 지금 대출이 얼마나 잡혀 있나요
+— 저보다 먼저 들어온 세입자가 있나요
+— 보증금은 언제 어떻게 돌려주시나요
+
+물어보면 까다로운 세입자로 보일까 봐 망설이게 되는데,
+이걸 안 물어보는 게 훨씬 위험합니다.
+
+집주인 입장에서도, 이런 걸 묻는 사람이 월세도 제때 냅니다.</code></pre>
+  </article>
+    <nav class="pager">
+      <button class="page-btn" type="button" data-step="-1">← 이전</button>
+      <button class="page-btn" type="button" data-step="1">다음 →</button>
+    </nav>
+  </section>
+  <section class="pane" data-pane="0-7" hidden>
+    <header class="pane-head">
+      <p class="eyebrow">등기부 뜯어보기</p>
+      <h1 class="pane-title"><span class="pane-num">#08</span>가압류·가처분이 있는 집</h1>
+      
+      <div class="warn"><span class="warn-tag">올리기 전 확인</span><p>가압류·가처분이 갑구에 기재된다는 점, 두 제도의 차이 서술은 게시 전에 한 번 확인하세요.</p></div>
+      
+    </header>
+    <h3 class="group-head">이미지<span>Claude Design에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind ">1장</span>
+        <span class="size">1080 × 1350</span>
+        <span class="unit-name">스레드 · 가압류·가처분이 있는 집</span>
+      </div>
+      <button class="copy" type="button" data-copy>프롬프트 복사</button>
+    </header>
+    
+    <pre class="block"><code>「등기부 뜯어보기」 #08 — 가압류·가처분이 있는 집
+
+[연재 고정 — 12화 내내 똑같은 자리 같은 크기로]
+상단 왼쪽   &quot;등기부 뜯어보기&quot; 30px 앰버 #E9A23B  +  &quot;#08&quot; 52px 흰색 900
+하단 왼쪽   28px 앰버 #E9A23B로 다음 화를 예고할 것:
+                 다음 화 — 다가구와 다세대가 다른 이유
+이 두 가지가 화마다 흔들리면 연재로 읽히지 않는다. 아래 내용보다 우선한다.
+워드마크 위치는 아래 본문 지시를 따를 것.
+
+입주해(한국 임대차 신뢰 서비스) SNS 이미지를 만들어줘.
+바탕 딥네이비 #0C2247, 강조 앰버 #E9A23B, 글자 흰색. 서체는 Gothic A1(없으면 Noto Sans KR).
+차분하고 사무적인 톤. 스톡사진·이모지·그라데이션 배경·영어 문구 금지. 느낌표 쓰지 말 것.
+아래 문구를 한 글자도 바꾸지 말고 그대로 넣을 것. 한글 맞춤법과 띄어쓰기를 지킬 것.
+
+이미지 1장. 1080 × 1350 px. 안전 여백: 위아래 각 120px, 좌우 각 90px.
+
+좌측 상단: 연재명 32px 앰버 #E9A23B — 등기부 뜯어보기
+그 바로 아래: 회차 번호 120px 흰색 아주 굵게 — #08
+가운데: 제목 84px 흰색 아주 굵게, 자간 -3px — 가압류 · 가처분이 있는 집
+좌측 하단: &quot;입주해&quot; 워드마크 30px 흰색 60%
+
+연재명과 번호는 매 화 같은 자리에 같은 크기로. 표지 형식은 절대 바꾸지 말 것.</code></pre>
+  </article>
+    <h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">스레드 · 가압류·가처분이 있는 집</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>등기부 뜯어보기 #08
+
+갑구에 가압류나 가처분이 적혀 있으면, 그 집은 지금 다툼 중이라는 뜻입니다.
+
+가압류는 누가 이 집주인한테 받을 돈이 있다며 집을 묶어둔 것이고
+가처분은 이 집의 소유권 자체를 두고 다투는 중이라는 표시입니다.
+
+둘 다 &quot;재판이 끝나면 이 집이 넘어갈 수도 있다&quot;는 신호입니다.
+
+근저당은 금액이라도 보이는데, 이건 결과를 알 수 없습니다.
+그래서 저는 이 표시가 있으면 그냥 다른 집을 봅니다.
+
+다음은 다가구와 다세대가 어떻게 다른지입니다.</code></pre>
+  </article>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">X · 가압류·가처분이 있는 집</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>등기부 뜯어보기 #08
+
+갑구에 가압류나 가처분이 있으면 그 집은 지금 다툼 중입니다.
+
+가압류는 집주인한테 받을 돈이 있다는 뜻
+가처분은 소유권 자체를 다투는 중이라는 뜻
+
+근저당은 금액이라도 보이는데 이건 결과를 알 수 없습니다.</code></pre>
+  </article>
+    <nav class="pager">
+      <button class="page-btn" type="button" data-step="-1">← 이전</button>
+      <button class="page-btn" type="button" data-step="1">다음 →</button>
+    </nav>
+  </section>
+  <section class="pane" data-pane="0-8" hidden>
+    <header class="pane-head">
+      <p class="eyebrow">등기부 뜯어보기</p>
+      <h1 class="pane-title"><span class="pane-num">#09</span>다가구와 다세대가 다른 이유</h1>
+      
+      <div class="warn"><span class="warn-tag">올리기 전 확인</span><p>다가구·다세대의 등기 구조와 &quot;확정일자 부여현황·전입세대 열람 내역&quot; 열람 절차는 게시 전 확인하세요.</p></div>
+      
+    </header>
+    <h3 class="group-head">이미지<span>Claude Design에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind ">1장</span>
+        <span class="size">1080 × 1350</span>
+        <span class="unit-name">스레드 · 다가구와 다세대가 다른 이유</span>
+      </div>
+      <button class="copy" type="button" data-copy>프롬프트 복사</button>
+    </header>
+    
+    <pre class="block"><code>「등기부 뜯어보기」 #09 — 다가구와 다세대가 다른 이유
+
+[연재 고정 — 12화 내내 똑같은 자리 같은 크기로]
+상단 왼쪽   &quot;등기부 뜯어보기&quot; 30px 앰버 #E9A23B  +  &quot;#09&quot; 52px 흰색 900
+하단 왼쪽   28px 앰버 #E9A23B로 다음 화를 예고할 것:
+                 다음 화 — 전입신고와 확정일자, 하루가 갈랐다
+이 두 가지가 화마다 흔들리면 연재로 읽히지 않는다. 아래 내용보다 우선한다.
+워드마크 위치는 아래 본문 지시를 따를 것.
+
+입주해(한국 임대차 신뢰 서비스) SNS 이미지를 만들어줘.
+바탕 딥네이비 #0C2247, 강조 앰버 #E9A23B, 글자 흰색. 서체는 Gothic A1(없으면 Noto Sans KR).
+차분하고 사무적인 톤. 스톡사진·이모지·그라데이션 배경·영어 문구 금지. 느낌표 쓰지 말 것.
+아래 문구를 한 글자도 바꾸지 말고 그대로 넣을 것. 한글 맞춤법과 띄어쓰기를 지킬 것.
+
+이미지 1장. 1080 × 1350 px. 안전 여백: 위아래 각 120px, 좌우 각 90px.
+
+좌측 상단에 작게: 등기부 뜯어보기 #09 (28px 앰버 #E9A23B)
+
+화면을 세로선으로 좌우 두 칸 분할(가운데 흰색 12% 세로선).
+
+왼쪽 칸
+  제목 64px 흰색 굵게: 다세대
+  항목 36px 흰색 72% (각 앞에 앰버 정사각형 12×12):
+    호실마다 등기가 따로
+    내 순위만 보면 됨
+
+오른쪽 칸
+  제목 64px 앰버 #E9A23B 굵게: 다가구
+  항목 36px 흰색 72% (각 앞에 앰버 정사각형 12×12):
+    건물 하나에 등기 하나
+    앞선 세입자 보증금이 전부 앞순위
+    등기부에 총액이 안 보임
+
+맨 아래 한 줄 40px 흰색: 이름은 비슷한데 위험이 다릅니다
+좌측 하단에 &quot;입주해&quot; 워드마크 30px 흰색 60%</code></pre>
+  </article>
+    <h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">스레드 · 다가구와 다세대가 다른 이유</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>등기부 뜯어보기 #09
+
+이름은 비슷한데, 보증금 위험은 완전히 다릅니다.
+
+다세대는 호실마다 등기가 따로 있습니다.
+201호 등기부를 떼면 201호 이야기만 나옵니다. 내 순위만 보면 됩니다.
+
+다가구는 건물 하나에 등기가 하나입니다.
+주인도 한 명, 등기부도 한 장인데 세입자는 열 몇 가구입니다.
+
+그래서 다가구에서는 내 앞에 들어온 세입자들의 보증금 전부가
+내 보증금보다 앞순위입니다.
+
+등기부만 봐서는 그 총액이 안 보입니다.
+집주인에게 확정일자 부여현황과 전입세대 열람 내역을 요청해서 직접 확인해야 합니다.
+거절하면, 그것도 하나의 답입니다.
+
+다음은 전입신고와 확정일자입니다.</code></pre>
+  </article>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">X · 다가구와 다세대가 다른 이유</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>등기부 뜯어보기 #09
+
+다세대는 호실마다 등기가 따로 있어서 내 순위만 보면 됩니다.
+
+다가구는 건물 하나에 등기가 하나입니다.
+세입자는 열 몇 가구인데 등기부는 한 장.
+
+내 앞에 들어온 세입자들의 보증금 전부가 내 앞순위인데,
+등기부만 봐서는 그 총액이 안 보입니다.</code></pre>
+  </article>
+    <nav class="pager">
+      <button class="page-btn" type="button" data-step="-1">← 이전</button>
+      <button class="page-btn" type="button" data-step="1">다음 →</button>
+    </nav>
+  </section>
+  <section class="pane" data-pane="0-9" hidden>
+    <header class="pane-head">
+      <p class="eyebrow">등기부 뜯어보기</p>
+      <h1 class="pane-title"><span class="pane-num">#10</span>전입신고와 확정일자, 하루가 갈랐다</h1>
+      
+      <div class="warn"><span class="warn-tag">올리기 전 확인</span><p>대항력 발생 시점(전입신고 다음 날)은 실무에서 널리 통용되는 내용이지만, 게시 전 반드시 확인하고 &quot;법률 조언이 아니다&quot;라는 톤을 유지하세요.</p></div>
+      
+    </header>
+    <h3 class="group-head">이미지<span>Claude Design에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind ">1장</span>
+        <span class="size">1080 × 1350</span>
+        <span class="unit-name">스레드 · 전입신고와 확정일자, 하루가 갈랐다</span>
+      </div>
+      <button class="copy" type="button" data-copy>프롬프트 복사</button>
+    </header>
+    
+    <pre class="block"><code>「등기부 뜯어보기」 #10 — 전입신고와 확정일자, 하루가 갈랐다
+
+[연재 고정 — 12화 내내 똑같은 자리 같은 크기로]
+상단 왼쪽   &quot;등기부 뜯어보기&quot; 30px 앰버 #E9A23B  +  &quot;#10&quot; 52px 흰색 900
+하단 왼쪽   28px 앰버 #E9A23B로 다음 화를 예고할 것:
+                 다음 화 — 보증보험이 거절되는 집
+이 두 가지가 화마다 흔들리면 연재로 읽히지 않는다. 아래 내용보다 우선한다.
+워드마크 위치는 아래 본문 지시를 따를 것.
+
+입주해(한국 임대차 신뢰 서비스) SNS 이미지를 만들어줘.
+바탕 딥네이비 #0C2247, 강조 앰버 #E9A23B, 글자 흰색. 서체는 Gothic A1(없으면 Noto Sans KR).
+차분하고 사무적인 톤. 스톡사진·이모지·그라데이션 배경·영어 문구 금지. 느낌표 쓰지 말 것.
+아래 문구를 한 글자도 바꾸지 말고 그대로 넣을 것. 한글 맞춤법과 띄어쓰기를 지킬 것.
+
+이미지 1장. 1080 × 1350 px. 안전 여백: 위아래 각 120px, 좌우 각 90px.
+
+좌측 상단: 연재명 32px 앰버 #E9A23B — 등기부 뜯어보기
+그 바로 아래: 회차 번호 120px 흰색 아주 굵게 — #10
+가운데: 제목 84px 흰색 아주 굵게, 자간 -3px — 전입신고와 확정일자,
+하루가 갈랐다
+좌측 하단: &quot;입주해&quot; 워드마크 30px 흰색 60%
+
+연재명과 번호는 매 화 같은 자리에 같은 크기로. 표지 형식은 절대 바꾸지 말 것.</code></pre>
+  </article>
+    <h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">스레드 · 전입신고와 확정일자, 하루가 갈랐다</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>등기부 뜯어보기 #10
+
+둘을 같은 날 했는데도 순위가 밀리는 경우가 있습니다.
+
+전입신고를 하면 대항력이 생기는데,
+그날 바로가 아니라 그다음 날부터 효력이 생깁니다.
+
+그래서 잔금 치른 날 오전에 전입신고를 해도,
+그날 오후에 집주인이 대출을 받아 근저당을 걸면
+근저당이 먼저입니다.
+
+드물지만 실제로 있는 일이고, 그래서 계약서에
+&quot;잔금일 다음 날까지 근저당을 설정하지 않는다&quot;는 특약을 넣습니다.
+#06에서 썼던 그 한 줄입니다.
+
+다음은 보증보험이 거절되는 집입니다.</code></pre>
+  </article>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">X · 전입신고와 확정일자, 하루가 갈랐다</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>등기부 뜯어보기 #10
+
+전입신고를 하면 대항력이 생기는데, 그날이 아니라 다음 날부터입니다.
+
+잔금 치른 날 오전에 전입신고를 해도
+그날 오후에 근저당이 걸리면 근저당이 먼저입니다.
+
+그래서 계약서에 특약 한 줄을 넣습니다.</code></pre>
+  </article>
+    <nav class="pager">
+      <button class="page-btn" type="button" data-step="-1">← 이전</button>
+      <button class="page-btn" type="button" data-step="1">다음 →</button>
+    </nav>
+  </section>
+  <section class="pane" data-pane="0-10" hidden>
+    <header class="pane-head">
+      <p class="eyebrow">등기부 뜯어보기</p>
+      <h1 class="pane-title"><span class="pane-num">#11</span>보증보험이 거절되는 집</h1>
+      
+      <div class="warn"><span class="warn-tag">올리기 전 확인</span><p>가입 거절 기준은 기관과 시기에 따라 다르고 자주 바뀝니다. 구체적 수치(부채비율 등)를 넣지 마세요. 기관명을 쓰려면 현재 기준을 직접 확인하세요.</p></div>
+      
+    </header>
+    <h3 class="group-head">이미지<span>Claude Design에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind ">1장</span>
+        <span class="size">1080 × 1350</span>
+        <span class="unit-name">스레드 · 보증보험이 거절되는 집</span>
+      </div>
+      <button class="copy" type="button" data-copy>프롬프트 복사</button>
+    </header>
+    
+    <pre class="block"><code>「등기부 뜯어보기」 #11 — 보증보험이 거절되는 집
+
+[연재 고정 — 12화 내내 똑같은 자리 같은 크기로]
+상단 왼쪽   &quot;등기부 뜯어보기&quot; 30px 앰버 #E9A23B  +  &quot;#11&quot; 52px 흰색 900
+하단 왼쪽   28px 앰버 #E9A23B로 다음 화를 예고할 것:
+                 다음 화 — 계약 전 마지막 점검표
+이 두 가지가 화마다 흔들리면 연재로 읽히지 않는다. 아래 내용보다 우선한다.
+워드마크 위치는 아래 본문 지시를 따를 것.
+
+입주해(한국 임대차 신뢰 서비스) SNS 이미지를 만들어줘.
+바탕 딥네이비 #0C2247, 강조 앰버 #E9A23B, 글자 흰색. 서체는 Gothic A1(없으면 Noto Sans KR).
+차분하고 사무적인 톤. 스톡사진·이모지·그라데이션 배경·영어 문구 금지. 느낌표 쓰지 말 것.
+아래 문구를 한 글자도 바꾸지 말고 그대로 넣을 것. 한글 맞춤법과 띄어쓰기를 지킬 것.
+
+이미지 1장. 1080 × 1350 px. 안전 여백: 위아래 각 120px, 좌우 각 90px.
+
+좌측 상단: 연재명 32px 앰버 #E9A23B — 등기부 뜯어보기
+그 바로 아래: 회차 번호 120px 흰색 아주 굵게 — #11
+가운데: 제목 84px 흰색 아주 굵게, 자간 -3px — 보증보험이
+거절되는 집
+좌측 하단: &quot;입주해&quot; 워드마크 30px 흰색 60%
+
+연재명과 번호는 매 화 같은 자리에 같은 크기로. 표지 형식은 절대 바꾸지 말 것.</code></pre>
+  </article>
+    <h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">스레드 · 보증보험이 거절되는 집</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>등기부 뜯어보기 #11
+
+전세보증금 반환보증에 가입하려는데 거절당했다면,
+그건 보험사가 이 집을 위험하다고 판단했다는 뜻입니다.
+
+거절 사유는 대체로 이런 것들입니다.
+선순위 채권이 너무 많거나, 신탁등기가 걸려 있거나,
+집값 대비 보증금 비중이 기준을 넘거나.
+
+여기서 중요한 건 개별 기준이 아닙니다.
+심사를 전문으로 하는 곳이 안 받겠다고 한 집을,
+내가 보증금 전부를 걸고 들어갈 이유가 있느냐입니다.
+
+가입이 되는지 계약 전에 먼저 확인해보세요.
+계약하고 나서 알면 늦습니다.
+
+다음은 마지막 화, 계약 전 점검표입니다.</code></pre>
+  </article>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">X · 보증보험이 거절되는 집</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>등기부 뜯어보기 #11
+
+전세보증금 반환보증 가입이 거절됐다면,
+심사를 전문으로 하는 곳이 이 집을 위험하다고 본 겁니다.
+
+그런 집에 내가 보증금 전부를 걸 이유가 있을까요.
+
+계약 전에 가입이 되는지 먼저 확인해보세요.</code></pre>
+  </article>
+    <nav class="pager">
+      <button class="page-btn" type="button" data-step="-1">← 이전</button>
+      <button class="page-btn" type="button" data-step="1">다음 →</button>
+    </nav>
+  </section>
+  <section class="pane" data-pane="0-11" hidden>
+    <header class="pane-head">
+      <p class="eyebrow">등기부 뜯어보기</p>
+      <h1 class="pane-title"><span class="pane-num">#12</span>계약 전 마지막 점검표</h1>
+      
+      
+      
+    </header>
+    <h3 class="group-head">이미지<span>Claude Design에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind ">1장</span>
+        <span class="size">1080 × 1350</span>
+        <span class="unit-name">스레드 · 계약 전 마지막 점검표</span>
+      </div>
+      <button class="copy" type="button" data-copy>프롬프트 복사</button>
+    </header>
+    
+    <pre class="block"><code>「등기부 뜯어보기」 #12 — 계약 전 마지막 점검표
+
+[연재 고정 — 12화 내내 똑같은 자리 같은 크기로]
+상단 왼쪽   &quot;등기부 뜯어보기&quot; 30px 앰버 #E9A23B  +  &quot;#12&quot; 52px 흰색 900
+하단 왼쪽   28px 앰버 #E9A23B로 &quot;연재 끝&quot; 표시
+이 두 가지가 화마다 흔들리면 연재로 읽히지 않는다. 아래 내용보다 우선한다.
+워드마크 위치는 아래 본문 지시를 따를 것.
+
+입주해(한국 임대차 신뢰 서비스) SNS 이미지를 만들어줘.
+바탕 딥네이비 #0C2247, 강조 앰버 #E9A23B, 글자 흰색. 서체는 Gothic A1(없으면 Noto Sans KR).
+차분하고 사무적인 톤. 스톡사진·이모지·그라데이션 배경·영어 문구 금지. 느낌표 쓰지 말 것.
+아래 문구를 한 글자도 바꾸지 말고 그대로 넣을 것. 한글 맞춤법과 띄어쓰기를 지킬 것.
+
+이미지 1장. 1080 × 1350 px. 안전 여백: 위아래 각 120px, 좌우 각 90px.
+
+좌측 상단에 작게: 등기부 뜯어보기 #12 (28px 앰버 #E9A23B)
+제목 76px 흰색 아주 굵게: 계약 전 / 마지막 점검표
+
+그 아래 항목 일곱 줄. 각 줄은 [빈 네모 체크박스 28×28(흰색 선 2px) + 문장 32px 흰색 80%]:
+  등기부상 소유자와 계약 상대가 같은가
+  근저당 채권최고액이 시세 대비 얼마인가
+  신탁 표시가 있는가
+  가압류·가처분이 있는가
+  다가구라면 앞선 보증금 총액을 확인했는가
+  근저당 설정 금지 특약을 넣었는가
+  보증보험 가입이 되는 집인가
+
+줄 간격 34px. 맨 아래 한 줄 38px 앰버 #E9A23B: 반나절이면 다 확인합니다
+좌측 하단에 &quot;입주해&quot; 워드마크 30px 흰색 60%</code></pre>
+  </article>
+    <h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">스레드 · 계약 전 마지막 점검표</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>등기부 뜯어보기 #12 (마지막 화)
+
+열한 편을 한 장으로 줄이면 이렇습니다.
+
+계약하려는 사람이 등기부상 소유자와 같은가 (#02)
+근저당 채권최고액이 시세에 비해 얼마인가 (#03)
+신탁 표시가 있는가 (#04)
+가압류·가처분이 있는가 (#08)
+다가구라면 앞선 세입자들의 보증금 총액을 확인했는가 (#09)
+잔금 다음 날까지 근저당을 설정하지 않는다는 특약을 넣었는가 (#06, #10)
+보증보험 가입이 되는 집인가 (#11)
+
+일곱 개를 다 확인하는 데 반나절이면 됩니다.
+보증금은 반나절보다 비쌉니다.
+
+이 연재는 여기서 한 번 매듭짓고,
+다음 주부터는 집주인 쪽을 확인하는 이야기를 시작합니다.</code></pre>
+  </article>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">X · 계약 전 마지막 점검표</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>등기부 뜯어보기 #12 (마지막 화)
+
+열한 편을 줄이면 일곱 개입니다.
+
+소유자가 계약 상대와 같은가
+근저당이 시세 대비 얼마인가
+신탁 표시가 있는가
+가압류·가처분이 있는가
+다가구면 앞선 보증금 총액은
+근저당 금지 특약을 넣었는가
+보증보험 가입이 되는가
+
+반나절이면 다 확인합니다.</code></pre>
+  </article>
+    <nav class="pager">
+      <button class="page-btn" type="button" data-step="-1">← 이전</button>
+      <button class="page-btn" type="button" data-step="1">다음 →</button>
+    </nav>
+  </section>
+  <section class="pane" data-pane="1-0" hidden>
+    <header class="pane-head">
+      <p class="eyebrow">임대인 노트</p>
+      <h1 class="pane-title"><span class="pane-num">#01</span>공실보다 연체가 비싸다</h1>
+      
+      <div class="warn"><span class="warn-tag">올리기 전 확인</span><p>구체적 금액을 넣으려면 &quot;가정&quot;임을 명시하세요.</p></div>
+      
+    </header>
+    <h3 class="group-head">이미지<span>Claude Design에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind ">1장</span>
+        <span class="size">1600 × 900</span>
+        <span class="unit-name">X · 임대인 · 연체 비용</span>
+      </div>
+      <button class="copy" type="button" data-copy>프롬프트 복사</button>
+    </header>
+    
+    <pre class="block"><code>「임대인 노트」 #01 — 공실보다 연체가 비싸다
+
+[연재 고정 — 6화 내내 똑같은 자리 같은 크기로]
+상단 왼쪽   &quot;임대인 노트&quot; 30px 앰버 #E9A23B  +  &quot;#01&quot; 52px 흰색 900
+하단 왼쪽   28px 앰버 #E9A23B로 다음 화를 예고할 것:
+                 다음 화 — 물어봐도 되는 것과 안 되는 것
+이 두 가지가 화마다 흔들리면 연재로 읽히지 않는다. 아래 내용보다 우선한다.
+워드마크 위치는 아래 본문 지시를 따를 것.
+
+입주해(한국 임대차 신뢰 서비스) SNS 이미지를 만들어줘.
+바탕 딥네이비 #0C2247, 강조 앰버 #E9A23B, 글자 흰색. 서체는 Gothic A1(없으면 Noto Sans KR).
+차분하고 사무적인 톤. 스톡사진·이모지·그라데이션 배경·영어 문구 금지. 느낌표 쓰지 말 것.
+아래 문구를 한 글자도 바꾸지 말고 그대로 넣을 것. 한글 맞춤법과 띄어쓰기를 지킬 것.
+
+이미지 1장. 1600 × 900 px (X 타임라인은 가로 16:9로 자른다).
+안전 여백: 사방 각 100px. 우측 하단에 &quot;입주해&quot; 워드마크(28px, 흰색 60%).
+
+가로 이미지. 왼쪽에 큰 숫자, 오른쪽에 설명.
+
+왼쪽
+  작은 단서 26px 흰색 50%: 월세 80만 원 가정
+  그 아래 30px 흰색 60%: 3개월 밀리면
+  그 아래 140px 앰버 #E9A23B 굵게: 240만 원
+
+오른쪽 (36px 흰색 72%, 각 앞에 앰버 정사각형 10×10)
+  여기에 명도 소송 변호사비가 붙고
+  그동안 못 받는 월세가 계속 쌓입니다
+  공실 한 달보다 훨씬 비쌉니다</code></pre>
+  </article>
+    <h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">스레드 · 공실보다 연체가 비싸다</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>집주인 입장에서 제일 비싼 실수는 공실이 아니라 연체입니다.
+
+공실 한 달은 한 달치 손해로 끝나지만
+연체는 명도까지 가면 몇 달에 소송비까지 붙습니다.
+
+그런데 세입자를 고를 때 쓸 수 있는 정보는 여전히 &quot;느낌&quot;뿐입니다.</code></pre>
+  </article>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">X · 임대인 · 연체 비용</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>집주인 입장에서 제일 비싼 실수는 공실이 아니라 연체입니다.
+
+공실 한 달은 한 달치로 끝나지만
+연체는 명도까지 가면 몇 달에 소송비가 붙습니다.
+
+그런데 세입자를 고를 때 쓸 수 있는 정보는 여전히 &quot;느낌&quot;뿐입니다.</code></pre>
+  </article>
+    <nav class="pager">
+      <button class="page-btn" type="button" data-step="-1">← 이전</button>
+      <button class="page-btn" type="button" data-step="1">다음 →</button>
+    </nav>
+  </section>
+  <section class="pane" data-pane="1-1" hidden>
+    <header class="pane-head">
+      <p class="eyebrow">임대인 노트</p>
+      <h1 class="pane-title"><span class="pane-num">#02</span>물어봐도 되는 것과 안 되는 것</h1>
+      
+      
+      
+    </header>
+    <h3 class="group-head">이미지<span>Claude Design에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-multi">캐러셀 6장</span>
+        <span class="size">1080 × 1350</span>
+        <span class="unit-name">인스타그램 · 캐러셀 · 임대인이 볼 수 있는 것 / 없는 것</span>
+      </div>
+      <button class="copy" type="button" data-copy>프롬프트 복사</button>
+    </header>
+    
+  <ol class="slides">
+    
+      <li class="slide">
+        <span class="slide-no">1</span>
+        <div class="slide-body">
+          <p class="slide-label">표지 — 제목 위에 앰버 가로막대 140×14</p>
+          <p class="slide-line"><span class="k">제목</span>집주인이 세입자에 대해 / 알 수 있는 건 / 거의 없습니다   ← 세 줄, 84px</p>
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">2</span>
+        <div class="slide-body">
+          
+          <p class="slide-line"><span class="k">제목</span>물어볼 수 있는 것</p><p class="slide-line">목록(52px 굵게, 각 항목 앞에 앰버 정사각형 14×14):</p><p class="slide-line">월세를 낼 수 있는 소득인지</p><p class="slide-line">이전 계약을 잘 마쳤는지</p>
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">3</span>
+        <div class="slide-body">
+          
+          <p class="slide-line"><span class="k">제목</span>그런데 / 확인할 방법이 / 없습니다</p><p class="slide-line"><span class="k">설명</span>서류는 위조됩니다. / 말은 확인할 수 없습니다.</p>
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">4</span>
+        <div class="slide-body">
+          
+          <p class="slide-line"><span class="k">제목</span>물어보면 안 되는 것</p><p class="slide-line">목록(52px 굵게, 앰버 정사각형):</p><p class="slide-line">출신 학교</p><p class="slide-line">국적</p><p class="slide-line">결혼 계획</p><p class="slide-line">가족 구성</p>
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">5</span>
+        <div class="slide-body">
+          
+          <p class="slide-line"><span class="k">제목</span>판단에 도움도 안 되고 / 차별이 됩니다</p>
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">6</span>
+        <div class="slide-body">
+          <p class="slide-label">세 줄을 계단처럼 왼쪽 정렬로 쌓을 것. 각 76px.</p>
+          <p class="slide-line">1행(들여쓰기 0):   필요한 건</p><p class="slide-line">2행(들여쓰기 60px): 더 많이 묻는 게 아니라</p><p class="slide-line">3행(들여쓰기 120px): 확인된 걸 보는 겁니다   ← 이 줄만 앰버 #E9A23B</p>
+        </div>
+      </li>
+  </ol>
+    <details class="raw"><summary>프롬프트 원문</summary><pre class="block"><code>「임대인 노트」 #02 — 물어봐도 되는 것과 안 되는 것
+
+[연재 고정 — 6화 내내 똑같은 자리 같은 크기로]
+표지 상단 왼쪽   &quot;임대인 노트&quot; 30px 앰버 #E9A23B  +  &quot;#02&quot; 52px 흰색 900
+마지막 장 하단   28px 앰버 #E9A23B로 다음 화를 예고할 것:
+                 다음 화 — 연체는 얼마짜리 실수인가
+이 두 가지가 화마다 흔들리면 연재로 읽히지 않는다. 아래 내용보다 우선한다.
+워드마크 위치는 아래 본문 지시를 따를 것.
+
+입주해(한국 임대차 신뢰 서비스) SNS 이미지를 만들어줘.
+바탕 딥네이비 #0C2247, 강조 앰버 #E9A23B, 글자 흰색. 서체는 Gothic A1(없으면 Noto Sans KR).
+차분하고 사무적인 톤. 스톡사진·이모지·그라데이션 배경·영어 문구 금지. 느낌표 쓰지 말 것.
+아래 문구를 한 글자도 바꾸지 말고 그대로 넣을 것. 한글 맞춤법과 띄어쓰기를 지킬 것.
+
+캐러셀 6장. 아트보드 6개를 가로로 나란히. 각 1080 × 1350 px.
+안전 여백: 위아래 각 120px, 좌우 각 90px.
+제목 88px 굵게. 2~6장 우측 상단에 &quot;2/6&quot; 형식 번호. 모든 장 좌측 하단에 &quot;입주해&quot; 워드마크.
+
+1장  (표지 — 제목 위에 앰버 가로막대 140×14)
+     제목: 집주인이 세입자에 대해 / 알 수 있는 건 / 거의 없습니다   ← 세 줄, 84px
+
+2장  제목: 물어볼 수 있는 것
+     목록(52px 굵게, 각 항목 앞에 앰버 정사각형 14×14):
+       월세를 낼 수 있는 소득인지
+       이전 계약을 잘 마쳤는지
+
+3장  제목: 그런데 / 확인할 방법이 / 없습니다
+     설명: 서류는 위조됩니다. / 말은 확인할 수 없습니다.
+
+4장  제목: 물어보면 안 되는 것
+     목록(52px 굵게, 앰버 정사각형):
+       출신 학교
+       국적
+       결혼 계획
+       가족 구성
+
+5장  제목: 판단에 도움도 안 되고 / 차별이 됩니다
+
+6장  세 줄을 계단처럼 왼쪽 정렬로 쌓을 것. 각 76px.
+     1행(들여쓰기 0):   필요한 건
+     2행(들여쓰기 60px): 더 많이 묻는 게 아니라
+     3행(들여쓰기 120px): 확인된 걸 보는 겁니다   ← 이 줄만 앰버 #E9A23B</code></pre></details>
+  </article>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind ">1장</span>
+        <span class="size">1080 × 1350</span>
+        <span class="unit-name">스레드 · 물어봐도 되는 것 / 안 되는 것</span>
+      </div>
+      <button class="copy" type="button" data-copy>프롬프트 복사</button>
+    </header>
+    
+    <pre class="block"><code>「임대인 노트」 #02 — 물어봐도 되는 것과 안 되는 것
+
+[연재 고정 — 6화 내내 똑같은 자리 같은 크기로]
+표지 상단 왼쪽   &quot;임대인 노트&quot; 30px 앰버 #E9A23B  +  &quot;#02&quot; 52px 흰색 900
+마지막 장 하단   28px 앰버 #E9A23B로 다음 화를 예고할 것:
+                 다음 화 — 연체는 얼마짜리 실수인가
+이 두 가지가 화마다 흔들리면 연재로 읽히지 않는다. 아래 내용보다 우선한다.
+워드마크 위치는 아래 본문 지시를 따를 것.
+
+입주해(한국 임대차 신뢰 서비스) SNS 이미지를 만들어줘.
+바탕 딥네이비 #0C2247, 강조 앰버 #E9A23B, 글자 흰색. 서체는 Gothic A1(없으면 Noto Sans KR).
+차분하고 사무적인 톤. 스톡사진·이모지·그라데이션 배경·영어 문구 금지. 느낌표 쓰지 말 것.
+아래 문구를 한 글자도 바꾸지 말고 그대로 넣을 것. 한글 맞춤법과 띄어쓰기를 지킬 것.
+
+이미지 1장. 1080 × 1350 px (스레드 피드에 세로로 크게 뜬다).
+안전 여백: 위아래 각 120px, 좌우 각 90px. 좌측 하단에 &quot;입주해&quot; 워드마크(30px, 흰색 60%).
+
+화면을 위아래 두 칸으로 나눌 것. 사이에 흰색 12% 가로선.
+
+위 칸
+  머리말 36px 앰버 #E9A23B: 물어봐도 되는 것
+  항목 48px 흰색: 월세를 낼 수 있는 소득인지 / 이전 계약을 잘 마쳤는지
+
+아래 칸
+  머리말 36px 흰색 50% 투명도: 물어보면 안 되는 것
+  항목 48px 흰색 40% 투명도, 각 항목에 취소선:
+    출신 학교 / 국적 / 결혼 계획 / 가족 구성
+
+아래 칸이 흐리고 취소선이 그어져 &quot;이건 안 된다&quot;가 한눈에 보이게 할 것.</code></pre>
+  </article>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind ">1장</span>
+        <span class="size">1600 × 900</span>
+        <span class="unit-name">X · 차별 선긋기</span>
+      </div>
+      <button class="copy" type="button" data-copy>프롬프트 복사</button>
+    </header>
+    
+    <pre class="block"><code>「임대인 노트」 #02 — 물어봐도 되는 것과 안 되는 것
+
+[연재 고정 — 6화 내내 똑같은 자리 같은 크기로]
+표지 상단 왼쪽   &quot;임대인 노트&quot; 30px 앰버 #E9A23B  +  &quot;#02&quot; 52px 흰색 900
+마지막 장 하단   28px 앰버 #E9A23B로 다음 화를 예고할 것:
+                 다음 화 — 연체는 얼마짜리 실수인가
+이 두 가지가 화마다 흔들리면 연재로 읽히지 않는다. 아래 내용보다 우선한다.
+워드마크 위치는 아래 본문 지시를 따를 것.
+
+입주해(한국 임대차 신뢰 서비스) SNS 이미지를 만들어줘.
+바탕 딥네이비 #0C2247, 강조 앰버 #E9A23B, 글자 흰색. 서체는 Gothic A1(없으면 Noto Sans KR).
+차분하고 사무적인 톤. 스톡사진·이모지·그라데이션 배경·영어 문구 금지. 느낌표 쓰지 말 것.
+아래 문구를 한 글자도 바꾸지 말고 그대로 넣을 것. 한글 맞춤법과 띄어쓰기를 지킬 것.
+
+이미지 1장. 1600 × 900 px (X 타임라인은 가로 16:9로 자른다).
+안전 여백: 사방 각 100px. 우측 하단에 &quot;입주해&quot; 워드마크(28px, 흰색 60%).
+
+가로 이미지. 세로선으로 좌우 두 칸 분할(가운데 흰색 12% 세로선).
+
+왼쪽 칸
+  머리말 30px 앰버 #E9A23B: 물어봐도 되는 것
+  항목 40px 흰색: 월세를 낼 수 있는 소득인지 / 이전 계약을 잘 마쳤는지
+
+오른쪽 칸
+  머리말 30px 흰색 50%: 물어보면 안 되는 것
+  항목 40px 흰색 40% 투명도, 각 항목에 취소선:
+    출신 학교 / 국적 / 결혼 계획 / 가족 구성
+
+오른쪽이 흐리고 취소선이 그어져 &quot;이건 안 된다&quot;가 한눈에 보이게.</code></pre>
+  </article>
+    <h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">인스타그램 · 캐러셀 · 임대인이 볼 수 있는 것 / 없는 것</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>집주인이 세입자에 대해 알 수 있는 건 사실상 없습니다.
+
+물어볼 수는 있습니다.
+월세를 낼 수 있는 소득인지, 이전 계약을 잘 마쳤는지.
+그런데 확인할 방법이 없습니다. 서류는 위조되고, 말은 확인이 안 됩니다.
+
+그래서 자꾸 다른 걸 묻게 됩니다.
+어느 학교 나왔는지, 결혼 계획은 있는지, 가족은 몇 명인지.
+
+그건 판단에 도움이 안 되면서 차별이 됩니다.
+그리고 사실 알고 싶었던 것도 아닙니다.
+
+필요한 건 더 많이 묻는 게 아니라, 확인된 걸 보는 겁니다.
+
+—
+학력도 직장 이름도 묻지 않는 방식으로 만들고 있습니다.
+프로필 링크에 사전 신청이 있습니다.
+
+#임대인 #집주인 #임대사업자 #세입자구하기 #월세 #전세 #부동산임대 #임대차 #공인중개사 #부동산 #계약 #입주해</code></pre>
+  </article>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">스레드 · 물어봐도 되는 것 / 안 되는 것</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>세입자에게 물어봐도 되는 것과 안 되는 것.
+
+물어봐도 되는 것
+— 월세를 낼 수 있는 소득이 되는지
+— 이전 계약을 잘 마쳤는지
+
+물어보면 안 되는 것
+— 결혼 계획, 출신 학교, 국적, 가족 구성
+
+두 번째 줄은 판단에 도움이 안 되면서 차별이 됩니다.
+그리고 첫 번째 줄은 물어봐도 확인할 방법이 없다는 게 진짜 문제입니다.</code></pre>
+  </article>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">X · 차별 선긋기</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>세입자에게 물어봐도 되는 것
+
+— 월세를 낼 수 있는 소득인지
+— 이전 계약을 잘 마쳤는지
+
+물어보면 안 되는 것
+
+— 출신 학교, 국적, 결혼 계획, 가족 구성
+
+두 번째는 판단에 도움도 안 되면서 차별이 됩니다.
+
+━━━ 답글 ━━━
+그리고 첫 번째는, 물어봐도 확인할 방법이 없다는 게 진짜 문제입니다.</code></pre>
+  </article>
+    <nav class="pager">
+      <button class="page-btn" type="button" data-step="-1">← 이전</button>
+      <button class="page-btn" type="button" data-step="1">다음 →</button>
+    </nav>
+  </section>
+  <section class="pane" data-pane="1-2" hidden>
+    <header class="pane-head">
+      <p class="eyebrow">임대인 노트</p>
+      <h1 class="pane-title"><span class="pane-num">#03</span>연체는 얼마짜리 실수인가</h1>
+      
+      <div class="warn"><span class="warn-tag">올리기 전 확인</span><p>첫 줄의 &quot;가정&quot;을 빼지 마세요. 소송비를 금액으로 쓰려면 근거를 확인하세요.</p></div>
+      
+    </header>
+    <h3 class="group-head">이미지<span>Claude Design에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind ">1장</span>
+        <span class="size">1080 × 1350</span>
+        <span class="unit-name">스레드 · 연체 손해 계산</span>
+      </div>
+      <button class="copy" type="button" data-copy>프롬프트 복사</button>
+    </header>
+    
+    <pre class="block"><code>「임대인 노트」 #03 — 연체는 얼마짜리 실수인가
+
+[연재 고정 — 6화 내내 똑같은 자리 같은 크기로]
+상단 왼쪽   &quot;임대인 노트&quot; 30px 앰버 #E9A23B  +  &quot;#03&quot; 52px 흰색 900
+하단 왼쪽   28px 앰버 #E9A23B로 다음 화를 예고할 것:
+                 다음 화 — 중개사가 확인할 수 없는 것
+이 두 가지가 화마다 흔들리면 연재로 읽히지 않는다. 아래 내용보다 우선한다.
+워드마크 위치는 아래 본문 지시를 따를 것.
+
+입주해(한국 임대차 신뢰 서비스) SNS 이미지를 만들어줘.
+바탕 딥네이비 #0C2247, 강조 앰버 #E9A23B, 글자 흰색. 서체는 Gothic A1(없으면 Noto Sans KR).
+차분하고 사무적인 톤. 스톡사진·이모지·그라데이션 배경·영어 문구 금지. 느낌표 쓰지 말 것.
+아래 문구를 한 글자도 바꾸지 말고 그대로 넣을 것. 한글 맞춤법과 띄어쓰기를 지킬 것.
+
+이미지 1장. 1080 × 1350 px (스레드 피드에 세로로 크게 뜬다).
+안전 여백: 위아래 각 120px, 좌우 각 90px. 좌측 하단에 &quot;입주해&quot; 워드마크(30px, 흰색 60%).
+
+왼쪽 위에 작은 단서(32px, 흰색 50%): 월세 80만 원 가정
+
+가운데에 숫자를 크게. 240만 원을 160px 앰버 #E9A23B 굵게, 그 위에 34px 흰색 60%로 &quot;3개월 밀리면&quot;.
+그 아래 목록 두 줄(40px 흰색 72%), 각 앞에 앰버 정사각형 12×12:
+  여기에 명도 소송 변호사비가 붙고
+  그동안 못 받는 월세가 계속 쌓입니다
+
+맨 아래 한 줄 44px 흰색: 공실 한 달보다 훨씬 비쌉니다</code></pre>
+  </article>
+    <h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">스레드 · 연체 손해 계산</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>세입자를 잘못 받으면 얼마나 손해인지 계산해봤습니다. (월세 80만 원 가정)
+
+3개월 밀리면 240만 원
+명도 소송에 들어가면 변호사비
+그동안 못 받는 월세는 계속 쌓입니다
+
+&quot;보증금에서 까면 된다&quot;고 하시는데,
+보증금을 다 까먹을 때까지 안 나가는 경우가 진짜 문제입니다.</code></pre>
+  </article>
+    <nav class="pager">
+      <button class="page-btn" type="button" data-step="-1">← 이전</button>
+      <button class="page-btn" type="button" data-step="1">다음 →</button>
+    </nav>
+  </section>
+  <section class="pane" data-pane="1-3" hidden>
+    <header class="pane-head">
+      <p class="eyebrow">임대인 노트</p>
+      <h1 class="pane-title"><span class="pane-num">#04</span>중개사가 확인할 수 없는 것</h1>
+      
+      
+      
+    </header>
+    
+    <h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">스레드 · 중개사에게 묻는 글</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>중개사 분들께 묻고 싶습니다.
+
+계약 자리에서 세입자가 준 서류가 진짜인지,
+현장에서 확인하실 방법이 있으신가요.
+
+재직증명서 위조는 생각보다 쉽습니다.
+확인 안 하고 넘어갔다가 사고가 나면 책임은 중개사에게 옵니다.</code></pre>
+  </article>
+    <nav class="pager">
+      <button class="page-btn" type="button" data-step="-1">← 이전</button>
+      <button class="page-btn" type="button" data-step="1">다음 →</button>
+    </nav>
+  </section>
+  <section class="pane" data-pane="1-4" hidden>
+    <header class="pane-head">
+      <p class="eyebrow">임대인 노트</p>
+      <h1 class="pane-title"><span class="pane-num">#05</span>보증금을 올리는 것 말고</h1>
+      
+      
+      
+    </header>
+    <h3 class="group-head">이미지<span>Claude Design에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind ">1장</span>
+        <span class="size">1080 × 1350</span>
+        <span class="unit-name">스레드 · 보증금을 올리는 것 말고</span>
+      </div>
+      <button class="copy" type="button" data-copy>프롬프트 복사</button>
+    </header>
+    
+    <pre class="block"><code>「임대인 노트」 #05 — 보증금을 올리는 것 말고
+
+[연재 고정 — 6화 내내 똑같은 자리 같은 크기로]
+상단 왼쪽   &quot;임대인 노트&quot; 30px 앰버 #E9A23B  +  &quot;#05&quot; 52px 흰색 900
+하단 왼쪽   28px 앰버 #E9A23B로 다음 화를 예고할 것:
+                 다음 화 — 좋은 세입자의 신호는 무엇인가
+이 두 가지가 화마다 흔들리면 연재로 읽히지 않는다. 아래 내용보다 우선한다.
+워드마크 위치는 아래 본문 지시를 따를 것.
+
+입주해(한국 임대차 신뢰 서비스) SNS 이미지를 만들어줘.
+바탕 딥네이비 #0C2247, 강조 앰버 #E9A23B, 글자 흰색. 서체는 Gothic A1(없으면 Noto Sans KR).
+차분하고 사무적인 톤. 스톡사진·이모지·그라데이션 배경·영어 문구 금지. 느낌표 쓰지 말 것.
+아래 문구를 한 글자도 바꾸지 말고 그대로 넣을 것. 한글 맞춤법과 띄어쓰기를 지킬 것.
+
+이미지 1장. 1080 × 1350 px. 안전 여백: 위아래 각 120px, 좌우 각 90px.
+
+좌측 상단: 연재명 32px 앰버 #E9A23B — 임대인 노트
+그 바로 아래: 회차 번호 120px 흰색 아주 굵게 — #05
+가운데: 제목 84px 흰색 아주 굵게, 자간 -3px — 보증금을 올리는 것
+말고
+좌측 하단: &quot;입주해&quot; 워드마크 30px 흰색 60%
+
+연재명과 번호는 매 화 같은 자리에 같은 크기로. 표지 형식은 절대 바꾸지 말 것.</code></pre>
+  </article>
+    <h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">스레드 · 보증금을 올리는 것 말고</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>임대인 노트 #05
+
+연체가 걱정되면 보통 보증금을 올립니다.
+그런데 보증금을 올리면 두 가지가 같이 일어납니다.
+
+위험은 줄어들고, 들어올 사람도 줄어듭니다.
+
+돈을 잘 내는 사람일수록 선택지가 많아서
+보증금 높은 집을 굳이 고르지 않습니다.
+결국 보증금을 올려서 걸러지는 쪽이 오히려 성실한 세입자일 수 있습니다.
+
+보증금 말고 쓸 수 있는 게 있습니다.
+월세를 자동이체로 받는 것,
+연체 시 지연손해금을 계약서에 명확히 적어두는 것,
+그리고 계약 전에 확인할 수 있는 걸 확인하는 것.
+
+마지막이 지금은 거의 불가능해서, 저희가 그걸 만들고 있습니다.</code></pre>
+  </article>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">X · 보증금을 올리는 것 말고</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>임대인 노트 #05
+
+연체가 걱정되면 보증금을 올립니다.
+그러면 위험도 줄지만 들어올 사람도 줄어듭니다.
+
+돈을 잘 내는 사람일수록 선택지가 많아서
+보증금 높은 집을 굳이 고르지 않습니다.
+
+보증금으로 걸러지는 쪽이 오히려 성실한 세입자일 수 있습니다.</code></pre>
+  </article>
+    <nav class="pager">
+      <button class="page-btn" type="button" data-step="-1">← 이전</button>
+      <button class="page-btn" type="button" data-step="1">다음 →</button>
+    </nav>
+  </section>
+  <section class="pane" data-pane="1-5" hidden>
+    <header class="pane-head">
+      <p class="eyebrow">임대인 노트</p>
+      <h1 class="pane-title"><span class="pane-num">#06</span>좋은 세입자의 신호는 무엇인가</h1>
+      
+      
+      
+    </header>
+    <h3 class="group-head">이미지<span>Claude Design에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind ">1장</span>
+        <span class="size">1080 × 1350</span>
+        <span class="unit-name">스레드 · 좋은 세입자의 신호는 무엇인가</span>
+      </div>
+      <button class="copy" type="button" data-copy>프롬프트 복사</button>
+    </header>
+    
+    <pre class="block"><code>「임대인 노트」 #06 — 좋은 세입자의 신호는 무엇인가
+
+[연재 고정 — 6화 내내 똑같은 자리 같은 크기로]
+상단 왼쪽   &quot;임대인 노트&quot; 30px 앰버 #E9A23B  +  &quot;#06&quot; 52px 흰색 900
+하단 왼쪽   28px 앰버 #E9A23B로 &quot;연재 끝&quot; 표시
+이 두 가지가 화마다 흔들리면 연재로 읽히지 않는다. 아래 내용보다 우선한다.
+워드마크 위치는 아래 본문 지시를 따를 것.
+
+입주해(한국 임대차 신뢰 서비스) SNS 이미지를 만들어줘.
+바탕 딥네이비 #0C2247, 강조 앰버 #E9A23B, 글자 흰색. 서체는 Gothic A1(없으면 Noto Sans KR).
+차분하고 사무적인 톤. 스톡사진·이모지·그라데이션 배경·영어 문구 금지. 느낌표 쓰지 말 것.
+아래 문구를 한 글자도 바꾸지 말고 그대로 넣을 것. 한글 맞춤법과 띄어쓰기를 지킬 것.
+
+이미지 1장. 1080 × 1350 px. 안전 여백: 위아래 각 120px, 좌우 각 90px.
+
+좌측 상단에 작게: 임대인 노트 #06 (28px 앰버 #E9A23B)
+
+화면을 위아래 두 칸으로. 사이에 흰색 12% 가로선.
+
+위 칸
+  머리말 34px 앰버 #E9A23B: 보는 것
+  항목 46px 흰색 (각 앞에 앰버 정사각형 12×12):
+    월세가 소득에서 차지하는 비율
+    이전 계약을 끝까지 마쳤는지
+    정기 납부를 밀리지 않았는지
+
+아래 칸
+  머리말 34px 흰색 50%: 보지 않는 것
+  항목 46px 흰색 40% 투명도, 각 항목에 취소선:
+    직업 / 학력 / 나이 / 결혼 여부 / 국적
+
+아래 칸이 흐리고 취소선이 그어져 한눈에 대비되게 할 것.
+좌측 하단에 &quot;입주해&quot; 워드마크 30px 흰색 60%</code></pre>
+  </article>
+    <h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">스레드 · 좋은 세입자의 신호는 무엇인가</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>임대인 노트 #06
+
+좋은 세입자를 어떻게 알아보느냐는 질문을 받습니다.
+저희가 보는 건 세 가지입니다.
+
+첫째, 월세가 소득에서 차지하는 비율.
+액수가 아니라 비율입니다. 많이 버는 사람이 아니라 감당 가능한 사람을 찾는 거니까요.
+
+둘째, 이전 계약을 끝까지 마쳤는가.
+중간에 나갔는지, 분쟁이 있었는지.
+
+셋째, 정기적으로 나가는 돈을 밀리지 않고 내왔는가.
+통신비 같은 것들요.
+
+여기에 없는 것도 말씀드리는 게 맞겠습니다.
+직업, 학력, 나이, 결혼 여부, 국적은 안 봅니다.
+판단에 도움이 안 되고, 무엇보다 차별이 됩니다.
+
+그리고 솔직히 말하면, 저 셋도 지금은 확인할 방법이 없습니다.
+그게 저희가 만들고 있는 것입니다.</code></pre>
+  </article>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">X · 좋은 세입자의 신호는 무엇인가</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>임대인 노트 #06
+
+좋은 세입자를 어떻게 알아보나.
+
+보는 것
+— 월세가 소득에서 차지하는 비율
+— 이전 계약을 끝까지 마쳤는지
+— 정기 납부를 밀리지 않았는지
+
+안 보는 것
+— 직업, 학력, 나이, 결혼 여부, 국적
+
+솔직히 앞의 셋도 지금은 확인할 방법이 없습니다.</code></pre>
+  </article>
+    <nav class="pager">
+      <button class="page-btn" type="button" data-step="-1">← 이전</button>
+      <button class="page-btn" type="button" data-step="1">다음 →</button>
+    </nav>
+  </section>
+  <section class="pane" data-pane="2-0" hidden>
+    <header class="pane-head">
+      <p class="eyebrow">지수의 계약</p>
+      <h1 class="pane-title"><span class="pane-num">#01</span>너무 싼 집</h1>
+      
+      
+      
+    </header>
+    <h3 class="group-head">이미지<span>Claude Design에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-multi">4컷</span>
+        <span class="size">1080 × 1350</span>
+        <span class="unit-name">이미지 디자인 프롬프트</span>
+      </div>
+      <button class="copy" type="button" data-copy>프롬프트 복사</button>
+    </header>
+    
+  <ol class="slides">
+    
+      <li class="slide">
+        <span class="slide-no">1</span>
+        <div class="slide-body">
+          <p class="slide-label">지수 · 생각</p>
+          <p class="slide-line">보증금 8천?</p><p class="slide-line">이 동네에?</p>
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">2</span>
+        <div class="slide-body">
+          <p class="slide-label">김 소장 · 말</p>
+          <p class="slide-line">운이 좋으시네요.</p><p class="slide-line">오늘 아침에 나온 거예요.</p>
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">3</span>
+        <div class="slide-body">
+          <p class="slide-label">지수 · 생각</p>
+          <p class="slide-line">깨끗한데…</p><p class="slide-line">왜 이렇게 싸지?</p>
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">4</span>
+        <div class="slide-body">
+          <p class="slide-label">지수 · 말</p>
+          <p class="slide-line">잠깐만요.</p><p class="slide-line">등기부 한 번만</p><p class="slide-line">볼게요.</p>
+        </div>
+      </li>
+  </ol>
+    <details class="raw"><summary>프롬프트 원문</summary><pre class="block"><code>「지수의 계약」 #01 — 너무 싼 집
+인스타그램 게시용 이미지 1장을 만들어줘.
+
+[규격]
+1080 × 1350 px. 여백 위 60px, 좌우 54px, 아래 54px.
+바탕 딥네이비 #0C2247. 강조 앰버 #E9A23B. 카드 연회색 #EEF1F5. 글자 먹색 #1B1A18.
+서체 Gothic A1 (없으면 Noto Sans KR). 느낌표 쓰지 말 것.
+
+[연재 고정 — 12화 내내 똑같이 유지할 것]
+상단 왼쪽   &quot;지수의 계약&quot; 30px 앰버  +  &quot;#01&quot; 52px 흰색 900
+상단 오른쪽 너무 싼 집  — 26px 흰색 60%
+가운데      연회색 카드 한 장. 모서리 26px, 안쪽 여백 34px. 이 카드 안에서 4컷이 전개된다
+하단 왼쪽   다음 화 — 소유자 이름이 다르다  — 28px 앰버      ← 절대 빼지 말 것
+하단 오른쪽 &quot;입주해&quot; 24px 흰색 55%
+
+[4컷 — 문구를 한 글자도 바꾸지 말 것]
+1컷  지수 · 생각
+     보증금 8천?
+     이 동네에?
+2컷  김 소장 · 말
+     운이 좋으시네요.
+     오늘 아침에 나온 거예요.
+3컷  지수 · 생각
+     깨끗한데…
+     왜 이렇게 싸지?
+4컷  지수 · 말
+     잠깐만요.
+     등기부 한 번만
+     볼게요.
+
+[표현 규칙]
+지수의 말은 오른쪽, 김 소장의 말은 왼쪽에 둘 것.
+지수의 생각과 걱정은 말풍선이 아니라 점선 내레이션으로 구분할 것.
+사람 일러스트, 이모지, 스톡 이미지, 그라데이션 배경, 영어 문구 금지.
+한글 맞춤법과 띄어쓰기를 지킬 것.</code></pre></details>
+  </article>
+    <h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">인스타·스레드 캡션</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>지수의 계약 #01 — 너무 싼 집
+
+시세보다 눈에 띄게 싼 집에는 이유가 있습니다.
+좋은 이유일 수도 있고, 아닐 수도 있고요.
+
+지수는 일단 등기부를 떼보기로 했습니다.
+
+다음 화 — 소유자 이름이 다르다
+
+#지수의계약 #등기부등본 #전세사기예방 #보증금 #임대차계약 #전세 #월세 #집구하기 #자취 #부동산상식 #입주해</code></pre>
+  </article>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">X 본문</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>지수의 계약 #01 — 너무 싼 집
+
+보증금이 시세보다 확 싸면 이유가 있습니다.
+좋은 이유일 수도, 아닐 수도.
+
+일단 등기부부터 떼봅니다.
+
+다음 화 — 소유자 이름이 다르다</code></pre>
+  </article>
+    <nav class="pager">
+      <button class="page-btn" type="button" data-step="-1">← 이전</button>
+      <button class="page-btn" type="button" data-step="1">다음 →</button>
+    </nav>
+  </section>
+  <section class="pane" data-pane="2-1" hidden>
+    <header class="pane-head">
+      <p class="eyebrow">지수의 계약</p>
+      <h1 class="pane-title"><span class="pane-num">#02</span>소유자 이름이 다르다</h1>
+      <p class="topic">갑구 · 소유자와 신탁 표시</p>
+      
+      
+    </header>
+    <h3 class="group-head">이미지<span>Claude Design에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-multi">4컷</span>
+        <span class="size">1080 × 1350</span>
+        <span class="unit-name">이미지 디자인 프롬프트</span>
+      </div>
+      <button class="copy" type="button" data-copy>프롬프트 복사</button>
+    </header>
+    
+  <ol class="slides">
+    
+      <li class="slide">
+        <span class="slide-no">1</span>
+        <div class="slide-body">
+          <p class="slide-label">지수 · 말</p>
+          <p class="slide-line">등기부 나왔다.</p><p class="slide-line">갑구부터…</p>
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">2</span>
+        <div class="slide-body">
+          <p class="slide-label">서류 (인물 없음</p>
+          <p class="slide-line">소유자</p><p class="slide-line">○○부동산신탁</p><p class="slide-line">→ 등기사항전부증명서 【갑구】 소유권에 관한 사항 형태의 흰색 문서 카드.</p><p class="slide-line">&quot;소유자&quot; 행의 값만 크게 키우고 앰버 형광 밑줄을 그을 것.</p><p class="slide-line">카드 오른쪽 위에 「예시」 배지를 반드시 넣을 것</p>
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">3</span>
+        <div class="slide-body">
+          <p class="slide-label">지수 · 놀람</p>
+          <p class="slide-line">어? 박 사장님</p><p class="slide-line">이름이 아닌데?</p>
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">4</span>
+        <div class="slide-body">
+          <p class="slide-label">지수 · 생각</p>
+          <p class="slide-line">그럼 계약은</p><p class="slide-line">누구랑 하는 거지?</p>
+        </div>
+      </li>
+  </ol>
+    <details class="raw"><summary>프롬프트 원문</summary><pre class="block"><code>「지수의 계약」 #02 — 소유자 이름이 다르다
+인스타그램 게시용 이미지 1장을 만들어줘.
+
+[규격]
+1080 × 1350 px. 여백 위 60px, 좌우 54px, 아래 54px.
+바탕 딥네이비 #0C2247. 강조 앰버 #E9A23B. 카드 연회색 #EEF1F5. 글자 먹색 #1B1A18.
+서체 Gothic A1 (없으면 Noto Sans KR). 느낌표 쓰지 말 것.
+
+[연재 고정 — 12화 내내 똑같이 유지할 것]
+상단 왼쪽   &quot;지수의 계약&quot; 30px 앰버  +  &quot;#02&quot; 52px 흰색 900
+상단 오른쪽 소유자 이름이 다르다  — 26px 흰색 60%
+가운데      연회색 카드 한 장. 모서리 26px, 안쪽 여백 34px. 이 카드 안에서 4컷이 전개된다
+하단 왼쪽   다음 화 — &quot;원래 그래요&quot;  — 28px 앰버      ← 절대 빼지 말 것
+하단 오른쪽 &quot;입주해&quot; 24px 흰색 55%
+
+[이 화의 주제]
+카드 맨 위 가운데에 알약 모양 칩으로 넣을 것 (23px, 네이비 55%, 테두리 2px 네이비 18%)
+갑구 · 소유자와 신탁 표시
+
+[4컷 — 문구를 한 글자도 바꾸지 말 것]
+1컷  지수 · 말
+     등기부 나왔다.
+     갑구부터…
+2컷  서류 (인물 없음)
+     소유자
+     ○○부동산신탁
+     → 등기사항전부증명서 【갑구】 소유권에 관한 사항 형태의 흰색 문서 카드.
+        &quot;소유자&quot; 행의 값만 크게 키우고 앰버 형광 밑줄을 그을 것.
+        카드 오른쪽 위에 「예시」 배지를 반드시 넣을 것
+3컷  지수 · 놀람
+     어? 박 사장님
+     이름이 아닌데?
+4컷  지수 · 생각
+     그럼 계약은
+     누구랑 하는 거지?
+
+[표현 규칙]
+지수의 말은 오른쪽, 김 소장의 말은 왼쪽에 둘 것.
+지수의 생각과 걱정은 말풍선이 아니라 점선 내레이션으로 구분할 것.
+사람 일러스트, 이모지, 스톡 이미지, 그라데이션 배경, 영어 문구 금지.
+한글 맞춤법과 띄어쓰기를 지킬 것.</code></pre></details>
+  </article>
+    <h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">인스타·스레드 캡션</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>지수의 계약 #02 — 소유자 이름이 다르다
+
+갑구에서 제일 먼저 보는 건 소유자 이름입니다.
+계약하려는 사람과 같은지.
+
+신탁회사 이름이 적혀 있으면, 집주인이라고 소개받은 사람이 등기부상 주인이 아닐 수 있습니다.
+
+다음 화 — &quot;원래 그래요&quot;
+
+#지수의계약 #등기부등본 #전세사기예방 #보증금 #임대차계약 #전세 #월세 #집구하기 #자취 #부동산상식 #입주해</code></pre>
+  </article>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">X 본문</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>지수의 계약 #02 — 소유자 이름이 다르다
+
+갑구에서 제일 먼저 볼 건 소유자 이름입니다.
+계약할 사람과 같은지.
+
+신탁회사 이름이 있으면 그 사람은 등기부상 주인이 아닙니다.
+
+다음 화 — &quot;원래 그래요&quot;</code></pre>
+  </article>
+    <nav class="pager">
+      <button class="page-btn" type="button" data-step="-1">← 이전</button>
+      <button class="page-btn" type="button" data-step="1">다음 →</button>
+    </nav>
+  </section>
+  <section class="pane" data-pane="2-2" hidden>
+    <header class="pane-head">
+      <p class="eyebrow">지수의 계약</p>
+      <h1 class="pane-title"><span class="pane-num">#03</span>&quot;원래 그래요&quot;</h1>
+      <p class="topic">신탁원부 · 임대 권한</p>
+      
+      
+    </header>
+    <h3 class="group-head">이미지<span>Claude Design에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-multi">4컷</span>
+        <span class="size">1080 × 1350</span>
+        <span class="unit-name">이미지 디자인 프롬프트</span>
+      </div>
+      <button class="copy" type="button" data-copy>프롬프트 복사</button>
+    </header>
+    
+  <ol class="slides">
+    
+      <li class="slide">
+        <span class="slide-no">1</span>
+        <div class="slide-body">
+          <p class="slide-label">지수 · 말</p>
+          <p class="slide-line">소유자가</p><p class="slide-line">신탁회사로 돼 있는데요.</p>
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">2</span>
+        <div class="slide-body">
+          <p class="slide-label">김 소장 · 말</p>
+          <p class="slide-line">아 요즘 그런 집 많아요.</p><p class="slide-line">원래 그래요.</p>
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">3</span>
+        <div class="slide-body">
+          <p class="slide-label">지수 · 걱정</p>
+          <p class="slide-line">많다는 거랑</p><p class="slide-line">괜찮다는 건</p><p class="slide-line">다른 얘기 아닌가…</p>
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">4</span>
+        <div class="slide-body">
+          <p class="slide-label">지수 · 말</p>
+          <p class="slide-line">신탁원부</p><p class="slide-line">확인해주실 수 있을까요.</p>
+        </div>
+      </li>
+  </ol>
+    <details class="raw"><summary>프롬프트 원문</summary><pre class="block"><code>「지수의 계약」 #03 — &quot;원래 그래요&quot;
+인스타그램 게시용 이미지 1장을 만들어줘.
+
+[규격]
+1080 × 1350 px. 여백 위 60px, 좌우 54px, 아래 54px.
+바탕 딥네이비 #0C2247. 강조 앰버 #E9A23B. 카드 연회색 #EEF1F5. 글자 먹색 #1B1A18.
+서체 Gothic A1 (없으면 Noto Sans KR). 느낌표 쓰지 말 것.
+
+[연재 고정 — 12화 내내 똑같이 유지할 것]
+상단 왼쪽   &quot;지수의 계약&quot; 30px 앰버  +  &quot;#03&quot; 52px 흰색 900
+상단 오른쪽 &quot;원래 그래요&quot;  — 26px 흰색 60%
+가운데      연회색 카드 한 장. 모서리 26px, 안쪽 여백 34px. 이 카드 안에서 4컷이 전개된다
+하단 왼쪽   다음 화 — 숫자를 세어본다  — 28px 앰버      ← 절대 빼지 말 것
+하단 오른쪽 &quot;입주해&quot; 24px 흰색 55%
+
+[이 화의 주제]
+카드 맨 위 가운데에 알약 모양 칩으로 넣을 것 (23px, 네이비 55%, 테두리 2px 네이비 18%)
+신탁원부 · 임대 권한
+
+[4컷 — 문구를 한 글자도 바꾸지 말 것]
+1컷  지수 · 말
+     소유자가
+     신탁회사로 돼 있는데요.
+2컷  김 소장 · 말
+     아 요즘 그런 집 많아요.
+     원래 그래요.
+3컷  지수 · 걱정
+     많다는 거랑
+     괜찮다는 건
+     다른 얘기 아닌가…
+4컷  지수 · 말
+     신탁원부
+     확인해주실 수 있을까요.
+
+[표현 규칙]
+지수의 말은 오른쪽, 김 소장의 말은 왼쪽에 둘 것.
+지수의 생각과 걱정은 말풍선이 아니라 점선 내레이션으로 구분할 것.
+사람 일러스트, 이모지, 스톡 이미지, 그라데이션 배경, 영어 문구 금지.
+한글 맞춤법과 띄어쓰기를 지킬 것.</code></pre></details>
+  </article>
+    <h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">인스타·스레드 캡션</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>지수의 계약 #03 — &quot;원래 그래요&quot;
+
+&quot;원래 그래요&quot;는 확인이 아닙니다.
+
+신탁된 집은 빌려줄 권한이 신탁회사에 있을 수도, 원래 주인에게 일부 남아 있을 수도 있습니다. 그건 등기부에 안 나오고 신탁원부를 봐야 압니다.
+
+권한 없는 사람과 한 계약은 나중에 무효가 될 수 있습니다.
+
+다음 화 — 숫자를 세어본다
+
+#지수의계약 #등기부등본 #전세사기예방 #보증금 #임대차계약 #전세 #월세 #집구하기 #자취 #부동산상식 #입주해</code></pre>
+  </article>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">X 본문</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>지수의 계약 #03 — &quot;원래 그래요&quot;
+
+&quot;요즘 그런 집 많아요&quot;는 확인이 아닙니다.
+
+신탁된 집은 빌려줄 권한이 누구에게 있는지를 신탁원부로 확인해야 합니다.
+
+권한 없는 사람과 한 계약은 무효가 될 수 있습니다.
+
+다음 화 — 숫자를 세어본다</code></pre>
+  </article>
+    <nav class="pager">
+      <button class="page-btn" type="button" data-step="-1">← 이전</button>
+      <button class="page-btn" type="button" data-step="1">다음 →</button>
+    </nav>
+  </section>
+  <section class="pane" data-pane="2-3" hidden>
+    <header class="pane-head">
+      <p class="eyebrow">지수의 계약</p>
+      <h1 class="pane-title"><span class="pane-num">#04</span>숫자를 세어본다</h1>
+      <p class="topic">을구 · 근저당 채권최고액</p>
+      
+      
+    </header>
+    <h3 class="group-head">이미지<span>Claude Design에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-multi">4컷</span>
+        <span class="size">1080 × 1350</span>
+        <span class="unit-name">이미지 디자인 프롬프트</span>
+      </div>
+      <button class="copy" type="button" data-copy>프롬프트 복사</button>
+    </header>
+    
+  <ol class="slides">
+    
+      <li class="slide">
+        <span class="slide-no">1</span>
+        <div class="slide-body">
+          <p class="slide-label">지수 · 말</p>
+          <p class="slide-line">을구도 볼게요.</p>
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">2</span>
+        <div class="slide-body">
+          <p class="slide-label">서류 (인물 없음</p>
+          <p class="slide-line">채권최고액</p><p class="slide-line">2억 4,000만원</p><p class="slide-line">→ 등기사항전부증명서 【을구】 소유권 이외의 권리에 관한 사항 형태의 흰색 문서 카드.</p><p class="slide-line">&quot;채권최고액&quot; 행의 값만 크게 키우고 앰버 형광 밑줄을 그을 것.</p><p class="slide-line">카드 오른쪽 위에 「예시」 배지를 반드시 넣을 것</p>
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">3</span>
+        <div class="slide-body">
+          <p class="slide-label">지수 · 생각</p>
+          <p class="slide-line">집값이 3억인데</p><p class="slide-line">2억 4천…</p>
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">4</span>
+        <div class="slide-body">
+          <p class="slide-label">지수 · 걱정</p>
+          <p class="slide-line">경매 가면</p><p class="slide-line">은행이 먼저구나.</p>
+        </div>
+      </li>
+  </ol>
+    <details class="raw"><summary>프롬프트 원문</summary><pre class="block"><code>「지수의 계약」 #04 — 숫자를 세어본다
+인스타그램 게시용 이미지 1장을 만들어줘.
+
+[규격]
+1080 × 1350 px. 여백 위 60px, 좌우 54px, 아래 54px.
+바탕 딥네이비 #0C2247. 강조 앰버 #E9A23B. 카드 연회색 #EEF1F5. 글자 먹색 #1B1A18.
+서체 Gothic A1 (없으면 Noto Sans KR). 느낌표 쓰지 말 것.
+
+[연재 고정 — 12화 내내 똑같이 유지할 것]
+상단 왼쪽   &quot;지수의 계약&quot; 30px 앰버  +  &quot;#04&quot; 52px 흰색 900
+상단 오른쪽 숫자를 세어본다  — 26px 흰색 60%
+가운데      연회색 카드 한 장. 모서리 26px, 안쪽 여백 34px. 이 카드 안에서 4컷이 전개된다
+하단 왼쪽   다음 화 — 앞집 사람  — 28px 앰버      ← 절대 빼지 말 것
+하단 오른쪽 &quot;입주해&quot; 24px 흰색 55%
+
+[이 화의 주제]
+카드 맨 위 가운데에 알약 모양 칩으로 넣을 것 (23px, 네이비 55%, 테두리 2px 네이비 18%)
+을구 · 근저당 채권최고액
+
+[4컷 — 문구를 한 글자도 바꾸지 말 것]
+1컷  지수 · 말
+     을구도 볼게요.
+2컷  서류 (인물 없음)
+     채권최고액
+     2억 4,000만원
+     → 등기사항전부증명서 【을구】 소유권 이외의 권리에 관한 사항 형태의 흰색 문서 카드.
+        &quot;채권최고액&quot; 행의 값만 크게 키우고 앰버 형광 밑줄을 그을 것.
+        카드 오른쪽 위에 「예시」 배지를 반드시 넣을 것
+3컷  지수 · 생각
+     집값이 3억인데
+     2억 4천…
+4컷  지수 · 걱정
+     경매 가면
+     은행이 먼저구나.
+
+[표현 규칙]
+지수의 말은 오른쪽, 김 소장의 말은 왼쪽에 둘 것.
+지수의 생각과 걱정은 말풍선이 아니라 점선 내레이션으로 구분할 것.
+사람 일러스트, 이모지, 스톡 이미지, 그라데이션 배경, 영어 문구 금지.
+한글 맞춤법과 띄어쓰기를 지킬 것.</code></pre></details>
+  </article>
+    <h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">인스타·스레드 캡션</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>지수의 계약 #04 — 숫자를 세어본다
+
+을구의 채권최고액은 이 집을 담보로 빌린 돈입니다.
+
+경매로 넘어가면 은행이 먼저 가져갑니다. 이 금액이 집값에 가까울수록 내 보증금에 남는 게 줄어듭니다.
+
+확정일자보다 순위가 먼저입니다.
+
+다음 화 — 앞집 사람
+
+#지수의계약 #등기부등본 #전세사기예방 #보증금 #임대차계약 #전세 #월세 #집구하기 #자취 #부동산상식 #입주해</code></pre>
+  </article>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">X 본문</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>지수의 계약 #04 — 숫자를 세어본다
+
+을구 채권최고액은 이 집을 담보로 빌린 돈입니다.
+
+경매로 넘어가면 은행이 먼저 가져갑니다.
+집값에 가까울수록 내 보증금에 남는 게 없습니다.
+
+다음 화 — 앞집 사람</code></pre>
+  </article>
+    <nav class="pager">
+      <button class="page-btn" type="button" data-step="-1">← 이전</button>
+      <button class="page-btn" type="button" data-step="1">다음 →</button>
+    </nav>
+  </section>
+  <section class="pane" data-pane="2-4" hidden>
+    <header class="pane-head">
+      <p class="eyebrow">지수의 계약</p>
+      <h1 class="pane-title"><span class="pane-num">#05</span>앞집 사람</h1>
+      <p class="topic">다가구 · 선순위 보증금</p>
+      
+      
+    </header>
+    <h3 class="group-head">이미지<span>Claude Design에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-multi">4컷</span>
+        <span class="size">1080 × 1350</span>
+        <span class="unit-name">이미지 디자인 프롬프트</span>
+      </div>
+      <button class="copy" type="button" data-copy>프롬프트 복사</button>
+    </header>
+    
+  <ol class="slides">
+    
+      <li class="slide">
+        <span class="slide-no">1</span>
+        <div class="slide-body">
+          <p class="slide-label">지수 · 말</p>
+          <p class="slide-line">여기 몇 가구</p><p class="slide-line">사세요?</p>
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">2</span>
+        <div class="slide-body">
+          <p class="slide-label">김 소장 · 말</p>
+          <p class="slide-line">한 층에 세 집,</p><p class="slide-line">건물에 아홉이요.</p>
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">3</span>
+        <div class="slide-body">
+          <p class="slide-label">지수 · 생각</p>
+          <p class="slide-line">등기부는 한 장이었는데</p><p class="slide-line">세입자가 아홉?</p>
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">4</span>
+        <div class="slide-body">
+          <p class="slide-label">지수 · 말</p>
+          <p class="slide-line">앞서 들어온 분들</p><p class="slide-line">보증금 합계도</p><p class="slide-line">알 수 있을까요.</p>
+        </div>
+      </li>
+  </ol>
+    <details class="raw"><summary>프롬프트 원문</summary><pre class="block"><code>「지수의 계약」 #05 — 앞집 사람
+인스타그램 게시용 이미지 1장을 만들어줘.
+
+[규격]
+1080 × 1350 px. 여백 위 60px, 좌우 54px, 아래 54px.
+바탕 딥네이비 #0C2247. 강조 앰버 #E9A23B. 카드 연회색 #EEF1F5. 글자 먹색 #1B1A18.
+서체 Gothic A1 (없으면 Noto Sans KR). 느낌표 쓰지 말 것.
+
+[연재 고정 — 12화 내내 똑같이 유지할 것]
+상단 왼쪽   &quot;지수의 계약&quot; 30px 앰버  +  &quot;#05&quot; 52px 흰색 900
+상단 오른쪽 앞집 사람  — 26px 흰색 60%
+가운데      연회색 카드 한 장. 모서리 26px, 안쪽 여백 34px. 이 카드 안에서 4컷이 전개된다
+하단 왼쪽   다음 화 — 보험이 거절됐다  — 28px 앰버      ← 절대 빼지 말 것
+하단 오른쪽 &quot;입주해&quot; 24px 흰색 55%
+
+[이 화의 주제]
+카드 맨 위 가운데에 알약 모양 칩으로 넣을 것 (23px, 네이비 55%, 테두리 2px 네이비 18%)
+다가구 · 선순위 보증금
+
+[4컷 — 문구를 한 글자도 바꾸지 말 것]
+1컷  지수 · 말
+     여기 몇 가구
+     사세요?
+2컷  김 소장 · 말
+     한 층에 세 집,
+     건물에 아홉이요.
+3컷  지수 · 생각
+     등기부는 한 장이었는데
+     세입자가 아홉?
+4컷  지수 · 말
+     앞서 들어온 분들
+     보증금 합계도
+     알 수 있을까요.
+
+[표현 규칙]
+지수의 말은 오른쪽, 김 소장의 말은 왼쪽에 둘 것.
+지수의 생각과 걱정은 말풍선이 아니라 점선 내레이션으로 구분할 것.
+사람 일러스트, 이모지, 스톡 이미지, 그라데이션 배경, 영어 문구 금지.
+한글 맞춤법과 띄어쓰기를 지킬 것.</code></pre></details>
+  </article>
+    <h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">인스타·스레드 캡션</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>지수의 계약 #05 — 앞집 사람
+
+다세대는 호실마다 등기가 따로 있어서 내 순위만 보면 됩니다.
+
+다가구는 건물 하나에 등기가 하나입니다. 세입자는 여럿인데 등기부는 한 장이라, 내 앞에 들어온 사람들의 보증금 전부가 내 앞순위입니다.
+
+그 총액은 등기부에 안 보입니다. 직접 요청해서 확인해야 합니다.
+
+다음 화 — 보험이 거절됐다
+
+#지수의계약 #등기부등본 #전세사기예방 #보증금 #임대차계약 #전세 #월세 #집구하기 #자취 #부동산상식 #입주해</code></pre>
+  </article>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">X 본문</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>지수의 계약 #05 — 앞집 사람
+
+다세대는 호실마다 등기가 따로 있습니다.
+
+다가구는 건물 하나에 등기가 하나인데 세입자는 여럿입니다.
+앞선 보증금 전부가 내 앞순위인데 등기부엔 총액이 안 보입니다.
+
+다음 화 — 보험이 거절됐다</code></pre>
+  </article>
+    <nav class="pager">
+      <button class="page-btn" type="button" data-step="-1">← 이전</button>
+      <button class="page-btn" type="button" data-step="1">다음 →</button>
+    </nav>
+  </section>
+  <section class="pane" data-pane="2-5" hidden>
+    <header class="pane-head">
+      <p class="eyebrow">지수의 계약</p>
+      <h1 class="pane-title"><span class="pane-num">#06</span>보험이 거절됐다</h1>
+      <p class="topic">보증보험 거절 = 위험 신호</p>
+      
+      
+    </header>
+    <h3 class="group-head">이미지<span>Claude Design에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-multi">4컷</span>
+        <span class="size">1080 × 1350</span>
+        <span class="unit-name">이미지 디자인 프롬프트</span>
+      </div>
+      <button class="copy" type="button" data-copy>프롬프트 복사</button>
+    </header>
+    
+  <ol class="slides">
+    
+      <li class="slide">
+        <span class="slide-no">1</span>
+        <div class="slide-body">
+          <p class="slide-label">지수 · 말</p>
+          <p class="slide-line">보증보험은</p><p class="slide-line">들 수 있겠죠?</p>
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">2</span>
+        <div class="slide-body">
+          <p class="slide-label">서류 (인물 없음</p>
+          <p class="slide-line">가입</p><p class="slide-line">불가</p><p class="slide-line">→ 전세보증금 반환보증 심사 결과 통지 형태의 흰색 문서 카드.</p><p class="slide-line">&quot;결과&quot; 행의 값만 크게 키우고 앰버 형광 밑줄을 그을 것.</p><p class="slide-line">카드 오른쪽 위에 「예시」 배지를 반드시 넣을 것</p>
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">3</span>
+        <div class="slide-body">
+          <p class="slide-label">지수 · 놀람</p>
+          <p class="slide-line">거절?</p>
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">4</span>
+        <div class="slide-body">
+          <p class="slide-label">지수 · 생각</p>
+          <p class="slide-line">심사하는 데서</p><p class="slide-line">안 받겠다는 집을</p><p class="slide-line">내가 왜.</p>
+        </div>
+      </li>
+  </ol>
+    <details class="raw"><summary>프롬프트 원문</summary><pre class="block"><code>「지수의 계약」 #06 — 보험이 거절됐다
+인스타그램 게시용 이미지 1장을 만들어줘.
+
+[규격]
+1080 × 1350 px. 여백 위 60px, 좌우 54px, 아래 54px.
+바탕 딥네이비 #0C2247. 강조 앰버 #E9A23B. 카드 연회색 #EEF1F5. 글자 먹색 #1B1A18.
+서체 Gothic A1 (없으면 Noto Sans KR). 느낌표 쓰지 말 것.
+
+[연재 고정 — 12화 내내 똑같이 유지할 것]
+상단 왼쪽   &quot;지수의 계약&quot; 30px 앰버  +  &quot;#06&quot; 52px 흰색 900
+상단 오른쪽 보험이 거절됐다  — 26px 흰색 60%
+가운데      연회색 카드 한 장. 모서리 26px, 안쪽 여백 34px. 이 카드 안에서 4컷이 전개된다
+하단 왼쪽   다음 화 — 다른 집  — 28px 앰버      ← 절대 빼지 말 것
+하단 오른쪽 &quot;입주해&quot; 24px 흰색 55%
+
+[이 화의 주제]
+카드 맨 위 가운데에 알약 모양 칩으로 넣을 것 (23px, 네이비 55%, 테두리 2px 네이비 18%)
+보증보험 거절 = 위험 신호
+
+[4컷 — 문구를 한 글자도 바꾸지 말 것]
+1컷  지수 · 말
+     보증보험은
+     들 수 있겠죠?
+2컷  서류 (인물 없음)
+     가입
+     불가
+     → 전세보증금 반환보증 심사 결과 통지 형태의 흰색 문서 카드.
+        &quot;결과&quot; 행의 값만 크게 키우고 앰버 형광 밑줄을 그을 것.
+        카드 오른쪽 위에 「예시」 배지를 반드시 넣을 것
+3컷  지수 · 놀람
+     거절?
+4컷  지수 · 생각
+     심사하는 데서
+     안 받겠다는 집을
+     내가 왜.
+
+[표현 규칙]
+지수의 말은 오른쪽, 김 소장의 말은 왼쪽에 둘 것.
+지수의 생각과 걱정은 말풍선이 아니라 점선 내레이션으로 구분할 것.
+사람 일러스트, 이모지, 스톡 이미지, 그라데이션 배경, 영어 문구 금지.
+한글 맞춤법과 띄어쓰기를 지킬 것.</code></pre></details>
+  </article>
+    <h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">인스타·스레드 캡션</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>지수의 계약 #06 — 보험이 거절됐다
+
+전세보증금 반환보증 가입이 거절됐다면, 심사를 전문으로 하는 곳이 이 집을 위험하다고 판단한 겁니다.
+
+그런 집에 보증금 전부를 걸 이유가 있을까요.
+
+계약 전에 가입이 되는지 먼저 확인해보세요. 계약하고 나서 알면 늦습니다.
+
+다음 화 — 다른 집
+
+#지수의계약 #등기부등본 #전세사기예방 #보증금 #임대차계약 #전세 #월세 #집구하기 #자취 #부동산상식 #입주해</code></pre>
+  </article>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">X 본문</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>지수의 계약 #06 — 보험이 거절됐다
+
+보증보험 가입이 거절됐다면,
+심사를 전문으로 하는 곳이 이 집을 위험하다고 본 겁니다.
+
+계약 전에 가입이 되는지 먼저 확인해보세요.
+
+다음 화 — 다른 집</code></pre>
+  </article>
+    <nav class="pager">
+      <button class="page-btn" type="button" data-step="-1">← 이전</button>
+      <button class="page-btn" type="button" data-step="1">다음 →</button>
+    </nav>
+  </section>
+  <section class="pane" data-pane="2-6" hidden>
+    <header class="pane-head">
+      <p class="eyebrow">지수의 계약</p>
+      <h1 class="pane-title"><span class="pane-num">#07</span>다른 집</h1>
+      <p class="topic">정상적인 등기부는 어떻게 생겼나</p>
+      
+      
+    </header>
+    <h3 class="group-head">이미지<span>Claude Design에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-multi">4컷</span>
+        <span class="size">1080 × 1350</span>
+        <span class="unit-name">이미지 디자인 프롬프트</span>
+      </div>
+      <button class="copy" type="button" data-copy>프롬프트 복사</button>
+    </header>
+    
+  <ol class="slides">
+    
+      <li class="slide">
+        <span class="slide-no">1</span>
+        <div class="slide-body">
+          <p class="slide-label">지수 · 말</p>
+          <p class="slide-line">이 집 등기부도</p><p class="slide-line">볼게요.</p>
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">2</span>
+        <div class="slide-body">
+          <p class="slide-label">서류 (인물 없음</p>
+          <p class="slide-line">소유자 박○○</p><p class="slide-line">근저당 없음</p><p class="slide-line">→ 등기사항전부증명서 【갑구】 · 【을구】 형태의 흰색 문서 카드.</p><p class="slide-line">&quot;근저당권&quot; 행의 값만 크게 키우고 앰버 형광 밑줄을 그을 것.</p><p class="slide-line">카드 오른쪽 위에 「예시」 배지를 반드시 넣을 것</p>
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">3</span>
+        <div class="slide-body">
+          <p class="slide-label">지수 · 평범</p>
+          <p class="slide-line">깨끗하네.</p>
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">4</span>
+        <div class="slide-body">
+          <p class="slide-label">지수 · 생각</p>
+          <p class="slide-line">그래도</p><p class="slide-line">확인할 게 하나</p><p class="slide-line">남았지.</p>
+        </div>
+      </li>
+  </ol>
+    <details class="raw"><summary>프롬프트 원문</summary><pre class="block"><code>「지수의 계약」 #07 — 다른 집
+인스타그램 게시용 이미지 1장을 만들어줘.
+
+[규격]
+1080 × 1350 px. 여백 위 60px, 좌우 54px, 아래 54px.
+바탕 딥네이비 #0C2247. 강조 앰버 #E9A23B. 카드 연회색 #EEF1F5. 글자 먹색 #1B1A18.
+서체 Gothic A1 (없으면 Noto Sans KR). 느낌표 쓰지 말 것.
+
+[연재 고정 — 12화 내내 똑같이 유지할 것]
+상단 왼쪽   &quot;지수의 계약&quot; 30px 앰버  +  &quot;#07&quot; 52px 흰색 900
+상단 오른쪽 다른 집  — 26px 흰색 60%
+가운데      연회색 카드 한 장. 모서리 26px, 안쪽 여백 34px. 이 카드 안에서 4컷이 전개된다
+하단 왼쪽   다음 화 — 특약을 말해본다  — 28px 앰버      ← 절대 빼지 말 것
+하단 오른쪽 &quot;입주해&quot; 24px 흰색 55%
+
+[이 화의 주제]
+카드 맨 위 가운데에 알약 모양 칩으로 넣을 것 (23px, 네이비 55%, 테두리 2px 네이비 18%)
+정상적인 등기부는 어떻게 생겼나
+
+[4컷 — 문구를 한 글자도 바꾸지 말 것]
+1컷  지수 · 말
+     이 집 등기부도
+     볼게요.
+2컷  서류 (인물 없음)
+     소유자 박○○
+     근저당 없음
+     → 등기사항전부증명서 【갑구】 · 【을구】 형태의 흰색 문서 카드.
+        &quot;근저당권&quot; 행의 값만 크게 키우고 앰버 형광 밑줄을 그을 것.
+        카드 오른쪽 위에 「예시」 배지를 반드시 넣을 것
+3컷  지수 · 평범
+     깨끗하네.
+4컷  지수 · 생각
+     그래도
+     확인할 게 하나
+     남았지.
+
+[표현 규칙]
+지수의 말은 오른쪽, 김 소장의 말은 왼쪽에 둘 것.
+지수의 생각과 걱정은 말풍선이 아니라 점선 내레이션으로 구분할 것.
+사람 일러스트, 이모지, 스톡 이미지, 그라데이션 배경, 영어 문구 금지.
+한글 맞춤법과 띄어쓰기를 지킬 것.</code></pre></details>
+  </article>
+    <h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">인스타·스레드 캡션</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>지수의 계약 #07 — 다른 집
+
+소유자가 계약할 사람과 같고, 근저당도 신탁도 없습니다.
+
+여기까지 오면 대부분 안심합니다. 그런데 등기부는 오늘 시점의 사진일 뿐입니다.
+
+계약하고 잔금 치르기 전에 바뀔 수 있습니다.
+
+다음 화 — 특약을 말해본다
+
+#지수의계약 #등기부등본 #전세사기예방 #보증금 #임대차계약 #전세 #월세 #집구하기 #자취 #부동산상식 #입주해</code></pre>
+  </article>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">X 본문</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>지수의 계약 #07 — 다른 집
+
+소유자가 계약할 사람과 같고 근저당도 없습니다.
+
+여기서 대부분 안심하는데,
+등기부는 오늘 시점의 사진일 뿐입니다.
+
+다음 화 — 특약을 말해본다</code></pre>
+  </article>
+    <nav class="pager">
+      <button class="page-btn" type="button" data-step="-1">← 이전</button>
+      <button class="page-btn" type="button" data-step="1">다음 →</button>
+    </nav>
+  </section>
+  <section class="pane" data-pane="2-7" hidden>
+    <header class="pane-head">
+      <p class="eyebrow">지수의 계약</p>
+      <h1 class="pane-title"><span class="pane-num">#08</span>특약을 말해본다</h1>
+      <p class="topic">근저당 설정 금지 특약</p>
+      
+      
+    </header>
+    <h3 class="group-head">이미지<span>Claude Design에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-multi">4컷</span>
+        <span class="size">1080 × 1350</span>
+        <span class="unit-name">이미지 디자인 프롬프트</span>
+      </div>
+      <button class="copy" type="button" data-copy>프롬프트 복사</button>
+    </header>
+    
+  <ol class="slides">
+    
+      <li class="slide">
+        <span class="slide-no">1</span>
+        <div class="slide-body">
+          <p class="slide-label">지수 · 말</p>
+          <p class="slide-line">특약에 한 줄만</p><p class="slide-line">넣어주실 수 있을까요.</p>
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">2</span>
+        <div class="slide-body">
+          <p class="slide-label">김 소장 · 말</p>
+          <p class="slide-line">어떤 거요?</p>
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">3</span>
+        <div class="slide-body">
+          <p class="slide-label">지수 · 말</p>
+          <p class="slide-line">잔금 다음 날까지</p><p class="slide-line">근저당 설정 안 한다고요.</p>
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">4</span>
+        <div class="slide-body">
+          <p class="slide-label">김 소장 · 말</p>
+          <p class="slide-line">…집주인분께</p><p class="slide-line">여쭤볼게요.</p>
+        </div>
+      </li>
+  </ol>
+    <details class="raw"><summary>프롬프트 원문</summary><pre class="block"><code>「지수의 계약」 #08 — 특약을 말해본다
+인스타그램 게시용 이미지 1장을 만들어줘.
+
+[규격]
+1080 × 1350 px. 여백 위 60px, 좌우 54px, 아래 54px.
+바탕 딥네이비 #0C2247. 강조 앰버 #E9A23B. 카드 연회색 #EEF1F5. 글자 먹색 #1B1A18.
+서체 Gothic A1 (없으면 Noto Sans KR). 느낌표 쓰지 말 것.
+
+[연재 고정 — 12화 내내 똑같이 유지할 것]
+상단 왼쪽   &quot;지수의 계약&quot; 30px 앰버  +  &quot;#08&quot; 52px 흰색 900
+상단 오른쪽 특약을 말해본다  — 26px 흰색 60%
+가운데      연회색 카드 한 장. 모서리 26px, 안쪽 여백 34px. 이 카드 안에서 4컷이 전개된다
+하단 왼쪽   다음 화 — 잔금일 아침  — 28px 앰버      ← 절대 빼지 말 것
+하단 오른쪽 &quot;입주해&quot; 24px 흰색 55%
+
+[이 화의 주제]
+카드 맨 위 가운데에 알약 모양 칩으로 넣을 것 (23px, 네이비 55%, 테두리 2px 네이비 18%)
+근저당 설정 금지 특약
+
+[4컷 — 문구를 한 글자도 바꾸지 말 것]
+1컷  지수 · 말
+     특약에 한 줄만
+     넣어주실 수 있을까요.
+2컷  김 소장 · 말
+     어떤 거요?
+3컷  지수 · 말
+     잔금 다음 날까지
+     근저당 설정 안 한다고요.
+4컷  김 소장 · 말
+     …집주인분께
+     여쭤볼게요.
+
+[표현 규칙]
+지수의 말은 오른쪽, 김 소장의 말은 왼쪽에 둘 것.
+지수의 생각과 걱정은 말풍선이 아니라 점선 내레이션으로 구분할 것.
+사람 일러스트, 이모지, 스톡 이미지, 그라데이션 배경, 영어 문구 금지.
+한글 맞춤법과 띄어쓰기를 지킬 것.</code></pre></details>
+  </article>
+    <h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">인스타·스레드 캡션</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>지수의 계약 #08 — 특약을 말해본다
+
+&quot;임대인은 잔금일 다음 날까지 본 부동산에 근저당권을 설정하지 않는다.&quot;
+
+요구하기 어색한 한 줄입니다. 까다로운 세입자로 보일까 봐 망설이게 됩니다.
+
+그런데 이 한 줄이 왜 필요한지는 다음 화에 나옵니다.
+
+다음 화 — 잔금일 아침
+
+#지수의계약 #등기부등본 #전세사기예방 #보증금 #임대차계약 #전세 #월세 #집구하기 #자취 #부동산상식 #입주해</code></pre>
+  </article>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">X 본문</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>지수의 계약 #08 — 특약을 말해본다
+
+&quot;임대인은 잔금일 다음 날까지 근저당권을 설정하지 않는다.&quot;
+
+계약서에 넣어달라고 요구할 수 있는 한 줄입니다.
+왜 필요한지는 다음 화에.
+
+다음 화 — 잔금일 아침</code></pre>
+  </article>
+    <nav class="pager">
+      <button class="page-btn" type="button" data-step="-1">← 이전</button>
+      <button class="page-btn" type="button" data-step="1">다음 →</button>
+    </nav>
+  </section>
+  <section class="pane" data-pane="2-8" hidden>
+    <header class="pane-head">
+      <p class="eyebrow">지수의 계약</p>
+      <h1 class="pane-title"><span class="pane-num">#09</span>잔금일 아침</h1>
+      <p class="topic">대항력은 다음 날부터</p>
+      
+      
+    </header>
+    <h3 class="group-head">이미지<span>Claude Design에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-multi">4컷</span>
+        <span class="size">1080 × 1350</span>
+        <span class="unit-name">이미지 디자인 프롬프트</span>
+      </div>
+      <button class="copy" type="button" data-copy>프롬프트 복사</button>
+    </header>
+    
+  <ol class="slides">
+    
+      <li class="slide">
+        <span class="slide-no">1</span>
+        <div class="slide-body">
+          <p class="slide-label">지수 · 말</p>
+          <p class="slide-line">잔금 보냈습니다.</p>
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">2</span>
+        <div class="slide-body">
+          <p class="slide-label">지수 · 말</p>
+          <p class="slide-line">전입신고</p><p class="slide-line">바로 하러 갈게요.</p>
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">3</span>
+        <div class="slide-body">
+          <p class="slide-label">김 소장 · 말</p>
+          <p class="slide-line">오늘 하시면</p><p class="slide-line">오늘부터 되는 거죠?</p>
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">4</span>
+        <div class="slide-body">
+          <p class="slide-label">지수 · 생각</p>
+          <p class="slide-line">아니요.</p><p class="slide-line">내일부터요.</p>
+        </div>
+      </li>
+  </ol>
+    <details class="raw"><summary>프롬프트 원문</summary><pre class="block"><code>「지수의 계약」 #09 — 잔금일 아침
+인스타그램 게시용 이미지 1장을 만들어줘.
+
+[규격]
+1080 × 1350 px. 여백 위 60px, 좌우 54px, 아래 54px.
+바탕 딥네이비 #0C2247. 강조 앰버 #E9A23B. 카드 연회색 #EEF1F5. 글자 먹색 #1B1A18.
+서체 Gothic A1 (없으면 Noto Sans KR). 느낌표 쓰지 말 것.
+
+[연재 고정 — 12화 내내 똑같이 유지할 것]
+상단 왼쪽   &quot;지수의 계약&quot; 30px 앰버  +  &quot;#09&quot; 52px 흰색 900
+상단 오른쪽 잔금일 아침  — 26px 흰색 60%
+가운데      연회색 카드 한 장. 모서리 26px, 안쪽 여백 34px. 이 카드 안에서 4컷이 전개된다
+하단 왼쪽   다음 화 — 하루 사이에  — 28px 앰버      ← 절대 빼지 말 것
+하단 오른쪽 &quot;입주해&quot; 24px 흰색 55%
+
+[이 화의 주제]
+카드 맨 위 가운데에 알약 모양 칩으로 넣을 것 (23px, 네이비 55%, 테두리 2px 네이비 18%)
+대항력은 다음 날부터
+
+[4컷 — 문구를 한 글자도 바꾸지 말 것]
+1컷  지수 · 말
+     잔금 보냈습니다.
+2컷  지수 · 말
+     전입신고
+     바로 하러 갈게요.
+3컷  김 소장 · 말
+     오늘 하시면
+     오늘부터 되는 거죠?
+4컷  지수 · 생각
+     아니요.
+     내일부터요.
+
+[표현 규칙]
+지수의 말은 오른쪽, 김 소장의 말은 왼쪽에 둘 것.
+지수의 생각과 걱정은 말풍선이 아니라 점선 내레이션으로 구분할 것.
+사람 일러스트, 이모지, 스톡 이미지, 그라데이션 배경, 영어 문구 금지.
+한글 맞춤법과 띄어쓰기를 지킬 것.</code></pre></details>
+  </article>
+    <h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">인스타·스레드 캡션</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>지수의 계약 #09 — 잔금일 아침
+
+전입신고를 하면 대항력이 생기는데, 그날이 아니라 그다음 날부터 효력이 생깁니다.
+
+잔금 치른 날 오전에 전입신고를 해도, 그날 하루는 비어 있는 셈입니다.
+
+그 하루에 무슨 일이 생길 수 있는지가 다음 화입니다.
+
+다음 화 — 하루 사이에
+
+#지수의계약 #등기부등본 #전세사기예방 #보증금 #임대차계약 #전세 #월세 #집구하기 #자취 #부동산상식 #입주해</code></pre>
+  </article>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">X 본문</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>지수의 계약 #09 — 잔금일 아침
+
+전입신고를 하면 대항력이 생기는데,
+그날이 아니라 다음 날부터입니다.
+
+잔금 치른 날 하루가 비어 있습니다.
+
+다음 화 — 하루 사이에</code></pre>
+  </article>
+    <nav class="pager">
+      <button class="page-btn" type="button" data-step="-1">← 이전</button>
+      <button class="page-btn" type="button" data-step="1">다음 →</button>
+    </nav>
+  </section>
+  <section class="pane" data-pane="2-9" hidden>
+    <header class="pane-head">
+      <p class="eyebrow">지수의 계약</p>
+      <h1 class="pane-title"><span class="pane-num">#10</span>하루 사이에</h1>
+      <p class="topic">잔금일 근저당 설정 위험</p>
+      
+      
+    </header>
+    <h3 class="group-head">이미지<span>Claude Design에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-multi">4컷</span>
+        <span class="size">1080 × 1350</span>
+        <span class="unit-name">이미지 디자인 프롬프트</span>
+      </div>
+      <button class="copy" type="button" data-copy>프롬프트 복사</button>
+    </header>
+    
+  <ol class="slides">
+    
+      <li class="slide">
+        <span class="slide-no">1</span>
+        <div class="slide-body">
+          <p class="slide-label">지수 · 말</p>
+          <p class="slide-line">등기부 한 번</p><p class="slide-line">다시 떼볼까.</p>
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">2</span>
+        <div class="slide-body">
+          <p class="slide-label">서류 (인물 없음</p>
+          <p class="slide-line">근저당권설정</p><p class="slide-line">오늘 날짜</p><p class="slide-line">→ 등기사항전부증명서 【을구】 소유권 이외의 권리에 관한 사항 형태의 흰색 문서 카드.</p><p class="slide-line">&quot;등기목적&quot; 행의 값만 크게 키우고 앰버 형광 밑줄을 그을 것.</p><p class="slide-line">카드 오른쪽 위에 「예시」 배지를 반드시 넣을 것</p>
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">3</span>
+        <div class="slide-body">
+          <p class="slide-label">지수 · 놀람</p>
+          <p class="slide-line">오늘?!</p>
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">4</span>
+        <div class="slide-body">
+          <p class="slide-label">지수 · 걱정</p>
+          <p class="slide-line">내 전입신고는</p><p class="slide-line">내일부터인데…</p>
+        </div>
+      </li>
+  </ol>
+    <details class="raw"><summary>프롬프트 원문</summary><pre class="block"><code>「지수의 계약」 #10 — 하루 사이에
+인스타그램 게시용 이미지 1장을 만들어줘.
+
+[규격]
+1080 × 1350 px. 여백 위 60px, 좌우 54px, 아래 54px.
+바탕 딥네이비 #0C2247. 강조 앰버 #E9A23B. 카드 연회색 #EEF1F5. 글자 먹색 #1B1A18.
+서체 Gothic A1 (없으면 Noto Sans KR). 느낌표 쓰지 말 것.
+
+[연재 고정 — 12화 내내 똑같이 유지할 것]
+상단 왼쪽   &quot;지수의 계약&quot; 30px 앰버  +  &quot;#10&quot; 52px 흰색 900
+상단 오른쪽 하루 사이에  — 26px 흰색 60%
+가운데      연회색 카드 한 장. 모서리 26px, 안쪽 여백 34px. 이 카드 안에서 4컷이 전개된다
+하단 왼쪽   다음 화 — 그 한 줄이  — 28px 앰버      ← 절대 빼지 말 것
+하단 오른쪽 &quot;입주해&quot; 24px 흰색 55%
+
+[이 화의 주제]
+카드 맨 위 가운데에 알약 모양 칩으로 넣을 것 (23px, 네이비 55%, 테두리 2px 네이비 18%)
+잔금일 근저당 설정 위험
+
+[4컷 — 문구를 한 글자도 바꾸지 말 것]
+1컷  지수 · 말
+     등기부 한 번
+     다시 떼볼까.
+2컷  서류 (인물 없음)
+     근저당권설정
+     오늘 날짜
+     → 등기사항전부증명서 【을구】 소유권 이외의 권리에 관한 사항 형태의 흰색 문서 카드.
+        &quot;등기목적&quot; 행의 값만 크게 키우고 앰버 형광 밑줄을 그을 것.
+        카드 오른쪽 위에 「예시」 배지를 반드시 넣을 것
+3컷  지수 · 놀람
+     오늘?!
+4컷  지수 · 걱정
+     내 전입신고는
+     내일부터인데…
+
+[표현 규칙]
+지수의 말은 오른쪽, 김 소장의 말은 왼쪽에 둘 것.
+지수의 생각과 걱정은 말풍선이 아니라 점선 내레이션으로 구분할 것.
+사람 일러스트, 이모지, 스톡 이미지, 그라데이션 배경, 영어 문구 금지.
+한글 맞춤법과 띄어쓰기를 지킬 것.</code></pre></details>
+  </article>
+    <h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">인스타·스레드 캡션</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>지수의 계약 #10 — 하루 사이에
+
+드물지만 실제로 일어납니다.
+
+잔금을 받은 집주인이 그날 대출을 받아버리면, 근저당이 내 대항력보다 먼저 자리를 잡습니다.
+
+지수는 이 상황을 미리 막아뒀습니다. 8화에서 넣은 그 한 줄로요.
+
+다음 화 — 그 한 줄이
+
+#지수의계약 #등기부등본 #전세사기예방 #보증금 #임대차계약 #전세 #월세 #집구하기 #자취 #부동산상식 #입주해</code></pre>
+  </article>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">X 본문</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>지수의 계약 #10 — 하루 사이에
+
+잔금 받은 집주인이 그날 대출을 받아버리면
+근저당이 내 대항력보다 먼저 잡힙니다.
+
+드물지만 실제로 일어납니다.
+
+다음 화 — 그 한 줄이</code></pre>
+  </article>
+    <nav class="pager">
+      <button class="page-btn" type="button" data-step="-1">← 이전</button>
+      <button class="page-btn" type="button" data-step="1">다음 →</button>
+    </nav>
+  </section>
+  <section class="pane" data-pane="2-10" hidden>
+    <header class="pane-head">
+      <p class="eyebrow">지수의 계약</p>
+      <h1 class="pane-title"><span class="pane-num">#11</span>그 한 줄이</h1>
+      <p class="topic">특약이 실제로 하는 일</p>
+      
+      
+    </header>
+    <h3 class="group-head">이미지<span>Claude Design에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-multi">4컷</span>
+        <span class="size">1080 × 1350</span>
+        <span class="unit-name">이미지 디자인 프롬프트</span>
+      </div>
+      <button class="copy" type="button" data-copy>프롬프트 복사</button>
+    </header>
+    
+  <ol class="slides">
+    
+      <li class="slide">
+        <span class="slide-no">1</span>
+        <div class="slide-body">
+          <p class="slide-label">지수 · 말</p>
+          <p class="slide-line">계약서</p><p class="slide-line">특약 3항 봐주세요.</p>
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">2</span>
+        <div class="slide-body">
+          <p class="slide-label">서류 (인물 없음</p>
+          <p class="slide-line">특약 3항</p><p class="slide-line">잔금 다음 날까지</p><p class="slide-line">근저당 설정 금지</p><p class="slide-line">→ 주택임대차계약서 특약사항 형태의 흰색 문서 카드.</p><p class="slide-line">&quot;제3항&quot; 행의 값만 크게 키우고 앰버 형광 밑줄을 그을 것.</p><p class="slide-line">카드 오른쪽 위에 「예시」 배지를 반드시 넣을 것</p>
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">3</span>
+        <div class="slide-body">
+          <p class="slide-label">김 소장 · 말</p>
+          <p class="slide-line">아… 이거 때문에</p><p class="slide-line">말씀드렸었죠.</p>
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">4</span>
+        <div class="slide-body">
+          <p class="slide-label">지수 · 평범</p>
+          <p class="slide-line">네.</p><p class="slide-line">그래서 넣었어요.</p>
+        </div>
+      </li>
+  </ol>
+    <details class="raw"><summary>프롬프트 원문</summary><pre class="block"><code>「지수의 계약」 #11 — 그 한 줄이
+인스타그램 게시용 이미지 1장을 만들어줘.
+
+[규격]
+1080 × 1350 px. 여백 위 60px, 좌우 54px, 아래 54px.
+바탕 딥네이비 #0C2247. 강조 앰버 #E9A23B. 카드 연회색 #EEF1F5. 글자 먹색 #1B1A18.
+서체 Gothic A1 (없으면 Noto Sans KR). 느낌표 쓰지 말 것.
+
+[연재 고정 — 12화 내내 똑같이 유지할 것]
+상단 왼쪽   &quot;지수의 계약&quot; 30px 앰버  +  &quot;#11&quot; 52px 흰색 900
+상단 오른쪽 그 한 줄이  — 26px 흰색 60%
+가운데      연회색 카드 한 장. 모서리 26px, 안쪽 여백 34px. 이 카드 안에서 4컷이 전개된다
+하단 왼쪽   마지막 화 — 도장  — 28px 앰버      ← 절대 빼지 말 것
+하단 오른쪽 &quot;입주해&quot; 24px 흰색 55%
+
+[이 화의 주제]
+카드 맨 위 가운데에 알약 모양 칩으로 넣을 것 (23px, 네이비 55%, 테두리 2px 네이비 18%)
+특약이 실제로 하는 일
+
+[4컷 — 문구를 한 글자도 바꾸지 말 것]
+1컷  지수 · 말
+     계약서
+     특약 3항 봐주세요.
+2컷  서류 (인물 없음)
+     특약 3항
+     잔금 다음 날까지
+     근저당 설정 금지
+     → 주택임대차계약서 특약사항 형태의 흰색 문서 카드.
+        &quot;제3항&quot; 행의 값만 크게 키우고 앰버 형광 밑줄을 그을 것.
+        카드 오른쪽 위에 「예시」 배지를 반드시 넣을 것
+3컷  김 소장 · 말
+     아… 이거 때문에
+     말씀드렸었죠.
+4컷  지수 · 평범
+     네.
+     그래서 넣었어요.
+
+[표현 규칙]
+지수의 말은 오른쪽, 김 소장의 말은 왼쪽에 둘 것.
+지수의 생각과 걱정은 말풍선이 아니라 점선 내레이션으로 구분할 것.
+사람 일러스트, 이모지, 스톡 이미지, 그라데이션 배경, 영어 문구 금지.
+한글 맞춤법과 띄어쓰기를 지킬 것.</code></pre></details>
+  </article>
+    <h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">인스타·스레드 캡션</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>지수의 계약 #11 — 그 한 줄이
+
+8화에서 어색하게 요구했던 한 줄이 여기서 일을 합니다.
+
+특약은 분쟁이 났을 때 근거가 됩니다. 넣을 때는 까다로워 보이고, 필요할 때는 유일한 방패입니다.
+
+넣는 데 드는 비용은 어색함 한 번뿐입니다.
+
+다음 화 — 마지막 화 — 도장
+
+#지수의계약 #등기부등본 #전세사기예방 #보증금 #임대차계약 #전세 #월세 #집구하기 #자취 #부동산상식 #입주해</code></pre>
+  </article>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">X 본문</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>지수의 계약 #11 — 그 한 줄이
+
+8화에서 어색하게 요구했던 한 줄이 여기서 일을 합니다.
+
+넣을 때는 까다로워 보이고,
+필요할 때는 유일한 방패입니다.
+
+다음 화 — 마지막 화 — 도장</code></pre>
+  </article>
+    <nav class="pager">
+      <button class="page-btn" type="button" data-step="-1">← 이전</button>
+      <button class="page-btn" type="button" data-step="1">다음 →</button>
+    </nav>
+  </section>
+  <section class="pane" data-pane="2-11" hidden>
+    <header class="pane-head">
+      <p class="eyebrow">지수의 계약</p>
+      <h1 class="pane-title"><span class="pane-num">#12</span>도장</h1>
+      <p class="topic">전체 요약 · 제품의 전제</p>
+      
+      
+    </header>
+    <h3 class="group-head">이미지<span>Claude Design에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-multi">4컷</span>
+        <span class="size">1080 × 1350</span>
+        <span class="unit-name">이미지 디자인 프롬프트</span>
+      </div>
+      <button class="copy" type="button" data-copy>프롬프트 복사</button>
+    </header>
+    
+  <ol class="slides">
+    
+      <li class="slide">
+        <span class="slide-no">1</span>
+        <div class="slide-body">
+          <p class="slide-label">지수 · 평범</p>
+          <p class="slide-line">도장 찍었습니다.</p>
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">2</span>
+        <div class="slide-body">
+          <p class="slide-label">김 소장 · 말</p>
+          <p class="slide-line">고생 많으셨어요.</p><p class="slide-line">꼼꼼하시더라고요.</p>
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">3</span>
+        <div class="slide-body">
+          <p class="slide-label">지수 · 생각</p>
+          <p class="slide-line">꼼꼼한 게 아니라</p><p class="slide-line">확인할 방법이 없어서</p><p class="slide-line">다 뒤진 건데.</p>
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">4</span>
+        <div class="slide-body">
+          <p class="slide-label">지수 · 말</p>
+          <p class="slide-line">서로 확인만 됐어도</p><p class="slide-line">이 고생은 안 했을 텐데요.</p>
+        </div>
+      </li>
+  </ol>
+    <details class="raw"><summary>프롬프트 원문</summary><pre class="block"><code>「지수의 계약」 #12 — 도장
+인스타그램 게시용 이미지 1장을 만들어줘.
+
+[규격]
+1080 × 1350 px. 여백 위 60px, 좌우 54px, 아래 54px.
+바탕 딥네이비 #0C2247. 강조 앰버 #E9A23B. 카드 연회색 #EEF1F5. 글자 먹색 #1B1A18.
+서체 Gothic A1 (없으면 Noto Sans KR). 느낌표 쓰지 말 것.
+
+[연재 고정 — 12화 내내 똑같이 유지할 것]
+상단 왼쪽   &quot;지수의 계약&quot; 30px 앰버  +  &quot;#12&quot; 52px 흰색 900
+상단 오른쪽 도장  — 26px 흰색 60%
+가운데      연회색 카드 한 장. 모서리 26px, 안쪽 여백 34px. 이 카드 안에서 4컷이 전개된다
+하단 왼쪽   연재 끝 — 다음 연재 「임대인 노트」  — 28px 앰버      ← 절대 빼지 말 것
+하단 오른쪽 &quot;입주해&quot; 24px 흰색 55%
+
+[이 화의 주제]
+카드 맨 위 가운데에 알약 모양 칩으로 넣을 것 (23px, 네이비 55%, 테두리 2px 네이비 18%)
+전체 요약 · 제품의 전제
+
+[4컷 — 문구를 한 글자도 바꾸지 말 것]
+1컷  지수 · 평범
+     도장 찍었습니다.
+2컷  김 소장 · 말
+     고생 많으셨어요.
+     꼼꼼하시더라고요.
+3컷  지수 · 생각
+     꼼꼼한 게 아니라
+     확인할 방법이 없어서
+     다 뒤진 건데.
+4컷  지수 · 말
+     서로 확인만 됐어도
+     이 고생은 안 했을 텐데요.
+
+[표현 규칙]
+지수의 말은 오른쪽, 김 소장의 말은 왼쪽에 둘 것.
+지수의 생각과 걱정은 말풍선이 아니라 점선 내레이션으로 구분할 것.
+사람 일러스트, 이모지, 스톡 이미지, 그라데이션 배경, 영어 문구 금지.
+한글 맞춤법과 띄어쓰기를 지킬 것.</code></pre></details>
+  </article>
+    <h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">인스타·스레드 캡션</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>지수의 계약 #12 — 도장
+
+열두 편을 줄이면 일곱 개입니다.
+
+소유자가 계약 상대와 같은가 / 근저당이 시세 대비 얼마인가 / 신탁 표시가 있는가 / 가압류·가처분이 있는가 / 다가구면 앞선 보증금 총액은 / 근저당 금지 특약을 넣었는가 / 보증보험 가입이 되는가
+
+반나절이면 다 확인합니다. 보증금은 반나절보다 비쌉니다.
+
+그런데 이걸 세입자 혼자 다 해야 한다는 게 이상하지 않나요. 그래서 저희는 서로 확인할 수 있는 걸 만들고 있습니다.
+
+#지수의계약 #등기부등본 #전세사기예방 #보증금 #임대차계약 #전세 #월세 #집구하기 #자취 #부동산상식 #입주해</code></pre>
+  </article>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">X 본문</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>지수의 계약 #12 — 도장
+
+열두 편을 줄이면 일곱 개입니다.
+
+소유자·근저당·신탁·가압류·앞선 보증금·특약·보증보험.
+
+반나절이면 다 확인합니다.
+그런데 이걸 세입자 혼자 다 해야 하는 게 이상하지 않나요.</code></pre>
+  </article>
+    <nav class="pager">
+      <button class="page-btn" type="button" data-step="-1">← 이전</button>
+      <button class="page-btn" type="button" data-step="1">다음 →</button>
+    </nav>
+  </section>
+  <section class="pane" data-pane="3-0" hidden>
+    <header class="pane-head">
+      <p class="eyebrow">계약 전 30초</p>
+      <h1 class="pane-title"><span class="pane-num">#01</span>등기부 어디부터 볼까요</h1>
+      
+      
+      
+    </header>
+    <h3 class="group-head">이미지<span>Claude Design에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind ">1장</span>
+        <span class="size">1080 × 1920</span>
+        <span class="unit-name">디자인 프롬프트 — 커버</span>
+      </div>
+      <button class="copy" type="button" data-copy>프롬프트 복사</button>
+    </header>
+    
+    <pre class="block"><code>입주해(한국 임대차 신뢰 서비스) 릴스 연재 「계약 전 30초」 #01 커버를 만들어줘.
+
+규격 1080 × 1920 px. 바탕 딥네이비 #0C2247.
+위 250px과 아래 450px은 앱 UI에 가려지므로 아무것도 놓지 말 것.
+서체 Gothic A1 (없으면 Noto Sans KR). 느낌표 쓰지 말 것.
+
+y 330 부근  &quot;계약 전 30초&quot; 32px 앰버 #E9A23B, 자간 넓게, 가운데 정렬
+y 400 부근  &quot;#01&quot; 64px 흰색 900, 가운데 정렬
+y 720~1150 제목 &quot;등기부 / 다 읽지 마세요&quot; 두 줄, 96px 900 흰색, 줄간격 1.25, 가운데 정렬
+            &quot;다 읽지 마세요&quot;만 앰버 #E9A23B
+y 1290 부근 얇은 가로선 1px 흰색 20%, 폭 320px, 가운데
+y 1350 부근 &quot;세 부분부터 확인합니다&quot; 40px 흰색 60%, 가운데
+y 1430 부근 &quot;입주해&quot; 30px 흰색 45%, 가운데
+
+배경 장식은 넣지 말 것. 글자만으로 승부한다.
+한글 제목이 두 줄을 넘으면 96px을 88px로 줄일 것.</code></pre>
+  </article>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-multi">캐러셀 6장</span>
+        
+        <span class="unit-name">디자인 프롬프트 — 본문 자막 프레임</span>
+      </div>
+      <button class="copy" type="button" data-copy>프롬프트 복사</button>
+    </header>
+    
+  <ol class="slides">
+    
+      <li class="slide">
+        <span class="slide-no">1</span>
+        <div class="slide-body">
+          <p class="slide-label">&quot;등기부 어디부터 볼까요&quot;  (&quot;다 읽지 마세요&quot; 앰버</p>
+          
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">2</span>
+        <div class="slide-body">
+          <p class="slide-label">&quot;먼저 살펴볼 / 세 부분입니다&quot;  (&quot;세 곳&quot; 앰버</p>
+          
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">3</span>
+        <div class="slide-body">
+          <p class="slide-label">&quot;표제부 / 이 집이 계약서의 그 집인가&quot;</p>
+          
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">4</span>
+        <div class="slide-body">
+          <p class="slide-label">&quot;갑구 / 계약 상대가 진짜 주인인가&quot;</p>
+          
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">5</span>
+        <div class="slide-body">
+          <p class="slide-label">&quot;을구 / 어떤 담보권 등이 기록돼 있나&quot;</p>
+          
+        </div>
+      </li>
+      <li class="slide">
+        <span class="slide-no">6</span>
+        <div class="slide-body">
+          <p class="slide-label">&quot;다음 편 — 이름이 다르면&quot;  (전체 앰버, 46px</p>
+          
+        </div>
+      </li>
+  </ol>
+    <details class="raw"><summary>프롬프트 원문</summary><pre class="block"><code>같은 연재의 자막 프레임 6장을 만들어줘. 규격과 색은 커버와 동일.
+
+공통  바탕 #0C2247. 위 250px·아래 450px 비움.
+      자막은 y 780~1150 사이에 세로 가운데 정렬, 62px 900 흰색, 한 프레임 최대 두 줄.
+      강조 단어만 앰버 #E9A23B. 우측 하단 y 1430에 &quot;입주해&quot; 26px 흰색 40%.
+
+1장  &quot;등기부 어디부터 볼까요&quot;  (&quot;다 읽지 마세요&quot; 앰버)
+2장  &quot;먼저 살펴볼 / 세 부분입니다&quot;  (&quot;세 곳&quot; 앰버)
+3장  &quot;표제부 / 이 집이 계약서의 그 집인가&quot;
+4장  &quot;갑구 / 계약 상대가 진짜 주인인가&quot;
+5장  &quot;을구 / 어떤 담보권 등이 기록돼 있나&quot;
+6장  &quot;다음 편 — 이름이 다르면&quot;  (전체 앰버, 46px)
+
+3~5장에는 자막 위쪽 y 470~740에 크림색 #FBF6EF 서류 카드를 놓을 것.
+카드는 모서리 16px, 안쪽에 회색 가로선 여러 줄(더미 텍스트 대신),
+해당 블록 한 줄만 앰버 #E9A23B 4px 밑줄로 강조.</code></pre></details>
+  </article>
+    <h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">인스타·스레드 캡션</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>계약 전 30초 #01 — 등기부 어디부터 볼까요
+
+표제부·갑구·을구에서 확인할 질문부터 정리합니다.
+
+표제부 · 이 집이 계약서에 적힌 그 집인가
+갑구 · 계약하는 상대가 실제 소유자인가
+을구 · 어떤 담보권 등이 기록돼 있나
+
+세 곳이 다 맞아도 안전하다는 뜻은 아닙니다.
+확인해야 할 것을 줄여주는 것뿐입니다.
+
+다음 편 — 소유자 이름이 다르면
+
+프로필 링크에서 입주해 사전 신청을 받고 있어요.
+
+#등기부등본 #전세사기예방 #보증금 #임대차계약 #전세 #월세 #집구하기 #자취 #부동산상식 #입주해</code></pre>
+  </article>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">X 본문</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>계약 전 30초 #01
+
+등기부 어디부터 볼까요. 세 부분부터 확인합니다.
+
+표제부 — 계약서의 그 집이 맞는가
+갑구 — 상대가 진짜 주인인가
+을구 — 어떤 담보권 등이 기록돼 있나
+
+다 맞아도 안전하다는 뜻은 아닙니다. 확인할 것을 줄여줄 뿐.
+
+다음 편 — 이름이 다르면</code></pre>
+  </article>
+    <nav class="pager">
+      <button class="page-btn" type="button" data-step="-1">← 이전</button>
+      <button class="page-btn" type="button" data-step="1">다음 →</button>
+    </nav>
+  </section>
+  <section class="pane" data-pane="3-1" hidden>
+    <header class="pane-head">
+      <p class="eyebrow">계약 전 30초</p>
+      <h1 class="pane-title"><span class="pane-num">#02</span>이름이 다르면 계약하지 않습니다</h1>
+      
+      
+      
+    </header>
+    <h3 class="group-head">이미지<span>Claude Design에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind ">1장</span>
+        
+        <span class="unit-name">디자인 프롬프트 — 커버</span>
+      </div>
+      <button class="copy" type="button" data-copy>프롬프트 복사</button>
+    </header>
+    
+    <pre class="block"><code>입주해 릴스 연재 「계약 전 30초」 #02 커버. #01과 형식을 그대로 유지할 것.
+
+규격 1080 × 1920, 바탕 #0C2247, 위 250px·아래 450px 비움.
+서체 Gothic A1. 느낌표 쓰지 말 것.
+
+y 330  &quot;계약 전 30초&quot; 32px 앰버 #E9A23B 가운데
+y 400  &quot;#02&quot; 64px 흰색 900 가운데
+y 700~1180  화면 가운데에 크림색 #FBF6EF 카드 두 장을 좌우로 나란히 (각 폭 400px, 높이 300px,
+            사이 간격 60px, 모서리 16px). 왼쪽 카드 위에 &quot;계약서&quot; 28px 회색,
+            오른쪽 카드 위에 &quot;등기부&quot; 28px 회색. 각 카드 안에는 이름 자리를 나타내는
+            앰버 #E9A23B 3px 테두리 빈 박스만 놓을 것 (실제 이름은 쓰지 말 것).
+            두 카드 사이 정중앙에 앰버 &quot;≠&quot; 72px.
+y 1290  제목 &quot;이름이 다르면&quot; 88px 900 흰색 가운데
+y 1430  &quot;입주해&quot; 30px 흰색 45% 가운데</code></pre>
+  </article>
+    <h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">인스타·스레드 캡션</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>계약 전 30초 #02 — 이름이 다르면
+
+등기부 갑구에 적힌 소유자 이름과
+계약서에 도장 찍는 사람의 이름이 같은지 봅니다.
+
+다르다면 대리인일 수 있습니다.
+그때 확인할 것은 위임장과 인감증명서입니다.
+
+그 자리에서 못 받으면 계약을 미룹니다.
+미루는 것으로 잃는 것보다 잃을 게 큽니다.
+
+다음 편 — 금액 옆의 숫자
+
+#등기부등본 #갑구 #전세사기예방 #임대차계약 #전세 #월세 #집구하기 #부동산상식 #입주해</code></pre>
+  </article>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">X 본문</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>계약 전 30초 #02
+
+등기부 갑구의 소유자 이름과, 계약서에 도장 찍는 사람의 이름.
+이 둘이 같은지만 봅니다.
+
+다르면 대리인입니다. 위임장과 인감증명서를 그 자리에서 확인합니다.
+못 받으면 미룹니다.
+
+다음 편 — 금액 옆의 숫자</code></pre>
+  </article>
+    <nav class="pager">
+      <button class="page-btn" type="button" data-step="-1">← 이전</button>
+      <button class="page-btn" type="button" data-step="1">다음 →</button>
+    </nav>
+  </section>
+  <section class="pane" data-pane="3-2" hidden>
+    <header class="pane-head">
+      <p class="eyebrow">계약 전 30초</p>
+      <h1 class="pane-title"><span class="pane-num">#03</span>그 금액은 빚이 아닙니다</h1>
+      
+      
+      
+    </header>
+    <h3 class="group-head">이미지<span>Claude Design에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind ">1장</span>
+        
+        <span class="unit-name">디자인 프롬프트 — 커버</span>
+      </div>
+      <button class="copy" type="button" data-copy>프롬프트 복사</button>
+    </header>
+    
+    <pre class="block"><code>입주해 릴스 연재 「계약 전 30초」 #03 커버. #01·#02와 형식 동일.
+
+규격 1080 × 1920, 바탕 #0C2247, 위 250px·아래 450px 비움. 서체 Gothic A1. 느낌표 금지.
+
+y 330  &quot;계약 전 30초&quot; 32px 앰버 가운데
+y 400  &quot;#03&quot; 64px 흰색 900 가운데
+y 700~1200  중첩 사각형 도식. 바깥 사각형은 앰버 #E9A23B 4px 테두리, 폭 620px 높이 380px,
+            안쪽 상단에 &quot;채권최고액&quot; 34px 앰버.
+            그 안에 흰색 20% 채움 사각형 폭 330px 높이 190px을 왼쪽 아래에 배치,
+            그 안에 &quot;실제 빚 ?&quot; 34px 흰색 70%.
+            구체적인 금액 숫자는 쓰지 말 것.
+y 1300  제목 &quot;그 금액은 / 빚이 아닙니다&quot; 두 줄 84px 900 흰색 가운데, &quot;빚이 아닙니다&quot; 앰버
+y 1430  &quot;입주해&quot; 30px 흰색 45% 가운데</code></pre>
+  </article>
+    <h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">인스타·스레드 캡션</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>계약 전 30초 #03 — 그 금액은 빚이 아닙니다
+
+등기부 을구의 근저당 금액은 채권최고액입니다.
+실제로 빌린 돈이 아니라, 크게 잡아둔 한도입니다.
+
+그래서 지금 남은 빚이 얼마인지는 등기부만으로 알 수 없습니다.
+알고 싶으면 집주인에게 대출 잔액 확인서를 요청합니다.
+
+자료를 받지 못하면 미확인 상태로 남깁니다.
+
+다음 편 — 두 글자가 보이면
+
+#등기부등본 #을구 #근저당 #채권최고액 #전세사기예방 #임대차계약 #전세 #집구하기 #입주해</code></pre>
+  </article>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">X 본문</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>계약 전 30초 #03
+
+등기부 을구의 근저당 금액은 &quot;채권최고액&quot;입니다.
+실제 빌린 돈이 아니라 크게 잡아둔 한도.
+
+지금 남은 빚은 등기부에 안 나옵니다.
+집주인에게 잔액 확인서를 요청하세요. 받지 못한 자료는 미확인으로 남깁니다.
+
+다음 편 — 두 글자</code></pre>
+  </article>
+    <nav class="pager">
+      <button class="page-btn" type="button" data-step="-1">← 이전</button>
+      <button class="page-btn" type="button" data-step="1">다음 →</button>
+    </nav>
+  </section>
+  <section class="pane" data-pane="3-3" hidden>
+    <header class="pane-head">
+      <p class="eyebrow">계약 전 30초</p>
+      <h1 class="pane-title"><span class="pane-num">#04</span>두 글자가 보이면 멈춥니다</h1>
+      
+      
+      
+    </header>
+    <h3 class="group-head">이미지<span>Claude Design에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind ">1장</span>
+        
+        <span class="unit-name">디자인 프롬프트 — 커버</span>
+      </div>
+      <button class="copy" type="button" data-copy>프롬프트 복사</button>
+    </header>
+    
+    <pre class="block"><code>입주해 릴스 연재 「계약 전 30초」 #04 커버. 형식 동일.
+
+규격 1080 × 1920, 바탕 #0C2247, 위 250px·아래 450px 비움. 서체 Gothic A1. 느낌표 금지.
+
+y 330  &quot;계약 전 30초&quot; 32px 앰버 가운데
+y 400  &quot;#04&quot; 64px 흰색 900 가운데
+y 680~1120  화면 가운데에 크림색 #FBF6EF 서류 카드 (폭 700px, 높이 420px, 모서리 16px).
+            카드 안은 회색 가로선 더미 텍스트 여러 줄. 그중 한 줄 자리에만
+            &quot;신탁&quot; 110px 900 딥네이비 #0C2247을 놓고, 그 글자 뒤에 앰버 #E9A23B
+            형광펜 느낌의 채움 사각형을 깔 것 (글자 높이의 60%, 아래쪽 정렬).
+y 1240  제목 &quot;두 글자가 보이면 / 멈춥니다&quot; 두 줄 84px 900 흰색 가운데, &quot;멈춥니다&quot; 앰버
+y 1430  &quot;입주해&quot; 30px 흰색 45% 가운데</code></pre>
+  </article>
+    <h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">인스타·스레드 캡션</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>계약 전 30초 #04 — 두 글자가 보이면
+
+등기부에 &quot;신탁&quot;이 보이면 그 자리에서 판단하지 않습니다.
+
+신탁이 걸린 집은 등기부에 이름이 있는 사람과
+실제로 계약 권한을 가진 사람이 다를 수 있습니다.
+
+누구와 어떤 조건으로 계약해야 하는지는
+등기부가 아니라 신탁원부에 적혀 있습니다.
+
+그래서 이 경우엔 등기부 한 장으로 끝내지 않습니다.
+신탁원부를 함께 확인하고, 확인이 어려우면 전문가에게 묻습니다.
+
+다음 편 — 하루 차이
+
+#등기부등본 #신탁등기 #신탁원부 #전세사기예방 #임대차계약 #전세 #집구하기 #부동산상식 #입주해</code></pre>
+  </article>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">X 본문</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>계약 전 30초 #04
+
+등기부에 &quot;신탁&quot; 두 글자가 보이면 그 자리에서 판단하지 않습니다.
+
+등기부의 이름과 실제 계약 권한을 가진 사람이 다를 수 있고,
+그 내용은 등기부가 아니라 신탁원부에 있습니다.
+
+등기부 한 장으로 끝내지 마세요.
+
+다음 편 — 하루 차이</code></pre>
+  </article>
+    <nav class="pager">
+      <button class="page-btn" type="button" data-step="-1">← 이전</button>
+      <button class="page-btn" type="button" data-step="1">다음 →</button>
+    </nav>
+  </section>
+  <section class="pane" data-pane="3-4" hidden>
+    <header class="pane-head">
+      <p class="eyebrow">계약 전 30초</p>
+      <h1 class="pane-title"><span class="pane-num">#05</span>하루가 갈랐습니다</h1>
+      
+      
+      
+    </header>
+    <h3 class="group-head">이미지<span>Claude Design에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind ">1장</span>
+        
+        <span class="unit-name">디자인 프롬프트 — 커버</span>
+      </div>
+      <button class="copy" type="button" data-copy>프롬프트 복사</button>
+    </header>
+    
+    <pre class="block"><code>입주해 릴스 연재 「계약 전 30초」 #05 커버. 형식 동일.
+
+규격 1080 × 1920, 바탕 #0C2247, 위 250px·아래 450px 비움. 서체 Gothic A1. 느낌표 금지.
+
+y 330  &quot;계약 전 30초&quot; 32px 앰버 가운데
+y 400  &quot;#05&quot; 64px 흰색 900 가운데
+y 720~1080  달력 두 칸을 가로로 나란히 (각 폭 300px 높이 300px, 사이 간격 80px,
+            모서리 16px, 크림색 #FBF6EF 바탕).
+            왼쪽 칸 안에 &quot;잔금·전입신고&quot; 26px 딥네이비, 아래 작은 회색 원.
+            오른쪽 칸 안에 &quot;효력 발생&quot; 26px 딥네이비, 아래 앰버 #E9A23B 채움 원.
+            두 칸 사이 간격 한가운데에 앰버 세로 점선 4px, 위쪽에 &quot;하루&quot; 34px 앰버.
+            날짜 숫자는 쓰지 말 것.
+y 1240  제목 &quot;하루가 / 갈랐습니다&quot; 두 줄 88px 900 흰색 가운데, &quot;갈랐습니다&quot; 앰버
+y 1430  &quot;입주해&quot; 30px 흰색 45% 가운데</code></pre>
+  </article>
+    <h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">인스타·스레드 캡션</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>계약 전 30초 #05 — 하루가 갈랐습니다
+
+전입신고를 한 날 바로 효력이 생기는 게 아닙니다.
+그 다음 날부터입니다.
+
+그래서 잔금을 치른 날과 효력이 생기는 날 사이에
+하루의 빈틈이 생깁니다.
+
+이 하루를 없앨 수는 없지만 줄일 수는 있습니다.
+잔금·전입신고·확정일자를 같은 날에 끝내고,
+계약서에 &quot;잔금일 다음 날까지 담보권을 설정하지 않는다&quot;는 문구를 넣어달라고 요청합니다.
+
+받아주는지 아닌지도 정보입니다.
+
+다음 편 — 나보다 앞선 사람들
+
+#전입신고 #확정일자 #대항력 #전세사기예방 #임대차계약 #전세 #보증금 #집구하기 #입주해</code></pre>
+  </article>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">X 본문</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>계약 전 30초 #05
+
+전입신고는 한 날이 아니라 그 다음 날부터 효력이 생깁니다.
+잔금일과 효력일 사이에 하루가 빕니다.
+
+없앨 수는 없어도 줄일 수는 있습니다.
+잔금·전입신고·확정일자를 같은 날에 끝내세요.
+
+다음 편 — 나보다 앞선 사람들</code></pre>
+  </article>
+    <nav class="pager">
+      <button class="page-btn" type="button" data-step="-1">← 이전</button>
+      <button class="page-btn" type="button" data-step="1">다음 →</button>
+    </nav>
+  </section>
+  <section class="pane" data-pane="3-5" hidden>
+    <header class="pane-head">
+      <p class="eyebrow">계약 전 30초</p>
+      <h1 class="pane-title"><span class="pane-num">#06</span>나보다 앞선 사람이 몇 명입니까</h1>
+      
+      
+      
+    </header>
+    <h3 class="group-head">이미지<span>Claude Design에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind ">1장</span>
+        <span class="size">90 × 70</span>
+        <span class="unit-name">디자인 프롬프트 — 커버</span>
+      </div>
+      <button class="copy" type="button" data-copy>프롬프트 복사</button>
+    </header>
+    
+    <pre class="block"><code>입주해 릴스 연재 「계약 전 30초」 #06 커버. 형식 동일.
+
+규격 1080 × 1920, 바탕 #0C2247, 위 250px·아래 450px 비움. 서체 Gothic A1. 느낌표 금지.
+
+y 330  &quot;계약 전 30초&quot; 32px 앰버 가운데
+y 400  &quot;#06&quot; 64px 흰색 900 가운데
+y 660~1150  단순한 건물 실루엣 하나 (크림색 #FBF6EF 채움, 폭 520px, 높이 480px, 가운데 정렬).
+            건물 안에 창문 사각형을 3열 × 4행으로 배치 (각 90×70px, 딥네이비 #0C2247 채움).
+            창문 중 다섯 개는 앰버 #E9A23B로 채우고, 하나는 앰버 3px 테두리에 속은 비움
+            (그 하나가 &quot;나&quot;). 숫자나 이름은 쓰지 말 것.
+y 1270  제목 &quot;나보다 / 앞선 사람&quot; 두 줄 88px 900 흰색 가운데, &quot;앞선 사람&quot; 앰버
+y 1430  &quot;입주해&quot; 30px 흰색 45% 가운데</code></pre>
+  </article>
+    <h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">인스타·스레드 캡션</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>계약 전 30초 #06 — 나보다 앞선 사람
+
+다가구 주택은 건물 하나에 등기가 하나입니다.
+호실이 여러 개여도 등기부는 한 장입니다.
+
+그래서 다른 호실 세입자들의 보증금이 얼마인지,
+나보다 앞선 사람이 몇 명인지가 등기부에 나오지 않습니다.
+
+집이 넘어가면 앞선 순서부터 돌려받습니다.
+그 줄에서 내 자리가 어디인지 모르고 계약하는 셈입니다.
+
+확정일자 부여현황과 전입세대 열람 내역을 요청해서 봅니다.
+집주인이 협조해야 볼 수 있는 자료이고, 협조 여부 자체가 정보입니다.
+
+다음 편 — 등기부에 안 나오는 것
+
+#다가구 #다세대 #확정일자 #전입세대열람 #전세사기예방 #임대차계약 #보증금 #집구하기 #입주해</code></pre>
+  </article>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">X 본문</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>계약 전 30초 #06
+
+다가구는 건물 하나에 등기 하나입니다.
+다른 호실 세입자의 보증금이 얼마인지, 내가 몇 번째인지 등기부엔 없습니다.
+
+집이 넘어가면 앞선 순서부터 돌려받습니다.
+확정일자 부여현황을 요청해서 보세요.
+
+다음 편 — 등기부에 없는 것</code></pre>
+  </article>
+    <nav class="pager">
+      <button class="page-btn" type="button" data-step="-1">← 이전</button>
+      <button class="page-btn" type="button" data-step="1">다음 →</button>
+    </nav>
+  </section>
+  <section class="pane" data-pane="3-6" hidden>
+    <header class="pane-head">
+      <p class="eyebrow">계약 전 30초</p>
+      <h1 class="pane-title"><span class="pane-num">#07</span>등기부가 깨끗해도 안심하지 않습니다</h1>
+      
+      
+      
+    </header>
+    <h3 class="group-head">이미지<span>Claude Design에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind ">1장</span>
+        <span class="size">150 × 90</span>
+        <span class="unit-name">디자인 프롬프트 — 커버</span>
+      </div>
+      <button class="copy" type="button" data-copy>프롬프트 복사</button>
+    </header>
+    
+    <pre class="block"><code>입주해 릴스 연재 「계약 전 30초」 #07 커버. 형식 동일.
+
+규격 1080 × 1920, 바탕 #0C2247, 위 250px·아래 450px 비움. 서체 Gothic A1. 느낌표 금지.
+
+y 330  &quot;계약 전 30초&quot; 32px 앰버 가운데
+y 400  &quot;#07&quot; 64px 흰색 900 가운데
+y 680~1150  크림색 #FBF6EF 서류 카드 (폭 640px 높이 440px, 모서리 16px) 가운데.
+            카드 안에 회색 가로선 더미 텍스트 다섯 줄.
+            카드 바깥 오른쪽에 세 개의 빈 사각형 (각 150×90px, 세로로 쌓고 간격 26px,
+            흰색 25% 3px 점선 테두리, 속은 비움) — 등기부 밖에 남은 것들을 뜻한다.
+            카드와 점선 사각형 사이에 흰색 20% 세로 구분선.
+            사각형 안에 글자는 쓰지 말 것.
+y 1270  제목 &quot;등기부에 / 안 나오는 것&quot; 두 줄 84px 900 흰색 가운데, &quot;안 나오는 것&quot; 앰버
+y 1430  &quot;입주해&quot; 30px 흰색 45% 가운데</code></pre>
+  </article>
+    <h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">인스타·스레드 캡션</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>계약 전 30초 #07 — 등기부에 안 나오는 것
+
+등기부가 깨끗해도 확인이 끝난 게 아닙니다.
+
+등기부를 언제 확인했는지 기록합니다.
+체납 정보와 다른 임차인의 보증금까지 모두 확인됐다고 판단하지 않습니다.
+추가로 필요한 자료와 확인 절차를 살펴봅니다.
+
+그래서 두 가지를 합니다.
+
+하나, 계약할 때 본 등기부를 잔금 치르는 날 아침에 한 번 더 뗍니다.
+둘, 등기부 밖의 것은 집주인에게 직접 요청합니다.
+납세증명서, 확정일자 부여현황 같은 것들입니다.
+
+없다고 해서 다 위험한 것도, 있다고 해서 다 안전한 것도 아닙니다.
+확인할 항목을 빠뜨리지 않는 게 전부입니다.
+
+다음 편 — 집주인도 검증 대상입니다
+
+#등기부등본 #납세증명서 #전세사기예방 #임대차계약 #전세 #보증금 #집구하기 #부동산상식 #입주해</code></pre>
+  </article>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">X 본문</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>계약 전 30초 #07
+
+등기부가 깨끗해도 확인이 끝난 것은 아닙니다. 확인 시점과 기록 범위를 살펴봅니다.
+
+체납 정보와 다른 보증금 등 추가로 확인할 항목을 정리합니다.
+
+계약할 때 본 등기부를 잔금 날 아침에 한 번 더 떼세요.
+
+다음 편 — 집주인도 검증 대상입니다</code></pre>
+  </article>
+    <nav class="pager">
+      <button class="page-btn" type="button" data-step="-1">← 이전</button>
+      <button class="page-btn" type="button" data-step="1">다음 →</button>
+    </nav>
+  </section>
+  <section class="pane" data-pane="3-7" hidden>
+    <header class="pane-head">
+      <p class="eyebrow">계약 전 30초</p>
+      <h1 class="pane-title"><span class="pane-num">#08</span>집주인도 검증 대상입니다</h1>
+      
+      
+      
+    </header>
+    <h3 class="group-head">이미지<span>Claude Design에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind ">1장</span>
+        
+        <span class="unit-name">디자인 프롬프트 — 커버</span>
+      </div>
+      <button class="copy" type="button" data-copy>프롬프트 복사</button>
+    </header>
+    
+    <pre class="block"><code>입주해 릴스 연재 「계약 전 30초」 #08 커버. 형식 동일.
+
+규격 1080 × 1920, 바탕 #0C2247, 위 250px·아래 450px 비움. 서체 Gothic A1. 느낌표 금지.
+
+y 330  &quot;계약 전 30초&quot; 32px 앰버 가운데
+y 400  &quot;#08&quot; 64px 흰색 900 가운데
+y 700~1120  인물 아이콘 두 개를 좌우 대칭으로 (지름 220px 원, 크림색 #FBF6EF 채움,
+            사이 간격 140px, 얼굴 묘사 없이 단순한 실루엣).
+            왼쪽 원 아래 &quot;세입자&quot; 32px 흰색 70%, 오른쪽 원 아래 &quot;임대인&quot; 32px 흰색 70%.
+            두 원 모두를 가로지르는 앰버 #E9A23B 4px 수평 스캔선을 y 900 부근에 그을 것.
+            두 원 사이 정중앙에 앰버 양방향 화살표 &quot;⇄&quot; 64px.
+y 1250  제목 &quot;집주인도 / 검증 대상입니다&quot; 두 줄 80px 900 흰색 가운데, &quot;검증 대상입니다&quot; 앰버
+y 1430  &quot;입주해&quot; 30px 흰색 45% 가운데</code></pre>
+  </article>
+    <h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">인스타·스레드 캡션</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>계약 전 30초 #08 — 집주인도 검증 대상입니다
+
+계약에서 요청하는 자료는 상황에 따라 다릅니다.
+임차인과 임대인 양쪽에서 확인할 질문을 정리하고 싶습니다.
+
+그런데 큰 돈을 맡기는 쪽은 세입자입니다.
+
+이게 이상하다고 생각해서 만들고 있습니다.
+임차인·임대인·주택 자료의 확인 상태와 다음 질문을 정리하는 서비스를 개발하고 있습니다.
+
+사람을 단정적으로 평가하기보다 자료의 확인 상태를 설명하려 합니다.
+
+지금 사전 신청을 받고 있어요. 프로필 링크에 있습니다.
+
+다음 편 — 시즌 2로 돌아옵니다
+
+#임대차 #전세사기예방 #임대인 #세입자 #보증금 #임대차계약 #집구하기 #프롭테크 #입주해</code></pre>
+  </article>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">X 본문</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>계약 전 30초 #08
+
+계약에서 요청하는 자료는 상황에 따라 다릅니다. 양쪽의 확인 질문을 정리하고 싶습니다.
+그런데 큰 돈을 맡기는 쪽은 세입자입니다.
+
+이상하다고 생각해서 만들고 있습니다.
+임차인·임대인·주택 자료의 확인 상태와 다음 질문을 정리하는 서비스를 개발 중입니다.
+
+사전 신청 링크는 답글에.</code></pre>
+  </article>
+    <nav class="pager">
+      <button class="page-btn" type="button" data-step="-1">← 이전</button>
+      <button class="page-btn" type="button" data-step="1">다음 →</button>
+    </nav>
+  </section>
+  <section class="pane" data-pane="4-0" hidden>
+    <header class="pane-head">
+      <p class="eyebrow">만드는 중</p>
+      <h1 class="pane-title">스레드 · 왜 만들고 있는지</h1>
+      
+      
+      <div class="noimg"><span class="noimg-tag">이미지 없음</span><p>이미지 없이 텍스트만. 문장 자체가 후킹이라 카드를 붙이면 힘이 빠집니다.</p></div>
+    </header>
+    
+    <h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">스레드 · 왜 만들고 있는지</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>임대차 계약할 때 서로를 확인할 방법이 없다는 게 이상해서, 그걸 만들고 있습니다.
+
+세입자는 자기가 성실하다는 걸 증명할 방법이 없고
+집주인은 이 사람이 월세를 낼 사람인지 알 방법이 없고
+중개사는 양쪽 말만 듣고 계약서를 씁니다.
+
+셋 다 불안한데 아무도 확인을 못 하는 구조입니다.
+
+사전 신청 페이지를 며칠 전에 열었고, 지금까지 신청한 사람은 1명입니다.
+그 1명이 저는 아닙니다.</code></pre>
+  </article>
+    <nav class="pager">
+      <button class="page-btn" type="button" data-step="-1">← 이전</button>
+      <button class="page-btn" type="button" data-step="1">다음 →</button>
+    </nav>
+  </section>
+  <section class="pane" data-pane="4-1" hidden>
+    <header class="pane-head">
+      <p class="eyebrow">만드는 중</p>
+      <h1 class="pane-title">스레드 · 점수 배점 공개</h1>
+      
+      
+      
+    </header>
+    <h3 class="group-head">이미지<span>Claude Design에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind ">1장</span>
+        <span class="size">1080 × 1350</span>
+        <span class="unit-name">스레드 · 점수 배점 공개</span>
+      </div>
+      <button class="copy" type="button" data-copy>프롬프트 복사</button>
+    </header>
+    
+    <pre class="block"><code>입주해(한국 임대차 신뢰 서비스) SNS 이미지를 만들어줘.
+바탕 딥네이비 #0C2247, 강조 앰버 #E9A23B, 글자 흰색. 서체는 Gothic A1(없으면 Noto Sans KR).
+차분하고 사무적인 톤. 스톡사진·이모지·그라데이션 배경·영어 문구 금지. 느낌표 쓰지 말 것.
+아래 문구를 한 글자도 바꾸지 말고 그대로 넣을 것. 한글 맞춤법과 띄어쓰기를 지킬 것.
+
+이미지 1장. 1080 × 1350 px (스레드 피드에 세로로 크게 뜬다).
+안전 여백: 위아래 각 120px, 좌우 각 90px. 좌측 하단에 &quot;입주해&quot; 워드마크(30px, 흰색 60%).
+
+화면 가운데에 배점 네 줄을 표로 쌓을 것. 각 행은 [항목명 왼쪽 정렬 · 숫자 오른쪽 정렬] 한 줄.
+항목명 52px 흰색, 숫자 72px 앰버 #E9A23B 굵게. 행 사이에 흰색 12% 투명도 가로선.
+
+  소득 안정성    30
+  납부 이력      30
+  거주 평판      25
+  본인 인증      15
+
+표 위에 작은 제목(40px, 흰색 60%): 세입자 점수 배점
+표 아래 한 줄(44px, 흰색): 학력, 직장 이름, 나이는 안 봅니다</code></pre>
+  </article>
+    <h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">스레드 · 점수 배점 공개</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>세입자 점수를 이렇게 나눴습니다.
+
+소득 안정성 30
+납부 이력 30
+거주 평판 25
+본인 인증 15
+
+학력, 직장 이름, 나이는 안 봅니다.
+소득도 액수가 아니라 월세 대비 비율만 봅니다.
+
+그걸 넣으면 점수는 정확해지겠지만,
+그건 신뢰가 아니라 계급이라서요.
+
+이 배점이 맞다고 생각하시나요. 뭘 빼고 뭘 넣어야 할까요.</code></pre>
+  </article>
+    <nav class="pager">
+      <button class="page-btn" type="button" data-step="-1">← 이전</button>
+      <button class="page-btn" type="button" data-step="1">다음 →</button>
+    </nav>
+  </section>
+  <section class="pane" data-pane="4-2" hidden>
+    <header class="pane-head">
+      <p class="eyebrow">만드는 중</p>
+      <h1 class="pane-title">스레드 · 실시간 카운터를 지운 이야기</h1>
+      
+      
+      <div class="noimg"><span class="noimg-tag">이미지 없음</span><p>이미지 없이 텍스트만. 문장 자체가 후킹이라 카드를 붙이면 힘이 빠집니다.</p></div>
+    </header>
+    
+    <h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">스레드 · 실시간 카운터를 지운 이야기</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>오늘 한 일: 랜딩에 실시간 신청자 수를 띄우는 기능을 만들었다가 지웠습니다.
+
+신청자가 1명이라
+&quot;현재 1명이 신청했습니다&quot;가 화면에 뜨더라고요.
+
+기능은 멀쩡한데 보여줄 숫자가 없었습니다.</code></pre>
+  </article>
+    <nav class="pager">
+      <button class="page-btn" type="button" data-step="-1">← 이전</button>
+      <button class="page-btn" type="button" data-step="1">다음 →</button>
+    </nav>
+  </section>
+  <section class="pane" data-pane="4-3" hidden>
+    <header class="pane-head">
+      <p class="eyebrow">만드는 중</p>
+      <h1 class="pane-title">스레드 · 베타 모집 — 링크 1/2</h1>
+      
+      
+      
+    </header>
+    <h3 class="group-head">이미지<span>Claude Design에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind ">1장</span>
+        <span class="size">1080 × 1350</span>
+        <span class="unit-name">스레드 · 베타 모집 — 링크 1/2</span>
+      </div>
+      <button class="copy" type="button" data-copy>프롬프트 복사</button>
+    </header>
+    
+    <pre class="block"><code>입주해(한국 임대차 신뢰 서비스) SNS 이미지를 만들어줘.
+바탕 딥네이비 #0C2247, 강조 앰버 #E9A23B, 글자 흰색. 서체는 Gothic A1(없으면 Noto Sans KR).
+차분하고 사무적인 톤. 스톡사진·이모지·그라데이션 배경·영어 문구 금지. 느낌표 쓰지 말 것.
+아래 문구를 한 글자도 바꾸지 말고 그대로 넣을 것. 한글 맞춤법과 띄어쓰기를 지킬 것.
+
+이미지 1장. 1080 × 1350 px (스레드 피드에 세로로 크게 뜬다).
+안전 여백: 위아래 각 120px, 좌우 각 90px. 좌측 하단에 &quot;입주해&quot; 워드마크(30px, 흰색 60%).
+
+세 역할을 세로로 쌓을 것. 각 줄은 [역할 · 하는 일] 형식.
+
+  임차인   카드를 발급받고
+  임대인   카드를 비교하고
+  중개사   카드를 검증합니다
+
+역할 이름 44px 앰버 #E9A23B 굵게, 하는 일 56px 흰색.
+줄 사이 간격 56px, 사이에 흰색 10% 가로선.
+
+맨 아래에 앰버 배경 알약 모양 버튼(가로 여백 40px, 세로 20px):
+  검정색 글자 36px 굵게 &quot;사전 신청 받는 중&quot;</code></pre>
+  </article>
+    <h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">스레드 · 베타 모집 — 링크 1/2</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>임대차 신뢰 서비스 베타를 준비하고 있습니다.
+
+세입자는 자기 카드를 무료로 발급받고
+집주인은 그 카드를 같은 기준으로 비교하고
+중개사는 그 카드가 진짜인지 검증합니다.
+
+먼저 써보실 분을 찾습니다.
+특히 집주인과 중개사 분들.
+
+ipjuhae.com/?utm_source=threads</code></pre>
+  </article>
+    <nav class="pager">
+      <button class="page-btn" type="button" data-step="-1">← 이전</button>
+      <button class="page-btn" type="button" data-step="1">다음 →</button>
+    </nav>
+  </section>
+  <section class="pane" data-pane="4-4" hidden>
+    <header class="pane-head">
+      <p class="eyebrow">만드는 중</p>
+      <h1 class="pane-title">스레드 · 일주일 결산 — 링크 2/2</h1>
+      
+      <div class="warn"><span class="warn-tag">올리기 전 확인</span><p>숫자는 GET /api/admin/waitlist의 sources에서 실제 값을 가져와 넣으세요. 결과가 나빠도 그대로 쓰는 게 이 계정의 톤입니다.</p></div>
+      
+    </header>
+    <h3 class="group-head">이미지<span>Claude Design에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind ">1장</span>
+        <span class="size">1080 × 1350</span>
+        <span class="unit-name">스레드 · 일주일 결산 — 링크 2/2</span>
+      </div>
+      <button class="copy" type="button" data-copy>프롬프트 복사</button>
+    </header>
+    
+    <pre class="block"><code>입주해(한국 임대차 신뢰 서비스) SNS 이미지를 만들어줘.
+바탕 딥네이비 #0C2247, 강조 앰버 #E9A23B, 글자 흰색. 서체는 Gothic A1(없으면 Noto Sans KR).
+차분하고 사무적인 톤. 스톡사진·이모지·그라데이션 배경·영어 문구 금지. 느낌표 쓰지 말 것.
+아래 문구를 한 글자도 바꾸지 말고 그대로 넣을 것. 한글 맞춤법과 띄어쓰기를 지킬 것.
+
+이미지 1장. 1080 × 1350 px (스레드 피드에 세로로 크게 뜬다).
+안전 여백: 위아래 각 120px, 좌우 각 90px. 좌측 하단에 &quot;입주해&quot; 워드마크(30px, 흰색 60%).
+
+주간 기록 카드. 맨 위에 작은 제목(36px, 흰색 60%): 1주차 기록
+
+그 아래 숫자 세 줄. 각 줄은 [설명 왼쪽 · 숫자 오른쪽], 숫자만 앰버 #E9A23B 88px 굵게, 설명 44px 흰색:
+  올린 글            14
+  사전 신청          [N]
+  지난주 신청         1
+
+[N] 자리는 실제 숫자로 바꿔 넣을 것.
+행 사이에 흰색 12% 가로선.</code></pre>
+  </article>
+    <h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">스레드 · 일주일 결산 — 링크 2/2</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>일주일 기록.
+
+스레드 글 14개
+사전 신청 N명 (지난주 1명)
+가장 반응 좋았던 글: (제목)
+가장 반응 없던 글: (제목)
+
+배운 것: (한 줄)
+
+다음 주에는 등기부 읽는 법을 제대로 정리해서 올리겠습니다.
+
+ipjuhae.com/?utm_source=threads</code></pre>
+  </article>
+    <nav class="pager">
+      <button class="page-btn" type="button" data-step="-1">← 이전</button>
+      <button class="page-btn" type="button" data-step="1">다음 →</button>
+    </nav>
+  </section>
+  <section class="pane" data-pane="4-5" hidden>
+    <header class="pane-head">
+      <p class="eyebrow">만드는 중</p>
+      <h1 class="pane-title">X · 고정 트윗</h1>
+      
+      
+      <div class="noimg"><span class="noimg-tag">이미지 없음</span><p>이미지 없이 텍스트만. 문장 자체가 후킹이라 카드를 붙이면 힘이 빠집니다.</p></div>
+    </header>
+    
+    <h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">X · 고정 트윗</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>임대차 계약할 때 서로를 확인할 방법이 없다는 게 이상해서 만들고 있습니다.
+
+세입자는 성실하다는 걸 증명 못 하고
+집주인은 월세를 낼 사람인지 알 수 없고
+중개사는 양쪽 말만 듣고 계약서를 씁니다.
+
+셋 다 불안한데 아무도 확인을 못 합니다.
+
+━━━ 답글로 이어 달 것 ━━━
+사전 신청 페이지를 열었고 지금까지 신청자는 1명입니다. 그 1명이 저는 아닙니다.
+
+ipjuhae.com/?utm_source=x</code></pre>
+  </article>
+    <nav class="pager">
+      <button class="page-btn" type="button" data-step="-1">← 이전</button>
+      <button class="page-btn" type="button" data-step="1">다음 →</button>
+    </nav>
+  </section>
+  <section class="pane" data-pane="4-6" hidden>
+    <header class="pane-head">
+      <p class="eyebrow">만드는 중</p>
+      <h1 class="pane-title">X · 배점 공개</h1>
+      
+      
+      
+    </header>
+    <h3 class="group-head">이미지<span>Claude Design에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind ">1장</span>
+        <span class="size">1600 × 900</span>
+        <span class="unit-name">X · 배점 공개</span>
+      </div>
+      <button class="copy" type="button" data-copy>프롬프트 복사</button>
+    </header>
+    
+    <pre class="block"><code>입주해(한국 임대차 신뢰 서비스) SNS 이미지를 만들어줘.
+바탕 딥네이비 #0C2247, 강조 앰버 #E9A23B, 글자 흰색. 서체는 Gothic A1(없으면 Noto Sans KR).
+차분하고 사무적인 톤. 스톡사진·이모지·그라데이션 배경·영어 문구 금지. 느낌표 쓰지 말 것.
+아래 문구를 한 글자도 바꾸지 말고 그대로 넣을 것. 한글 맞춤법과 띄어쓰기를 지킬 것.
+
+이미지 1장. 1600 × 900 px (X 타임라인은 가로 16:9로 자른다).
+안전 여백: 사방 각 100px. 우측 하단에 &quot;입주해&quot; 워드마크(28px, 흰색 60%).
+
+가로 이미지. 가운데에 배점 네 줄을 표로.
+
+각 행 [항목명 왼쪽 정렬 · 숫자 오른쪽 정렬], 행 사이 흰색 12% 가로선:
+  소득 안정성    30
+  납부 이력      30
+  거주 평판      25
+  본인 인증      15
+
+항목명 42px 흰색, 숫자 64px 앰버 #E9A23B 굵게.
+표 위 작은 제목 32px 흰색 60%: 세입자 점수 배점
+표 아래 한 줄 36px 흰색: 학력, 직장 이름, 나이는 안 봅니다</code></pre>
+  </article>
+    <h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">X · 배점 공개</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>세입자 점수를 이렇게 나눴습니다.
+
+소득 안정성 30
+납부 이력 30
+거주 평판 25
+본인 인증 15
+
+학력, 직장 이름, 나이는 안 봅니다.
+소득도 액수가 아니라 월세 대비 비율만 봅니다.
+
+이 배점, 뭘 빼고 뭘 넣어야 할까요.</code></pre>
+  </article>
+    <nav class="pager">
+      <button class="page-btn" type="button" data-step="-1">← 이전</button>
+      <button class="page-btn" type="button" data-step="1">다음 →</button>
+    </nav>
+  </section>
+  <section class="pane" data-pane="4-7" hidden>
+    <header class="pane-head">
+      <p class="eyebrow">만드는 중</p>
+      <h1 class="pane-title">X · 주간 결산</h1>
+      
+      <div class="warn"><span class="warn-tag">올리기 전 확인</span><p>숫자는 GET /api/admin/waitlist의 sources에서 실제 값을 가져와 넣으세요.</p></div>
+      
+    </header>
+    <h3 class="group-head">이미지<span>Claude Design에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind ">1장</span>
+        <span class="size">1600 × 900</span>
+        <span class="unit-name">X · 주간 결산</span>
+      </div>
+      <button class="copy" type="button" data-copy>프롬프트 복사</button>
+    </header>
+    
+    <pre class="block"><code>입주해(한국 임대차 신뢰 서비스) SNS 이미지를 만들어줘.
+바탕 딥네이비 #0C2247, 강조 앰버 #E9A23B, 글자 흰색. 서체는 Gothic A1(없으면 Noto Sans KR).
+차분하고 사무적인 톤. 스톡사진·이모지·그라데이션 배경·영어 문구 금지. 느낌표 쓰지 말 것.
+아래 문구를 한 글자도 바꾸지 말고 그대로 넣을 것. 한글 맞춤법과 띄어쓰기를 지킬 것.
+
+이미지 1장. 1600 × 900 px (X 타임라인은 가로 16:9로 자른다).
+안전 여백: 사방 각 100px. 우측 하단에 &quot;입주해&quot; 워드마크(28px, 흰색 60%).
+
+가로 이미지. 주간 기록 카드.
+
+맨 위 작은 제목 30px 흰색 60%: 1주차 기록
+그 아래 숫자 세 줄. 각 줄 [설명 왼쪽 · 숫자 오른쪽], 행 사이 흰색 12% 가로선:
+  올린 글            7
+  사전 신청          [N]
+  지난주 신청         1
+
+설명 38px 흰색, 숫자 72px 앰버 #E9A23B 굵게.
+[N] 자리는 실제 숫자로 바꿔 넣을 것.</code></pre>
+  </article>
+    <h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">X · 주간 결산</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>일주일 기록.
+
+X 글 7개
+사전 신청 N명 (지난주 1명)
+가장 반응 좋았던 글: (제목)
+
+배운 것: (한 줄)
+
+다음 주에는 등기부 읽는 법을 제대로 정리하겠습니다.
+
+━━━ 답글 ━━━
+ipjuhae.com/?utm_source=x</code></pre>
+  </article>
+    <nav class="pager">
+      <button class="page-btn" type="button" data-step="-1">← 이전</button>
+      <button class="page-btn" type="button" data-step="1">다음 →</button>
+    </nav>
+  </section>
+  <section class="pane" data-pane="5-0" hidden>
+    <header class="pane-head">
+      <p class="eyebrow">단발 · 확산용</p>
+      <h1 class="pane-title">인스타그램 · 릴스 · 양방향 (20초)</h1>
+      
+      
+      
+    </header>
+    <h3 class="group-head">이미지<span>Claude Design에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind ">1장</span>
+        <span class="size">1080 × 1920</span>
+        <span class="unit-name">인스타그램 · 릴스 · 양방향 (20초)</span>
+      </div>
+      <button class="copy" type="button" data-copy>프롬프트 복사</button>
+    </header>
+    
+    <pre class="block"><code>입주해(한국 임대차 신뢰 서비스) SNS 이미지를 만들어줘.
+바탕 딥네이비 #0C2247, 강조 앰버 #E9A23B, 글자 흰색. 서체는 Gothic A1(없으면 Noto Sans KR).
+차분하고 사무적인 톤. 스톡사진·이모지·그라데이션 배경·영어 문구 금지. 느낌표 쓰지 말 것.
+아래 문구를 한 글자도 바꾸지 말고 그대로 넣을 것. 한글 맞춤법과 띄어쓰기를 지킬 것.
+
+세로 영상 커버 1장. 1080 × 1920 px.
+위 250px, 아래 450px 비울 것. 글자는 위에서 700~1300px 사이. 좌우 여백 각 90px.
+
+제목 1행: 세입자만 심사받는 게    ← 흰색
+제목 2행: 이상하지 않나요          ← 앰버 #E9A23B
+
+두 줄 모두 92px, 아주 굵게(900), 자간 -4px, 왼쪽 정렬.
+그 아래 64px 띄우고 &quot;입주해&quot; 워드마크(30px, 흰색 60%).</code></pre>
+  </article>
+    <h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">인스타그램 · 릴스 · 양방향 (20초)</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>세입자만 심사받는 게 이상하다고 생각한 적 없으신가요.
+
+집주인은 소득과 직장을 묻는데,
+세입자는 대출이 얼마인지 묻기가 어렵습니다.
+
+돈은 세입자가 더 많이 겁니다. 보증금 전부요.
+
+#임대차 #전세 #월세 #보증금 #세입자 #집주인 #부동산 #자취 #집구하기 #전세사기예방 #입주해
+
+──────────── 촬영 대본 ────────────
+[0–3초]  계약서 위에 펜이 놓인 정지 컷
+         자막: 집 구할 때 이상하다고 느낀 적 없으세요?
+[3–10초] 왼쪽에 목록이 하나씩 뜸 / 자막: 소득 / 직장 / 재직 기간 / 이전 거주지
+         내레이션: 집주인은 내 소득, 직장, 재직 기간을 다 물어봅니다.
+[10–15초] 오른쪽은 비어 있고 물음표 하나 / 자막: 내가 물어볼 수 있는 것 — ?
+         내레이션: 그런데 저는 집주인한테 대출이 얼마인지 묻기가 어렵습니다.
+[15–18초] 검은 배경에 한 줄 / 자막: 돈은 제가 더 겁니다
+         내레이션: 돈은 제가 더 겁니다. 보증금 전부요.
+[18–20초] 랜딩 화면 / 자막: 양쪽 다 확인하는 서비스, 프로필 링크</code></pre>
+  </article>
+    <nav class="pager">
+      <button class="page-btn" type="button" data-step="-1">← 이전</button>
+      <button class="page-btn" type="button" data-step="1">다음 →</button>
+    </nav>
+  </section>
+  <section class="pane" data-pane="5-1" hidden>
+    <header class="pane-head">
+      <p class="eyebrow">단발 · 확산용</p>
+      <h1 class="pane-title">스레드 · 세입자만 심사받는 게 이상하다</h1>
+      
+      
+      <div class="noimg"><span class="noimg-tag">이미지 없음</span><p>이미지 없이 텍스트만. 문장 자체가 후킹이라 카드를 붙이면 힘이 빠집니다.</p></div>
+    </header>
+    
+    <h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">스레드 · 세입자만 심사받는 게 이상하다</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>세입자만 심사받는 게 이상하다고 생각한 적 없으신가요.
+
+집주인은 세입자의 소득과 직장을 묻는데
+세입자는 집주인에게 근저당이 얼마인지 묻기가 어렵습니다.
+
+돈은 세입자가 더 많이 겁니다. 보증금 전부요.</code></pre>
+  </article>
+    <nav class="pager">
+      <button class="page-btn" type="button" data-step="-1">← 이전</button>
+      <button class="page-btn" type="button" data-step="1">다음 →</button>
+    </nav>
+  </section>
+  <section class="pane" data-pane="5-2" hidden>
+    <header class="pane-head">
+      <p class="eyebrow">단발 · 확산용</p>
+      <h1 class="pane-title">X · 양방향</h1>
+      
+      
+      <div class="noimg"><span class="noimg-tag">이미지 없음</span><p>이미지 없이 텍스트만. 문장 자체가 후킹이라 카드를 붙이면 힘이 빠집니다.</p></div>
+    </header>
+    
+    <h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>
+  <article class="unit">
+    <header class="unit-head">
+      <div class="unit-id">
+        <span class="kind kind-text">게시글</span>
+        <span class="unit-name">X · 양방향</span>
+      </div>
+      <button class="copy" type="button" data-copy>본문 복사</button>
+    </header>
+    <pre class="block block--sans"><code>세입자만 심사받는 게 이상하다고 생각한 적 없으신가요.
+
+집주인은 소득과 직장을 묻는데
+세입자는 대출이 얼마인지 묻기가 어렵습니다.
+
+돈은 세입자가 더 많이 겁니다. 보증금 전부요.</code></pre>
+  </article>
+    <nav class="pager">
+      <button class="page-btn" type="button" data-step="-1">← 이전</button>
+      <button class="page-btn" type="button" data-step="1">다음 →</button>
+    </nav>
+  </section></main>
+</div>
+
+<script>
+const ORDER = ["0-0","0-1","0-2","0-3","0-4","0-5","0-6","0-7","0-8","0-9","0-10","0-11","1-0","1-1","1-2","1-3","1-4","1-5","2-0","2-1","2-2","2-3","2-4","2-5","2-6","2-7","2-8","2-9","2-10","2-11","3-0","3-1","3-2","3-3","3-4","3-5","3-6","3-7","4-0","4-1","4-2","4-3","4-4","4-5","4-6","4-7","5-0","5-1","5-2"];
+const rail = document.querySelectorAll('.rail-item');
+const panes = document.querySelectorAll('.pane');
+
+function show(key, scroll) {
+  panes.forEach(p => { p.hidden = p.dataset.pane !== key });
+  rail.forEach(b => b.setAttribute('aria-current', String(b.dataset.go === key)));
+  const i = ORDER.indexOf(key);
+  const pane = document.querySelector('[data-pane="' + key + '"]');
+  if (pane) pane.querySelectorAll('[data-step]').forEach(b => {
+    const t = i + Number(b.dataset.step);
+    b.disabled = t < 0 || t >= ORDER.length;
+  });
+  const active = document.querySelector('.rail-item[aria-current="true"]');
+  if (active) active.scrollIntoView({ block: 'nearest' });
+  if (scroll) window.scrollTo({ top: 0, behavior: 'instant' });
+  history.replaceState(null, '', '#' + key);
+}
+rail.forEach(b => b.addEventListener('click', () => show(b.dataset.go, true)));
+
+document.addEventListener('click', (ev) => {
+  const step = ev.target.closest('[data-step]');
+  if (step) {
+    const cur = ORDER.indexOf(document.querySelector('.pane:not([hidden])').dataset.pane);
+    const next = ORDER[cur + Number(step.dataset.step)];
+    if (next) show(next, true);
+    return;
+  }
+  const btn = ev.target.closest('[data-copy]');
+  if (!btn) return;
+  const code = btn.closest('.unit').querySelector('code');
+  const label = btn.textContent;
+  const done = () => {
+    btn.textContent = '복사됨';
+    btn.dataset.state = 'done';
+    setTimeout(() => { btn.textContent = label; delete btn.dataset.state }, 1600);
+  };
+  // 샌드박스에서 클립보드가 막히면 블록을 선택해 두어 직접 복사하게 한다.
+  const fallback = () => {
+    const r = document.createRange();
+    r.selectNodeContents(code);
+    const sel = getSelection();
+    sel.removeAllRanges();
+    sel.addRange(r);
+    let ok = false;
+    try { ok = document.execCommand('copy') } catch (e) {}
+    if (ok) { sel.removeAllRanges(); done() }
+    else { btn.textContent = '⌘C 로 복사'; setTimeout(() => { btn.textContent = label }, 2600) }
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(code.textContent).then(done, fallback);
+  } else fallback();
+});
+
+show(ORDER.includes(location.hash.slice(1)) ? location.hash.slice(1) : ORDER[0], false);
+</script>
