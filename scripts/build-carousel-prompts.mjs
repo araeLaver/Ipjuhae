@@ -41,21 +41,23 @@ function comicSets(src) {
 
 // ── 프롬프트 본문 ────────────────────────────────────────────
 const indent = (s, n) => s.split('\n').map((l) => ' '.repeat(n) + l).join('\n')
+/** 줄바꿈은 " / "로 잇는다. 빈 줄은 먼저 접어야 " /  / "가 생기지 않는다. */
+const flow = (t) => t.replace(/\n{2,}/g, '\n').replace(/\n/g, ' / ')
 
 function slideText(s, i, total) {
   const n = i + 1
   const head = `${n}장`
   if (s.kind === 'cover') {
-    return `${head}  (표지 — ${COVER_NOTE})\n${indent(`제목: ${s.title.replace(/\n/g, ' / ')}`, 6)}\n${indent(`설명: ${s.sub}`, 6)}`
+    return `${head}  (표지 — ${COVER_NOTE})\n${indent(`제목: ${flow(s.title)}`, 6)}\n${indent(`설명: ${s.sub}`, 6)}`
   }
   if (s.kind === 'point') {
-    const lines = [`라벨: ${s.label}   (앰버 34px + 그 아래 앰버 밑줄 96×6)`, `제목: ${s.title.replace(/\n/g, ' / ')}`]
-    if (s.desc) lines.push(`설명: ${s.desc.replace(/\n/g, ' / ')}`)
+    const lines = [`라벨: ${s.label}   (앰버 34px + 그 아래 앰버 밑줄 96×6)`, `제목: ${flow(s.title)}`]
+    if (s.desc) lines.push(`설명: ${flow(s.desc)}`)
     return `${head}\n${indent(lines.join('\n'), 6)}`
   }
   if (s.kind === 'list') {
     const items = s.items.map((t) => `· ${t}`).join('\n')
-    return `${head}\n${indent(`제목: ${s.title.replace(/\n/g, ' / ')}`, 6)}\n${indent('목록 (36px 흰색 72%, 각 앞에 앰버 정사각형 10×10, 항목 간격 28px)', 6)}\n${indent(items, 8)}`
+    return `${head}\n${indent(`제목: ${flow(s.title)}`, 6)}\n${indent('목록 (36px 흰색 72%, 각 앞에 앰버 정사각형 10×10, 항목 간격 28px)', 6)}\n${indent(items, 8)}`
   }
   if (s.kind === 'say') {
     return `${head}  ${s.who} · ${s.mood}\n${indent(s.title, 6)}`
@@ -63,8 +65,13 @@ function slideText(s, i, total) {
   if (s.kind === 'doc') {
     return `${head}  서류 (인물 없음)\n${indent(s.title, 6)}\n${indent('흰색 문서 카드에 굵은 글자만. 결정적 한 줄에 앰버 형광 밑줄.\n카드 오른쪽 위에 「예시」 배지를 반드시 넣을 것', 6)}`
   }
-  // end
-  return `${head}  (마지막 장)\n${indent(`제목: ${s.title}`, 6)}\n${indent(`설명: ${s.desc}`, 6)}`
+  if (s.kind === 'end') {
+    return `${head}  (마지막 장 — 다음 화 예고)\n${indent(`제목: ${s.title}`, 6)}\n${indent(`설명: ${s.desc}`, 6)}`
+  }
+  // plain — 라벨 없는 본문
+  const lines = [`제목: ${flow(s.title)}`]
+  if (s.desc) lines.push(`설명: ${flow(s.desc)}`)
+  return `${head}\n${indent(lines.join('\n'), 6)}`
 }
 
 function buildPrompt({ series, total, num, title, slides, comic }) {
