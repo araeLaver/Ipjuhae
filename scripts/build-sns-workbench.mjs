@@ -1,37 +1,26 @@
 #!/usr/bin/env node
 /**
- * SNS 게시 워크벤치 — 원고에서 아티팩트 페이지를 만든다.
+ * SNS 게시 워크벤치 — 연속 이미지 세트와 게시글을 골라 복사하는 한 장짜리 페이지.
  *
- * `marketing/sns/posts/*.md`를 읽어 게시물별 이미지 프롬프트와 게시글을
- * 골라 복사하는 한 장짜리 페이지(`marketing/sns/workbench.html`)를 만든다.
+ * 게시물 하나 = **이어지는 이미지 세트 한 벌 + 게시글**. 한 장짜리 이미지는 다루지 않는다.
+ * 이미지 세트는 `marketing/sns/carousels.mjs`와 만화 원고에서 오고(30세트 168장),
+ * 게시글은 `marketing/sns/posts/*.md`의 캡션에서 온다.
  *
- * 단위는 **만들 이미지 하나**다 — 캐러셀 / 4컷 / 단장. 프롬프트 안의 장·컷을
- * 갈라 표로 펴고, 원문은 접어 둔다. 프롬프트가 40줄짜리 덩어리로 쌓이면
- * 뭘 만들어야 하는지가 안 보인다.
+ *   node scripts/build-sns-workbench.mjs   # → marketing/sns/workbench.html
  *
- *   node scripts/build-sns-workbench.mjs
- *
- * 만든 뒤 아티팩트로 올리면 같은 URL이 갱신된다(README의 온라인 문서 표 참고).
+ * 만든 뒤 기존 아티팩트 URL과 함께 올려야 같은 링크가 갱신된다(README 참고).
  */
 import { readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
+import { collect } from './build-carousel-prompts.mjs'
 
 const POSTS = path.resolve('marketing/sns/posts')
 const OUT = path.resolve('marketing/sns/workbench.html')
 
-const SERIES = [
-  { file: '01-series-deungi.md', name: '등기부 뜯어보기', track: '도달 · 세입자' },
-  { file: '02-series-landlord.md', name: '임대인 노트', track: '전환 · 임대인·중개사' },
-  { file: '05-series-comic.md', name: '지수의 계약', track: '도달 · 세입자' },
-  { file: '06-series-reels.md', name: '계약 전 30초', track: '릴스 · 세입자' },
-  { file: '03-log.md', name: '만드는 중', track: '일지 · 번호 없음', flat: true },
-  { file: '04-solo.md', name: '단발 · 확산용', track: '번호 없음', flat: true },
-]
-
 const esc = (s) =>
   String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 
-// ── 원고 읽기 ────────────────────────────────────────────────
+// ── 게시글 캡션 읽기 ─────────────────────────────────────────
 /** 한 화 안에서 (섹션, 라벨, 코드블록) 묶음을 순서대로 뽑는다. */
 function collectBlocks(body) {
   const lines = body.split('\n')
@@ -42,24 +31,15 @@ function collectBlocks(body) {
   while (i < lines.length) {
     const l = lines[i]
     const h3 = l.match(/^### (.+)$/)
-    if (h3) {
-      section = h3[1].trim()
-      label = null
-      i++
-      continue
-    }
+    if (h3) { section = h3[1].trim(); label = null; i++; continue }
     const bold = l.match(/^\*\*(.+?)\*\*/)
-    if (bold) {
-      label = bold[1].trim()
-      i++
-      continue
-    }
+    if (bold) { label = bold[1].trim(); i++; continue }
     if (l.startsWith('```')) {
       const buf = []
       i++
       while (i < lines.length && !lines[i].startsWith('```')) buf.push(lines[i++])
       i++
-      if (label) out.push({ section, label, text: buf.join('\n').trim() })
+      if (label && !/프롬프트/.test(label)) out.push({ section, label, text: buf.join('\n').trim() })
       label = null
       continue
     }
@@ -70,119 +50,55 @@ function collectBlocks(body) {
 
 const WARN = /⚠︎\s*\*\*올리기 전 확인\*\*\s*—\s*(.+)/
 
-function readEpisodes(src, flat) {
-  if (flat) {
-    // 일지와 단발은 회차 번호가 없다. ### 섹션 하나가 게시물 한 건.
-    return src
-      .split(/\n### /)
-      .slice(1)
-      .map((b, i) => {
-        const body = '\n### ' + b
-        const blocks = collectBlocks(body)
-        return {
-          num: String(i + 1).padStart(2, '0'),
-          title: b.slice(0, b.indexOf('\n')).trim(),
-          topic: null,
-          warn: WARN.exec(b)?.[1]?.trim() ?? null,
-          noImage: /\*\*디자인\*\* — (.+)/.exec(b)?.[1]?.trim() ?? null,
-          copy: blocks.filter((x) => !/프롬프트/.test(x.label)),
-          prompts: blocks.filter((x) => /프롬프트/.test(x.label)),
-        }
-      })
+async function readSource(file) {
+  const src = await readFile(path.join(POSTS, file), 'utf8')
+  const map = new Map()
+  for (const b of src.split(/\n## #/).slice(1)) {
+    const num = b.match(/^(\d+) · /m)[1]
+    map.set(num, { posts: collectBlocks(b), warn: WARN.exec(b)?.[1]?.trim() ?? null })
   }
-  return src
-    .split(/\n## #/)
-    .slice(1)
-    .map((b) => {
-      const [, num, title] = b.match(/^(\d+) · (.+)$/m)
-      const blocks = collectBlocks(b.slice(b.indexOf('\n')))
-      const topic = b.match(/^\*\*이 화가 다루는 것:\*\* (.+)$/m)?.[1]?.trim() ?? null
-      return {
-        num,
-        title,
-        topic: topic && topic !== '—' ? topic : null,
-        warn: WARN.exec(b)?.[1]?.trim() ?? null,
-        noImage: null,
-        copy: blocks.filter((x) => !/프롬프트/.test(x.label)),
-        prompts: blocks.filter((x) => /프롬프트/.test(x.label)),
-      }
-    })
-}
-
-// ── 프롬프트를 장·컷으로 가르기 ──────────────────────────────
-const SLIDE = /^\s*(\d+)\s*(장|컷)\s*(.*)$/
-
-function slice(text) {
-  const slides = []
-  let cur = null
-  for (const l of text.split('\n')) {
-    const m = SLIDE.exec(l)
-    if (m && Number(m[1]) >= 1 && Number(m[1]) <= 20) {
-      cur = { no: m[1], label: m[3].trim(), lines: [] }
-      slides.push(cur)
-      continue
-    }
-    if (!cur) continue
-    // 장 블록은 들여쓴 줄로 이어진다. 들여쓰기가 끊기면 블록도 끝난다.
-    if (/^\s{2,}\S/.test(l)) cur.lines.push(l.trim())
-    else if (l.trim() !== '') cur = null
-  }
-  // "2장  제목: 준비물"처럼 표시줄에 내용이 붙어 있으면 라벨이 아니라 내용이다.
-  return slides.map((s) =>
-    s.label && /^[가-힣A-Za-z][^:]{0,8}:/.test(s.label)
-      ? { ...s, label: '', lines: [s.label, ...s.lines] }
-      : s
-  )
-}
-
-function spec(text, slides) {
-  const carousel = /캐러셀\s*(\d+)\s*장/.exec(text)
-  const size = /(\d[\d,]*)\s*[×x]\s*(\d[\d,]*)\s*px/.exec(text)
-  let kind = carousel ? `캐러셀 ${carousel[1]}장` : /4컷/.test(text) ? '4컷' : '1장'
-  if (kind === '1장' && slides.length > 1) kind = `캐러셀 ${slides.length}장`
-  return { kind, size: size ? `${size[1]} × ${size[2]}` : null }
+  return map
 }
 
 // ── 조각 ─────────────────────────────────────────────────────
-/** "제목: 값"은 키를 흐리게 둬서 넣을 문구만 눈에 들어오게 한다. */
-const slideLine = (l) => {
-  const m = /^([가-힣A-Za-z][가-힣A-Za-z\s]{0,8}):\s*(.+)$/.exec(l)
-  return m ? `<span class="k">${esc(m[1])}</span>${esc(m[2])}` : esc(l)
+const KIND_LABEL = {
+  cover: '표지', point: '논점', plain: '본문', list: '목록',
+  say: '대사', doc: '서류', end: '마지막',
+}
+
+function slideBody(s) {
+  const rows = []
+  if (s.kind === 'cover') {
+    rows.push(['제목', s.title], ['설명', s.sub])
+  } else if (s.kind === 'point') {
+    rows.push(['라벨', s.label], ['제목', s.title])
+    if (s.desc) rows.push(['설명', s.desc])
+  } else if (s.kind === 'list') {
+    rows.push(['제목', s.title], ['목록', s.items.map((t) => `· ${t}`).join('\n')])
+  } else if (s.kind === 'say') {
+    rows.push([`${s.who} · ${s.mood}`, s.title])
+  } else if (s.kind === 'doc') {
+    rows.push(['문구', s.title])
+  } else {
+    rows.push(['제목', s.title], ['설명', s.desc])
+  }
+  return rows
+    .filter(([, v]) => v)
+    .map(([k, v]) => `<p class="slide-line"><span class="k">${esc(k)}</span><span class="v">${esc(v).replace(/\n/g, '<br>')}</span></p>`)
+    .join('')
 }
 
 const slideTable = (slides) => `
   <ol class="slides">
-    ${slides
-      .map(
-        (s) => `
+    ${slides.map((s, i) => `
       <li class="slide">
-        <span class="slide-no">${esc(s.no)}</span>
+        <span class="slide-no">${i + 1}</span>
         <div class="slide-body">
-          ${s.label ? `<p class="slide-label">${esc(s.label.replace(/^\(|\)$/g, ''))}</p>` : ''}
-          ${s.lines.map((l) => `<p class="slide-line">${slideLine(l)}</p>`).join('')}
+          <p class="slide-kind">${esc(KIND_LABEL[s.kind] ?? '')}</p>
+          ${slideBody(s)}
         </div>
-      </li>`
-      )
-      .join('')}
+      </li>`).join('')}
   </ol>`
-
-const promptCard = (p) => `
-  <article class="unit">
-    <header class="unit-head">
-      <div class="unit-id">
-        <span class="kind ${p.kind === '1장' ? '' : 'kind-multi'}">${esc(p.kind)}</span>
-        ${p.size ? `<span class="size">${esc(p.size)}</span>` : ''}
-        <span class="unit-name">${esc(p.section || p.label)}</span>
-      </div>
-      <button class="copy" type="button" data-copy>프롬프트 복사</button>
-    </header>
-    ${p.slides.length ? slideTable(p.slides) : ''}
-    ${
-      p.slides.length
-        ? `<details class="raw"><summary>프롬프트 원문</summary><pre class="block"><code>${esc(p.text)}</code></pre></details>`
-        : `<pre class="block"><code>${esc(p.text)}</code></pre>`
-    }
-  </article>`
 
 const postCard = (b) => `
   <article class="unit">
@@ -197,78 +113,74 @@ const postCard = (b) => `
   </article>`
 
 // ── 조립 ─────────────────────────────────────────────────────
-const data = []
-for (const s of SERIES) {
-  let src
-  try {
-    src = await readFile(path.join(POSTS, s.file), 'utf8')
-  } catch {
-    continue
-  }
-  const episodes = readEpisodes(src, s.flat)
-  for (const e of episodes) {
-    for (const p of e.prompts) {
-      p.slides = slice(p.text)
-      Object.assign(p, spec(p.text, p.slides))
-    }
-  }
-  data.push({ ...s, episodes })
+const sets = await collect()
+const sources = new Map()
+for (const file of new Set(sets.map((s) => s.source))) sources.set(file, await readSource(file))
+
+for (const s of sets) {
+  const extra = sources.get(s.source).get(s.num)
+  s.posts = extra?.posts ?? []
+  s.warn = extra?.warn ?? null
 }
 
-const units = data.flatMap((s) => s.episodes.flatMap((e) => e.prompts))
-const nCarousel = units.filter((p) => p.kind.startsWith('캐러셀')).length
-const nCut = units.filter((p) => p.kind === '4컷').length
-const nSingle = units.length - nCarousel - nCut
-const nPosts = data.reduce((a, s) => a + s.episodes.reduce((n, e) => n + e.copy.length, 0), 0)
+const groups = []
+for (const s of sets) {
+  let g = groups.find((x) => x.name === s.series)
+  if (!g) groups.push((g = { name: s.series, track: s.track, items: [] }))
+  g.items.push(s)
+}
 
-const rail = data
-  .map(
-    (s, si) => `
+const nSets = sets.length
+const nSlides = sets.reduce((a, s) => a + s.count, 0)
+const nPosts = sets.reduce((a, s) => a + s.posts.length, 0)
+const nWarn = sets.filter((s) => s.warn).length
+
+const rail = groups.map((g, gi) => `
   <section class="rail-group">
-    <h2 class="rail-title">${esc(s.name)}</h2>
-    <p class="rail-track">${esc(s.track)}</p>
+    <h2 class="rail-title">${esc(g.name)}</h2>
+    <p class="rail-track">${esc(g.track)}</p>
     <ol class="rail-list">
-      ${s.episodes
-        .map(
-          (e, ei) => `
-        <li><button class="rail-item" data-go="${si}-${ei}" type="button">
-          <span class="rail-num">${s.flat ? '·' : '#' + esc(e.num)}</span>
-          <span class="rail-name">${esc(e.title)}</span>
-          ${e.warn ? '<span class="rail-flag">확인</span>' : ''}
-        </button></li>`
-        )
-        .join('')}
+      ${g.items.map((s, ii) => `
+        <li><button class="rail-item" data-go="${gi}-${ii}" type="button">
+          <span class="rail-num">#${esc(s.num)}</span>
+          <span class="rail-name">${esc(s.title)}</span>
+          <span class="rail-count">${s.count}장</span>
+          ${s.warn ? '<span class="rail-flag">확인</span>' : ''}
+        </button></li>`).join('')}
     </ol>
-  </section>`
-  )
-  .join('')
+  </section>`).join('')
 
-const panes = data
-  .map((s, si) =>
-    s.episodes
-      .map(
-        (e, ei) => `
-  <section class="pane" data-pane="${si}-${ei}" hidden>
+const panes = groups.map((g, gi) => g.items.map((s, ii) => `
+  <section class="pane" data-pane="${gi}-${ii}" hidden>
     <header class="pane-head">
-      <p class="eyebrow">${esc(s.name)}</p>
-      <h1 class="pane-title">${s.flat ? '' : `<span class="pane-num">#${esc(e.num)}</span>`}${esc(e.title)}</h1>
-      ${e.topic ? `<p class="topic">${esc(e.topic)}</p>` : ''}
-      ${e.warn ? `<div class="warn"><span class="warn-tag">올리기 전 확인</span><p>${esc(e.warn)}</p></div>` : ''}
-      ${e.noImage ? `<div class="noimg"><span class="noimg-tag">이미지 없음</span><p>${esc(e.noImage)}</p></div>` : ''}
+      <p class="eyebrow">${esc(g.name)}</p>
+      <h1 class="pane-title"><span class="pane-num">#${esc(s.num)}</span>${esc(s.title)}</h1>
+      ${s.warn ? `<div class="warn"><span class="warn-tag">올리기 전 확인</span><p>${esc(s.warn)}</p></div>` : ''}
     </header>
-    ${e.prompts.length ? `<h3 class="group-head">이미지<span>Claude Design에 붙여넣기</span></h3>${e.prompts.map(promptCard).join('')}` : ''}
-    ${e.copy.length ? `<h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>${e.copy.map(postCard).join('')}` : ''}
+
+    <h3 class="group-head">이미지 세트<span>Claude Design에 붙여넣기</span></h3>
+    <article class="unit">
+      <header class="unit-head">
+        <div class="unit-id">
+          <span class="kind kind-multi">캐러셀 ${s.count}장</span>
+          <span class="size">1080 × 1350</span>
+          <span class="unit-name">${s.next ? `다음 화 — ${esc(s.next)}` : '연재 마지막 화'}</span>
+        </div>
+        <button class="copy" type="button" data-copy>프롬프트 복사</button>
+      </header>
+      ${slideTable(s.slides)}
+      <details class="raw"><summary>프롬프트 원문</summary><pre class="block"><code>${esc(s.prompt)}</code></pre></details>
+    </article>
+
+    ${s.posts.length ? `<h3 class="group-head">게시글<span>채널에 붙여넣기</span></h3>${s.posts.map(postCard).join('')}` : ''}
+
     <nav class="pager">
       <button class="page-btn" type="button" data-step="-1">← 이전</button>
       <button class="page-btn" type="button" data-step="1">다음 →</button>
     </nav>
-  </section>`
-      )
-      .join('')
-  )
-  .join('')
+  </section>`).join('')).join('')
 
-const order = JSON.stringify(data.flatMap((s, si) => s.episodes.map((e, ei) => `${si}-${ei}`)))
+const order = JSON.stringify(groups.flatMap((g, gi) => g.items.map((s, ii) => `${gi}-${ii}`)))
 
 const html = `<title>입주해 게시 워크벤치</title>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -300,7 +212,7 @@ body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
      -webkit-font-smoothing:antialiased;line-height:1.6}
 button{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--amber);outline-offset:2px;border-radius:4px}
-.shell{display:grid;grid-template-columns:288px minmax(0,1fr);min-height:100vh}
+.shell{display:grid;grid-template-columns:300px minmax(0,1fr);min-height:100vh}
 
 .rail{background:var(--rail);color:var(--rail-ink);padding:26px 0 40px;position:sticky;top:0;height:100vh;overflow-y:auto}
 .brand{padding:0 24px 20px;border-bottom:1px solid rgba(255,255,255,.12);margin-bottom:18px}
@@ -314,13 +226,14 @@ button{font:inherit;color:inherit}
 .rail-title{font-size:14px;font-weight:900;margin:0 0 2px;padding:0 10px}
 .rail-track{font-size:11.5px;color:var(--rail-muted);margin:0 0 8px;padding:0 10px}
 .rail-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
-.rail-item{display:flex;align-items:baseline;gap:9px;width:100%;text-align:left;background:none;border:0;
+.rail-item{display:flex;align-items:baseline;gap:8px;width:100%;text-align:left;background:none;border:0;
   padding:7px 10px;border-radius:7px;cursor:pointer;color:var(--rail-muted);font-size:13.5px;
   transition:background .12s,color .12s}
 .rail-item:hover{background:rgba(255,255,255,.06);color:var(--rail-ink)}
 .rail-item[aria-current="true"]{background:var(--amber);color:#17120A;font-weight:700}
 .rail-num{font-family:var(--mono);font-size:11.5px;font-variant-numeric:tabular-nums;opacity:.8}
 .rail-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rail-count{font-family:var(--mono);font-size:11px;opacity:.7;font-variant-numeric:tabular-nums}
 .rail-flag{font-size:10px;font-weight:700;padding:1px 6px;border-radius:999px;background:rgba(232,144,118,.18);color:#F0A88E}
 .rail-item[aria-current="true"] .rail-flag{background:rgba(23,18,10,.18);color:#17120A}
 
@@ -330,14 +243,10 @@ button{font:inherit;color:inherit}
 .pane-title{font-size:clamp(26px,3.2vw,36px);font-weight:900;letter-spacing:-.03em;margin:0;line-height:1.2;
   text-wrap:balance;display:flex;gap:13px;align-items:baseline;flex-wrap:wrap}
 .pane-num{font-family:var(--mono);font-weight:600;font-size:.6em;color:var(--faint);font-variant-numeric:tabular-nums}
-.topic{margin:10px 0 0;font-size:14px;color:var(--muted)}
-.warn,.noimg{display:flex;gap:12px;align-items:flex-start;margin-top:16px;padding:12px 15px;border-radius:10px}
-.warn{background:var(--warn-bg);border:1px solid color-mix(in srgb,var(--warn) 32%,transparent)}
-.noimg{background:var(--surface);border:1px dashed var(--line)}
+.warn{display:flex;gap:12px;align-items:flex-start;margin-top:16px;padding:12px 15px;border-radius:10px;
+  background:var(--warn-bg);border:1px solid color-mix(in srgb,var(--warn) 32%,transparent)}
 .warn-tag{flex:none;font-size:11.5px;font-weight:900;color:var(--warn);padding-top:2px}
-.noimg-tag{flex:none;font-size:11.5px;font-weight:900;color:var(--muted);padding-top:2px}
-.warn p,.noimg p{margin:0;font-size:13.5px;line-height:1.55}
-.noimg p{color:var(--muted)}
+.warn p{margin:0;font-size:13.5px;line-height:1.55}
 
 .group-head{display:flex;align-items:baseline;gap:10px;font-size:15px;font-weight:900;color:var(--ink);
   margin:40px 0 12px;padding-bottom:9px;border-bottom:1px solid var(--line)}
@@ -365,9 +274,10 @@ button{font:inherit;color:inherit}
   font-family:var(--mono);font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;
   font-variant-numeric:tabular-nums}
 .slide-body{min-width:0;display:flex;flex-direction:column;gap:3px}
-.slide-label{margin:0;font-size:12px;color:var(--faint);letter-spacing:.02em}
-.slide-line{margin:0;font-size:14.5px;line-height:1.6;word-break:break-word}
-.slide-line .k{color:var(--faint);font-size:12.5px;margin-right:7px}
+.slide-kind{margin:0 0 1px;font-size:11px;color:var(--faint);letter-spacing:.08em}
+.slide-line{margin:0;display:flex;gap:9px;font-size:14.5px;line-height:1.6}
+.slide-line .k{flex:none;min-width:48px;white-space:nowrap;color:var(--faint);font-size:12.5px;padding-top:2px}
+.slide-line .v{min-width:0;word-break:break-word}
 
 .raw{border-top:1px solid var(--line)}
 .raw summary{cursor:pointer;padding:10px 16px;font-size:12.5px;font-weight:700;color:var(--muted);list-style:none}
@@ -403,10 +313,10 @@ button{font:inherit;color:inherit}
     <div class="brand">
       <p class="brand-mark">입주해</p>
       <p class="brand-name">게시 워크벤치</p>
-      <p class="brand-note">프롬프트를 복사해 Claude Design에 붙여넣고, 나온 이미지에 게시글을 함께 올린다.</p>
+      <p class="brand-note">게시물 하나 = 이어지는 이미지 한 벌 + 게시글. 한 장짜리는 넘길 이유가 없어 쓰지 않는다.</p>
       <ul class="stats">
-        <li>캐러셀 <b>${nCarousel}</b></li><li>4컷 <b>${nCut}</b></li>
-        <li>단장 <b>${nSingle}</b></li><li>게시글 <b>${nPosts}</b></li>
+        <li>세트 <b>${nSets}</b></li><li>이미지 <b>${nSlides}</b>장</li>
+        <li>게시글 <b>${nPosts}</b></li><li>확인 필요 <b>${nWarn}</b></li>
       </ul>
     </div>
     ${rail}
@@ -473,6 +383,4 @@ show(ORDER.includes(location.hash.slice(1)) ? location.hash.slice(1) : ORDER[0],
 </script>`
 
 await writeFile(OUT, html)
-console.log(
-  `캐러셀 ${nCarousel} · 4컷 ${nCut} · 단장 ${nSingle} · 게시글 ${nPosts} → ${path.relative(process.cwd(), OUT)}`
-)
+console.log(`세트 ${nSets} · 이미지 ${nSlides}장 · 게시글 ${nPosts} → ${path.relative(process.cwd(), OUT)}`)

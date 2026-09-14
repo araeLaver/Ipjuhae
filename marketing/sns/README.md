@@ -51,7 +51,7 @@
 
 | 문서 | URL | 비고 |
 | --- | --- | --- |
-| **게시 워크벤치** (이미지 46건 + 게시글 83건) | https://claude.ai/code/artifact/efc3b5ce-e97e-4ed7-8fdf-12b3641543e4 | 실행용. `node scripts/build-sns-workbench.mjs`로 만든다 |
+| **게시 워크벤치** (이미지 세트 30벌 168장 + 게시글 56건) | https://claude.ai/code/artifact/efc3b5ce-e97e-4ed7-8fdf-12b3641543e4 | 실행용. `node scripts/build-sns-workbench.mjs`로 만든다 |
 | **캐러셀 디자인 캔버스** (아트보드 16장) | https://claude.ai/code/artifact/682c6f4d-eccd-4c23-afa4-831fe8d60034 | 편집 가능 |
 | 계정 성장 계획 (전략) | https://claude.ai/code/artifact/189deeb7-7542-455c-ba4c-ff858a206e8b | 09-06에 제목·전략 개정 |
 | ~~1주차 스레드 편성~~ | https://claude.ai/code/artifact/71792698-0c2b-4ef4-9f3b-0e63678504db | 초기판, 위 문서에 흡수됨 |
@@ -64,12 +64,24 @@
 **이게 기본 경로다.** 각 게시물의 「이미지 디자인 프롬프트」 블록을 통째로 복사해
 Claude Design에 붙여넣으면 된다. 블록 하나가 혼자서 완결되어 있어서 다른 곳을 같이 볼 필요가 없다.
 
-작업할 때는 마크다운을 직접 열지 말고 **게시 워크벤치**를 쓴다(위 표의 URL). 만들 이미지 하나를
-단위로 — 캐러셀 3건 · 4컷 12건 · 단장 31건 — 장·컷을 표로 펴서 보여주고, 버튼 하나로 복사된다.
-원고를 고친 뒤 다시 만들려면:
+**게시물 하나 = 이어지는 이미지 한 벌 + 게시글.** 한 장짜리 이미지는 쓰지 않는다 —
+넘길 이유가 없으면 저장도 팔로우도 안 붙는다. 세트는 전부 같은 틀이다:
+표지 → 논점 한 장씩 → 다음 화 예고.
+
+작업할 때는 마크다운을 직접 열지 말고 **게시 워크벤치**를 쓴다(위 표의 URL).
+30벌 168장을 장별로 펴서 보여주고, 버튼 하나로 프롬프트 전문이 복사된다.
+
+| 연재 | 세트 |
+| --- | --- |
+| 등기부 뜯어보기 | 12벌 (5~7장) |
+| 임대인 노트 | 6벌 (5~7장) |
+| 지수의 계약 | 12벌 (5장 — 4컷 + 다음 화) |
+
+이미지 세트의 자료원은 **`marketing/sns/carousels.mjs`**다(만화는 원고의 4컷을 그대로 편다).
+게시글 캡션은 `posts/*.md`에 그대로 있다. 고친 뒤 다시 만들려면:
 
 ```bash
-node scripts/build-sns-workbench.mjs   # posts/*.md → marketing/sns/workbench.html
+node scripts/build-sns-workbench.mjs   # carousels.mjs + posts/*.md → marketing/sns/workbench.html
 ```
 
 그 다음 이 파일을 **기존 아티팩트 URL과 함께** 올려야 같은 링크가 갱신된다.
