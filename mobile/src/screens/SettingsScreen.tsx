@@ -16,6 +16,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { useAuth } from '../contexts/AuthContext';
 import Constants from 'expo-constants';
+import * as api from '../services/api';
 
 type SettingsScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Settings'>;
 
@@ -35,6 +36,7 @@ interface SettingItem {
 
 const SettingsScreen: React.FC<Props> = ({ navigation }) => {
   const { logout } = useAuth();
+  const [deleting, setDeleting] = React.useState(false);
 
   const handleLogout = () => {
     Alert.alert('로그아웃', '로그아웃 하시겠습니까?', [
@@ -46,14 +48,27 @@ const SettingsScreen: React.FC<Props> = ({ navigation }) => {
   const handleDeleteAccount = () => {
     Alert.alert(
       '계정 삭제',
-      '계정을 삭제하면 모든 데이터가 영구적으로 삭제됩니다. 계속하시겠습니까?',
+      '계정을 삭제하면 프로필과 인증 자료가 지워지고 등록한 매물은 비공개로 전환됩니다.\n되돌릴 수 없습니다. 계속하시겠습니까?',
       [
         { text: '취소', style: 'cancel' },
         {
           text: '삭제',
           style: 'destructive',
-          onPress: () => {
-            Alert.alert('안내', '계정 삭제를 원하시면 고객센터로 연락해주세요.\nsupport@ipjuhae.com');
+          onPress: async () => {
+            if (deleting) return;
+            setDeleting(true);
+            try {
+              await api.deleteAccount();
+              // 서버가 계정을 지운 뒤에는 남은 토큰이 의미가 없다. 바로 로그아웃 상태로 보낸다.
+              await logout();
+            } catch (e) {
+              Alert.alert(
+                '삭제하지 못했습니다',
+                '잠시 후 다시 시도해 주세요. 계속 안 되면 support@ipjuhae.com 으로 알려주세요.'
+              );
+            } finally {
+              setDeleting(false);
+            }
           },
         },
       ]
@@ -86,7 +101,7 @@ const SettingsScreen: React.FC<Props> = ({ navigation }) => {
       title: '',
       items: [
         { icon: '🚪', label: '로그아웃', type: 'action', onPress: handleLogout, danger: true },
-        { icon: '⚠️', label: '계정 삭제', type: 'action', onPress: handleDeleteAccount, danger: true },
+        { icon: '⚠️', label: deleting ? '삭제하는 중…' : '계정 삭제', type: 'action', onPress: handleDeleteAccount, danger: true },
       ],
     },
   ];

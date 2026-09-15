@@ -62,6 +62,17 @@ export async function logout(): Promise<void> {
   await apiClient.post('/auth/logout');
 }
 
+/**
+ * DELETE /api/account/delete → { ok: true }
+ *
+ * 앱 안에서 계정을 지울 수 있어야 한다 — App Store 심사 지침 5.1.1(v)와
+ * Play 데이터 안전성 요건이 계정 생성 앱에 이걸 요구한다.
+ * 서버는 개인정보를 익명화하고 민감한 인증 자료(소득·재직·추천)는 삭제한다.
+ */
+export async function deleteAccount(): Promise<void> {
+  await apiClient.delete('/account/delete');
+}
+
 // ─── Tenant profile / verifications ─────────────────────────────────────────
 
 interface ProfileRow {
