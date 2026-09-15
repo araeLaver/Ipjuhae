@@ -129,19 +129,19 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
               <QuickAction
                 icon="🏠"
                 label="매물 검색"
-                color="#DBEAFE"
+                color="#FFE0CF"
                 onPress={() => navigation.navigate('Listings' as any)}
               />
               <QuickAction
                 icon="🎯"
                 label="AI 매칭"
-                color="#FEF3C7"
+                color="#FBF1D8"
                 onPress={() => navigation.navigate('Matches')}
               />
               <QuickAction
                 icon="📋"
                 label="인증 관리"
-                color="#D1FAE5"
+                color="#E3EFE9"
                 onPress={() => navigation.navigate('Verification')}
               />
             </>
@@ -150,13 +150,13 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
               <QuickAction
                 icon="🏗️"
                 label="매물 관리"
-                color="#DBEAFE"
+                color="#FFE0CF"
                 onPress={() => navigation.navigate('Properties')}
               />
               <QuickAction
                 icon="👥"
                 label="세입자 탐색"
-                color="#FEF3C7"
+                color="#FBF1D8"
                 onPress={() => navigation.navigate('TenantBrowse')}
               />
               <QuickAction
@@ -190,15 +190,15 @@ const QuickAction: React.FC<{
 );
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
+  container: { flex: 1, backgroundColor: '#FBF6EF' },
   welcomeSection: {
-    backgroundColor: '#2563EB',
+    backgroundColor: '#F0663F',
     paddingHorizontal: 24,
     paddingTop: 60,
     paddingBottom: 32,
   },
   welcomeText: { fontSize: 24, fontWeight: 'bold', color: '#fff' },
-  welcomeSubtext: { fontSize: 14, color: '#BFDBFE', marginTop: 4 },
+  welcomeSubtext: { fontSize: 14, color: 'rgba(255,255,255,0.85)', marginTop: 4 },
   trustCard: {
     backgroundColor: '#fff',
     marginHorizontal: 16,
@@ -217,19 +217,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
-  trustTitle: { fontSize: 16, fontWeight: '600', color: '#374151' },
-  trustScore: { fontSize: 28, fontWeight: 'bold', color: '#2563EB' },
+  trustTitle: { fontSize: 16, fontWeight: '600', color: '#4A423C' },
+  trustScore: { fontSize: 28, fontWeight: 'bold', color: '#C2451F' },
   trustBar: {
     height: 8,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: '#E7DFD4',
     borderRadius: 4,
   },
   trustFill: {
     height: 8,
-    backgroundColor: '#2563EB',
+    backgroundColor: '#F0663F',
     borderRadius: 4,
   },
-  trustHint: { fontSize: 12, color: '#9CA3AF', marginTop: 8 },
+  trustHint: { fontSize: 12, color: '#9A8F87', marginTop: 8 },
   statsRow: {
     flexDirection: 'row',
     paddingHorizontal: 16,
@@ -248,10 +248,10 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
-  statNumber: { fontSize: 22, fontWeight: 'bold', color: '#111827' },
-  statLabel: { fontSize: 11, color: '#6B7280', marginTop: 4 },
+  statNumber: { fontSize: 22, fontWeight: 'bold', color: '#262220' },
+  statLabel: { fontSize: 11, color: '#6B625C', marginTop: 4 },
   section: { marginTop: 24, paddingHorizontal: 24 },
-  sectionTitle: { fontSize: 18, fontWeight: '600', color: '#111827', marginBottom: 16 },
+  sectionTitle: { fontSize: 18, fontWeight: '600', color: '#262220', marginBottom: 16 },
   quickActions: { flexDirection: 'row', gap: 12 },
   actionButton: {
     flex: 1,
@@ -269,7 +269,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   actionEmoji: { fontSize: 24 },
-  actionText: { fontSize: 12, color: '#374151', fontWeight: '500' },
+  actionText: { fontSize: 12, color: '#4A423C', fontWeight: '500' },
   bottomPadding: { height: 48 },
 });
 

@@ -90,7 +90,7 @@ const MatchesScreen: React.FC<Props> = ({ navigation }) => {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#2563EB" />
+        <ActivityIndicator size="large" color="#F0663F" />
         <Text style={styles.loadingText}>AI 매칭 중...</Text>
       </View>
     );
@@ -116,33 +116,33 @@ const MatchesScreen: React.FC<Props> = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
+  container: { flex: 1, backgroundColor: '#FBF6EF' },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  loadingText: { fontSize: 14, color: '#6B7280', marginTop: 12 },
+  loadingText: { fontSize: 14, color: '#6B625C', marginTop: 12 },
   listContent: { padding: 16 },
   card: { backgroundColor: '#fff', borderRadius: 12, overflow: 'hidden', marginBottom: 14 },
   image: { width: '100%', height: 180 },
-  imagePlaceholder: { backgroundColor: '#E5E7EB', justifyContent: 'center', alignItems: 'center' },
+  imagePlaceholder: { backgroundColor: '#E7DFD4', justifyContent: 'center', alignItems: 'center' },
   scoreBadge: {
     position: 'absolute',
     top: 12,
     right: 12,
-    backgroundColor: '#2563EB',
+    backgroundColor: '#F0663F',
     borderRadius: 20,
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
   scoreText: { fontSize: 13, fontWeight: 'bold', color: '#fff' },
   info: { padding: 14 },
-  title: { fontSize: 16, fontWeight: '600', color: '#111827' },
-  address: { fontSize: 13, color: '#6B7280', marginTop: 2 },
-  price: { fontSize: 16, fontWeight: 'bold', color: '#2563EB', marginTop: 8 },
+  title: { fontSize: 16, fontWeight: '600', color: '#262220' },
+  address: { fontSize: 13, color: '#6B625C', marginTop: 2 },
+  price: { fontSize: 16, fontWeight: 'bold', color: '#C2451F', marginTop: 8 },
   reasons: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
-  reasonTag: { backgroundColor: '#EFF6FF', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
-  reasonText: { fontSize: 11, color: '#2563EB' },
+  reasonTag: { backgroundColor: '#FFF3DC', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+  reasonText: { fontSize: 11, color: '#C2451F' },
   emptyContainer: { alignItems: 'center', marginTop: 60 },
-  emptyTitle: { fontSize: 16, fontWeight: '600', color: '#374151' },
-  emptySubtext: { fontSize: 14, color: '#9CA3AF', marginTop: 4 },
+  emptyTitle: { fontSize: 16, fontWeight: '600', color: '#4A423C' },
+  emptySubtext: { fontSize: 14, color: '#9A8F87', marginTop: 4 },
 });
 
 export default MatchesScreen;

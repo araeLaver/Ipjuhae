@@ -75,7 +75,7 @@ const ListingDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   if (loading || !listing) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#2563EB" />
+        <ActivityIndicator size="large" color="#F0663F" />
       </View>
     );
   }
@@ -200,16 +200,16 @@ const styles = StyleSheet.create({
   noImage: {
     width: '100%',
     height: 200,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: '#E7DFD4',
     justifyContent: 'center',
     alignItems: 'center',
   },
   infoSection: { padding: 20 },
-  title: { fontSize: 22, fontWeight: 'bold', color: '#111827' },
-  address: { fontSize: 14, color: '#6B7280', marginTop: 4 },
+  title: { fontSize: 22, fontWeight: 'bold', color: '#262220' },
+  address: { fontSize: 14, color: '#6B625C', marginTop: 4 },
   priceSection: {
     marginTop: 20,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#FBF6EF',
     borderRadius: 12,
     padding: 16,
   },
@@ -218,8 +218,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 8,
   },
-  priceLabel: { fontSize: 14, color: '#6B7280' },
-  priceValue: { fontSize: 16, fontWeight: 'bold', color: '#2563EB' },
+  priceLabel: { fontSize: 14, color: '#6B625C' },
+  priceValue: { fontSize: 16, fontWeight: 'bold', color: '#C2451F' },
   detailGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -228,28 +228,28 @@ const styles = StyleSheet.create({
   },
   detailItem: {
     width: '30%',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#FBF6EF',
     borderRadius: 8,
     padding: 12,
     alignItems: 'center',
   },
-  detailLabel: { fontSize: 12, color: '#6B7280' },
-  detailValue: { fontSize: 15, fontWeight: '600', color: '#111827', marginTop: 4 },
+  detailLabel: { fontSize: 12, color: '#6B625C' },
+  detailValue: { fontSize: 15, fontWeight: '600', color: '#262220', marginTop: 4 },
   optionsSection: { marginTop: 20 },
-  sectionTitle: { fontSize: 16, fontWeight: '600', color: '#111827', marginBottom: 10 },
+  sectionTitle: { fontSize: 16, fontWeight: '600', color: '#262220', marginBottom: 10 },
   optionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  optionTag: { backgroundColor: '#EFF6FF', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 6 },
-  optionText: { fontSize: 13, color: '#2563EB' },
+  optionTag: { backgroundColor: '#FFF3DC', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 6 },
+  optionText: { fontSize: 13, color: '#C2451F' },
   descSection: { marginTop: 20 },
-  descText: { fontSize: 15, color: '#374151', lineHeight: 22 },
+  descText: { fontSize: 15, color: '#4A423C', lineHeight: 22 },
   contactBar: {
     backgroundColor: '#fff',
     padding: 16,
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+    borderTopColor: '#E7DFD4',
   },
   contactButton: {
-    backgroundColor: '#2563EB',
+    backgroundColor: '#F0663F',
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',

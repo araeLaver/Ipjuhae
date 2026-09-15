@@ -169,10 +169,10 @@ const VerificationScreen: React.FC<Props> = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
+  container: { flex: 1, backgroundColor: '#FBF6EF' },
   header: { padding: 24, paddingTop: 16 },
-  title: { fontSize: 22, fontWeight: 'bold', color: '#111827' },
-  subtitle: { fontSize: 14, color: '#6B7280', marginTop: 4 },
+  title: { fontSize: 22, fontWeight: 'bold', color: '#262220' },
+  subtitle: { fontSize: 14, color: '#6B625C', marginTop: 4 },
   card: {
     backgroundColor: '#fff',
     marginHorizontal: 16,
@@ -183,17 +183,17 @@ const styles = StyleSheet.create({
   cardHeader: { flexDirection: 'row', alignItems: 'center' },
   cardIcon: { fontSize: 28, marginRight: 12 },
   cardInfo: { flex: 1 },
-  cardTitle: { fontSize: 16, fontWeight: '600', color: '#111827' },
-  cardDescription: { fontSize: 13, color: '#6B7280', marginTop: 2 },
+  cardTitle: { fontSize: 16, fontWeight: '600', color: '#262220' },
+  cardDescription: { fontSize: 13, color: '#6B625C', marginTop: 2 },
   statusBadge: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#F3EEE6',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
   },
-  statusDone: { backgroundColor: '#D1FAE5' },
-  statusText: { fontSize: 12, fontWeight: '600', color: '#9CA3AF' },
-  statusTextDone: { color: '#059669' },
+  statusDone: { backgroundColor: '#E3EFE9' },
+  statusText: { fontSize: 12, fontWeight: '600', color: '#9A8F87' },
+  statusTextDone: { color: '#3F7A5E' },
   cardFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -201,11 +201,11 @@ const styles = StyleSheet.create({
     marginTop: 14,
     paddingTop: 14,
     borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
+    borderTopColor: '#F3EEE6',
   },
-  pointsText: { fontSize: 14, fontWeight: '600', color: '#2563EB' },
+  pointsText: { fontSize: 14, fontWeight: '600', color: '#C2451F' },
   uploadButton: {
-    backgroundColor: '#2563EB',
+    backgroundColor: '#F0663F',
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 8,

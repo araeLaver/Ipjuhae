@@ -54,10 +54,10 @@ const TenantBrowseScreen: React.FC<Props> = ({ navigation }) => {
   }, [loadTenants]);
 
   const getTrustColor = (score: number) => {
-    if (score >= 80) return '#059669';
-    if (score >= 60) return '#2563EB';
-    if (score >= 40) return '#D97706';
-    return '#9CA3AF';
+    if (score >= 80) return '#3F7A5E';
+    if (score >= 60) return '#F0663F';
+    if (score >= 40) return '#B7801F';
+    return '#9A8F87';
   };
 
   const formatBudget = (min?: number, max?: number) => {
@@ -160,7 +160,7 @@ const TenantBrowseScreen: React.FC<Props> = ({ navigation }) => {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#2563EB" />
+        <ActivityIndicator size="large" color="#F0663F" />
       </View>
     );
   }
@@ -186,36 +186,36 @@ const TenantBrowseScreen: React.FC<Props> = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
+  container: { flex: 1, backgroundColor: '#FBF6EF' },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   listContent: { padding: 16, gap: 12 },
   card: { backgroundColor: '#fff', borderRadius: 12, padding: 16, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
   cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
-  avatarCircle: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#2563EB', justifyContent: 'center', alignItems: 'center' },
+  avatarCircle: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#F0663F', justifyContent: 'center', alignItems: 'center' },
   avatarText: { fontSize: 18, fontWeight: 'bold', color: '#fff' },
   headerInfo: { flex: 1, marginLeft: 12 },
-  name: { fontSize: 16, fontWeight: '600', color: '#111827' },
+  name: { fontSize: 16, fontWeight: '600', color: '#262220' },
   tagRow: { flexDirection: 'row', gap: 6, marginTop: 4 },
-  tag: { backgroundColor: '#F3F4F6', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
-  tagText: { fontSize: 11, color: '#6B7280' },
+  tag: { backgroundColor: '#F3EEE6', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
+  tagText: { fontSize: 11, color: '#6B625C' },
   trustSection: { alignItems: 'center' },
   trustScore: { fontSize: 22, fontWeight: '700' },
-  trustLabel: { fontSize: 10, color: '#9CA3AF', marginTop: 1 },
-  bio: { fontSize: 13, color: '#6B7280', marginBottom: 10, lineHeight: 18 },
+  trustLabel: { fontSize: 10, color: '#9A8F87', marginTop: 1 },
+  bio: { fontSize: 13, color: '#6B625C', marginBottom: 10, lineHeight: 18 },
   detailRow: { flexDirection: 'row', gap: 16, marginBottom: 10 },
   detailItem: {},
-  detailLabel: { fontSize: 11, color: '#9CA3AF', marginBottom: 2 },
-  detailValue: { fontSize: 13, fontWeight: '500', color: '#374151' },
+  detailLabel: { fontSize: 11, color: '#9A8F87', marginBottom: 2 },
+  detailValue: { fontSize: 13, fontWeight: '500', color: '#4A423C' },
   districtRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 8 },
-  districtTag: { backgroundColor: '#EFF6FF', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
-  districtText: { fontSize: 12, color: '#2563EB', fontWeight: '500' },
-  moreText: { fontSize: 12, color: '#9CA3AF', alignSelf: 'center' },
+  districtTag: { backgroundColor: '#FFF3DC', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+  districtText: { fontSize: 12, color: '#C2451F', fontWeight: '500' },
+  moreText: { fontSize: 12, color: '#9A8F87', alignSelf: 'center' },
   infoIcons: { flexDirection: 'row', gap: 6 },
   infoIcon: { fontSize: 16 },
   emptyContainer: { alignItems: 'center', paddingTop: 80 },
   emptyIcon: { fontSize: 48, marginBottom: 12 },
-  emptyTitle: { fontSize: 18, fontWeight: '600', color: '#374151', marginBottom: 4 },
-  emptySubtitle: { fontSize: 14, color: '#9CA3AF' },
+  emptyTitle: { fontSize: 18, fontWeight: '600', color: '#4A423C', marginBottom: 4 },
+  emptySubtitle: { fontSize: 14, color: '#9A8F87' },
 });
 
 export default TenantBrowseScreen;

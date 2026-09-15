@@ -72,10 +72,10 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   const getTrustGrade = (score: number) => {
-    if (score >= 80) return { label: '우수', color: '#059669' };
-    if (score >= 60) return { label: '양호', color: '#2563EB' };
+    if (score >= 80) return { label: '우수', color: '#3F7A5E' };
+    if (score >= 60) return { label: '양호', color: '#C2451F' };
     if (score >= 40) return { label: '보통', color: '#F59E0B' };
-    return { label: '시작', color: '#9CA3AF' };
+    return { label: '시작', color: '#9A8F87' };
   };
 
   const isTenant = user?.userType === 'tenant';
@@ -182,29 +182,29 @@ const MenuItem: React.FC<{ icon: string; label: string; onPress: () => void }> =
 );
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
+  container: { flex: 1, backgroundColor: '#FBF6EF' },
   header: {
     backgroundColor: '#fff',
     paddingTop: 60,
     paddingBottom: 24,
     alignItems: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: '#E7DFD4',
   },
   profileImage: { width: 80, height: 80, borderRadius: 40 },
   profileImagePlaceholder: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#2563EB',
+    backgroundColor: '#F0663F',
     justifyContent: 'center',
     alignItems: 'center',
   },
   profileInitial: { fontSize: 32, fontWeight: 'bold', color: '#fff' },
-  name: { fontSize: 22, fontWeight: 'bold', color: '#111827', marginTop: 12 },
-  email: { fontSize: 14, color: '#6B7280', marginTop: 2 },
-  typeBadge: { backgroundColor: '#EFF6FF', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12, marginTop: 8 },
-  typeText: { fontSize: 12, color: '#2563EB', fontWeight: '600' },
+  name: { fontSize: 22, fontWeight: 'bold', color: '#262220', marginTop: 12 },
+  email: { fontSize: 14, color: '#6B625C', marginTop: 2 },
+  typeBadge: { backgroundColor: '#FFF3DC', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12, marginTop: 8 },
+  typeText: { fontSize: 12, color: '#C2451F', fontWeight: '600' },
   trustSection: {
     backgroundColor: '#fff',
     margin: 16,
@@ -212,14 +212,14 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   trustHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  trustTitle: { fontSize: 16, fontWeight: '600', color: '#374151' },
+  trustTitle: { fontSize: 16, fontWeight: '600', color: '#4A423C' },
   gradeBadge: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 8 },
   gradeText: { fontSize: 13, fontWeight: '600' },
-  trustScoreValue: { fontSize: 36, fontWeight: 'bold', color: '#2563EB', marginTop: 8 },
-  trustBar: { height: 8, backgroundColor: '#E5E7EB', borderRadius: 4, marginTop: 12 },
-  trustFill: { height: 8, backgroundColor: '#2563EB', borderRadius: 4 },
+  trustScoreValue: { fontSize: 36, fontWeight: 'bold', color: '#C2451F', marginTop: 8 },
+  trustBar: { height: 8, backgroundColor: '#E7DFD4', borderRadius: 4, marginTop: 12 },
+  trustFill: { height: 8, backgroundColor: '#F0663F', borderRadius: 4 },
   section: { marginTop: 16, paddingHorizontal: 16 },
-  sectionTitle: { fontSize: 16, fontWeight: '600', color: '#374151', marginBottom: 12 },
+  sectionTitle: { fontSize: 16, fontWeight: '600', color: '#4A423C', marginBottom: 12 },
   verifItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -228,11 +228,11 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginBottom: 6,
   },
-  verifLabel: { fontSize: 15, color: '#111827' },
-  verifStatus: { fontSize: 14, color: '#9CA3AF' },
-  verifDone: { color: '#059669', fontWeight: '600' },
+  verifLabel: { fontSize: 15, color: '#262220' },
+  verifStatus: { fontSize: 14, color: '#9A8F87' },
+  verifDone: { color: '#3F7A5E', fontWeight: '600' },
   verifButton: {
-    backgroundColor: '#2563EB',
+    backgroundColor: '#F0663F',
     paddingVertical: 12,
     borderRadius: 10,
     alignItems: 'center',
@@ -248,8 +248,8 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   menuIcon: { fontSize: 20, marginRight: 12 },
-  menuText: { flex: 1, fontSize: 16, color: '#111827' },
-  menuArrow: { fontSize: 20, color: '#9CA3AF' },
+  menuText: { flex: 1, fontSize: 16, color: '#262220' },
+  menuArrow: { fontSize: 20, color: '#9A8F87' },
   logoutSection: { marginTop: 32, alignItems: 'center', paddingHorizontal: 24 },
   logoutButton: {
     backgroundColor: '#FEE2E2',
@@ -257,8 +257,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     borderRadius: 12,
   },
-  logoutText: { fontSize: 16, fontWeight: '600', color: '#DC2626' },
-  versionText: { fontSize: 12, color: '#9CA3AF', marginTop: 16 },
+  logoutText: { fontSize: 16, fontWeight: '600', color: '#C0392B' },
+  versionText: { fontSize: 12, color: '#9A8F87', marginTop: 16 },
   bottomPadding: { height: 48 },
 });
 

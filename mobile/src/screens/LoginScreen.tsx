@@ -61,7 +61,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
           <TextInput
             style={styles.input}
             placeholder="email@example.com"
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor="#9A8F87"
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
@@ -73,7 +73,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
           <TextInput
             style={styles.input}
             placeholder="비밀번호 입력"
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor="#9A8F87"
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -107,21 +107,21 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   scrollContent: { flexGrow: 1, justifyContent: 'center', padding: 24 },
   header: { alignItems: 'center', marginBottom: 48 },
-  logo: { fontSize: 36, fontWeight: 'bold', color: '#2563EB' },
-  subtitle: { fontSize: 14, color: '#6B7280', marginTop: 8 },
+  logo: { fontSize: 36, fontWeight: 'bold', color: '#C2451F' },
+  subtitle: { fontSize: 14, color: '#6B625C', marginTop: 8 },
   form: {},
-  label: { fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 6, marginTop: 16 },
+  label: { fontSize: 14, fontWeight: '600', color: '#4A423C', marginBottom: 6, marginTop: 16 },
   input: {
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#FBF6EF',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: '#E7DFD4',
     borderRadius: 10,
     padding: 14,
     fontSize: 16,
-    color: '#111827',
+    color: '#262220',
   },
   loginButton: {
-    backgroundColor: '#2563EB',
+    backgroundColor: '#F0663F',
     paddingVertical: 16,
     borderRadius: 10,
     alignItems: 'center',
@@ -130,8 +130,8 @@ const styles = StyleSheet.create({
   loginButtonDisabled: { opacity: 0.6 },
   loginButtonText: { fontSize: 16, fontWeight: '600', color: '#fff' },
   registerLink: { alignItems: 'center', marginTop: 20 },
-  registerLinkText: { fontSize: 14, color: '#6B7280' },
-  registerHighlight: { color: '#2563EB', fontWeight: '600' },
+  registerLinkText: { fontSize: 14, color: '#6B625C' },
+  registerHighlight: { color: '#C2451F', fontWeight: '600' },
 });
 
 export default LoginScreen;

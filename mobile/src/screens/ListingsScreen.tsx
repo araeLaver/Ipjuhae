@@ -96,7 +96,7 @@ const ListingsScreen: React.FC<Props> = ({ navigation }) => {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#2563EB" />
+        <ActivityIndicator size="large" color="#F0663F" />
       </View>
     );
   }
@@ -118,7 +118,7 @@ const ListingsScreen: React.FC<Props> = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
+  container: { flex: 1, backgroundColor: '#FBF6EF' },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   listContent: { padding: 16 },
   listingCard: {
@@ -134,19 +134,19 @@ const styles = StyleSheet.create({
   },
   listingImage: { width: '100%', height: 180 },
   imagePlaceholder: {
-    backgroundColor: '#E5E7EB',
+    backgroundColor: '#E7DFD4',
     justifyContent: 'center',
     alignItems: 'center',
   },
   placeholderText: { fontSize: 40 },
   listingInfo: { padding: 14 },
-  listingTitle: { fontSize: 16, fontWeight: '600', color: '#111827' },
-  listingAddress: { fontSize: 13, color: '#6B7280', marginTop: 2 },
-  listingPrice: { fontSize: 18, fontWeight: 'bold', color: '#2563EB', marginTop: 6 },
+  listingTitle: { fontSize: 16, fontWeight: '600', color: '#262220' },
+  listingAddress: { fontSize: 13, color: '#6B625C', marginTop: 2 },
+  listingPrice: { fontSize: 18, fontWeight: 'bold', color: '#C2451F', marginTop: 6 },
   listingMeta: { flexDirection: 'row', gap: 12, marginTop: 8 },
-  metaText: { fontSize: 12, color: '#9CA3AF' },
+  metaText: { fontSize: 12, color: '#9A8F87' },
   footer: { paddingVertical: 20 },
-  emptyText: { textAlign: 'center', color: '#9CA3AF', fontSize: 14, marginTop: 40 },
+  emptyText: { textAlign: 'center', color: '#9A8F87', fontSize: 14, marginTop: 40 },
 });
 
 export default ListingsScreen;

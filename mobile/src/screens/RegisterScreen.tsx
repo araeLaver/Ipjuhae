@@ -91,7 +91,7 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
         <TextInput
           style={styles.input}
           placeholder="이름"
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor="#9A8F87"
           value={name}
           onChangeText={setName}
         />
@@ -100,7 +100,7 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
         <TextInput
           style={styles.input}
           placeholder="email@example.com"
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor="#9A8F87"
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
@@ -111,7 +111,7 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
         <TextInput
           style={styles.input}
           placeholder="8자 이상"
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor="#9A8F87"
           value={password}
           onChangeText={setPassword}
           secureTextEntry
@@ -121,7 +121,7 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
         <TextInput
           style={styles.input}
           placeholder="비밀번호 확인"
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor="#9A8F87"
           value={passwordConfirm}
           onChangeText={setPasswordConfirm}
           secureTextEntry
@@ -153,31 +153,31 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   scrollContent: { flexGrow: 1, padding: 24, paddingTop: 60 },
-  title: { fontSize: 28, fontWeight: 'bold', color: '#111827' },
-  subtitle: { fontSize: 14, color: '#6B7280', marginTop: 4, marginBottom: 24 },
-  label: { fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 6, marginTop: 16 },
+  title: { fontSize: 28, fontWeight: 'bold', color: '#262220' },
+  subtitle: { fontSize: 14, color: '#6B625C', marginTop: 4, marginBottom: 24 },
+  label: { fontSize: 14, fontWeight: '600', color: '#4A423C', marginBottom: 6, marginTop: 16 },
   typeRow: { flexDirection: 'row', gap: 12 },
   typeButton: {
     flex: 1,
     paddingVertical: 14,
     borderRadius: 10,
     alignItems: 'center',
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#F3EEE6',
   },
-  typeButtonActive: { backgroundColor: '#2563EB' },
-  typeText: { fontSize: 15, fontWeight: '600', color: '#6B7280' },
+  typeButtonActive: { backgroundColor: '#F0663F' },
+  typeText: { fontSize: 15, fontWeight: '600', color: '#6B625C' },
   typeTextActive: { color: '#fff' },
   input: {
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#FBF6EF',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: '#E7DFD4',
     borderRadius: 10,
     padding: 14,
     fontSize: 16,
-    color: '#111827',
+    color: '#262220',
   },
   registerButton: {
-    backgroundColor: '#2563EB',
+    backgroundColor: '#F0663F',
     paddingVertical: 16,
     borderRadius: 10,
     alignItems: 'center',
@@ -186,8 +186,8 @@ const styles = StyleSheet.create({
   registerButtonDisabled: { opacity: 0.6 },
   registerButtonText: { fontSize: 16, fontWeight: '600', color: '#fff' },
   loginLink: { alignItems: 'center', marginTop: 20 },
-  loginLinkText: { fontSize: 14, color: '#6B7280' },
-  loginHighlight: { color: '#2563EB', fontWeight: '600' },
+  loginLinkText: { fontSize: 14, color: '#6B625C' },
+  loginHighlight: { color: '#C2451F', fontWeight: '600' },
 });
 
 export default RegisterScreen;

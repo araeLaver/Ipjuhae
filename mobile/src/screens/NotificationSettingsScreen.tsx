@@ -21,13 +21,13 @@ export default function NotificationSettingsScreen() {
             <Text style={styles.description}>새 메시지와 매칭 소식을 알려드립니다.</Text>
           </View>
           {isLoading ? (
-            <ActivityIndicator color="#2563EB" />
+            <ActivityIndicator color="#F0663F" />
           ) : (
             <Switch
               value={enabled}
               onValueChange={(value) => void setEnabled(value)}
-              trackColor={{ false: '#D1D5DB', true: '#93C5FD' }}
-              thumbColor={enabled ? '#2563EB' : '#F3F4F6'}
+              trackColor={{ false: '#CFC4B8', true: '#F4977B' }}
+              thumbColor={enabled ? '#F0663F' : '#F3EEE6'}
             />
           )}
         </View>
@@ -50,17 +50,17 @@ export default function NotificationSettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB', padding: 16 },
+  container: { flex: 1, backgroundColor: '#FBF6EF', padding: 16 },
   card: { backgroundColor: '#FFFFFF', borderRadius: 14, padding: 18 },
   row: { flexDirection: 'row', alignItems: 'center' },
   copy: { flex: 1, paddingRight: 16 },
-  title: { fontSize: 17, fontWeight: '700', color: '#111827' },
-  description: { marginTop: 5, fontSize: 14, lineHeight: 20, color: '#6B7280' },
-  status: { marginTop: 16, fontSize: 13, color: '#374151' },
+  title: { fontSize: 17, fontWeight: '700', color: '#262220' },
+  description: { marginTop: 5, fontSize: 14, lineHeight: 20, color: '#6B625C' },
+  status: { marginTop: 16, fontSize: 13, color: '#4A423C' },
   error: { marginTop: 8, fontSize: 13, lineHeight: 19, color: '#B45309' },
-  primaryButton: { marginTop: 16, borderRadius: 10, backgroundColor: '#2563EB', padding: 14 },
+  primaryButton: { marginTop: 16, borderRadius: 10, backgroundColor: '#F0663F', padding: 14 },
   primaryButtonText: { color: '#FFFFFF', textAlign: 'center', fontWeight: '700' },
-  retryButton: { marginTop: 12, borderRadius: 10, borderWidth: 1, borderColor: '#D1D5DB', padding: 13 },
-  retryButtonText: { color: '#374151', textAlign: 'center', fontWeight: '600' },
-  note: { marginTop: 18, fontSize: 12, lineHeight: 18, color: '#9CA3AF' },
+  retryButton: { marginTop: 12, borderRadius: 10, borderWidth: 1, borderColor: '#CFC4B8', padding: 13 },
+  retryButtonText: { color: '#4A423C', textAlign: 'center', fontWeight: '600' },
+  note: { marginTop: 18, fontSize: 12, lineHeight: 18, color: '#9A8F87' },
 });
