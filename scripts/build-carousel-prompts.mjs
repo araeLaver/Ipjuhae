@@ -79,7 +79,7 @@ function buildPrompt({ series, total, num, title, slides, comic }) {
   const body = slides.map((s, i) => slideText(s, i, n)).join('\n\n')
 
   const sizes = comic
-    ? `제목 88px 900. 말은 흰 말풍선, 생각은 점선 내레이션으로 구분할 것.`
+    ? `대사 88px 900. 말은 흰 말풍선, 생각은 점선 내레이션으로 구분할 것.\n장마다 대사 하나만 크게 넣고 나머지는 비울 것 — 넘길 때 리듬이 생긴다.`
     : `제목 88px 900, 설명 40px 흰색 72%, 라벨 34px 앰버 #E9A23B.`
 
   return `「${series}」 #${num} — ${title}
