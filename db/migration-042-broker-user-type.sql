@@ -12,3 +12,16 @@ ALTER TABLE users DROP CONSTRAINT IF EXISTS users_user_type_check;
 
 ALTER TABLE users ADD CONSTRAINT users_user_type_check
   CHECK (user_type IN ('tenant', 'landlord', 'broker', 'admin'));
+
+-- waitlist·feature_requests는 'agent'를 받고 있었다. 세 테이블의 값이 서로 달라서
+-- 같은 사람이 폼에서는 agent, 계정에서는 broker가 되는 상태였다. 'broker'로 맞춘다.
+-- 두 테이블 모두 'agent'로 저장된 행이 없어 데이터 변환은 필요 없다.
+ALTER TABLE waitlist DROP CONSTRAINT IF EXISTS waitlist_user_type_check;
+
+ALTER TABLE waitlist ADD CONSTRAINT waitlist_user_type_check
+  CHECK (user_type IN ('tenant', 'landlord', 'broker'));
+
+ALTER TABLE feature_requests DROP CONSTRAINT IF EXISTS feature_requests_user_type_check;
+
+ALTER TABLE feature_requests ADD CONSTRAINT feature_requests_user_type_check
+  CHECK (user_type IN ('tenant', 'landlord', 'broker'));

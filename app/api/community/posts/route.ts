@@ -28,12 +28,15 @@ interface PostRow {
 
 // GET /api/community/posts?audience=&page=&limit=
 export async function GET(request: Request) {
+  // 읽기는 로그인을 요구하지 않는다. 커뮤니티가 유입 장치이므로 검색·SNS에서 들어온
+  // 사람이 로그인 벽을 만나면 안 된다. 비로그인은 '전체' 판만 보이고,
+  // 역할 판은 로그인해야 열린다(readableAudiences가 이미 그렇게 동작한다).
   const user = await getCurrentUser()
-  if (!user) return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 })
+  const viewerType = user?.user_type ?? null
 
   const { searchParams } = new URL(request.url)
   const requested = searchParams.get('audience')
-  const allowed = readableAudiences(user.user_type)
+  const allowed = readableAudiences(viewerType)
 
   let audiences: CommunityAudience[] = allowed
   if (requested && requested !== 'all_boards') {

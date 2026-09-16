@@ -13,21 +13,24 @@ interface PostRow {
   body: string
   view_count: number
   comment_count: number
+  author_role: string
   created_at: string
   author_name: string | null
 }
 
 // GET /api/community/posts/[id]
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  // 목록과 마찬가지로 읽기는 열어 둔다 — 검색·SNS에서 들어온 사람이 글을 볼 수 있어야
+  // 유입이 된다. 역할 판 글은 여전히 해당 역할만 볼 수 있다.
   const user = await getCurrentUser()
-  if (!user) return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 })
 
   const { id } = await params
   try {
     const post = await queryOne<PostRow>(
       `SELECT p.id, p.author_id, p.audience, p.category, p.title, p.body,
               p.view_count, p.comment_count, p.created_at,
-              COALESCE(pr.name, u.name) AS author_name
+              COALESCE(pr.name, u.name) AS author_name,
+              u.user_type AS author_role
          FROM community_posts p
          JOIN users u ON u.id = p.author_id
          LEFT JOIN profiles pr ON pr.user_id = p.author_id
@@ -36,8 +39,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     )
     if (!post) return NextResponse.json({ error: '게시글을 찾을 수 없습니다' }, { status: 404 })
 
-    const isAuthor = post.author_id === user.id
-    if (!isAuthor && !readableAudiences(user.user_type).includes(post.audience)) {
+    const isAuthor = !!user && post.author_id === user.id
+    if (!isAuthor && !readableAudiences(user?.user_type ?? null).includes(post.audience)) {
       return NextResponse.json({ error: '접근할 수 없는 게시글입니다' }, { status: 403 })
     }
 

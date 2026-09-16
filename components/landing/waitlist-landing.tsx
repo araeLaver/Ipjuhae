@@ -18,10 +18,13 @@ const COUNT_DISPLAY_THRESHOLD = 30
 
 type Role = 'tenant' | 'landlord' | 'broker'
 
+/** 파일럿 신청에서 받는 역할. 임대인은 카드를 발급받는 쪽이 아니라 확인하는 쪽이라 제외한다. */
+const PILOT_ROLES: Role[] = ['tenant', 'broker']
+
 const ROLE_LABEL: Record<Role, string> = {
   tenant: '임차인',
   landlord: '임대인',
-  broker: '공인중개사',
+  broker: '중개사무소',
 }
 
 const ROLE_DETAILS: Record<Role, { benefits: string[] }> = {
@@ -417,11 +420,11 @@ const DATASCORE_LANDLORD = [
 const FAQS = [
   {
     q: '무료인가요?',
-    a: '네. 사전 신청과 Trust Card 발급은 무료입니다. 유료 기능이 생기더라도 사전 신청자에게는 출시 후 첫 3개월 무료 이용권을 드려요.',
+    a: '네. 파일럿 기간 카드 발급은 무료입니다. 사업자등록 전이라 결제 기능 자체가 없습니다.',
   },
   {
     q: '개인정보는 안전한가요?',
-    a: '필요한 만큼만, 필요한 때만 공개되는 것이 원칙입니다. 사전 신청 단계에서는 휴대폰 번호와 역할, 선택 입력한 이름·이메일만 수집하며 초대와 혜택 안내 외 목적으로 쓰지 않아요.',
+    a: '필요한 만큼만, 필요한 때만 공개되는 것이 원칙입니다. 파일럿 신청 단계에서는 이메일과 역할만 수집하며 초대와 혜택 안내 외 목적으로 쓰지 않아요.',
   },
   {
     q: '언제 출시되나요?',
@@ -477,8 +480,6 @@ function FadeIn({ children, className = '' }: { children: React.ReactNode; class
 }
 
 function SignupForm({ onSuccess }: { onSuccess: (count: number) => void }) {
-  const [name, setName] = useState('')
-  const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
   const [role, setRole] = useState<Role | null>(null)
   const [consent, setConsent] = useState(false)
@@ -490,11 +491,6 @@ function SignupForm({ onSuccess }: { onSuccess: (count: number) => void }) {
     setError(null)
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       setError('올바른 이메일 주소를 입력해주세요')
-      return
-    }
-    // 휴대폰은 선택. 적었을 때만 형식을 본다.
-    if (phone.trim() && !/^01[016789][0-9]{7,8}$/.test(phone.replace(/[^0-9]/g, ''))) {
-      setError('휴대폰 번호 형식을 확인해주세요')
       return
     }
     if (!role) {
@@ -512,9 +508,7 @@ function SignupForm({ onSuccess }: { onSuccess: (count: number) => void }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email,
-          phone: phone.trim() || undefined,
           user_type: role,
-          name: name || undefined,
           consent,
           ...getAttribution(),
         }),
@@ -535,20 +529,6 @@ function SignupForm({ onSuccess }: { onSuccess: (count: number) => void }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4" aria-label="사전 신청 폼">
       <div>
-        <label htmlFor="wl-name" className="mb-1.5 block text-sm font-medium text-white/90">
-          이름 <span className="font-normal text-white/50">(선택)</span>
-        </label>
-        <input
-          id="wl-name"
-          type="text"
-          value={name}
-          maxLength={50}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="홍길동"
-          className="w-full rounded-lg border border-white/20 bg-white/10 px-4 py-3 text-white placeholder-white/40 outline-none transition focus:border-[#E9A23B] focus:ring-1 focus:ring-[#E9A23B]"
-        />
-      </div>
-      <div>
         <label htmlFor="wl-email" className="mb-1.5 block text-sm font-medium text-white/90">
           이메일 <span className="text-[#E9A23B]">*</span>
         </label>
@@ -562,29 +542,14 @@ function SignupForm({ onSuccess }: { onSuccess: (count: number) => void }) {
           autoComplete="email"
           className="w-full rounded-lg border border-white/20 bg-white/10 px-4 py-3 text-white placeholder-white/40 outline-none transition focus:border-[#E9A23B] focus:ring-1 focus:ring-[#E9A23B]"
         />
-        <p className="mt-1 text-xs text-white/50">베타 초대 메일을 여기로 보내드려요</p>
-      </div>
-      <div>
-        <label htmlFor="wl-phone" className="mb-1.5 block text-sm font-medium text-white/90">
-          휴대폰 번호 <span className="font-normal text-white/50">(선택)</span>
-        </label>
-        <input
-          id="wl-phone"
-          type="tel"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          placeholder="010-1234-5678"
-          autoComplete="tel"
-          className="w-full rounded-lg border border-white/20 bg-white/10 px-4 py-3 text-white placeholder-white/40 outline-none transition focus:border-[#E9A23B] focus:ring-1 focus:ring-[#E9A23B]"
-        />
-        <p className="mt-1 text-xs text-white/50">남겨주시면 문자로도 알려드려요</p>
+        <p className="mt-1 text-xs text-white/50">서류 제출 안내를 여기로 보내드려요</p>
       </div>
       <fieldset>
         <legend className="mb-1.5 block text-sm font-medium text-white/90">
           어떤 입장이신가요? <span className="text-[#E9A23B]">*</span>
         </legend>
-        <div className="grid grid-cols-3 gap-2">
-          {(Object.keys(ROLE_LABEL) as Role[]).map((r) => (
+        <div className="grid grid-cols-2 gap-2">
+          {PILOT_ROLES.map((r) => (
             <button
               key={r}
               type="button"
@@ -612,9 +577,17 @@ function SignupForm({ onSuccess }: { onSuccess: (count: number) => void }) {
         <span>
           개인정보 수집·이용에 동의합니다 <span className="text-[#E9A23B]">*</span>
           <span className="mt-0.5 block text-xs text-white/50">
-            수집 항목: 이메일, 역할, 이름·휴대폰 번호(선택), 유입 경로 · 목적: 사전 신청 접수와 초대·혜택 안내(이메일/문자) ·
-            서비스 정식 오픈 후 6개월 또는 동의 철회 시까지 보관 후 파기
+            수집 항목: 이메일, 역할, 유입 경로 · 목적: 파일럿 카드 발급과 안내 · 파일럿 종료 또는 동의 철회 시 파기
           </span>
+          <a
+            href="/privacy"
+            target="_blank"
+            rel="noreferrer"
+            className="mt-1 inline-block text-xs text-[#E9A23B] underline underline-offset-2"
+            onClick={(e) => e.stopPropagation()}
+          >
+            개인정보 처리방침 보기
+          </a>
         </span>
       </label>
       {error ? (
@@ -627,7 +600,7 @@ function SignupForm({ onSuccess }: { onSuccess: (count: number) => void }) {
         disabled={submitting}
         className="w-full rounded-lg bg-[#E9A23B] px-6 py-4 text-base font-bold text-[#0C2247] transition hover:brightness-105 disabled:opacity-60"
       >
-        {submitting ? '신청 중…' : '사전 신청하고 얼리 혜택 받기'}
+        {submitting ? '신청 중…' : '파일럿 신청하기'}
       </button>
     </form>
   )
@@ -697,7 +670,7 @@ export function WaitlistLanding({ initialCount }: { initialCount: number }) {
               className="rounded-lg px-7 py-4 text-base font-bold text-[#0C2247] shadow-lg transition hover:brightness-105"
               style={{ backgroundColor: AMBER }}
             >
-              사전 신청하고 얼리 혜택 받기
+              파일럿 신청하기
             </button>
             {count >= COUNT_DISPLAY_THRESHOLD ? (
               <p className="mt-4 text-sm text-white/60">
@@ -925,9 +898,9 @@ export function WaitlistLanding({ initialCount }: { initialCount: number }) {
                 >
                   ✓
                 </div>
-                <h2 className="mt-6 text-2xl font-bold sm:text-3xl">신청이 완료됐어요</h2>
+                <h2 className="mt-6 text-2xl font-bold sm:text-3xl">신청 완료</h2>
                 <p className="mt-3 leading-relaxed text-white/70">
-                  준비되는 대로 초대 메일을 보내드릴게요.
+                  24시간 안에 이메일로 서류 제출 안내를 보냅니다.
                   {count >= COUNT_DISPLAY_THRESHOLD ? (
                     <>
                       <br />
@@ -938,23 +911,12 @@ export function WaitlistLanding({ initialCount }: { initialCount: number }) {
               </div>
             ) : (
               <>
-                <h2 className="text-center text-2xl font-bold sm:text-3xl">사전 신청하고 혜택 받기</h2>
-                <div className="mt-8 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-xl border border-white/15 bg-white/5 p-5">
-                    <p className="text-2xl" aria-hidden="true">
-                      ☕
-                    </p>
-                    <p className="mt-2 text-sm font-bold">매주 추첨 커피 기프티콘</p>
-                    <p className="mt-1 text-xs leading-relaxed text-white/60">사전 신청자 중 매주 추첨으로 드려요</p>
-                  </div>
-                  <div className="rounded-xl border border-white/15 bg-white/5 p-5">
-                    <p className="text-2xl" aria-hidden="true">
-                      🎁
-                    </p>
-                    <p className="mt-2 text-sm font-bold">첫 3개월 무료 이용권</p>
-                    <p className="mt-1 text-xs leading-relaxed text-white/60">출시 후 유료 기능을 무료로 먼저 써보세요</p>
-                  </div>
-                </div>
+                <h2 className="text-center text-2xl font-bold sm:text-3xl">파일럿 신청</h2>
+                <p className="mx-auto mt-4 max-w-md text-center text-sm leading-relaxed text-white/70">
+                  API 연동 전까지 대표가 직접 확인해 카드를 발급합니다.
+                  <br />
+                  서류는 확인 즉시 삭제됩니다.
+                </p>
                 <div className="mt-8">
                   <SignupForm onSuccess={handleSuccess} />
                 </div>
@@ -1029,7 +991,7 @@ export function WaitlistLanding({ initialCount }: { initialCount: number }) {
               className="w-full rounded-lg px-6 py-3 text-sm font-bold text-[#0C2247] transition hover:brightness-105 sm:w-auto"
               style={{ backgroundColor: AMBER }}
             >
-              사전 신청하고 얼리 혜택 받기
+              파일럿 신청하기
             </button>
           </div>
         </div>

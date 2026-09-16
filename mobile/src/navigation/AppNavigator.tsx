@@ -23,6 +23,8 @@ import PropertiesScreen from '../screens/PropertiesScreen';
 import TenantBrowseScreen from '../screens/TenantBrowseScreen';
 import ChatRoomScreen from '../screens/ChatRoomScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import CommunityScreen from '../screens/CommunityScreen';
+import CommunityPostScreen from '../screens/CommunityPostScreen';
 import NotificationSettingsScreen from '../screens/NotificationSettingsScreen';
 
 // Types
@@ -39,6 +41,7 @@ export type RootStackParamList = {
   References: undefined;
   NotificationSettings: undefined;
   Settings: undefined;
+  CommunityPost: { postId: string };
 };
 
 export type AuthStackParamList = {
@@ -49,6 +52,7 @@ export type AuthStackParamList = {
 export type MainTabParamList = {
   Home: undefined;
   Listings: undefined;
+  Community: undefined;
   Messages: undefined;
   Profile: undefined;
 };
@@ -61,6 +65,7 @@ const TabIcon = ({ name, focused }: { name: string; focused: boolean }) => {
   const icons: Record<string, string> = {
     Home: '🏠',
     Listings: '🔍',
+    Community: '💭',
     Messages: '💬',
     Profile: '👤',
   };
@@ -98,6 +103,7 @@ const MainTabNavigator = () => (
   >
     <Tab.Screen name="Home" component={HomeScreen} options={{ tabBarLabel: '홈' }} />
     <Tab.Screen name="Listings" component={ListingsScreen} options={{ tabBarLabel: '매물' }} />
+    <Tab.Screen name="Community" component={CommunityScreen} options={{ tabBarLabel: '커뮤니티' }} />
     <Tab.Screen name="Messages" component={MessagesScreen} options={{ tabBarLabel: '메시지' }} />
     <Tab.Screen name="Profile" component={ProfileScreen} options={{ tabBarLabel: '프로필' }} />
   </Tab.Navigator>
@@ -196,6 +202,11 @@ const AppNavigator = () => {
               name="Settings"
               component={SettingsScreen}
               options={{ headerShown: true, headerTitle: '설정', headerBackTitle: '뒤로', headerTintColor: '#C2451F' }}
+            />
+            <Stack.Screen
+              name="CommunityPost"
+              component={CommunityPostScreen}
+              options={{ headerShown: true, headerTitle: '', headerBackTitle: '커뮤니티', headerTintColor: '#C2451F' }}
             />
           </>
         ) : (

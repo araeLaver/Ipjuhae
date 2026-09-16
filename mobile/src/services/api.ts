@@ -517,3 +517,69 @@ export async function fetchTenants(): Promise<TenantProfile[]> {
     isComplete: true,
   }));
 }
+
+// ─── 커뮤니티 ───────────────────────────────────────────────────────────────
+
+export type CommunityAudience = 'all' | 'tenant' | 'landlord' | 'broker'
+
+export interface CommunityPost {
+  id: string
+  audience: CommunityAudience
+  category: string | null
+  title: string
+  body?: string
+  viewCount: number
+  commentCount: number
+  createdAt: string
+  authorName: string | null
+  /** 글쓴이 계정의 역할. 게시판을 쪼개지 않고 이 값으로 구분한다. */
+  authorRole: string
+}
+
+interface PostRow {
+  id: string
+  audience: CommunityAudience
+  category: string | null
+  title: string
+  body?: string
+  view_count: number
+  comment_count: number
+  created_at: string
+  author_name: string | null
+  author_role: string
+}
+
+const toPost = (r: PostRow): CommunityPost => ({
+  id: r.id,
+  audience: r.audience,
+  category: r.category,
+  title: r.title,
+  body: r.body,
+  viewCount: r.view_count,
+  commentCount: r.comment_count,
+  createdAt: r.created_at,
+  authorName: r.author_name,
+  authorRole: r.author_role,
+})
+
+/** GET /api/community/posts?audience= */
+export async function fetchCommunityPosts(audience: CommunityAudience = 'all'): Promise<CommunityPost[]> {
+  const res = await apiClient.get<{ posts: PostRow[] }>(`/community/posts?audience=${audience}`)
+  return (res.posts ?? []).map(toPost)
+}
+
+/** GET /api/community/posts/[id] */
+export async function fetchCommunityPost(id: string): Promise<CommunityPost> {
+  const res = await apiClient.get<{ post: PostRow }>(`/community/posts/${id}`)
+  return toPost(res.post)
+}
+
+/** POST /api/community/posts */
+export async function createCommunityPost(input: {
+  audience: CommunityAudience
+  title: string
+  body: string
+}): Promise<string> {
+  const res = await apiClient.post<{ id: string }>('/community/posts', input)
+  return res.id
+}
