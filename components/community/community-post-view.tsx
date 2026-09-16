@@ -41,7 +41,7 @@ export function CommunityPostView({ params }: { params: Promise<{ id: string }> 
     setLoading(true)
     try {
       const res = await fetch(`/api/community/posts/${id}`)
-      if (res.status === 401) { router.push(`/login?redirect=/community/${id}`); return }
+      if (res.status === 401) { router.push(`/login?redirect=//${id}`); return }
       if (!res.ok) { setError((await res.json().catch(() => null))?.error ?? '게시글을 불러오지 못했습니다'); return }
       setPost((await res.json()).post)
       const cRes = await fetch(`/api/community/posts/${id}/comments`)
@@ -73,7 +73,7 @@ export function CommunityPostView({ params }: { params: Promise<{ id: string }> 
     <div className="min-h-screen bg-muted/40">
       <Header />
       <main className="container mx-auto max-w-3xl px-4 py-8">
-        <Link href="/community" className="mb-4 inline-block text-sm text-muted-foreground hover:text-foreground">← 커뮤니티</Link>
+        <Link href="/" className="mb-4 inline-block text-sm text-muted-foreground hover:text-foreground">← 커뮤니티</Link>
 
         {loading ? (
           <div className="flex justify-center py-16"><Spinner /></div>
