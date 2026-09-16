@@ -22,6 +22,8 @@ interface PostRow {
   comment_count: number
   created_at: string
   author_name: string | null
+  /** 작성자 계정의 역할. 한 게시판을 쓰므로 누가 쓴 글인지는 이걸로 구분한다. */
+  author_role: string
 }
 
 // GET /api/community/posts?audience=&page=&limit=
@@ -49,7 +51,8 @@ export async function GET(request: Request) {
     const rows = await query<PostRow>(
       `SELECT p.id, p.author_id, p.audience, p.category, p.title, p.body,
               p.view_count, p.comment_count, p.created_at,
-              COALESCE(pr.name, u.name) AS author_name
+              COALESCE(pr.name, u.name) AS author_name,
+              u.user_type AS author_role
          FROM community_posts p
          JOIN users u ON u.id = p.author_id
          LEFT JOIN profiles pr ON pr.user_id = p.author_id

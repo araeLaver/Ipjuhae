@@ -16,12 +16,12 @@ const HEADLINE = ['믿을 만한 세입자인지, 믿을 만한 집인지', '이
 
 const COUNT_DISPLAY_THRESHOLD = 30
 
-type Role = 'tenant' | 'landlord' | 'agent'
+type Role = 'tenant' | 'landlord' | 'broker'
 
 const ROLE_LABEL: Record<Role, string> = {
   tenant: '임차인',
   landlord: '임대인',
-  agent: '공인중개사',
+  broker: '공인중개사',
 }
 
 const ROLE_DETAILS: Record<Role, { benefits: string[] }> = {
@@ -39,7 +39,7 @@ const ROLE_DETAILS: Record<Role, { benefits: string[] }> = {
       '필요한 만큼만 공개된 정보를 확인해요',
     ],
   },
-  agent: {
+  broker: {
     benefits: [
       '카드 진위 검증으로 중개 사고 위험을 낮춰요',
       '양쪽 말이 아닌 확인된 정보로 중개해요',
@@ -318,7 +318,7 @@ function AgentVerifyMockup() {
 const ROLE_MOCKUP: Record<Role, () => React.JSX.Element> = {
   tenant: TenantCardMockup,
   landlord: LandlordViewMockup,
-  agent: AgentVerifyMockup,
+  broker: AgentVerifyMockup,
 }
 
 const PROBLEMS: { role: string; quote: string; icon: React.ReactNode }[] = [

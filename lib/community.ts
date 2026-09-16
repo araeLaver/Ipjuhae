@@ -9,6 +9,24 @@ export const AUDIENCE_LABELS: Record<CommunityAudience, string> = {
   broker: '공인중개사',
 }
 
+/**
+ * 글쓴이 계정의 역할 표시.
+ *
+ * 게시판을 역할별로 쪼개지 않고 한 곳에서 운영하기 때문에, 누가 쓴 글인지는
+ * 이 배지로 구분한다. 게시판 라벨(AUDIENCE_LABELS)이 "어느 판에 올렸나"라면
+ * 이건 "누가 썼나"다.
+ */
+export const ROLE_LABELS: Record<string, string> = {
+  tenant: '임차인',
+  landlord: '임대인',
+  broker: '공인중개사',
+  admin: '운영자',
+}
+
+export function roleLabel(userType: string | null | undefined): string | null {
+  return userType ? (ROLE_LABELS[userType] ?? null) : null
+}
+
 export function isCommunityAudience(value: unknown): value is CommunityAudience {
   return typeof value === 'string' && (COMMUNITY_AUDIENCES as string[]).includes(value)
 }

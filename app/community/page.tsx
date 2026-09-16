@@ -14,6 +14,7 @@ import { MessageSquare } from 'lucide-react'
 import {
   AUDIENCE_LABELS,
   canPostTo,
+  roleLabel,
   readableAudiences,
   userTypeToAudience,
   type CommunityAudience,
@@ -28,6 +29,7 @@ interface Post {
   view_count: number
   created_at: string
   author_name: string | null
+  author_role: string
 }
 
 export default function CommunityPage() {
@@ -166,6 +168,18 @@ export default function CommunityPage() {
                         {AUDIENCE_LABELS[p.audience]}
                       </span>
                       <span>{p.author_name ?? '익명'}</span>
+                      {roleLabel(p.author_role) && (
+                        <span
+                          className={
+                            'rounded px-1.5 py-0.5 font-medium ' +
+                            (p.author_role === 'admin'
+                              ? 'bg-primary text-primary-foreground'
+                              : 'border border-border text-foreground/70')
+                          }
+                        >
+                          {roleLabel(p.author_role)}
+                        </span>
+                      )}
                     </div>
                     <p className="font-semibold">{p.title}</p>
                     <div className="mt-1 flex gap-3 text-xs text-muted-foreground">

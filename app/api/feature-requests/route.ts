@@ -2,7 +2,7 @@ import { logger } from '@/lib/logger'
 import { NextResponse } from 'next/server'
 import { query } from '@/lib/db'
 
-const VALID_USER_TYPES = ['tenant', 'landlord', 'agent'] as const
+const VALID_USER_TYPES = ['tenant', 'landlord', 'broker'] as const
 const VALID_SOURCES = ['preview', 'landing'] as const
 
 // POST /api/feature-requests — 기능 요구사항 접수 (로그인 불필요)

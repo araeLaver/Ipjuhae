@@ -5,7 +5,8 @@ import { sanitizeTag } from '@/lib/attribution'
 
 const WAITLIST_CONSENT_VERSION = 'waitlist-v4-20260910'
 
-const VALID_USER_TYPES = ['tenant', 'landlord', 'agent'] as const
+// 'agent'는 임대인의 대리인과 헷갈려 'broker'로 통일했다(migration-042).
+const VALID_USER_TYPES = ['tenant', 'landlord', 'broker'] as const
 
 // GET /api/waitlist — 전체 대기자 수 반환
 export async function GET() {
