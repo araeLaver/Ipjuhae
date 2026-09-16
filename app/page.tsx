@@ -1,37 +1,30 @@
 import { Metadata } from 'next'
-import { queryOne } from '@/lib/db'
-import { WaitlistLanding } from '@/components/landing/waitlist-landing'
+import { CommunityBoard } from '@/components/community/community-board'
 
+/**
+ * 첫 화면은 커뮤니티다.
+ *
+ * 사용자를 모으는 게 목적인데 사전신청 랜딩을 첫 화면에 두면 방문자가 볼 게 없다.
+ * 글은 로그인 없이 읽힌다 — 검색·SNS에서 들어온 사람이 바로 읽고,
+ * 서비스 소개(/about)와 미리보기(/preview)로는 상단 버튼으로 언제든 넘어간다.
+ */
 export const metadata: Metadata = {
-  title: '입주해 — 믿을 만한 세입자인지, 믿을 만한 집인지 이제 확인할 수 있습니다',
+  title: '입주해 커뮤니티 — 계약 전에 물어보는 곳',
   description:
-    '임차인은 증명하고, 임대인은 확인하고, 중개사는 검증합니다. 임대차 거래의 신뢰를 만드는 입주해, 지금 사전 신청하고 얼리 혜택을 받으세요.',
+    '임차인·임대인·공인중개사가 계약 전에 확인할 것을 나누는 공간. 등기부, 보증금, 특약, 세입자 확인까지 실제 사례로 이야기합니다.',
   openGraph: {
-    title: '입주해 — 믿을 만한 세입자인지, 믿을 만한 집인지 이제 확인할 수 있습니다',
-    description:
-      '임차인은 증명하고, 임대인은 확인하고, 중개사는 검증합니다. 지금 사전 신청하고 얼리 혜택을 받으세요.',
+    title: '입주해 커뮤니티 — 계약 전에 물어보는 곳',
+    description: '임차인·임대인·공인중개사가 계약 전에 확인할 것을 나누는 공간.',
+    type: 'website',
   },
-  // twitter를 따로 안 주면 루트 레이아웃의 옛 문구가 그대로 나간다
   twitter: {
     card: 'summary_large_image',
-    title: '입주해 — 믿을 만한 세입자인지, 믿을 만한 집인지 이제 확인할 수 있습니다',
-    description:
-      '임차인은 증명하고, 임대인은 확인하고, 중개사는 검증합니다. 지금 사전 신청하고 얼리 혜택을 받으세요.',
+    title: '입주해 커뮤니티 — 계약 전에 물어보는 곳',
+    description: '임차인·임대인·공인중개사가 계약 전에 확인할 것을 나누는 공간.',
   },
+  alternates: { canonical: '/' },
 }
 
-export const revalidate = 60
-
-async function getWaitlistCount(): Promise<number> {
-  try {
-    const row = await queryOne<{ count: string }>('SELECT COUNT(*)::text AS count FROM waitlist')
-    return parseInt(row?.count ?? '0', 10)
-  } catch {
-    return 0
-  }
-}
-
-export default async function LandingPage() {
-  const count = await getWaitlistCount()
-  return <WaitlistLanding initialCount={count} />
+export default function HomePage() {
+  return <CommunityBoard />
 }
