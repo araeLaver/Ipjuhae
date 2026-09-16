@@ -9,17 +9,17 @@ import { CommunityBoard } from '@/components/community/community-board'
  * 서비스 소개(/about)와 미리보기(/preview)로는 상단 버튼으로 언제든 넘어간다.
  */
 export const metadata: Metadata = {
-  title: '입주해 커뮤니티 — 계약 전에 물어보는 곳',
+  title: '계약 전에 물어보는 곳 | 입주해 커뮤니티',
   description:
     '임차인·임대인·공인중개사가 계약 전에 확인할 것을 나누는 공간. 등기부, 보증금, 특약, 세입자 확인까지 실제 사례로 이야기합니다.',
   openGraph: {
-    title: '입주해 커뮤니티 — 계약 전에 물어보는 곳',
+    title: '계약 전에 물어보는 곳 | 입주해 커뮤니티',
     description: '임차인·임대인·공인중개사가 계약 전에 확인할 것을 나누는 공간.',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: '입주해 커뮤니티 — 계약 전에 물어보는 곳',
+    title: '계약 전에 물어보는 곳 | 입주해 커뮤니티',
     description: '임차인·임대인·공인중개사가 계약 전에 확인할 것을 나누는 공간.',
   },
   alternates: { canonical: '/' },

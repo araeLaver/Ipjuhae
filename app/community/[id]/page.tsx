@@ -36,7 +36,7 @@ export async function generateMetadata({
   if (!post) return { title: '입주해 커뮤니티' }
 
   const description = post.body.replace(/\s+/g, ' ').slice(0, 155)
-  const title = `${post.title} — 입주해 커뮤니티`
+  const title = `${post.title} | 입주해 커뮤니티`
 
   return {
     title,

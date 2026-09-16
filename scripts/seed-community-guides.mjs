@@ -16,39 +16,44 @@ import { SERIES } from '../marketing/sns/carousels.mjs'
 
 const DRY = process.argv.includes('--dry')
 
-/** 슬라이드를 읽을 수 있는 글로 편다. 캐러셀은 넘겨 보는 물건이고 글은 읽는 물건이라 형식이 다르다. */
+/**
+ * 슬라이드를 읽을 수 있는 글로 편다.
+ * 캐러셀은 넘겨 보는 물건이고 글은 읽는 물건이라 형식이 다르다.
+ *
+ * 기호를 쓰지 않는다. 줄표나 네모 같은 장식이 붙으면 사람이 쓴 글로 안 읽힌다.
+ * 소제목은 그냥 한 줄로 두고, 순서가 있는 것만 숫자를 붙인다.
+ */
 function composeBody(set, seriesName) {
   const lines = []
   const cover = set.slides.find((s) => s.kind === 'cover')
-  if (cover?.sub) lines.push(cover.sub, '')
+  if (cover?.sub) lines.push(`${cover.sub}입니다.`, '')
 
+  let pointNo = 0
   for (const s of set.slides) {
     if (s.kind === 'cover' || s.kind === 'end') continue
 
     const title = s.title?.replace(/\n/g, ' ')
     if (s.kind === 'point') {
-      lines.push(`■ ${s.label} — ${title}`)
+      pointNo += 1
+      lines.push(`${pointNo}. ${title}`)
       if (s.desc) lines.push(s.desc)
     } else if (s.kind === 'list') {
-      lines.push(`■ ${title}`)
+      lines.push(title)
       for (const item of s.items) lines.push(`· ${item}`)
     } else {
-      lines.push(`■ ${title}`)
+      lines.push(title)
       if (s.desc) lines.push(s.desc)
     }
     lines.push('')
   }
 
-  lines.push('—')
   lines.push(
     set.next
-      ? `${seriesName} 다음 편 — ${set.next}`
+      ? `다음 편은 ${set.next}입니다.`
       : `${seriesName}은 여기까지입니다.`
   )
   lines.push('')
-  lines.push(
-    '계약 전에 확인이 막히는 지점이 있으면 글로 남겨주세요. 같은 걸 겪은 사람이 답할 수 있습니다.'
-  )
+  lines.push('계약 전에 확인이 막히는 지점이 있으면 글로 남겨주세요. 같은 걸 겪은 사람이 답할 수 있습니다.')
 
   return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim()
 }
@@ -76,7 +81,7 @@ let updated = 0
 
 for (const series of SERIES) {
   for (const set of series.sets) {
-    const title = `${series.name} #${set.num} — ${set.title}`
+    const title = `${series.name} ${Number(set.num)}화. ${set.title}`
     const body = composeBody(set, series.name)
 
     if (DRY) {

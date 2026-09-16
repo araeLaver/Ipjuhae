@@ -3,8 +3,17 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
 
-const API_BASE_URL = 'https://www.ipjuhae.com/api';
+/**
+ * 기본은 프로덕션이다. 로컬 서버로 붙여 확인할 때만
+ * EXPO_PUBLIC_API_BASE_URL 이나 app.json의 expo.extra.apiBaseUrl 로 덮는다.
+ * (안드로이드 에뮬레이터에서 호스트 주소는 10.0.2.2다.)
+ */
+const API_BASE_URL =
+  process.env.EXPO_PUBLIC_API_BASE_URL ??
+  (Constants.expoConfig?.extra as { apiBaseUrl?: string } | undefined)?.apiBaseUrl ??
+  'https://www.ipjuhae.com/api';
 
 const TOKEN_KEY = 'auth_token';
 const REFRESH_TOKEN_KEY = 'refresh_token';
