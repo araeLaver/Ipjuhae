@@ -116,6 +116,29 @@ const PlaceholderScreen = () => (
   </View>
 );
 
+/** 로그인 전 화면. 커뮤니티만 연다. */
+const GuestNavigator = () => (
+  <Tab.Navigator
+    screenOptions={{
+      headerShown: false,
+      tabBarActiveTintColor: '#C2451F',
+      tabBarInactiveTintColor: '#9A8F87',
+      tabBarStyle: {
+        paddingBottom: 8,
+        paddingTop: 8,
+        height: 60,
+        backgroundColor: '#fff',
+        borderTopWidth: 1,
+        borderTopColor: '#E7DFD4',
+      },
+      tabBarLabelStyle: { fontSize: 11, fontWeight: '500' },
+      tabBarIcon: ({ focused }) => <TabIcon name="Community" focused={focused} />,
+    }}
+  >
+    <Tab.Screen name="Community" component={CommunityScreen} options={{ tabBarLabel: '커뮤니티' }} />
+  </Tab.Navigator>
+);
+
 const AppNavigator = () => {
   const { isAuthenticated, isLoading } = useAuth();
 
@@ -210,7 +233,17 @@ const AppNavigator = () => {
             />
           </>
         ) : (
-          <Stack.Screen name="Auth" component={AuthNavigator} />
+          <>
+            {/* 가입을 권할 단계가 아니다. 로그인 없이도 커뮤니티를 읽고 쓸 수 있어야
+                웹과 앞뒤가 맞는다. 로그인은 커뮤니티 안에서 언제든 갈 수 있다. */}
+            <Stack.Screen name="Main" component={GuestNavigator} />
+            <Stack.Screen
+              name="CommunityPost"
+              component={CommunityPostScreen}
+              options={{ headerShown: true, headerTitle: '', headerBackTitle: '커뮤니티', headerTintColor: '#C2451F' }}
+            />
+            <Stack.Screen name="Auth" component={AuthNavigator} />
+          </>
         )}
       </Stack.Navigator>
     </NavigationContainer>

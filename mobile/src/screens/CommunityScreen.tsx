@@ -17,6 +17,11 @@ import {
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
+  Modal,
+  TextInput,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { CompositeNavigationProp, useFocusEffect } from '@react-navigation/native';
@@ -66,6 +71,10 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [writing, setWriting] = useState(false);
+  const [draftTitle, setDraftTitle] = useState('');
+  const [draftBody, setDraftBody] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const load = useCallback(async (audience: api.CommunityAudience) => {
     setError(null);
@@ -109,6 +118,24 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
 
   /** 회차 번호를 떼고 제목만 남긴다. 목록에서는 연재명이 이미 머리에 있다. */
   const shortTitle = (t: string) => t.replace(/^.*?(\d+)화\.\s*/, '');
+
+  async function submitPost() {
+    if (!draftTitle.trim() || !draftBody.trim() || submitting) return;
+    setSubmitting(true);
+    try {
+      // 계정 없이 쓴다. 익명 글은 '전체' 판으로만 간다.
+      await api.createCommunityPost({ audience: 'all', title: draftTitle, body: draftBody });
+      setDraftTitle('');
+      setDraftBody('');
+      setWriting(false);
+      setTab('all');
+      await load('all');
+    } catch (e) {
+      Alert.alert('올리지 못했어요', '잠시 후 다시 시도해주세요.');
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   const renderThread = ({ item }: { item: api.CommunityPost }) => (
     <TouchableOpacity
@@ -154,10 +181,10 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
           지역과 보증금, 등기부에서 본 것만 적어주시면 같이 봅니다.
           주소와 건물명은 적지 말아주세요.
         </Text>
-        <View style={styles.askInput}>
+        <TouchableOpacity style={styles.askInput} onPress={() => setWriting(true)}>
           <Text style={styles.askInputText}>지금 막히는 게 무엇인가요</Text>
-        </View>
-        <Text style={styles.askNote}>운영자가 직접 답합니다. 익명으로 쓸 수 있어요.</Text>
+        </TouchableOpacity>
+        <Text style={styles.askNote}>운영자가 직접 답합니다. 가입하지 않아도 익명으로 쓸 수 있어요.</Text>
       </View>
 
       {guideCount > 0 && (
@@ -216,8 +243,55 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
     );
   }
 
+  const composer = (
+    <Modal visible={writing} animationType="slide" onRequestClose={() => setWriting(false)}>
+      <KeyboardAvoidingView
+        style={styles.modal}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <View style={styles.modalHead}>
+          <TouchableOpacity onPress={() => setWriting(false)}>
+            <Text style={styles.modalCancel}>취소</Text>
+          </TouchableOpacity>
+          <Text style={styles.modalTitle}>질문 남기기</Text>
+          <TouchableOpacity onPress={submitPost} disabled={submitting || !draftTitle.trim() || !draftBody.trim()}>
+            <Text
+              style={[
+                styles.modalSubmit,
+                (submitting || !draftTitle.trim() || !draftBody.trim()) && styles.modalSubmitOff,
+              ]}
+            >
+              {submitting ? '올리는 중' : '올리기'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <TextInput
+          style={styles.modalTitleInput}
+          placeholder="제목"
+          placeholderTextColor={colors.faint}
+          value={draftTitle}
+          onChangeText={setDraftTitle}
+          maxLength={200}
+        />
+        <TextInput
+          style={styles.modalBodyInput}
+          placeholder="어떤 상황인지 적어주세요. 지역은 동까지만, 주소와 건물명은 적지 말아주세요."
+          placeholderTextColor={colors.faint}
+          value={draftBody}
+          onChangeText={setDraftBody}
+          multiline
+          textAlignVertical="top"
+          maxLength={10000}
+        />
+        <Text style={styles.modalNote}>익명으로 올라갑니다.</Text>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+
   return (
     <View style={styles.container}>
+      {composer}
       <FlatList
         data={threads}
         keyExtractor={(p) => p.id}
@@ -356,6 +430,48 @@ const styles = StyleSheet.create({
   rowTitle: { fontSize: 15, fontWeight: '600', color: colors.ink, lineHeight: 21 },
   statRow: { flexDirection: 'row', gap: 12, marginTop: 8 },
   stat: { fontSize: 11, color: colors.faint },
+
+  modal: { flex: 1, backgroundColor: colors.background },
+  modalHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 18,
+    paddingTop: 56,
+    paddingBottom: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.line,
+    backgroundColor: colors.surface,
+  },
+  modalCancel: { fontSize: 15, color: colors.muted },
+  modalTitle: { fontSize: 16, fontWeight: '700', color: colors.ink },
+  modalSubmit: { fontSize: 15, fontWeight: '700', color: colors.primaryInk },
+  modalSubmitOff: { color: colors.faint },
+  modalTitleInput: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: colors.ink,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.line,
+  },
+  modalBodyInput: {
+    flex: 1,
+    fontSize: 15,
+    lineHeight: 23,
+    color: colors.ink,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: colors.surface,
+  },
+  modalNote: {
+    fontSize: 12,
+    color: colors.muted,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+  },
 
   empty: { alignItems: 'center', paddingTop: 50, paddingHorizontal: 30 },
   emptyTitle: { fontSize: 15, fontWeight: '700', color: colors.muted },
