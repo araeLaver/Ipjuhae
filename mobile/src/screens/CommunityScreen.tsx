@@ -14,7 +14,6 @@ import {
   Text,
   StyleSheet,
   FlatList,
-  ScrollView,
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
@@ -92,15 +91,24 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
     setRefreshing(false);
   }, [load, tab]);
 
-  const { guides, threads } = useMemo(() => {
-    const guides = posts
-      .filter((p) => p.authorRole === 'admin')
-      .sort((a, b) => {
-        const bySeries = (a.category ?? '').localeCompare(b.category ?? '', 'ko');
-        return bySeries !== 0 ? bySeries : episodeNo(a.title) - episodeNo(b.title);
-      });
-    return { guides, threads: posts.filter((p) => p.authorRole !== 'admin') };
+  const { guideSeries, guideCount, threads } = useMemo(() => {
+    const guides = posts.filter((p) => p.authorRole === 'admin');
+    const bySeries = new Map<string, api.CommunityPost[]>();
+    for (const g of guides) {
+      const key = g.category ?? '안내';
+      if (!bySeries.has(key)) bySeries.set(key, []);
+      bySeries.get(key)!.push(g);
+    }
+    for (const list of bySeries.values()) list.sort((a, b) => episodeNo(a.title) - episodeNo(b.title));
+    return {
+      guideSeries: [...bySeries.entries()],
+      guideCount: guides.length,
+      threads: posts.filter((p) => p.authorRole !== 'admin'),
+    };
   }, [posts]);
+
+  /** 회차 번호를 떼고 제목만 남긴다. 목록에서는 연재명이 이미 머리에 있다. */
+  const shortTitle = (t: string) => t.replace(/^.*?(\d+)화\.\s*/, '');
 
   const renderThread = ({ item }: { item: api.CommunityPost }) => (
     <TouchableOpacity
@@ -140,31 +148,46 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
         </Text>
       </View>
 
-      {guides.length > 0 && (
+      <View style={styles.askCard}>
+        <Text style={styles.askTitle}>이 집, 계약해도 될까요?</Text>
+        <Text style={styles.askSub}>
+          지역과 보증금, 등기부에서 본 것만 적어주시면 같이 봅니다.
+          주소와 건물명은 적지 말아주세요.
+        </Text>
+        <View style={styles.askInput}>
+          <Text style={styles.askInputText}>지금 막히는 게 무엇인가요</Text>
+        </View>
+        <Text style={styles.askNote}>운영자가 직접 답합니다. 익명으로 쓸 수 있어요.</Text>
+      </View>
+
+      {guideCount > 0 && (
         <View style={styles.guideSection}>
           <View style={styles.sectionHead}>
             <Text style={styles.sectionTitle}>입주해가 정리한 것</Text>
-            <Text style={styles.sectionCount}>{guides.length}편</Text>
+            <Text style={styles.sectionCount}>{guideCount}편</Text>
           </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.guideRow}
-          >
-            {guides.map((g) => (
-              <TouchableOpacity
-                key={g.id}
-                style={styles.guideCard}
-                onPress={() => navigation.navigate('CommunityPost', { postId: g.id })}
-              >
-                {g.category ? <Text style={styles.guideCategory}>{g.category}</Text> : null}
-                <Text style={styles.guideTitle} numberOfLines={3}>
-                  {g.title}
-                </Text>
-                <Text style={styles.guideMore}>읽기</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+          <Text style={styles.sectionSub}>계약 전에 확인할 것을 순서대로 정리했습니다.</Text>
+
+          {guideSeries.map(([series, list]) => (
+            <View key={series} style={styles.seriesBox}>
+              <View style={styles.seriesHead}>
+                <Text style={styles.seriesName}>{series}</Text>
+                <Text style={styles.seriesCount}>{list.length}편</Text>
+              </View>
+              {list.map((g, i) => (
+                <TouchableOpacity
+                  key={g.id}
+                  style={[styles.guideRowItem, i > 0 && styles.guideRowBorder]}
+                  onPress={() => navigation.navigate('CommunityPost', { postId: g.id })}
+                >
+                  <Text style={styles.guideNo}>{i + 1}</Text>
+                  <Text style={styles.guideRowTitle} numberOfLines={2}>
+                    {shortTitle(g.title)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          ))}
         </View>
       )}
 
@@ -228,7 +251,54 @@ const styles = StyleSheet.create({
   heroTitle: { fontSize: 24, fontWeight: '900', color: colors.ink, marginTop: 6, letterSpacing: -0.5 },
   heroSub: { fontSize: 13, lineHeight: 20, color: colors.muted, marginTop: 8 },
 
-  guideSection: { paddingTop: 22 },
+  askCard: {
+    marginHorizontal: 20,
+    marginTop: 20,
+    padding: 18,
+    borderRadius: 14,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.tint,
+  },
+  askTitle: { fontSize: 16, fontWeight: '900', color: colors.ink },
+  askSub: { fontSize: 13, lineHeight: 20, color: colors.muted, marginTop: 6 },
+  askInput: {
+    marginTop: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.background,
+  },
+  askInputText: { fontSize: 13.5, color: colors.faint },
+  askNote: { fontSize: 11.5, color: colors.muted, marginTop: 10 },
+
+  guideSection: { paddingTop: 26 },
+  sectionSub: { fontSize: 13, color: colors.muted, paddingHorizontal: 20, marginBottom: 14 },
+  seriesBox: {
+    marginHorizontal: 20,
+    marginBottom: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.surface,
+    overflow: 'hidden',
+  },
+  seriesHead: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    backgroundColor: colors.sunken,
+  },
+  seriesName: { fontSize: 13.5, fontWeight: '700', color: colors.ink },
+  seriesCount: { fontSize: 11.5, color: colors.muted },
+  guideRowItem: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 12 },
+  guideRowBorder: { borderTopWidth: 1, borderTopColor: colors.line },
+  guideNo: { width: 18, fontSize: 13, fontWeight: '700', color: colors.primary },
+  guideRowTitle: { flex: 1, fontSize: 13.5, fontWeight: '500', color: colors.ink, lineHeight: 19 },
   sectionHead: {
     flexDirection: 'row',
     alignItems: 'baseline',

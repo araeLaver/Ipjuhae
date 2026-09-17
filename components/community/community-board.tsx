@@ -82,17 +82,28 @@ export function CommunityBoard() {
 
   // 운영자가 정리한 글은 목록에 섞지 않고 위에 따로 세운다.
   // 처음 온 사람이 읽을 것부터 보여야 다시 온다.
-  const { guides, threads } = useMemo(() => {
-    // 연재물이라 최신순으로 두면 마지막 화부터 보인다. 연재·회차 순으로 세운다.
-    const episodeNo = (t: string) => Number(/#(\d+)/.exec(t)?.[1] ?? 999)
-    const guides = posts
-      .filter((p) => p.author_role === 'admin')
-      .sort((a, b) => {
-        const bySeries = (a.category ?? '').localeCompare(b.category ?? '', 'ko')
-        return bySeries !== 0 ? bySeries : episodeNo(a.title) - episodeNo(b.title)
-      })
-    return { guides, threads: posts.filter((p) => p.author_role !== 'admin') }
+  const { guideSeries, guideCount, threads } = useMemo(() => {
+    // 연재물이라 최신순으로 두면 마지막 화부터 보인다. 회차 순으로 세운다.
+    const episodeNo = (t: string) => Number(/(\d+)화/.exec(t)?.[1] ?? 999)
+    const guides = posts.filter((p) => p.author_role === 'admin')
+
+    const bySeries = new Map<string, Post[]>()
+    for (const g of guides) {
+      const key = g.category ?? '안내'
+      if (!bySeries.has(key)) bySeries.set(key, [])
+      bySeries.get(key)!.push(g)
+    }
+    for (const list of bySeries.values()) list.sort((a, b) => episodeNo(a.title) - episodeNo(b.title))
+
+    return {
+      guideSeries: [...bySeries.entries()],
+      guideCount: guides.length,
+      threads: posts.filter((p) => p.author_role !== 'admin'),
+    }
   }, [posts])
+
+  /** 회차 번호를 떼고 제목만 남긴다. 목록에서는 연재명이 이미 머리에 있다. */
+  const shortTitle = (t: string) => t.replace(/^.*?(\d+)화\.\s*/, '')
 
   function startWriting() {
     if (!userType) {
@@ -168,34 +179,65 @@ export function CommunityBoard() {
       </section>
 
       <main className="container mx-auto max-w-3xl px-4 py-8">
-        {/* 운영자가 정리한 것 */}
-        {guides.length > 0 && (
+        {/* 질문을 남기게 하는 자리. 작은 버튼 하나로는 아무도 쓰지 않는다. */}
+        <Card className="mb-8 border-primary/25 bg-card p-5">
+          <p className="text-base font-extrabold">이 집, 계약해도 될까요?</p>
+          <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+            지역과 보증금, 등기부에서 본 것만 적어주시면 같이 봅니다.
+            주소와 건물명은 적지 말아주세요.
+          </p>
+          <button
+            type="button"
+            onClick={startWriting}
+            className="mt-4 flex w-full items-center gap-2 rounded-lg border border-border bg-background px-4 py-3 text-left text-sm text-muted-foreground transition hover:border-primary/40"
+          >
+            <PenLine className="h-4 w-4 shrink-0" />
+            지금 막히는 게 무엇인가요
+          </button>
+          <p className="mt-2.5 text-xs text-muted-foreground">
+            운영자가 직접 답합니다. 익명으로 쓸 수 있어요.
+          </p>
+        </Card>
+
+        {/* 운영자가 정리한 것. 가로 스크롤은 대부분이 화면 밖으로 밀려 안 읽힌다. */}
+        {guideCount > 0 && (
           <section className="mb-10">
-            <div className="mb-3 flex items-baseline justify-between">
+            <div className="mb-1 flex items-baseline justify-between">
               <h2 className="text-lg font-extrabold">입주해가 정리한 것</h2>
-              <span className="text-xs text-muted-foreground">{guides.length}편</span>
+              <span className="text-xs text-muted-foreground">{guideCount}편</span>
             </div>
-            <ul className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-2">
-              {guides.map((g) => (
-                <li key={g.id} className="w-[260px] shrink-0 snap-start">
-                  <Link href={`/community/${g.id}`} className="block h-full">
-                    <Card className="flex h-full flex-col justify-between border-primary/20 bg-card p-4 transition hover:border-primary/50">
-                      <div>
-                        {g.category && (
-                          <p className="text-[11px] font-bold uppercase tracking-wider text-primary">
-                            {g.category}
-                          </p>
-                        )}
-                        <p className="mt-1.5 line-clamp-3 text-sm font-semibold leading-relaxed">
-                          {g.title}
-                        </p>
-                      </div>
-                      <p className="mt-4 text-xs text-muted-foreground">읽기 →</p>
-                    </Card>
-                  </Link>
-                </li>
+            <p className="mb-4 text-sm text-muted-foreground">
+              계약 전에 확인할 것을 순서대로 정리했습니다.
+            </p>
+
+            <div className="space-y-5">
+              {guideSeries.map(([series, list]) => (
+                <div key={series} className="overflow-hidden rounded-xl border border-border bg-card">
+                  <div className="flex items-baseline justify-between border-b border-border bg-muted/40 px-4 py-3">
+                    <h3 className="text-sm font-bold">{series}</h3>
+                    <span className="text-xs text-muted-foreground">{list.length}편</span>
+                  </div>
+                  <ol className="divide-y divide-border">
+                    {list.map((g, i) => (
+                      <li key={g.id}>
+                        <Link
+                          href={`/community/${g.id}`}
+                          className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/50"
+                        >
+                          <span className="w-6 shrink-0 text-sm font-bold tabular-nums text-primary">
+                            {i + 1}
+                          </span>
+                          <span className="min-w-0 flex-1 text-sm font-medium leading-snug">
+                            {shortTitle(g.title)}
+                          </span>
+                          <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                        </Link>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
               ))}
-            </ul>
+            </div>
           </section>
         )}
 
