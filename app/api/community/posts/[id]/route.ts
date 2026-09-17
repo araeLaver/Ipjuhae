@@ -30,9 +30,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       `SELECT p.id, p.author_id, p.audience, p.category, p.title, p.body,
               p.view_count, p.comment_count, p.created_at,
               COALESCE(pr.name, u.name) AS author_name,
-              u.user_type AS author_role
+              COALESCE(u.user_type, 'guest') AS author_role
          FROM community_posts p
-         JOIN users u ON u.id = p.author_id
+         LEFT JOIN users u ON u.id = p.author_id
          LEFT JOIN profiles pr ON pr.user_id = p.author_id
         WHERE p.id = $1 AND p.deleted_at IS NULL`,
       [id]

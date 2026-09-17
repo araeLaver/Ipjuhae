@@ -106,10 +106,7 @@ export function CommunityBoard() {
   const shortTitle = (t: string) => t.replace(/^.*?(\d+)화\.\s*/, '')
 
   function startWriting() {
-    if (!userType) {
-      router.push('/login?redirect=/')
-      return
-    }
+    // 계정을 만들라고 하지 않는다. 익명으로 바로 쓴다.
     setAudience(ownAudience ?? 'all')
     setWriting((v) => !v)
   }
@@ -195,7 +192,7 @@ export function CommunityBoard() {
             지금 막히는 게 무엇인가요
           </button>
           <p className="mt-2.5 text-xs text-muted-foreground">
-            운영자가 직접 답합니다. 익명으로 쓸 수 있어요.
+            운영자가 직접 답합니다. 가입하지 않아도 익명으로 쓸 수 있어요.
           </p>
         </Card>
 
@@ -267,7 +264,7 @@ export function CommunityBoard() {
         {writing && (
           <Card className="mb-6 space-y-3 p-4">
             <div className="flex flex-wrap gap-2">
-              {tabs.filter((a) => canPostTo(userType, a)).map((a) => (
+              {tabs.filter((a) => (userType ? canPostTo(userType, a) : a === 'all')).map((a) => (
                 <button
                   key={a}
                   onClick={() => setAudience(a)}

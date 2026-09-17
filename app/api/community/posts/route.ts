@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getCurrentUser } from '@/lib/auth'
+import { getClientIp, rateLimit } from '@/lib/rate-limit'
+import crypto from 'crypto'
 import { query, queryOne } from '@/lib/db'
 import { sanitizeUserInput } from '@/lib/sanitize'
 import { logger } from '@/lib/logger'
@@ -55,9 +57,9 @@ export async function GET(request: Request) {
       `SELECT p.id, p.author_id, p.audience, p.category, p.title, p.body,
               p.view_count, p.comment_count, p.created_at,
               COALESCE(pr.name, u.name) AS author_name,
-              u.user_type AS author_role
+              COALESCE(u.user_type, 'guest') AS author_role
          FROM community_posts p
-         JOIN users u ON u.id = p.author_id
+         LEFT JOIN users u ON u.id = p.author_id
          LEFT JOIN profiles pr ON pr.user_id = p.author_id
         WHERE p.deleted_at IS NULL
           AND p.audience = ANY($1::text[])
@@ -80,9 +82,29 @@ const createSchema = z.object({
 })
 
 // POST /api/community/posts
+/** 익명 작성자를 구분하기 위한 값. 원문 IP는 저장하지 않는다. */
+function authorHash(request: Request): string {
+  return crypto
+    .createHash('sha256')
+    .update(`${getClientIp(request)}:${process.env.JWT_SECRET ?? 'ipjuhae'}`)
+    .digest('hex')
+    .slice(0, 32)
+}
+
 export async function POST(request: Request) {
+  // 계정 없이 쓸 수 있다. 가입을 권할 단계가 아니라서 로그인 벽을 두지 않는다.
   const user = await getCurrentUser()
-  if (!user) return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 })
+
+  if (!user) {
+    // 대신 같은 곳에서 쏟아내는 것만 막는다.
+    const limited = rateLimit(`community:${getClientIp(request)}`, { limit: 5, windowMs: 10 * 60_000 })
+    if (!limited.success) {
+      return NextResponse.json(
+        { error: '잠시 후 다시 시도해주세요. 짧은 시간에 너무 많이 올렸습니다.' },
+        { status: 429 }
+      )
+    }
+  }
 
   const parsed = createSchema.safeParse(await request.json().catch(() => null))
   if (!parsed.success) {
@@ -90,16 +112,21 @@ export async function POST(request: Request) {
   }
   const data = parsed.data
 
-  if (!canPostTo(user.user_type, data.audience)) {
+  // 익명은 '전체' 판에만 쓴다. 역할 판은 그 역할인지 확인할 방법이 없다.
+  if (!user && data.audience !== 'all') {
+    return NextResponse.json({ error: '이 게시판은 로그인 후 쓸 수 있습니다' }, { status: 403 })
+  }
+  if (user && !canPostTo(user.user_type, data.audience)) {
     return NextResponse.json({ error: '이 게시판에 글을 쓸 수 없습니다' }, { status: 403 })
   }
 
   try {
     const post = await queryOne<{ id: string }>(
-      `INSERT INTO community_posts (author_id, audience, category, title, body)
-       VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+      `INSERT INTO community_posts (author_id, author_hash, audience, category, title, body)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
       [
-        user.id,
+        user?.id ?? null,
+        user ? null : authorHash(request),
         data.audience,
         data.category ? sanitizeUserInput(data.category) : null,
         sanitizeUserInput(data.title),

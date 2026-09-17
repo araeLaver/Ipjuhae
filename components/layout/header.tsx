@@ -138,16 +138,9 @@ export function Header({ user }: HeaderProps) {
                 </button>
               </>
             ) : (
-              <>
-                <Link href="/login">
-                  <Button variant="ghost" size="sm">
-                    로그인
-                  </Button>
-                </Link>
-                <Link href="/signup">
-                  <Button size="sm">회원가입</Button>
-                </Link>
-              </>
+              // 아직 가입을 권할 단계가 아니다. 읽는 사람에게 로그인·회원가입을
+              // 들이밀지 않는다. /login 주소는 그대로 살아 있다.
+              null
             )}
           </div>
         </div>
