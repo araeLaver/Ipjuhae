@@ -56,6 +56,7 @@ const migrations = [
   'migration-039-waitlist-landing.sql',
   'migration-040-feature-requests.sql',
   'migration-041-waitlist-attribution.sql',
+  'migration-042-broker-user-type.sql',
 ] as const
 
 const args = process.argv.slice(2)
