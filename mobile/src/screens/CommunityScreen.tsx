@@ -75,6 +75,8 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
   const [draftTitle, setDraftTitle] = useState('');
   const [draftBody, setDraftBody] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  /** 연재별 펼침 여부. 18편을 한 번에 세우면 게시판이 화면 밖으로 밀린다. */
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   const load = useCallback(async (audience: api.CommunityAudience) => {
     setError(null);
@@ -195,26 +197,38 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
           </View>
           <Text style={styles.sectionSub}>계약 전에 확인할 것을 순서대로 정리했습니다.</Text>
 
-          {guideSeries.map(([series, list]) => (
-            <View key={series} style={styles.seriesBox}>
-              <View style={styles.seriesHead}>
-                <Text style={styles.seriesName}>{series}</Text>
-                <Text style={styles.seriesCount}>{list.length}편</Text>
+          {guideSeries.map(([series, list]) => {
+            const open = expanded[series] ?? false;
+            const shown = open ? list : list.slice(0, 4);
+            return (
+              <View key={series} style={styles.seriesBox}>
+                <View style={styles.seriesHead}>
+                  <Text style={styles.seriesName}>{series}</Text>
+                  <Text style={styles.seriesCount}>{list.length}편</Text>
+                </View>
+                {shown.map((g, i) => (
+                  <TouchableOpacity
+                    key={g.id}
+                    style={[styles.guideRowItem, i > 0 && styles.guideRowBorder]}
+                    onPress={() => navigation.navigate('CommunityPost', { postId: g.id })}
+                  >
+                    <Text style={styles.guideNo}>{list.indexOf(g) + 1}</Text>
+                    <Text style={styles.guideRowTitle} numberOfLines={1}>
+                      {shortTitle(g.title)}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+                {list.length > 4 && (
+                  <TouchableOpacity
+                    style={styles.moreRow}
+                    onPress={() => setExpanded((prev) => ({ ...prev, [series]: !open }))}
+                  >
+                    <Text style={styles.moreText}>{open ? '접기' : `${list.length}편 모두 보기`}</Text>
+                  </TouchableOpacity>
+                )}
               </View>
-              {list.map((g, i) => (
-                <TouchableOpacity
-                  key={g.id}
-                  style={[styles.guideRowItem, i > 0 && styles.guideRowBorder]}
-                  onPress={() => navigation.navigate('CommunityPost', { postId: g.id })}
-                >
-                  <Text style={styles.guideNo}>{i + 1}</Text>
-                  <Text style={styles.guideRowTitle} numberOfLines={2}>
-                    {shortTitle(g.title)}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          ))}
+            );
+          })}
         </View>
       )}
 
@@ -369,7 +383,9 @@ const styles = StyleSheet.create({
   },
   seriesName: { fontSize: 13.5, fontWeight: '700', color: colors.ink },
   seriesCount: { fontSize: 11.5, color: colors.muted },
-  guideRowItem: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 12 },
+  guideRowItem: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 10 },
+  moreRow: { paddingVertical: 11, alignItems: 'center', borderTopWidth: 1, borderTopColor: colors.line },
+  moreText: { fontSize: 12.5, fontWeight: '700', color: colors.muted },
   guideRowBorder: { borderTopWidth: 1, borderTopColor: colors.line },
   guideNo: { width: 18, fontSize: 13, fontWeight: '700', color: colors.primary },
   guideRowTitle: { flex: 1, fontSize: 13.5, fontWeight: '500', color: colors.ink, lineHeight: 19 },
