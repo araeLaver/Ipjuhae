@@ -69,6 +69,30 @@ export function CommunityPostView({ params }: { params: Promise<{ id: string }> 
     }
   }
 
+  /** 익명 게시판이라 신고 수단이 반드시 있어야 한다. 로그인 없이도 신고할 수 있다. */
+  async function report() {
+    const reason = window.prompt(
+      '신고 사유를 적어주세요.\n(개인정보 노출, 광고·스팸, 욕설·혐오, 허위 정보 등)'
+    )
+    if (!reason || !reason.trim()) return
+    const res = await fetch('/api/community/reports', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ postId: id, reason: reason.trim() }),
+    })
+    const data = await res.json().catch(() => null)
+    if (!res.ok) {
+      alert(data?.error ?? '신고를 접수하지 못했습니다')
+      return
+    }
+    alert(
+      data?.hidden
+        ? '신고가 접수됐습니다. 신고가 쌓여 이 글은 보이지 않게 처리됐습니다.'
+        : '신고가 접수됐습니다. 운영자가 확인합니다.'
+    )
+    if (data?.hidden) router.push('/')
+  }
+
   return (
     <div className="min-h-screen bg-muted/40">
       <Header />
@@ -88,6 +112,15 @@ export function CommunityPostView({ params }: { params: Promise<{ id: string }> 
               </div>
               <h1 className="text-xl font-bold">{post.title}</h1>
               <p className="mt-3 whitespace-pre-wrap text-sm leading-7">{post.body}</p>
+              <div className="mt-5 flex justify-end border-t border-border pt-3">
+                <button
+                  type="button"
+                  onClick={report}
+                  className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
+                >
+                  신고
+                </button>
+              </div>
             </Card>
 
             <h2 className="mb-3 text-sm font-semibold">댓글 {comments.length}</h2>

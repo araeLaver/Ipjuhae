@@ -61,7 +61,7 @@ export async function GET(request: Request) {
          FROM community_posts p
          LEFT JOIN users u ON u.id = p.author_id
          LEFT JOIN profiles pr ON pr.user_id = p.author_id
-        WHERE p.deleted_at IS NULL
+        WHERE p.deleted_at IS NULL AND p.hidden_at IS NULL
           AND p.audience = ANY($1::text[])
         ORDER BY p.created_at DESC
         LIMIT $2 OFFSET $3`,

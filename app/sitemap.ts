@@ -32,7 +32,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     posts = await query<PostRow>(
       `SELECT id, updated_at, created_at
          FROM community_posts
-        WHERE deleted_at IS NULL AND audience = 'all'
+        WHERE deleted_at IS NULL AND hidden_at IS NULL AND audience = 'all'
         ORDER BY created_at DESC
         LIMIT 5000`
     )

@@ -34,7 +34,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
          FROM community_posts p
          LEFT JOIN users u ON u.id = p.author_id
          LEFT JOIN profiles pr ON pr.user_id = p.author_id
-        WHERE p.id = $1 AND p.deleted_at IS NULL`,
+        WHERE p.id = $1 AND p.deleted_at IS NULL AND p.hidden_at IS NULL`,
       [id]
     )
     if (!post) return NextResponse.json({ error: '게시글을 찾을 수 없습니다' }, { status: 404 })

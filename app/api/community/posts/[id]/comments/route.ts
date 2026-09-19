@@ -18,7 +18,7 @@ interface CommentRow {
 
 async function loadReadablePost(postId: string, userType: string | null, userId: string | null) {
   const post = await queryOne<{ id: string; audience: CommunityAudience; author_id: string }>(
-    'SELECT id, audience, author_id FROM community_posts WHERE id = $1 AND deleted_at IS NULL',
+    'SELECT id, audience, author_id FROM community_posts WHERE id = $1 AND deleted_at IS NULL AND hidden_at IS NULL',
     [postId]
   )
   if (!post) return { post: null, allowed: false }
@@ -43,7 +43,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
          FROM community_comments c
          LEFT JOIN users u ON u.id = c.author_id
          LEFT JOIN profiles pr ON pr.user_id = c.author_id
-        WHERE c.post_id = $1 AND c.deleted_at IS NULL
+        WHERE c.post_id = $1 AND c.deleted_at IS NULL AND c.hidden_at IS NULL
         ORDER BY c.created_at ASC
         LIMIT 200`,
       [id]

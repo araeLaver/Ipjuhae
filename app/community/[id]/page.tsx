@@ -18,7 +18,7 @@ async function loadMeta(id: string): Promise<PostMeta | null> {
   try {
     return await queryOne<PostMeta>(
       `SELECT title, body, audience FROM community_posts
-        WHERE id = $1 AND deleted_at IS NULL`,
+        WHERE id = $1 AND deleted_at IS NULL AND hidden_at IS NULL`,
       [id]
     )
   } catch {

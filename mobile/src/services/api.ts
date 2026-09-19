@@ -583,3 +583,13 @@ export async function createCommunityPost(input: {
   const res = await apiClient.post<{ id: string }>('/community/posts', input)
   return res.id
 }
+
+/**
+ * POST /api/community/reports
+ *
+ * 익명 게시판이라 신고 수단이 반드시 있어야 한다 — 스토어 정책 요건이자
+ * 문제 글이 올라왔을 때 대응할 유일한 방법이다. 로그인 없이도 신고한다.
+ */
+export async function reportCommunityPost(postId: string, reason: string): Promise<{ hidden: boolean }> {
+  return apiClient.post<{ ok: boolean; hidden: boolean }>('/community/reports', { postId, reason })
+}

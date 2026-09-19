@@ -3,7 +3,7 @@
  */
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/AppNavigator';
@@ -35,6 +35,28 @@ const CommunityPostScreen: React.FC<Props> = ({ route }) => {
   useEffect(() => {
     load();
   }, [load]);
+
+  function report() {
+    Alert.alert('이 글을 신고할까요?', '사유를 골라주세요.', [
+      { text: '취소', style: 'cancel' },
+      ...['개인정보 노출', '광고·스팸', '욕설·혐오', '허위 정보'].map((reason) => ({
+        text: reason,
+        onPress: async () => {
+          try {
+            const r = await api.reportCommunityPost(postId, reason);
+            Alert.alert(
+              '신고 접수',
+              r.hidden
+                ? '신고가 쌓여 이 글은 보이지 않게 처리됐습니다.'
+                : '운영자가 확인합니다.'
+            );
+          } catch {
+            Alert.alert('접수하지 못했어요', '잠시 후 다시 시도해주세요.');
+          }
+        },
+      })),
+    ]);
+  }
 
   if (loading) return <ActivityIndicator style={styles.loader} color={colors.primary} />;
 
@@ -68,6 +90,9 @@ const CommunityPostScreen: React.FC<Props> = ({ route }) => {
       <View style={styles.statRow}>
         <Text style={styles.stat}>댓글 {post.commentCount}</Text>
         <Text style={styles.stat}>조회 {post.viewCount}</Text>
+        <TouchableOpacity onPress={report} style={styles.reportBtn}>
+          <Text style={styles.reportText}>신고</Text>
+        </TouchableOpacity>
       </View>
     </ScrollView>
   );
@@ -104,6 +129,8 @@ const styles = StyleSheet.create({
     borderTopColor: colors.line,
   },
   stat: { fontSize: 12, color: colors.faint },
+  reportBtn: { marginLeft: 'auto' },
+  reportText: { fontSize: 12, color: colors.muted, textDecorationLine: 'underline' },
 });
 
 export default CommunityPostScreen;
