@@ -69,3 +69,38 @@ for (const t of TARGETS) {
   console.log(`✓ ${t.file}  ${t.size}x${t.size}`)
 }
 await browser.close()
+
+// ── Play 피처 그래픽 ────────────────────────────────────────
+// 스토어 목록 맨 위에 걸리는 가로 배너. 아이콘과 한 줄 설명만 둔다.
+const feature = `
+<div style="width:1024px;height:500px;box-sizing:border-box;background:${BUTTER};
+            display:flex;align-items:center;gap:56px;padding:0 80px;
+            font-family:'Gothic A1','Apple SD Gothic Neo',sans-serif">
+  <div style="flex:none;width:200px;height:200px;border-radius:44px;background:#fff;
+              display:flex;align-items:center;justify-content:center;
+              box-shadow:0 8px 24px rgba(240,102,63,0.18)">
+    <svg viewBox="0 0 48 48" style="width:130px;height:130px">
+      ${mark(ORANGE, ORANGE, AMBER)}
+    </svg>
+  </div>
+  <div>
+    <div style="font-size:82px;font-weight:900;color:#262220;letter-spacing:-3px">입주해</div>
+    <div style="margin-top:14px;font-size:34px;font-weight:700;color:${ORANGE}">계약 전에 물어보는 곳</div>
+    <div style="margin-top:8px;font-size:25px;color:#6B625C;line-height:1.45">
+      등기부와 보증금, 혼자 판단하기 어려운 것을<br>임차인·임대인·공인중개사가 함께 봅니다
+    </div>
+  </div>
+</div>`
+
+const fb = await chromium.launch({ channel: 'chrome' })
+const fp = await fb.newPage({ viewport: { width: 1024, height: 500 } })
+await fp.setContent(
+  `<!doctype html><html><head><meta charset="utf-8">
+   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gothic+A1:wght@400;700;900&display=swap">
+   <style>html,body{margin:0;padding:0}</style></head><body>${feature}</body></html>`,
+  { waitUntil: 'networkidle' }
+)
+await fp.evaluate(() => document.fonts.ready)
+await fp.screenshot({ path: path.resolve('mobile/assets/play-feature-graphic.png') })
+await fb.close()
+console.log('✓ mobile/assets/play-feature-graphic.png  1024x500')
