@@ -1,4 +1,4 @@
-import crypto from 'crypto'
+import crypto from 'node:crypto'
 import { getJwtSecret } from './jwt'
 
 export function generateOtpCode(): string {

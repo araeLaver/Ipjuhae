@@ -10,7 +10,7 @@
  */
 
 import { logger } from './logger'
-import crypto from 'crypto'
+import crypto from 'node:crypto'
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
 import { optimizeProfileImage, optimizeDocumentImage, validateImage } from './image'
 

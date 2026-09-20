@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import crypto from 'crypto'
+import crypto from 'node:crypto'
 import { getCurrentUser } from '@/lib/auth'
 import { query, queryOne } from '@/lib/db'
 import { getClientIp, rateLimit } from '@/lib/rate-limit'

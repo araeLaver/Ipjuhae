@@ -7,9 +7,9 @@
 
 import { logger } from '@/lib/logger'
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
-import { writeFile, mkdir } from 'fs/promises'
-import path from 'path'
-import crypto from 'crypto'
+import { writeFile, mkdir } from 'node:fs/promises'
+import path from 'node:path'
+import crypto from 'node:crypto'
 
 function generateKey(filename: string): string {
   const ext = filename.split('.').pop() || 'jpg'

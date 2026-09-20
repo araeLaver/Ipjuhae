@@ -8,7 +8,7 @@ import { query, queryOne } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
 import { LandlordReference, Profile } from '@/types/database'
 import { sendReferenceRequestSMS } from '@/lib/sms'
-import crypto from 'crypto'
+import crypto from 'node:crypto'
 
 interface RouteParams {
   params: Promise<{ id: string }>

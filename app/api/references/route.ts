@@ -5,7 +5,7 @@ import { LandlordReference, Profile } from '@/types/database'
 import { sendReferenceRequestSMS } from '@/lib/sms'
 import { sendReferenceRequestEmail } from '@/lib/email'
 import { referenceRequestSchema } from '@/lib/validations'
-import crypto from 'crypto'
+import crypto from 'node:crypto'
 import { withIdempotency } from '@/lib/idempotency'
 import { jsonError, jsonSuccess } from '@/lib/api-response'
 

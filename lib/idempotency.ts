@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createHash } from 'crypto'
+import { createHash } from 'node:crypto'
 import { query, queryOne } from '@/lib/db'
 import { getRequestContext } from '@/lib/request-context'
 

@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import { query } from '@/lib/db'
 import { getAdminUser } from '@/lib/admin'
 import { sendEmail } from '@/lib/email'
-import crypto from 'crypto'
+import crypto from 'node:crypto'
 
 // POST /api/admin/waitlist/invite — 대기자 초대 발송
 export async function POST(request: Request) {

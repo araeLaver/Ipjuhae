@@ -16,7 +16,7 @@
  */
 
 import { logger } from './logger'
-import crypto from 'crypto'
+import crypto from 'node:crypto'
 import { requireApprovedComplianceGate } from './compliance-gates'
 
 // 타입 정의

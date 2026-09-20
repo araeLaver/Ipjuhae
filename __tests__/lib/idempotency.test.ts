@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { NextResponse } from 'next/server'
-import { createHash } from 'crypto'
+import { createHash } from 'node:crypto'
 
 vi.mock('@/lib/db', () => ({
   query: vi.fn(),

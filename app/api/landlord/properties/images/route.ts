@@ -5,7 +5,7 @@ import { verifyTokenAllowed } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { uploadFile } from '@/lib/storage'
 import { validateImage } from '@/lib/image'
-import crypto from 'crypto'
+import crypto from 'node:crypto'
 
 interface UserRow {
   user_type: 'tenant' | 'landlord'
