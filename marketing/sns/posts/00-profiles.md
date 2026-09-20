@@ -13,15 +13,15 @@
 **소개**
 
 ```
-세입자도 집주인도 서로를 확인할 수 있게
-학력·직장 안 묻습니다
-계약 전에 물어보는 커뮤니티 ↓
+계약 전에 보증금이 안전한지 확인하세요
+등기부 읽는 법 12편, 가입 없이 씁니다
+숫자 넣으면 바로 계산 ↓
 ```
 
 **링크**
 
 ```
-https://ipjuhae.com/?utm_source=ig_bio
+https://ipjuhae.com/check?utm_source=ig_bio
 ```
 
 ## 스레드
@@ -36,7 +36,7 @@ https://ipjuhae.com/?utm_source=ig_bio
 **링크**
 
 ```
-https://ipjuhae.com/?utm_source=threads
+https://ipjuhae.com/check?utm_source=threads
 ```
 
 ## X
@@ -52,7 +52,7 @@ X는 프로필 소개가 160자로 짧고, 고정 트윗이 실질적인 소개 
 **링크**
 
 ```
-https://ipjuhae.com/?utm_source=x
+https://ipjuhae.com/check?utm_source=x
 ```
 
 **고정 트윗** — 아래 X 1번 글(`03-x.md`의 X-1)을 올린 뒤 고정한다.
@@ -63,4 +63,6 @@ https://ipjuhae.com/?utm_source=x
 
 - 프로필 사진은 세 곳 동일하게. 워드마크 하나면 충분하다
 - 헤더 이미지가 필요하면 `marketing/sns/canvas/`의 릴스 커버를 잘라 쓰지 말고 따로 만들 것 (비율이 다르다)
-- **링크의 `utm_source`를 채널마다 다르게 유지해야** 어디서 온 신청인지 구분된다
+- **링크의 `utm_source`를 채널마다 다르게 유지해야** 어디서 온 사람인지 구분된다
+- **링크를 `/check`로 바꿨다.** 커뮤니티로 바로 보내면 읽고 나간다. 자기 숫자를 넣어
+  답을 받아본 사람이 커뮤니티에 글을 쓴다. `/check` 아래에 커뮤니티로 가는 길을 뒀다
