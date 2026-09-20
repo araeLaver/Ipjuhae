@@ -26,6 +26,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './'),
+      // 앱(mobile/) 소스를 여기서 테스트하기 위한 스텁. Expo 런타임은 올리지 않는다.
+      'expo-constants': path.resolve(__dirname, './__tests__/stubs/expo-constants.ts'),
     },
   },
 })

@@ -52,6 +52,65 @@ export function isAnonymousOnlyEvent(event: string): boolean {
 }
 
 /**
+ * 익명으로만 기록하는 경로.
+ *
+ * 깔때기 3종만 익명으로 처리하면 같은 화면의 `page_view`가 계정에 붙어 남는다 —
+ * "몇 시에 누가 /check를 썼는지"가 그대로 남는 셈이라, 가입 없이 쓰는 화면이라는
+ * 전제도 개인정보처리방침에 적은 문장도 지켜지지 않는다.
+ *
+ * 경로 자체를 여기 등록해 두고 서버가 판정한다. 하위 경로(`/check/xxx`)도 포함한다.
+ */
+export const ANONYMOUS_PATHS = ['/check'] as const
+
+/**
+ * 주어진 경로가 익명 경로면 그 **정규화된 경로**를 돌려준다. 아니면 null.
+ *
+ * 클라이언트가 보낸 문자열을 그대로 저장하지 않고 이 목록의 값으로 바꿔 넣는다.
+ * 쿼리스트링이나 경로에 섞여 들어온 식별자가 저장될 여지를 없애기 위해서다.
+ */
+export function anonymousPathOf(value: unknown): string | null {
+  if (typeof value !== 'string') return null
+
+  // 쿼리·해시를 떼고 비교한다. `?token=...` 같은 게 붙어 와도 저장되지 않는다.
+  const path = value.split(/[?#]/)[0]
+
+  for (const base of ANONYMOUS_PATHS) {
+    if (path === base || path.startsWith(`${base}/`)) return base
+  }
+
+  return null
+}
+
+/**
+ * 이 요청을 익명으로 저장해야 하는지 판정한다.
+ *
+ * 익명이면 저장할 속성 묶음을, 아니면 null을 돌려준다.
+ * 라우트가 이 함수 하나만 보면 되도록 판정과 속성 정리를 여기서 함께 끝낸다.
+ */
+export function resolveAnonymousProperties(
+  event: EventName,
+  properties: unknown
+): Record<string, string> | null {
+  if (isAnonymousOnlyEvent(event)) {
+    return sanitizeAnonymousProperties(properties)
+  }
+
+  // 익명 경로의 page_view. 경로만 정규화해서 남기고 식별자는 붙이지 않는다.
+  if (event === 'page_view') {
+    const source =
+      properties && typeof properties === 'object' && !Array.isArray(properties)
+        ? (properties as Record<string, unknown>)
+        : {}
+    const path = anonymousPathOf(source.path)
+    if (path) {
+      return { path, ...sanitizeAnonymousProperties(source) }
+    }
+  }
+
+  return null
+}
+
+/**
  * 익명 이벤트에 실려도 되는 속성 키 — 허용 목록.
  *
  * 여기 없는 키는 서버에서 버린다. 금액(`deposit`, `market_price`)이나

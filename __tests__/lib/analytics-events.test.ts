@@ -9,8 +9,10 @@ import { describe, expect, it } from 'vitest'
 import {
   ANONYMOUS_ONLY_EVENTS,
   EVENT_NAMES,
+  anonymousPathOf,
   isAnonymousOnlyEvent,
   isEventName,
+  resolveAnonymousProperties,
   sanitizeAnonymousProperties,
 } from '@/lib/analytics-events'
 
@@ -123,5 +125,72 @@ describe('sanitizeAnonymousProperties', () => {
     expect(sanitizeAnonymousProperties(null)).toEqual({})
     expect(sanitizeAnonymousProperties('string')).toEqual({})
     expect(sanitizeAnonymousProperties([1, 2])).toEqual({})
+  })
+})
+
+describe('anonymousPathOf — 익명 경로 판정', () => {
+  it('/check와 그 하위 경로를 익명으로 본다', () => {
+    expect(anonymousPathOf('/check')).toBe('/check')
+    expect(anonymousPathOf('/check/result')).toBe('/check')
+  })
+
+  it('쿼리와 해시는 떼고 정규화된 경로만 돌려준다', () => {
+    // 경로에 섞여 들어온 값이 그대로 저장되는 길을 막는다.
+    expect(anonymousPathOf('/check?from=cafe')).toBe('/check')
+    expect(anonymousPathOf('/check/result?token=secret#x')).toBe('/check')
+  })
+
+  it('/check로 시작만 하는 다른 경로는 익명 경로가 아니다', () => {
+    expect(anonymousPathOf('/checkout')).toBeNull()
+    expect(anonymousPathOf('/checking')).toBeNull()
+  })
+
+  it('다른 경로와 문자열이 아닌 값은 null', () => {
+    expect(anonymousPathOf('/')).toBeNull()
+    expect(anonymousPathOf('/matches')).toBeNull()
+    expect(anonymousPathOf(undefined)).toBeNull()
+    expect(anonymousPathOf(123)).toBeNull()
+  })
+})
+
+describe('resolveAnonymousProperties — 익명 판정 단일 출처', () => {
+  it('깔때기 3종은 속성을 허용 목록으로 걸러 돌려준다', () => {
+    expect(
+      resolveAnonymousProperties('check_result_viewed', {
+        surface: 'web',
+        level: 'danger',
+        deposit: 30000,
+      })
+    ).toEqual({ surface: 'web', level: 'danger' })
+  })
+
+  it('/check의 page_view도 익명으로 처리한다 — 방침에 적은 문장과 동작을 맞춘다', () => {
+    expect(
+      resolveAnonymousProperties('page_view', { path: '/check', from: 'cafe' })
+    ).toEqual({ path: '/check', from: 'cafe' })
+  })
+
+  it('/check page_view에 실려 온 식별자는 버린다', () => {
+    // 경로의 쿼리스트링은 저장하지 않는다. 유입 구분은 별도 `from` 속성으로 온다.
+    expect(
+      resolveAnonymousProperties('page_view', {
+        path: '/check?token=secret',
+        user_id: 'u-1',
+        device_id: 'd-1',
+        deposit: 30000,
+      })
+    ).toEqual({ path: '/check' })
+  })
+
+  it('다른 경로의 page_view는 익명 대상이 아니다 — 기존 집계가 그대로 돌아야 한다', () => {
+    // /admin/waitlist가 랜딩(/) page_view로 채널별 방문을 센다.
+    expect(resolveAnonymousProperties('page_view', { path: '/' })).toBeNull()
+    expect(resolveAnonymousProperties('page_view', { path: '/matches' })).toBeNull()
+    expect(resolveAnonymousProperties('page_view', {})).toBeNull()
+  })
+
+  it('익명 대상이 아닌 이벤트는 null', () => {
+    expect(resolveAnonymousProperties('user_signup', { path: '/check' })).toBeNull()
+    expect(resolveAnonymousProperties('match_view_toggle', {})).toBeNull()
   })
 })

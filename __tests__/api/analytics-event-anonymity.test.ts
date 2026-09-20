@@ -90,6 +90,41 @@ describe('POST /api/analytics/event — 익명 보장', () => {
     })
   })
 
+  it('/check의 page_view는 로그인 상태여도 계정에 붙지 않는다', async () => {
+    // 깔때기 3종만 익명으로 두면 "몇 시에 누가 /check를 썼는지"가 계정에 남는다.
+    // 금액이 아니라 방문 사실이지만, 개인정보처리방침에 적은 문장은 그걸 안 한다고 읽힌다.
+    const res = await POST(
+      request({
+        event_name: 'page_view',
+        session_id: 'sess-1',
+        properties: { path: '/check', from: 'cafe' },
+      })
+    )
+
+    expect(res.status).toBe(200)
+    expect(getCurrentUser).not.toHaveBeenCalled()
+    expect(trackServer).toHaveBeenCalledWith('page_view', {
+      properties: { path: '/check', from: 'cafe' },
+    })
+
+    const [, options] = vi.mocked(trackServer).mock.calls[0]
+    expect(options).not.toHaveProperty('userId')
+    expect(options).not.toHaveProperty('sessionId')
+  })
+
+  it('랜딩(/)의 page_view는 종전대로 집계된다 — /admin/waitlist가 이 행을 쓴다', async () => {
+    await POST(
+      request({ event_name: 'page_view', session_id: 'sess-1', properties: { path: '/' } })
+    )
+
+    expect(getCurrentUser).toHaveBeenCalled()
+    expect(trackServer).toHaveBeenCalledWith('page_view', {
+      userId,
+      sessionId: 'sess-1',
+      properties: { path: '/' },
+    })
+  })
+
   it('예전에 라우트 목록에서 빠져 있던 match_view_toggle도 이제 저장된다', async () => {
     const res = await POST(request({ event_name: 'match_view_toggle' }))
 
