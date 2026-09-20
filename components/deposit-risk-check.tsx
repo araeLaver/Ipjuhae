@@ -7,13 +7,15 @@
  * 숫자는 전부 사용자가 등기부와 시세에서 직접 읽어 넣는다. 우리가 채워 넣지 않는다.
  */
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { TesterInvite } from '@/components/tester-invite'
+import { track } from '@/lib/analytics-client'
+import { getAttribution } from '@/lib/attribution'
 import {
   calculateDepositRisk,
   cushionLabel,
@@ -70,6 +72,18 @@ export function DepositRiskCheck() {
   const [result, setResult] = useState<DepositRiskResult | null>(null)
 
   const ready = price.length > 0 && deposit.length > 0 && Number(price) > 0
+
+  /**
+   * 결과가 화면에 그려진 순간을 익명으로 센다.
+   * 보내는 건 화면 구분과 위험 등급뿐이다. 넣으신 금액은 서버로 가지 않는다 —
+   * 위 안내문에 그렇게 적어 뒀고, 계측 때문에 그 말이 거짓이 되면 안 된다.
+   */
+  useEffect(() => {
+    if (!result) return
+    track('check_result_viewed', {
+      properties: { surface: 'web', level: result.level, ...getAttribution() },
+    })
+  }, [result])
 
   function run() {
     if (!ready) return

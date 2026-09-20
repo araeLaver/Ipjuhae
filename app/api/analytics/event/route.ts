@@ -1,20 +1,13 @@
 import { logger } from '@/lib/logger'
 import { NextResponse } from 'next/server'
 import { trackServer } from '@/lib/analytics'
-import type { EventName } from '@/lib/analytics'
+import {
+  isAnonymousOnlyEvent,
+  isEventName,
+  sanitizeAnonymousProperties,
+  type EventName,
+} from '@/lib/analytics-events'
 import { getCurrentUser } from '@/lib/auth'
-
-const VALID_EVENTS: EventName[] = [
-  'page_view',
-  'user_signup',
-  'profile_complete',
-  'profile_submitted',
-  'listing_created',
-  'listing_submitted',
-  'match_generated',
-  'match_viewed',
-  'listing_viewed',
-]
 
 export async function POST(request: Request) {
   // Analytics must never crash the caller — always return 200
@@ -26,9 +19,22 @@ export async function POST(request: Request) {
       session_id?: string
     }
 
-    if (!event_name || !VALID_EVENTS.includes(event_name as EventName)) {
+    if (!isEventName(event_name)) {
       // Still 200 — analytics errors are silent
       return NextResponse.json({ ok: false, reason: 'invalid_event' }, { status: 200 })
+    }
+
+    const eventName: EventName = event_name
+
+    // 익명 전용 이벤트(/check 깔때기)는 누가 보냈는지 알아내려 하지 않는다.
+    // 로그인 조회를 건너뛰고, 속성도 허용 목록을 통과한 것만 남긴다.
+    // 클라이언트가 실수로 식별자나 금액을 보내도 여기서 버려진다.
+    if (isAnonymousOnlyEvent(eventName)) {
+      await trackServer(eventName, {
+        properties: sanitizeAnonymousProperties(properties),
+      })
+
+      return NextResponse.json({ ok: true }, { status: 200 })
     }
 
     // Auth is optional for analytics
@@ -40,7 +46,7 @@ export async function POST(request: Request) {
       // no-op — unauthenticated events are fine
     }
 
-    await trackServer(event_name as EventName, {
+    await trackServer(eventName, {
       userId,
       sessionId: session_id,
       properties,

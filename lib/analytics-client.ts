@@ -9,18 +9,10 @@
  */
 
 import { logger } from './logger'
+import type { EventName } from './analytics-events'
 
-export type EventName =
-  | 'page_view'
-  | 'user_signup'
-  | 'profile_complete'
-  | 'profile_submitted'
-  | 'listing_created'
-  | 'listing_submitted'
-  | 'match_generated'
-  | 'match_viewed'
-  | 'match_view_toggle'
-  | 'listing_viewed'
+// 이름 목록은 lib/analytics-events.ts 한 곳에만 둔다. 여기서는 다시 내보내기만 한다.
+export type { EventName }
 
 export interface TrackClientOptions {
   sessionId?: string

@@ -1,3 +1,5 @@
+'use client'
+
 /**
  * 앱 테스터 모집.
  *
@@ -6,11 +8,32 @@
  *
  * 정식 출시까지 12명이 14일 필요하다는 사정을 숨기지 않는다.
  * 부탁이라고 말하는 쪽이 "베타 참여하기"보다 실제로 눌린다.
+ *
+ * 노출과 클릭을 익명으로 센다. 어느 모집 채널이 살아있는지 감으로 판단하지
+ * 않기 위해서다. 보내는 건 화면 구분과 유입 태그뿐이고, 사용자 식별자나
+ * /check에 넣은 금액은 함께 보내지 않는다.
  */
+
+import { useEffect } from 'react'
+import { track } from '@/lib/analytics-client'
+import { getAttribution } from '@/lib/attribution'
 
 const TESTING_URL = 'https://play.google.com/apps/testing/com.ipjuhae.app'
 
 export function TesterInvite() {
+  // 이 컴포넌트는 결과를 본 뒤에만 렌더된다. 즉 마운트 = 노출이다.
+  useEffect(() => {
+    track('tester_invite_shown', {
+      properties: { surface: 'web', ...getAttribution() },
+    })
+  }, [])
+
+  function onJoinClick() {
+    track('tester_invite_clicked', {
+      properties: { surface: 'web', ...getAttribution() },
+    })
+  }
+
   return (
     <aside className="rounded-xl border border-primary/25 bg-primary/5 p-5">
       <h2 className="text-balance text-base font-bold leading-snug">
@@ -27,6 +50,7 @@ export function TesterInvite() {
         href={TESTING_URL}
         target="_blank"
         rel="noopener noreferrer"
+        onClick={onJoinClick}
         className="mt-4 inline-flex w-full items-center justify-center rounded-lg bg-primary px-4 py-3 text-sm font-bold text-primary-foreground transition-opacity hover:opacity-90 sm:w-auto"
       >
         테스터로 참여하기

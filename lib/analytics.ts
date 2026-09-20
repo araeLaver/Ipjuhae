@@ -1,5 +1,6 @@
 import { query } from './db'
 import { logger } from './logger'
+import type { EventName } from './analytics-events'
 
 const isDev = process.env.NODE_ENV === 'development'
 
@@ -11,17 +12,8 @@ function shouldLogServerAnalyticsError(): boolean {
   return process.env.NODE_ENV === 'production'
 }
 
-export type EventName =
-  | 'page_view'
-  | 'user_signup'
-  | 'profile_complete'
-  | 'profile_submitted'
-  | 'listing_created'
-  | 'listing_submitted'
-  | 'match_generated'
-  | 'match_viewed'
-  | 'listing_viewed'
-  | 'match_view_toggle'
+// 이름 목록은 lib/analytics-events.ts 한 곳에만 둔다. 여기서는 다시 내보내기만 한다.
+export type { EventName }
 
 export interface TrackOptions {
   userId?: string

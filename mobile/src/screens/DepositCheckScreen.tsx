@@ -6,7 +6,7 @@
  * 이 화면은 도움이 아니라 위험이 된다.
  */
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -28,6 +28,8 @@ import {
   RiskLevel,
 } from '../lib/depositRisk';
 import * as api from '../services/api';
+import { trackAnonymous } from '../services/analytics';
+import TesterInvite from '../components/TesterInvite';
 
 interface Props {
   navigation: NativeStackNavigationProp<RootStackParamList>;
@@ -86,6 +88,16 @@ const DepositCheckScreen: React.FC<Props> = ({ navigation }) => {
     }),
     [price, deposit, mortgage, prior]
   );
+
+  /**
+   * 결과가 화면에 그려진 순간을 익명으로 센다.
+   * 위험 등급만 보내고, 넣으신 금액은 보내지 않는다 — 위 안내문에
+   * "이 기기를 벗어나지 않습니다"라고 적어 뒀다.
+   */
+  useEffect(() => {
+    if (!result) return;
+    trackAnonymous('check_result_viewed', { level: result.level });
+  }, [result]);
 
   function run() {
     if (!ready) return;
@@ -225,6 +237,9 @@ const DepositCheckScreen: React.FC<Props> = ({ navigation }) => {
             </TouchableOpacity>
           </View>
         ) : null}
+
+        {/* 결과를 본 뒤에만 보여준다. 들어오자마자 권하면 아무도 안 누른다. */}
+        {result ? <TesterInvite /> : null}
 
         <Text style={styles.disclaimer}>
           이 계산은 넣으신 숫자만 가지고 하는 것입니다. 등기부에 적히지 않는 위험도 있으니 계약

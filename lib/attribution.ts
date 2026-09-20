@@ -13,6 +13,8 @@ export interface Attribution {
   utm_medium: string | null
   utm_campaign: string | null
   referrer_host: string | null
+  /** 짧은 유입 채널 태그. utm 세트를 다 붙이기 번거로운 곳에 `?from=cafe` 한 줄로 쓴다. */
+  from: string | null
 }
 
 const STORAGE_KEY = 'ipjuhae:attribution'
@@ -23,6 +25,7 @@ const EMPTY: Attribution = {
   utm_medium: null,
   utm_campaign: null,
   referrer_host: null,
+  from: null,
 }
 
 /** 길이를 자르고 제어문자를 제거한다. 값이 비면 null. */
@@ -34,7 +37,7 @@ export function sanitizeTag(value: string | null | undefined): string | null {
 }
 
 function hasAnyValue(a: Attribution): boolean {
-  return Boolean(a.utm_source || a.utm_medium || a.utm_campaign || a.referrer_host)
+  return Boolean(a.utm_source || a.utm_medium || a.utm_campaign || a.referrer_host || a.from)
 }
 
 /** 현재 URL과 document.referrer에서 유입 정보를 읽는다. */
@@ -60,6 +63,7 @@ function readFromPage(): Attribution {
     utm_medium: sanitizeTag(params.get('utm_medium')),
     utm_campaign: sanitizeTag(params.get('utm_campaign')),
     referrer_host: sanitizeTag(referrerHost),
+    from: sanitizeTag(params.get('from')),
   }
 }
 
@@ -79,6 +83,8 @@ export function getAttribution(): Attribution {
         utm_medium: sanitizeTag(parsed.utm_medium),
         utm_campaign: sanitizeTag(parsed.utm_campaign),
         referrer_host: sanitizeTag(parsed.referrer_host),
+        // 예전 형태로 저장된 값에는 from이 없다. sanitizeTag가 null로 바꿔주므로 그대로 호환된다.
+        from: sanitizeTag(parsed.from),
       }
     }
   } catch {
