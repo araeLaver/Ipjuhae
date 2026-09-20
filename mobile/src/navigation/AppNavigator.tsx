@@ -25,6 +25,7 @@ import ChatRoomScreen from '../screens/ChatRoomScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import CommunityScreen from '../screens/CommunityScreen';
 import CommunityPostScreen from '../screens/CommunityPostScreen';
+import DepositCheckScreen from '../screens/DepositCheckScreen';
 import NotificationSettingsScreen from '../screens/NotificationSettingsScreen';
 
 // Types
@@ -52,6 +53,7 @@ export type AuthStackParamList = {
 export type MainTabParamList = {
   Home: undefined;
   Listings: undefined;
+  DepositCheck: undefined;
   Community: undefined;
   Messages: undefined;
   Profile: undefined;
@@ -65,6 +67,7 @@ const TabIcon = ({ name, focused }: { name: string; focused: boolean }) => {
   const icons: Record<string, string> = {
     Home: '🏠',
     Listings: '🔍',
+    DepositCheck: '🧮',
     Community: '💭',
     Messages: '💬',
     Profile: '👤',
@@ -103,6 +106,7 @@ const MainTabNavigator = () => (
   >
     <Tab.Screen name="Home" component={HomeScreen} options={{ tabBarLabel: '홈' }} />
     <Tab.Screen name="Listings" component={ListingsScreen} options={{ tabBarLabel: '매물' }} />
+    <Tab.Screen name="DepositCheck" component={DepositCheckScreen} options={{ tabBarLabel: '보증금 점검' }} />
     <Tab.Screen name="Community" component={CommunityScreen} options={{ tabBarLabel: '커뮤니티' }} />
     <Tab.Screen name="Messages" component={MessagesScreen} options={{ tabBarLabel: '메시지' }} />
     <Tab.Screen name="Profile" component={ProfileScreen} options={{ tabBarLabel: '프로필' }} />
@@ -116,10 +120,16 @@ const PlaceholderScreen = () => (
   </View>
 );
 
-/** 로그인 전 화면. 커뮤니티만 연다. */
+/**
+ * 로그인 전 화면.
+ *
+ * 커뮤니티 하나만 열어두니 받은 사람이 게시판 앱 하나를 받은 걸로 봤다.
+ * 가입 없이도 직접 돌려볼 게 있어야 한 번은 쓴다. 보증금 점검을 첫 탭으로 둔다.
+ */
 const GuestNavigator = () => (
   <Tab.Navigator
-    screenOptions={{
+    initialRouteName="DepositCheck"
+    screenOptions={({ route }) => ({
       headerShown: false,
       tabBarActiveTintColor: '#C2451F',
       tabBarInactiveTintColor: '#9A8F87',
@@ -132,9 +142,14 @@ const GuestNavigator = () => (
         borderTopColor: '#E7DFD4',
       },
       tabBarLabelStyle: { fontSize: 11, fontWeight: '500' },
-      tabBarIcon: ({ focused }) => <TabIcon name="Community" focused={focused} />,
-    }}
+      tabBarIcon: ({ focused }) => <TabIcon name={route.name} focused={focused} />,
+    })}
   >
+    <Tab.Screen
+      name="DepositCheck"
+      component={DepositCheckScreen}
+      options={{ tabBarLabel: '보증금 점검' }}
+    />
     <Tab.Screen name="Community" component={CommunityScreen} options={{ tabBarLabel: '커뮤니티' }} />
   </Tab.Navigator>
 );
