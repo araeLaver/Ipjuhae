@@ -59,3 +59,19 @@ push 후 `git log --oneline -1 origin/main`으로 실제 반영을 확인한다.
 
 회신일을 D라고 하면 12명 충족은 빨라야 D+6일, 프로덕션 신청 하한은 D+20일이다.
 하루 늦어지면 공개가 하루 밀린다.
+
+## 이어서 (같은 날, 다음 heartbeat)
+
+DOW-1079는 커밋·push까지 끝났는데도 이슈가 `todo`로 남아 있었다. 원인은 체크아웃 409였다.
+
+409의 details를 보니 `assigneeAgentId`가 **나 자신**이고 `checkoutRunId: null`인데
+`executionRunId`만 붙어 있었다. 10:14부터 `queued` 상태로 죽어 있던 내 이전 실행이
+슬롯만 점유한 좀비였다. 남의 작업이 아니었다.
+
+`todo`에서는 서버가 `done`/`in_review`로의 직접 전이를 거부하기 때문에(`Invalid issue
+status transition`) 체크아웃 없이는 상태 정리조차 불가능했다. `POST /api/issues/:id/release`로
+슬롯을 먼저 비우고 다시 checkout 하니 통과했고, `in_progress`를 거쳐 `done`으로 닫았다.
+
+**교훈.** 체크아웃 409를 무조건 "남의 작업"으로 읽으면 안 된다. details의 `assigneeAgentId`를
+내 `PAPERCLIP_AGENT_ID`와 먼저 대조하고, 내 것이면 release로 풀 수 있다.
+내 것이 아닐 때만 재시도 금지 규칙이 적용된다.
