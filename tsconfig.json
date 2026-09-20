@@ -24,6 +24,9 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "expo-constants": [
+        "./__tests__/stubs/expo-constants.ts"
       ]
     },
     "target": "ES2017"
