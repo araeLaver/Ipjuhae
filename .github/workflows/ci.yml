@@ -71,7 +71,8 @@ jobs:
         run: npm ci
 
       - name: Run tests
-        run: npm run test:run
+        # 기준치 갱신: scripts/check-test-suite-health.mjs의 안내 참고
+        run: npm run test:ci
 
   build:
     name: Build
