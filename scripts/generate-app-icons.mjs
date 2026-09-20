@@ -30,6 +30,18 @@ const squareIcon = (bg, stroke, dotA, dotB, radius) => `
   ${mark(stroke, dotA, dotB)}
 </svg>`
 
+/** Expo splash 자산. 출시 guard 기준인 1242x2436 캔버스 전체를 배경색으로 채운다. */
+const splashScreen = `
+<svg viewBox="0 0 1242 2436" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1242" height="2436" fill="${BUTTER}"/>
+  <g transform="translate(441 1038)">
+    <rect width="360" height="360" rx="80" fill="#fff"/>
+    <g transform="translate(72 72) scale(4.5)">
+      ${mark(ORANGE, ORANGE, AMBER)}
+    </g>
+  </g>
+</svg>`
+
 /**
  * 안드로이드 적응형 아이콘의 앞면. 배경색은 app.json이 칠하므로 여기선 비운다.
  * 바깥 25%는 기기가 잘라낼 수 있어 마크를 가운데로 줄인다.
@@ -42,31 +54,31 @@ const adaptiveForeground = `
 </svg>`
 
 const TARGETS = [
-  { file: 'public/app-icon-1024.png', size: 1024, svg: squareIcon(BUTTER, ORANGE, ORANGE, AMBER, 11) },
-  { file: 'public/app-icon-512.png', size: 512, svg: squareIcon(BUTTER, ORANGE, ORANGE, AMBER, 11) },
-  { file: 'public/app-icon-256.png', size: 256, svg: squareIcon(BUTTER, ORANGE, ORANGE, AMBER, 11) },
-  { file: 'mobile/assets/icon.png', size: 1024, svg: squareIcon(BUTTER, ORANGE, ORANGE, AMBER, 0) },
-  { file: 'mobile/assets/adaptive-icon.png', size: 1024, svg: adaptiveForeground },
-  { file: 'mobile/assets/favicon.png', size: 48, svg: squareIcon(BUTTER, ORANGE, ORANGE, AMBER, 11) },
-  { file: 'mobile/assets/notification-icon.png', size: 96, svg: adaptiveForeground },
-  { file: 'mobile/assets/splash.png', size: 1024, svg: squareIcon(BUTTER, ORANGE, ORANGE, AMBER, 0) },
+  { file: 'public/app-icon-1024.png', width: 1024, height: 1024, svg: squareIcon(BUTTER, ORANGE, ORANGE, AMBER, 11) },
+  { file: 'public/app-icon-512.png', width: 512, height: 512, svg: squareIcon(BUTTER, ORANGE, ORANGE, AMBER, 11) },
+  { file: 'public/app-icon-256.png', width: 256, height: 256, svg: squareIcon(BUTTER, ORANGE, ORANGE, AMBER, 11) },
+  { file: 'mobile/assets/icon.png', width: 1024, height: 1024, svg: squareIcon(BUTTER, ORANGE, ORANGE, AMBER, 0) },
+  { file: 'mobile/assets/adaptive-icon.png', width: 1024, height: 1024, svg: adaptiveForeground },
+  { file: 'mobile/assets/favicon.png', width: 48, height: 48, svg: squareIcon(BUTTER, ORANGE, ORANGE, AMBER, 11) },
+  { file: 'mobile/assets/notification-icon.png', width: 96, height: 96, svg: adaptiveForeground },
+  { file: 'mobile/assets/splash.png', width: 1242, height: 2436, svg: splashScreen },
 ]
 
 const browser = await chromium.launch({ channel: 'chrome' })
 for (const t of TARGETS) {
   const page = await browser.newPage({
-    viewport: { width: t.size, height: t.size },
+    viewport: { width: t.width, height: t.height },
     deviceScaleFactor: 1,
   })
   await page.setContent(
     `<!doctype html><html><head><meta charset="utf-8"><style>
        html,body{margin:0;padding:0;background:transparent}
-       svg{display:block;width:${t.size}px;height:${t.size}px}
+       svg{display:block;width:${t.width}px;height:${t.height}px}
      </style></head><body>${t.svg}</body></html>`
   )
   await page.screenshot({ path: path.resolve(t.file), omitBackground: true })
   await page.close()
-  console.log(`✓ ${t.file}  ${t.size}x${t.size}`)
+  console.log(`✓ ${t.file}  ${t.width}x${t.height}`)
 }
 await browser.close()
 
