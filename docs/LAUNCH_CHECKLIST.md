@@ -138,6 +138,23 @@ After deploy, verify:
    - 운영 환경(`NODE_ENV=production`)에서 토큰 미설정 시 자동으로 실패 처리됨
    - 실패 시 `/api/health` 및 핵심 체크 상태를 즉시 점검
 
+## 앱(모바일) 실기기 수동 확인
+
+자동 검증은 Expo/React Native 네이티브 모듈을 셔임으로 대체하므로, **실제 OS 권한 변경**은 태우지 못합니다.
+아래 항목은 스토어 제출 전 실기기(또는 시뮬레이터)에서 사람이 한 번 확인합니다. 근거: DOW-1114.
+
+- [ ] 앱에서 알림을 켜고 권한을 허용한 뒤, 기기 설정에서 알림 권한을 끄고 **앱을 재시작**한다 → 알림 설정 화면의 Switch가 OFF, 안내 문구는 "기기 설정에서 알림 권한이 꺼져 있습니다."
+- [ ] 같은 상황에서 **앱을 재시작하지 않고** 기기 설정에서 앱으로 복귀한다 → 잠깐 로딩 표시 후 Switch가 OFF로 바뀐다(켜진 채로 남으면 회귀).
+- [ ] 권한을 다시 허용하고 복귀하면 Switch는 OFF로 유지되고, 사용자가 직접 켜야 알림이 다시 등록된다(선호값은 권한이 꺼질 때 함께 꺼지는 설계).
+- [ ] 알림을 켠 상태에서 비행기 모드로 앱을 복귀시킨다 → 토큰 등록 실패 안내만 뜨고 앱의 다른 기능은 그대로 쓸 수 있다.
+
+자동 검증 범위(실기기 없이 CI에서 도는 부분):
+
+```bash
+npx vitest run __tests__/mobile/notification-permission-sync.test.ts   # service 계층 권한 동기화
+npx vitest run __tests__/mobile/notification-foreground-resync.test.ts # 포그라운드 복귀 재조회
+```
+
 ### 릴리즈 게이트 스크립트
 
 - `npm run launch:check`: 환경변수 필수값 검증
