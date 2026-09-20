@@ -281,6 +281,59 @@ describe('앱 재시작 — 저장된 선호값과 OS 권한을 다시 맞춘다
     expect(state).toMatchObject({ enabled: true, tokenRegistered: true })
   })
 
+  /**
+   * [DOW-1117] 2번. 이 경로는 포그라운드 복귀마다 지나간다. 기기 토큰이 그대로인데도
+   * 매번 `PUT /notifications/push-token`을 보내면 앱 전환 횟수만큼 요청이 쌓인다.
+   */
+  it('토큰이 그대로면 다시 등록하지 않는다', async () => {
+    globalThis.__notifShim.storage[PREFERENCE_KEY] = 'true'
+    globalThis.__notifShim.storage[TOKEN_KEY] = 'ExponentPushToken[test]'
+    globalThis.__notifShim.permission = 'granted'
+
+    const state = await initializeNotifications()
+
+    expect(state).toMatchObject({ enabled: true, tokenRegistered: true })
+    expect(captured).toHaveLength(0)
+  })
+
+  it('토큰이 바뀌면 다시 등록한다 — 재설치·토큰 회전은 놓치지 않는다', async () => {
+    globalThis.__notifShim.storage[PREFERENCE_KEY] = 'true'
+    globalThis.__notifShim.storage[TOKEN_KEY] = 'ExponentPushToken[old]'
+    globalThis.__notifShim.permission = 'granted'
+
+    const state = await initializeNotifications()
+
+    expect(state.tokenRegistered).toBe(true)
+    expect(captured.at(-1)!.init.method).toBe('PUT')
+    expect(globalThis.__notifShim.storage[TOKEN_KEY]).toBe('ExponentPushToken[test]')
+  })
+
+  /**
+   * 오프라인으로 복귀하면 토큰 조회 자체가 실패한다. 이미 등록해 둔 토큰이 있는데도
+   * 복귀할 때마다 "등록하지 못했습니다"를 띄우는 건 사용자에게 줄 정보가 아니다.
+   */
+  it('이미 등록된 토큰이 있으면 갱신 실패를 오류로 띄우지 않는다', async () => {
+    globalThis.__notifShim.storage[PREFERENCE_KEY] = 'true'
+    globalThis.__notifShim.storage[TOKEN_KEY] = 'ExponentPushToken[test]'
+    globalThis.__notifShim.permission = 'granted'
+    globalThis.__notifShim.tokenThrows = true
+
+    const state = await initializeNotifications()
+
+    expect(state).toMatchObject({ enabled: true, tokenRegistered: true, error: null })
+  })
+
+  it('등록된 토큰이 없는데 갱신도 실패하면 그때는 오류를 알린다', async () => {
+    globalThis.__notifShim.storage[PREFERENCE_KEY] = 'true'
+    globalThis.__notifShim.permission = 'granted'
+    globalThis.__notifShim.tokenThrows = true
+
+    const state = await initializeNotifications()
+
+    expect(state).toMatchObject({ enabled: true, tokenRegistered: false })
+    expect(state.error).toMatch(/토큰/)
+  })
+
   it('비로그인 상태에서는 토큰을 등록하지 않는다', async () => {
     globalThis.__notifShim.storage[PREFERENCE_KEY] = 'true'
     globalThis.__notifShim.permission = 'granted'
@@ -313,6 +366,79 @@ describe('앱 재시작 — 저장된 선호값과 OS 권한을 다시 맞춘다
     expect(state.enabled).toBe(false)
     // 선호값도 함께 내려가야 다음 실행에서 같은 모순이 반복되지 않는다.
     expect(globalThis.__notifShim.storage[PREFERENCE_KEY]).toBe('false')
+  })
+
+  /**
+   * [DOW-1117] 1번. 위 케이스는 "화면이 꺼진 것으로 보이는가"까지만 본다.
+   * 서버는 여전히 이 기기를 발송 대상으로 들고 있다. 앱 안에서 끄면
+   * `disableNotifications()`가 서버 토큰 삭제와 기기 토큰 폐기까지 하는데,
+   * 권한이 밖에서 꺼진 경로에는 그 정리가 없었다.
+   */
+  it('권한이 밖에서 꺼지면 서버 토큰도 지우고 기기 토큰을 폐기한다', async () => {
+    globalThis.__notifShim.onRequest = 'granted'
+    await enableNotifications()
+    captured.length = 0
+
+    globalThis.__notifShim.permission = 'denied'
+    await initializeNotifications()
+
+    const request = captured.at(-1)!
+    expect(request.init.method).toBe('DELETE')
+    expect(request.url).toContain('/notifications/push-token?token=')
+    expect(globalThis.__notifShim.unregisterCount).toBe(1)
+    expect(globalThis.__notifShim.storage[TOKEN_KEY]).toBeUndefined()
+  })
+
+  it('정리가 끝난 뒤 다시 복귀해도 같은 삭제 요청을 반복하지 않는다', async () => {
+    globalThis.__notifShim.onRequest = 'granted'
+    await enableNotifications()
+    globalThis.__notifShim.permission = 'denied'
+    await initializeNotifications()
+    captured.length = 0
+
+    await initializeNotifications()
+
+    expect(captured).toHaveLength(0)
+  })
+
+  /**
+   * 이 경로에는 실패를 알려 줄 사용자가 없다(앱이 방금 앞으로 나온 순간이다).
+   * 저장된 토큰을 지워 버리면 서버 행은 영영 남으므로, 남겨 두고 다음에 다시 건다.
+   */
+  it('서버 삭제가 실패하면 저장된 토큰을 남겨 다음 복귀에서 다시 시도한다', async () => {
+    globalThis.__notifShim.onRequest = 'granted'
+    await enableNotifications()
+
+    const working = globalThis.fetch
+    globalThis.fetch = (() => Promise.reject(new Error('offline'))) as typeof fetch
+    globalThis.__notifShim.permission = 'denied'
+    const state = await initializeNotifications()
+
+    expect(state.enabled).toBe(false)
+    expect(globalThis.__notifShim.storage[TOKEN_KEY]).toBe('ExponentPushToken[test]')
+    expect(globalThis.__notifShim.unregisterCount).toBe(0)
+
+    // 다음 복귀에서 네트워크가 돌아오면 그때 정리된다.
+    globalThis.fetch = working
+    captured.length = 0
+    await initializeNotifications()
+
+    expect(captured.at(-1)!.init.method).toBe('DELETE')
+    expect(globalThis.__notifShim.storage[TOKEN_KEY]).toBeUndefined()
+  })
+
+  it('비로그인 상태에서는 서버 토큰 정리를 시도하지 않는다 — 401이 날 뿐이다', async () => {
+    globalThis.__notifShim.onRequest = 'granted'
+    await enableNotifications()
+    captured.length = 0
+
+    globalThis.__notifShim.permission = 'denied'
+    const state = await initializeNotifications(false)
+
+    expect(state.enabled).toBe(false)
+    expect(captured).toHaveLength(0)
+    // 토큰은 남겨 둔다. 다시 로그인해 초기화가 돌 때 정리한다.
+    expect(globalThis.__notifShim.storage[TOKEN_KEY]).toBe('ExponentPushToken[test]')
   })
 
   it('권한이 꺼진 채 재시작하면 최소한 권한 상태는 denied로 보고한다', async () => {

@@ -265,6 +265,26 @@ describe('앱 재시작 없이 기기 설정에서 돌아오는 경로 (DOW-1114
     expect(tokenRequests).toBe(afterMount)
   })
 
+  /**
+   * [DOW-1117] 2번의 회귀 방지. 위 `복귀 시점에 권한이 그대로면...` 케이스는 화면 값만
+   * 보므로 요청이 몇 번 나갔는지는 보지 못한다. 앱 전환은 하루에도 수십 번 일어나고,
+   * 그때마다 `PUT /notifications/push-token`이 한 번씩 나가고 있었다.
+   */
+  it('복귀할 때마다 같은 토큰을 다시 등록하지 않는다', async () => {
+    await act(async () => {
+      renderProvider()
+    })
+    expect(tokenRequests).toBe(1)
+
+    await emitAppState('background')
+    await emitAppState('active')
+    await emitAppState('background')
+    await emitAppState('active')
+
+    expect(observed).toMatchObject({ enabled: true, tokenRegistered: true })
+    expect(tokenRequests).toBe(1)
+  })
+
   it('Provider가 언마운트되면 AppState 리스너를 정리한다', async () => {
     let view: ReturnType<typeof renderProvider>
     await act(async () => {

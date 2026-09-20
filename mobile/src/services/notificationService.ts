@@ -42,6 +42,36 @@ async function configureAndroidChannel(): Promise<void> {
 }
 
 /**
+ * 알림이 꺼진 상태인데 남아 있는 토큰을 정리한다.
+ *
+ * 앱 안에서 끄는 경로(`disableNotifications`)는 서버 토큰 삭제와 기기 토큰 폐기까지
+ * 하는데, 기기 설정에서 꺼진 경로에는 그 정리가 없어 서버가 보는 동의 상태와 기기의
+ * 실제 상태가 갈라졌다.
+ *
+ * 선호값이 꺼지는 "순간"이 아니라 꺼져 있는 "동안" 매번 확인한다. 전자로 두면 서버
+ * 삭제가 한 번 실패했을 때 선호값은 이미 false라 다시는 정리가 돌지 않는다. 저장된
+ * 토큰이 없으면 바로 빠지므로, 복귀마다 불려도 실제 요청은 정리가 끝날 때까지만 나간다.
+ *
+ * 서버 삭제가 실패하면 저장된 토큰을 그대로 두고 다음 복귀에서 다시 시도한다 —
+ * 여기에는 실패를 알려 줄 사용자가 없기 때문이다.
+ */
+async function revokeStoredToken(canCallServer: boolean): Promise<void> {
+  // 비로그인 상태에서는 서버 토큰이 사용자에 묶여 있어 지울 수 없다. 저장된 토큰을
+  // 남겨 두고, 다시 로그인해 초기화가 돌 때 정리한다.
+  if (!canCallServer) return;
+  const token = await AsyncStorage.getItem(PUSH_TOKEN_KEY);
+  if (!token) return;
+
+  try {
+    await apiClient.delete(`/notifications/push-token?token=${encodeURIComponent(token)}`);
+    await Notifications.unregisterForNotificationsAsync();
+  } catch {
+    return;
+  }
+  await AsyncStorage.removeItem(PUSH_TOKEN_KEY);
+}
+
+/**
  * 저장된 선호값을 OS 권한에 맞춘다.
  *
  * 권한은 기기 설정에서 앱 밖으로 바뀔 수 있으므로, 켜 두었더라도 권한이 없으면
@@ -58,11 +88,19 @@ async function reconcilePreference(
   return enabled;
 }
 
+/**
+ * 기기 토큰을 서버에 맞춘다.
+ *
+ * 포그라운드 복귀마다 불리므로 저장된 토큰과 같으면 요청을 만들지 않는다. 토큰이
+ * 바뀐 경우(앱 재설치, Expo 토큰 회전)에만 서버에 다시 올린다.
+ */
 async function registerToken(): Promise<void> {
   const projectId = Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
   if (!projectId) throw new Error('Expo projectId가 설정되지 않았습니다.');
 
   const { data: token } = await Notifications.getExpoPushTokenAsync({ projectId });
+  if ((await AsyncStorage.getItem(PUSH_TOKEN_KEY)) === token) return;
+
   await apiClient.put('/notifications/push-token', {
     token,
     platform: Platform.OS,
@@ -78,6 +116,9 @@ export async function initializeNotifications(canRegisterToken = true): Promise<
     const permission = normalizePermission(permissions.status);
     const enabled = await reconcilePreference(preferred, permission);
 
+    // 꺼져 있는데 토큰이 남아 있으면 서버는 이 기기를 계속 발송 대상으로 본다.
+    if (!enabled) await revokeStoredToken(canRegisterToken);
+
     // 앱 시작 시에는 권한 팝업을 띄우지 않는다. 사용자가 이전에 활성화했고
     // OS 권한도 유지된 경우에만 token을 갱신한다.
     if (enabled && permission === 'granted' && canRegisterToken) {
@@ -85,6 +126,11 @@ export async function initializeNotifications(canRegisterToken = true): Promise<
         await registerToken();
         return { enabled, permission, tokenRegistered: true, error: null };
       } catch {
+        // 이 경로는 포그라운드 복귀마다 지나간다. 이미 등록해 둔 토큰이 있으면
+        // 일시적인 실패(오프라인 복귀 등)이므로 복귀할 때마다 오류를 띄우지 않는다.
+        if (await AsyncStorage.getItem(PUSH_TOKEN_KEY)) {
+          return { enabled, permission, tokenRegistered: true, error: null };
+        }
         return {
           enabled,
           permission,
@@ -115,6 +161,7 @@ export async function enableNotifications(): Promise<PushState> {
   const permission = normalizePermission(permissions.status);
   if (permission !== 'granted') {
     await reconcilePreference(true, permission);
+    await revokeStoredToken(true);
     return {
       enabled: false,
       permission,
