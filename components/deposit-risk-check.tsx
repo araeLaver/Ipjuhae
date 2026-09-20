@@ -13,6 +13,7 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { TesterInvite } from '@/components/tester-invite'
 import {
   calculateDepositRisk,
   cushionLabel,
@@ -217,6 +218,9 @@ export function DepositRiskCheck() {
           </button>
         </Card>
       ) : null}
+
+      {/* 결과를 본 뒤에만 보여준다. 들어오자마자 권하면 아무도 안 누른다. */}
+      {result ? <TesterInvite /> : null}
 
       <p className="text-xs leading-relaxed text-muted-foreground">
         이 계산은 넣으신 숫자만 가지고 하는 것입니다. 등기부에 적히지 않는 위험도 있으니 계약 전에는
