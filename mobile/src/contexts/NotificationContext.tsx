@@ -1,4 +1,5 @@
-import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { AppState, AppStateStatus } from 'react-native';
 import { useAuth } from './AuthContext';
 import {
   disableNotifications,
@@ -37,6 +38,20 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     if (isAuthLoading) return;
     void refresh();
   }, [isAuthLoading, isAuthenticated, refresh]);
+
+  // 알림 권한은 기기 설정에서 앱 밖으로 바뀐다. 앱이 다시 앞으로 나올 때 상태를
+  // 다시 맞추지 않으면, 사용자가 권한을 끄고 돌아와도 화면은 켜진 것으로 남는다.
+  const appStateRef = useRef<AppStateStatus>(AppState.currentState);
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (next) => {
+      const previous = appStateRef.current;
+      appStateRef.current = next;
+      if (previous !== 'active' && next === 'active' && !isAuthLoading) {
+        void refresh();
+      }
+    });
+    return () => subscription.remove();
+  }, [isAuthLoading, refresh]);
 
   const setEnabled = useCallback(async (enabled: boolean) => {
     setIsLoading(true);

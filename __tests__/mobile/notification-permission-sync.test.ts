@@ -297,12 +297,10 @@ describe('앱 재시작 — 저장된 선호값과 OS 권한을 다시 맞춘다
    * 렌더링하므로, `enabled`가 true로 남으면 화면은 "켜짐"으로 보이면서 실제로는
    * 알림이 한 통도 오지 않는다. 안내 문구만 "권한이 꺼져 있습니다"로 뜨는 모순 상태다.
    *
-   * 현재 main은 이 조합을 보정하지 않는다(`enableNotifications`에만 강등 로직이 있고
-   * `initializeNotifications`에는 없다). 결함이 살아 있는 동안 CI를 빨갛게 두지 않으려고
-   * `it.fails`로 고정해 둔다 — 제품 코드가 고쳐지면 이 테스트가 실패하며,
-   * 그때 `it.fails`를 `it`으로 바꾸는 것이 마무리다.
+   * [DOW-1114]에서 `initializeNotifications`가 `reconcilePreference`로 선호값을
+   * OS 권한에 맞추도록 고쳤다. 이제 정상 통과해야 하는 케이스다.
    */
-  it.fails('권한을 기기 설정에서 끄면 앱 toggle도 꺼진 것으로 보여야 한다', async () => {
+  it('권한을 기기 설정에서 끄면 앱 toggle도 꺼진 것으로 보여야 한다', async () => {
     globalThis.__notifShim.onRequest = 'granted'
     await enableNotifications()
 
@@ -313,6 +311,8 @@ describe('앱 재시작 — 저장된 선호값과 OS 권한을 다시 맞춘다
 
     expect(state.permission).toBe('denied')
     expect(state.enabled).toBe(false)
+    // 선호값도 함께 내려가야 다음 실행에서 같은 모순이 반복되지 않는다.
+    expect(globalThis.__notifShim.storage[PREFERENCE_KEY]).toBe('false')
   })
 
   it('권한이 꺼진 채 재시작하면 최소한 권한 상태는 denied로 보고한다', async () => {

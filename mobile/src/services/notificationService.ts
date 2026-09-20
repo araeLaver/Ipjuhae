@@ -41,6 +41,23 @@ async function configureAndroidChannel(): Promise<void> {
   });
 }
 
+/**
+ * 저장된 선호값을 OS 권한에 맞춘다.
+ *
+ * 권한은 기기 설정에서 앱 밖으로 바뀔 수 있으므로, 켜 두었더라도 권한이 없으면
+ * 꺼진 것으로 본다. 선호값도 함께 되돌려 다음 실행에서 같은 모순이 반복되지 않게 한다.
+ */
+async function reconcilePreference(
+  preferred: boolean,
+  permission: PushPermissionStatus
+): Promise<boolean> {
+  const enabled = preferred && permission === 'granted';
+  if (preferred && !enabled) {
+    await AsyncStorage.setItem(PUSH_PREFERENCE_KEY, 'false');
+  }
+  return enabled;
+}
+
 async function registerToken(): Promise<void> {
   const projectId = Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
   if (!projectId) throw new Error('Expo projectId가 설정되지 않았습니다.');
@@ -56,9 +73,10 @@ async function registerToken(): Promise<void> {
 export async function initializeNotifications(canRegisterToken = true): Promise<PushState> {
   try {
     await configureAndroidChannel();
-    const enabled = (await AsyncStorage.getItem(PUSH_PREFERENCE_KEY)) === 'true';
+    const preferred = (await AsyncStorage.getItem(PUSH_PREFERENCE_KEY)) === 'true';
     const permissions = await Notifications.getPermissionsAsync();
     const permission = normalizePermission(permissions.status);
+    const enabled = await reconcilePreference(preferred, permission);
 
     // 앱 시작 시에는 권한 팝업을 띄우지 않는다. 사용자가 이전에 활성화했고
     // OS 권한도 유지된 경우에만 token을 갱신한다.
@@ -96,7 +114,7 @@ export async function enableNotifications(): Promise<PushState> {
 
   const permission = normalizePermission(permissions.status);
   if (permission !== 'granted') {
-    await AsyncStorage.setItem(PUSH_PREFERENCE_KEY, 'false');
+    await reconcilePreference(true, permission);
     return {
       enabled: false,
       permission,
