@@ -1,6 +1,5 @@
 import { notFound } from 'next/navigation'
 import { AlertTriangle, CalendarDays, CheckCircle2, Home, MapPin, ShieldCheck, TrainFront } from 'lucide-react'
-import { PageContainer } from '@/components/layout/page-container'
 import { Badge } from '@/components/ui/badge'
 import { publicMockListings, formatKrwManwon } from '@/lib/public-mock-listings'
 
@@ -25,8 +24,10 @@ export default function PublicMockListingsPage() {
   assertDemoEnabled()
 
   return (
-    <PageContainer maxWidth="xl">
-      <main className="space-y-6 py-6">
+    // 공통 PageContainer를 쓰지 않는다. 그 shell의 Header는 마운트 시 /api/auth/me를 호출해서
+    // 이 화면의 "운영 API 호출 없음" 고지를 깨뜨린다. demo 전용 정적 shell로 대체한다.
+    <div className="min-h-screen bg-muted/50">
+      <main className="container mx-auto max-w-6xl space-y-6 px-4 py-6">
         <section className="rounded-lg border border-amber-300 bg-amber-50 p-5 text-amber-950">
           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div className="max-w-4xl space-y-2">
@@ -142,6 +143,6 @@ export default function PublicMockListingsPage() {
           </aside>
         </section>
       </main>
-    </PageContainer>
+    </div>
   )
 }

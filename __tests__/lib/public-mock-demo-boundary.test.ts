@@ -61,6 +61,9 @@ describe('synthetic public mock demo 비공개 경계', () => {
     expect(content).not.toMatch(/보증(?!금)/)
   })
 
+  // 주의: 아래 검사는 파일 두 개의 텍스트만 본다. transitive import를 타고 들어간 호출은
+  // 잡지 못하므로 "운영 API 호출 없음"의 근거로 쓰면 안 된다. 실제 network 격리는
+  // `__tests__/components/demo-network-isolation.test.tsx`가 render 관측으로 검증한다.
   it('local-only fixture만 import하고 외부 image·API·DB·secret 호출을 포함하지 않는다', () => {
     const implementation = `${pageSource}\n${fixtureSource}`
 
