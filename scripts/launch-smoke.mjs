@@ -105,6 +105,12 @@ export function reportSmokePayload(launchSmoke) {
   const absentRequired = REQUIRED_CHECKS.filter(
     (name) => !entries.some(([checkName]) => checkName === name)
   )
+  const malformedRequired = REQUIRED_CHECKS.filter(
+    (name) =>
+      !absentRequired.includes(name) &&
+      payloadChecks[name]?.ok !== true &&
+      payloadChecks[name]?.ok !== false
+  )
   const recovered = effectiveExpected.filter((name) =>
     entries.some(([checkName, value]) => checkName === name && value?.ok === true)
   )
@@ -118,6 +124,11 @@ export function reportSmokePayload(launchSmoke) {
   }
   for (const name of absentRequired) {
     console.log(`❌ 회귀 | ${name} | 필수 항목이 응답 checks에 없습니다 (API가 항목을 드롭했는지 확인하세요)`)
+  }
+  for (const name of malformedRequired) {
+    console.log(
+      `❌ 회귀 | ${name} | 필수 항목의 ok가 true/false가 아닙니다 (실제: ${JSON.stringify(payloadChecks[name]?.ok)}) — 응답 스키마가 바뀌었는지 확인하세요`
+    )
   }
   for (const name of knownGap) {
     const message = payloadChecks[name]?.message
@@ -134,7 +145,7 @@ export function reportSmokePayload(launchSmoke) {
     console.log(`❌ 회귀 | ${name}${message ? ` | ${message}` : ''}`)
   }
 
-  return unexpected.length > 0 || absentRequired.length > 0
+  return unexpected.length > 0 || absentRequired.length > 0 || malformedRequired.length > 0
 }
 
 async function main() {

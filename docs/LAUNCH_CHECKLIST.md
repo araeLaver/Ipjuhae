@@ -138,7 +138,7 @@ After deploy, verify:
    - 운영 환경(`NODE_ENV=production`)에서 토큰 미설정 시 자동으로 실패 처리됨
    - 실패 시 `/api/health` 및 핵심 체크 상태를 즉시 점검
    - 종료 코드는 `/api/launch/smoke` 응답의 개별 check 단위로 판정합니다. `LAUNCH_SMOKE_EXPECTED_FAILURES`(쉼표 구분)에 올린 항목이 `ok: false`여도 known gap으로 로그만 남기고 exit 0, 목록 밖 항목이 깨지면 이름을 찍고 exit 1입니다. 기본값은 조달 미완인 `sms,verification`(DOW-912)이고, 목록의 항목이 통과로 바뀌면 "허용 목록에서 빼 주세요" 안내가 출력됩니다. 근거: DOW-1131.
-   - **필수 항목은 허용 목록으로 가릴 수 없습니다.** `database`, `jwt_secret`, `email`, `storage`, `runtime_env`는 `LAUNCH_SMOKE_EXPECTED_FAILURES`에 넣어도 무시되며(넣으면 경고 출력), 깨지면 항상 exit 1입니다. 또한 이 항목이 응답 `checks`에 **아예 없으면** API가 항목을 드롭한 것으로 보고 회귀 처리합니다 — `ok: false`만 세면 항목이 사라졌을 때 조용히 통과하기 때문입니다. 근거: DOW-1131.
+   - **필수 항목은 허용 목록으로 가릴 수 없습니다.** `database`, `jwt_secret`, `email`, `storage`, `runtime_env`는 `LAUNCH_SMOKE_EXPECTED_FAILURES`에 넣어도 무시되며(넣으면 경고 출력), 깨지면 항상 exit 1입니다. 또한 이 항목이 응답 `checks`에 **아예 없으면** API가 항목을 드롭한 것으로 보고 회귀 처리합니다 — `ok: false`만 세면 항목이 사라졌을 때 조용히 통과하기 때문입니다. 같은 이유로 필수 항목의 `ok`가 `true`/`false`가 아니면(필드 누락, 문자열 `"true"`, `null` 등) 응답 스키마가 바뀐 것으로 보고 회귀 처리합니다. 근거: DOW-1131.
 
 ## 앱(모바일) 실기기 수동 확인
 

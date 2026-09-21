@@ -175,4 +175,49 @@ describe('launch-smoke 필수 항목 판정', () => {
   it('checks가 빈 객체면 필수 항목 전부 누락이므로 회귀다', () => {
     expect(reportSmokePayload(payloadWithChecks({}))).toBe(true)
   })
+
+  it.each([
+    ['ok가 없는 경우', {}],
+    ['ok가 문자열 true인 경우', { ok: 'true' }],
+    ['ok가 null인 경우', { ok: null }],
+    ['항목 자체가 null인 경우', null],
+  ])('필수 항목 database의 %s는 회귀다', (_label, databaseValue) => {
+    expect(
+      reportSmokePayload(
+        payloadWithChecks({
+          database: databaseValue as never,
+          jwt_secret: { ok: true },
+          email: { ok: true },
+          storage: { ok: true },
+          runtime_env: { ok: true },
+          sms: { ok: false },
+          verification: { ok: false },
+        })
+      )
+    ).toBe(true)
+  })
+
+  it('필수 항목이 ok: false면 스키마 경고가 아니라 회귀 항목으로 잡힌다', () => {
+    const logs: string[] = []
+    vi.mocked(console.log).mockImplementation((...args: unknown[]) => {
+      logs.push(args.join(' '))
+    })
+
+    expect(
+      reportSmokePayload(
+        payloadWithChecks({
+          database: { ok: false, message: 'DB 연결/쿼리 실패' },
+          jwt_secret: { ok: true },
+          email: { ok: true },
+          storage: { ok: true },
+          runtime_env: { ok: true },
+          sms: { ok: false },
+          verification: { ok: false },
+        })
+      )
+    ).toBe(true)
+
+    expect(logs.some((line) => line.includes('❌ 회귀 | database | DB 연결/쿼리 실패'))).toBe(true)
+    expect(logs.some((line) => line.includes('ok가 true/false가 아닙니다'))).toBe(false)
+  })
 })
