@@ -4,6 +4,7 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
+import { AUTH_TOKEN_KEY, PUSH_TOKEN_KEY, REFRESH_TOKEN_KEY } from './storageKeys';
 
 /**
  * 기본은 프로덕션이다. 로컬 서버로 붙여 확인할 때만
@@ -15,8 +16,7 @@ const API_BASE_URL =
   (Constants.expoConfig?.extra as { apiBaseUrl?: string } | undefined)?.apiBaseUrl ??
   'https://www.ipjuhae.com/api';
 
-const TOKEN_KEY = 'auth_token';
-const REFRESH_TOKEN_KEY = 'refresh_token';
+const TOKEN_KEY = AUTH_TOKEN_KEY;
 
 class ApiClient {
   private baseUrl: string;
@@ -36,8 +36,17 @@ class ApiClient {
     }
   }
 
+  /**
+   * 세션을 비운다. 로그아웃과 401(세션 만료)이 공통으로 지나는 한 곳이다.
+   *
+   * `expo_push_token`도 함께 지운다. 이 값이 남으면 `notificationService`의
+   * 재등록 생략이 걸려, 같은 기기에서 다음 계정이 로그인해도 `PUT`이 나가지 않는다.
+   * `push_tokens.token`은 UNIQUE라 그 `PUT`이 소유자를 옮기는 유일한 수단이고,
+   * `DELETE`는 `user_id`로도 좁히므로 새 사용자가 이전 행을 지울 수도 없다.
+   * 결과적으로 이 기기가 이전 계정의 발송 대상으로 남는다.
+   */
   async clearTokens(): Promise<void> {
-    await AsyncStorage.multiRemove([TOKEN_KEY, REFRESH_TOKEN_KEY]);
+    await AsyncStorage.multiRemove([TOKEN_KEY, REFRESH_TOKEN_KEY, PUSH_TOKEN_KEY]);
   }
 
   private async request<T>(

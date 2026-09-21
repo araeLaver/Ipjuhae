@@ -61,6 +61,7 @@ const captured: Captured[] = []
 let initializeNotifications: (canRegisterToken?: boolean) => Promise<PushState>
 let enableNotifications: () => Promise<PushState>
 let disableNotifications: () => Promise<PushState>
+let apiClient: { clearTokens: () => Promise<void>; get: (url: string) => Promise<unknown> }
 
 const PREFERENCE_KEY = 'push_notifications_enabled'
 const TOKEN_KEY = 'expo_push_token'
@@ -125,9 +126,19 @@ export const Linking = { openSettings: async () => { globalThis.__notifShim.open
 `
   )
 
+  // `apiClient`도 같이 내보낸다. 세션 만료(401) 경로가 기기에 남은 push token까지
+  // 비우는지 보려면 셔임으로 흉내 내지 말고 실제 `clearTokens()`를 태워야 한다.
+  // 한 번들에서 꺼내야 두 모듈이 같은 AsyncStorage 셔임을 공유한다.
+  const entry = write(
+    'entry.ts',
+    `export * from ${JSON.stringify(join(process.cwd(), 'mobile/src/services/notificationService.ts'))}
+export { apiClient } from ${JSON.stringify(join(process.cwd(), 'mobile/src/services/apiClient.ts'))}
+`
+  )
+
   const outfile = join(dir, 'notificationService.mjs')
   await build({
-    entryPoints: [join(process.cwd(), 'mobile/src/services/notificationService.ts')],
+    entryPoints: [entry],
     outfile,
     bundle: true,
     format: 'esm',
@@ -159,6 +170,7 @@ beforeAll(async () => {
   initializeNotifications = mod.initializeNotifications
   enableNotifications = mod.enableNotifications
   disableNotifications = mod.disableNotifications
+  apiClient = mod.apiClient
 }, 30_000)
 
 beforeEach(() => {
@@ -464,25 +476,50 @@ describe('앱 재시작 — 저장된 선호값과 OS 권한을 다시 맞춘다
  * QA가 `b6e94891` 재검증 중 잡은 후속 2건. 아직 제품 코드가 고쳐지지 않아 `skip`이다.
  * 수정과 함께 `.skip`을 떼는 것이 이 두 건의 완료 조건이다 — [DOW-1117] 코멘트 참고.
  */
-describe.skip('토큰 수명주기 — 아직 열려 있는 구멍 (DOW-1117 후속)', () => {
+describe('토큰 수명주기 — 계정 전환과 정리 재시도 (DOW-1117 후속)', () => {
+  /**
+   * push_tokens.token은 UNIQUE이고, 기기 토큰의 소유자를 옮기는 유일한 수단이
+   * PUT의 `ON CONFLICT (token) DO UPDATE SET user_id`다. 복귀 경로에서 PUT을
+   * 건너뛰면 이 기기는 이전 계정의 발송 대상으로 남는다.
+   *
+   * 세션을 비우는 지점이 `expo_push_token`도 함께 지우므로 다음 계정의 초기화에서
+   * 저장값이 비어 있고, 재등록 생략에 걸리지 않는다.
+   */
   it('같은 기기에서 계정이 바뀌면 토큰 소유자를 서버에 다시 올린다', async () => {
-    // push_tokens.token은 UNIQUE이고, 기기 토큰의 소유자를 옮기는 유일한 수단이
-    // PUT의 `ON CONFLICT (token) DO UPDATE SET user_id`다. 복귀 경로에서 PUT을
-    // 건너뛰면 이 기기는 이전 계정의 발송 대상으로 남는다.
     globalThis.__notifShim.permission = 'granted'
     globalThis.__notifShim.onRequest = 'granted'
     await enableNotifications()
     expect(captured.filter((c) => c.init.method === 'PUT')).toHaveLength(1)
 
-    // 401 → apiClient.clearTokens()는 auth token만 지운다. disableNotifications()는
-    // 돌지 않으므로 expo_push_token과 선호값이 기기에 그대로 남는다. 그 상태로 다른
-    // 계정이 로그인한다.
+    // 401 → apiClient가 세션을 비운다. disableNotifications()는 돌지 않으므로
+    // 선호값은 기기에 그대로 남는다. 그 상태로 다른 계정이 로그인한다.
+    await apiClient.clearTokens()
     captured.length = 0
 
     const state = await initializeNotifications(true)
 
     expect(state).toMatchObject({ enabled: true, tokenRegistered: true })
     expect(captured.filter((c) => c.init.method === 'PUT')).toHaveLength(1)
+  })
+
+  /**
+   * 위 케이스가 기대는 전제를 따로 고정한다. 세션 정리가 `expo_push_token`을
+   * 남기도록 되돌아가면 계정 전환 케이스만으로는 원인이 드러나지 않는다.
+   */
+  it('세션이 만료되면(401) 기기에 남은 push token도 함께 비운다', async () => {
+    globalThis.__notifShim.permission = 'granted'
+    globalThis.__notifShim.onRequest = 'granted'
+    await enableNotifications()
+    expect(globalThis.__notifShim.storage[TOKEN_KEY]).toBe('ExponentPushToken[test]')
+
+    const working = globalThis.fetch
+    globalThis.fetch = (() =>
+      Promise.resolve(new Response('{}', { status: 401 }))) as typeof fetch
+    await expect(apiClient.get('/me')).rejects.toThrow('UNAUTHORIZED')
+    globalThis.fetch = working
+
+    expect(globalThis.__notifShim.storage[TOKEN_KEY]).toBeUndefined()
+    expect(globalThis.__notifShim.storage['auth_token']).toBeUndefined()
   })
 
   it('서버 삭제가 끝났으면 복귀마다 같은 DELETE를 되풀이하지 않는다', async () => {

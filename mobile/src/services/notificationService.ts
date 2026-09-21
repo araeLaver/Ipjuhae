@@ -3,9 +3,7 @@ import Constants from 'expo-constants';
 import * as Notifications from 'expo-notifications';
 import { Linking, Platform } from 'react-native';
 import { apiClient } from './apiClient';
-
-const PUSH_PREFERENCE_KEY = 'push_notifications_enabled';
-const PUSH_TOKEN_KEY = 'expo_push_token';
+import { PUSH_PREFERENCE_KEY, PUSH_TOKEN_KEY } from './storageKeys';
 
 export type PushPermissionStatus = 'granted' | 'denied' | 'undetermined';
 
@@ -64,9 +62,18 @@ async function revokeStoredToken(canCallServer: boolean): Promise<void> {
 
   try {
     await apiClient.delete(`/notifications/push-token?token=${encodeURIComponent(token)}`);
+  } catch {
+    // 서버 행이 그대로다. 저장된 토큰을 남겨 다음 복귀에서 다시 건다.
+    return;
+  }
+
+  // 여기서부터 서버 행은 없다. 기기 토큰 폐기가 실패하더라도 저장값을 비워야
+  // 이미 지워진 행에 대고 복귀마다 DELETE를 되풀이하지 않는다. 폐기 실패는 다음
+  // 활성화 때 새 토큰을 받으면서 해소된다.
+  try {
     await Notifications.unregisterForNotificationsAsync();
   } catch {
-    return;
+    // 사용자에게 알릴 것이 없다 — 앱이 방금 앞으로 나온 순간이다.
   }
   await AsyncStorage.removeItem(PUSH_TOKEN_KEY);
 }

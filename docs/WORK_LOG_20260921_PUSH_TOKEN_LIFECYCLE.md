@@ -69,10 +69,71 @@ QA 리포트의 "서버에 `DeviceNotRegistered` 처리가 없다"는 사실이�
 다시 등록하지 않는다` 1건 추가. 기존 `복귀 시점에 권한이 그대로면 켜진 상태가 유지된다`는
 화면 값만 보므로 요청 횟수는 보지 못했다.
 
+## 2차 — QA가 돌려준 후속 2건 (`deeb6fd8` → 이번 커밋)
+
+QA 재검증에서 **위 수정이 만든 회귀 1건 + 경미 1건**이 나왔다. 둘 다 타당해서 고쳤다.
+QA가 `describe.skip`으로 고정해 둔 재현 테스트의 `.skip`을 떼는 것이 완료 조건이었다.
+
+### 3. 같은 기기에서 계정이 바뀌면 토큰이 이전 계정에 묶인 채 남는다 (회귀)
+
+2번의 "토큰이 같으면 재등록 생략"이 **소유자 이전 경로까지 같이 막았다.**
+`push_tokens.token`이 UNIQUE라 기기 토큰의 소유자를 옮기는 유일한 수단이
+`PUT`의 `ON CONFLICT (token) DO UPDATE SET user_id`인데, 저장값이 남아 있으면
+그 `PUT`이 나가지 않는다. `DELETE`는 `user_id`로도 좁히므로 새 사용자가 이전
+사용자 행을 지울 수도 없다. 결과적으로 새 계정은 알림을 못 받고 이전 계정 행이
+이 기기를 계속 가리킨다. 상태는 `enabled: true, tokenRegistered: true`로 보고돼
+화면상 이상이 없다.
+
+트리거는 정상 로그아웃이 아니라 **401(세션 만료)**이다. `apiClient.request`가
+401에서 `clearTokens()`를 부르는데, 그게 `auth_token`/`refresh_token`만 지우고
+`expo_push_token`은 남겼다.
+
+수정은 QA 권장대로 `clearTokens()`에서 `expo_push_token`도 함께 제거. 로그아웃과
+세션 만료가 공통으로 지나는 한 곳이라, 소유자를 비교하는 방식보다 좁고 확실하다.
+`apiClient`와 `notificationService`가 같은 키를 다뤄야 하는데 후자가 전자를
+import하므로 상수를 한쪽에 두면 순환 import가 된다. `services/storageKeys.ts`를
+새로 만들어 양쪽이 거기서만 가져온다.
+
+### 4. 기기 토큰 폐기가 실패하면 복귀마다 같은 DELETE가 되풀이된다 (경미)
+
+`revokeStoredToken()`이 `apiClient.delete`와 `unregisterForNotificationsAsync()`를
+한 `try`에 묶고 있어, 서버 삭제가 끝났어도 폐기만 실패하면 저장된 토큰이 남았다.
+1번에서 "정리가 끝날 때까지만 요청이 나간다"고 썼는데 이 경로에서는 성립하지 않았다.
+
+`try`를 갈랐다. 서버 삭제가 실패하면 종전대로 토큰을 남겨 재시도하고, 서버 삭제가
+끝난 뒤에는 폐기가 실패하더라도 저장값을 비운다(이미 없는 행에 `DELETE`를 반복할
+이유가 없다). 폐기 실패는 다음 활성화 때 새 토큰을 받으면서 해소된다.
+
+### QA 테스트를 한 건 고쳐 썼다
+
+QA의 `같은 기기에서 계정이 바뀌면...` 케이스는 **그대로 통과시킬 수 없었다.**
+전제가 `선호값 true + 토큰 저장됨 + 권한 granted`로, 이미 합격 처리된
+`토큰이 그대로면 다시 등록하지 않는다`와 완전히 같은 상태인데 기대가 반대다
+(`PUT` 1건 vs 0건). 둘 다 통과시키려면 두 상황을 가르는 신호가 있어야 하고,
+그 신호가 바로 QA가 권장한 수정(`clearTokens`가 `expo_push_token`을 지움)이다.
+
+그래서 테스트가 실제로 그 경로를 태우도록 고쳤다 — 셔임으로 흉내 내지 않고 번들에서
+`apiClient`를 같이 꺼내 **진짜 `clearTokens()`를 호출**한다(`entry.ts` 재수출 추가.
+한 번들에서 꺼내야 두 모듈이 같은 AsyncStorage 셔임을 공유한다). 전제를 따로 고정하는
+`세션이 만료되면(401) 기기에 남은 push token도 함께 비운다`도 추가했다 — 이건 fetch가
+401을 돌려주게 해서 `request()` 경로를 그대로 태운다.
+
+### 2차 검증
+
+- `npx vitest run` → **536 pass / 0 fail / 0 skipped** (`.skip` 0건)
+- `npx tsc --noEmit` 루트/`mobile` 양쪽 통과
+- **음성 검증 (수정별로 분리)**:
+  - `apiClient.ts`만 되돌림 → 계정 전환 2건 실패 (`expected [] to have a length of 1`)
+  - `notificationService.ts`만 되돌림 → DELETE 반복 1건 실패 (`3` — QA 보고값과 일치)
+
 ## 남은 것
 
 - 실기기 확인은 여전히 `docs/LAUNCH_CHECKLIST.md`의 수동 게이트로 남아 있다. 자동
   검증은 네이티브 모듈을 셔임으로 대체하므로 실제 OS 권한 토글은 끝까지 태우지 못한다.
+- **권한이 꺼진 채 세션까지 만료되는 조합**은 아직 서버 행이 남는다. `clearTokens()`가
+  `expo_push_token`을 지우므로 `revokeStoredToken()`이 지울 토큰을 못 찾고, 선호값도
+  false라 재등록도 없다. 좁은 edge이고 지금은 발송 자체가 없어 증상이 0이다. 서버
+  `DeviceNotRegistered` 처리가 들어가면 그쪽에서 정리되는 종류다.
   이번 수정으로 **"권한 끄고 복귀 → 서버 토큰도 사라지는가"** 항목이 추가로 필요하다.
 - 푸시 발송 구현 시 Expo 영수증의 `DeviceNotRegistered`로 죽은 토큰을 지우는 처리.
 
