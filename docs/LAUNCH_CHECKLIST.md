@@ -137,6 +137,7 @@ After deploy, verify:
    - 보안을 위해 운영 환경에서는 `LAUNCH_SMOKE_TOKEN`을 비밀값으로 설정해 `/api/launch/smoke`를 보호
    - 운영 환경(`NODE_ENV=production`)에서 토큰 미설정 시 자동으로 실패 처리됨
    - 실패 시 `/api/health` 및 핵심 체크 상태를 즉시 점검
+   - 종료 코드는 `/api/launch/smoke` 응답의 개별 check 단위로 판정합니다. `LAUNCH_SMOKE_EXPECTED_FAILURES`(쉼표 구분)에 올린 항목이 `ok: false`여도 known gap으로 로그만 남기고 exit 0, 목록 밖 항목이 깨지면 이름을 찍고 exit 1입니다. 기본값은 조달 미완인 `sms,verification`(DOW-912)이고, 목록의 항목이 통과로 바뀌면 "허용 목록에서 빼 주세요" 안내가 출력됩니다. 근거: DOW-1131.
 
 ## 앱(모바일) 실기기 수동 확인
 
