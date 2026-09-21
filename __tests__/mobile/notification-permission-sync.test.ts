@@ -47,6 +47,8 @@ interface ShimState {
   unregisterCount: number
   openSettingsCount: number
   tokenThrows: boolean
+  /** unregisterForNotificationsAsync가 실패하는 기기 — 토큰 폐기만 실패하는 상황 */
+  unregisterThrows: boolean
 }
 
 declare global {
@@ -109,7 +111,10 @@ export async function getExpoPushTokenAsync() {
   if (s().tokenThrows) throw new Error('token registration failed')
   return { data: 'ExponentPushToken[test]' }
 }
-export async function unregisterForNotificationsAsync() { s().unregisterCount += 1 }
+export async function unregisterForNotificationsAsync() {
+  s().unregisterCount += 1
+  if (s().unregisterThrows) throw new Error('unregister failed')
+}
 `
   )
 
@@ -166,6 +171,7 @@ beforeEach(() => {
     unregisterCount: 0,
     openSettingsCount: 0,
     tokenThrows: false,
+    unregisterThrows: false,
   }
 })
 
@@ -451,5 +457,48 @@ describe('앱 재시작 — 저장된 선호값과 OS 권한을 다시 맞춘다
     expect(state.permission).toBe('denied')
     expect(state.tokenRegistered).toBe(false)
     expect(captured).toHaveLength(0)
+  })
+})
+
+/**
+ * QA가 `b6e94891` 재검증 중 잡은 후속 2건. 아직 제품 코드가 고쳐지지 않아 `skip`이다.
+ * 수정과 함께 `.skip`을 떼는 것이 이 두 건의 완료 조건이다 — [DOW-1117] 코멘트 참고.
+ */
+describe.skip('토큰 수명주기 — 아직 열려 있는 구멍 (DOW-1117 후속)', () => {
+  it('같은 기기에서 계정이 바뀌면 토큰 소유자를 서버에 다시 올린다', async () => {
+    // push_tokens.token은 UNIQUE이고, 기기 토큰의 소유자를 옮기는 유일한 수단이
+    // PUT의 `ON CONFLICT (token) DO UPDATE SET user_id`다. 복귀 경로에서 PUT을
+    // 건너뛰면 이 기기는 이전 계정의 발송 대상으로 남는다.
+    globalThis.__notifShim.permission = 'granted'
+    globalThis.__notifShim.onRequest = 'granted'
+    await enableNotifications()
+    expect(captured.filter((c) => c.init.method === 'PUT')).toHaveLength(1)
+
+    // 401 → apiClient.clearTokens()는 auth token만 지운다. disableNotifications()는
+    // 돌지 않으므로 expo_push_token과 선호값이 기기에 그대로 남는다. 그 상태로 다른
+    // 계정이 로그인한다.
+    captured.length = 0
+
+    const state = await initializeNotifications(true)
+
+    expect(state).toMatchObject({ enabled: true, tokenRegistered: true })
+    expect(captured.filter((c) => c.init.method === 'PUT')).toHaveLength(1)
+  })
+
+  it('서버 삭제가 끝났으면 복귀마다 같은 DELETE를 되풀이하지 않는다', async () => {
+    // revokeStoredToken은 DELETE와 unregister를 한 try에 묶어, unregister만 실패해도
+    // 저장된 토큰이 남는다. 서버 행은 이미 지워졌는데 복귀마다 DELETE가 다시 나간다.
+    globalThis.__notifShim.storage[PREFERENCE_KEY] = 'false'
+    globalThis.__notifShim.storage[TOKEN_KEY] = 'ExponentPushToken[test]'
+    globalThis.__notifShim.permission = 'denied'
+    globalThis.__notifShim.unregisterThrows = true
+
+    await initializeNotifications(true)
+    expect(captured.filter((c) => c.init.method === 'DELETE')).toHaveLength(1)
+
+    await initializeNotifications(true)
+    await initializeNotifications(true)
+
+    expect(captured.filter((c) => c.init.method === 'DELETE')).toHaveLength(1)
   })
 })
