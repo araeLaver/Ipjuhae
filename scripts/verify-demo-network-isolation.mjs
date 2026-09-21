@@ -20,13 +20,48 @@ const baseUrl = (process.argv[2] || 'http://127.0.0.1:3010').replace(/\/$/, '')
 const DEMO_PATH = '/demo/public-mock/listings'
 const CONTROL_PATH = '/home'
 
-/** document/script/style/font/image 같은 정적 자산은 격리 위반이 아니다. */
+/**
+ * 외부 origin 허용 목록.
+ *
+ * Pretendard 웹폰트는 `app/globals.css`의 `@import`로 전역 테마가 의존하는 항목이고
+ * [DOW-881](/DOW/issues/DOW-881)에서 CSP `style-src`/`font-src`에 의도적으로 허용됐다.
+ * 따라서 위반이 아니지만, **허용했다는 사실은 반드시 출력**한다 —
+ * 허용 목록이 조용히 마스킹하면 "외부 요청 0건"이라는 보고가 거짓이 된다.
+ */
+const ALLOWED_EXTERNAL_ORIGINS = new Map([
+  ['https://cdn.jsdelivr.net', 'Pretendard 웹폰트 (globals.css @import, DOW-881에서 CSP 허용)'],
+])
+
+/**
+ * document/script/style/font/image 같은 정적 자산은 격리 위반이 아니다.
+ *
+ * 단 origin이 같을 때만이다. 이전 판정은 non-`/api/` 이기만 하면 통과시켜서
+ * **외부 origin 요청을 구조적으로 관측할 수 없었다.** 실제로 이 화면은
+ * `cdn.jsdelivr.net`으로 stylesheet/font 2건을 보내고 있었는데 harness는 "0건"을 보고했다.
+ * DOW-728 체크리스트가 외부 요청 부재를 요구하므로 origin을 따로 판정한다.
+ */
 function isStaticAsset(url, resourceType) {
   if (['document', 'script', 'stylesheet', 'font', 'image', 'other'].includes(resourceType)) {
-    const { pathname } = new URL(url)
+    const { pathname, origin } = new URL(url)
+    if (origin !== new URL(baseUrl).origin) return false
     return !pathname.startsWith('/api/')
   }
   return false
+}
+
+/** 위반 목록을 허용된 외부 origin과 진짜 위반으로 가른다. */
+function splitExternal(requests) {
+  const allowed = []
+  const violations = []
+  for (const req of requests) {
+    const { origin } = new URL(req.url)
+    if (origin !== new URL(baseUrl).origin && ALLOWED_EXTERNAL_ORIGINS.has(origin)) {
+      allowed.push({ ...req, origin, reason: ALLOWED_EXTERNAL_ORIGINS.get(origin) })
+    } else {
+      violations.push(req)
+    }
+  }
+  return { allowed, violations }
 }
 
 async function collectRequests(browser, path) {
@@ -58,17 +93,22 @@ async function main() {
     const demo = await collectRequests(browser, DEMO_PATH)
     const control = await collectRequests(browser, CONTROL_PATH)
 
-    const violations = demo.requests.filter((r) => !isStaticAsset(r.url, r.resourceType))
+    const flagged = demo.requests.filter((r) => !isStaticAsset(r.url, r.resourceType))
+    const { allowed, violations } = splitExternal(flagged)
     const controlApiCalls = control.requests.filter((r) => new URL(r.url).pathname.startsWith('/api/'))
 
     console.log(`\n[demo] ${DEMO_PATH} → HTTP ${demo.status}, 요청 ${demo.requests.length}건`)
+    // 허용 목록이 무엇을 통과시켰는지 항상 드러낸다. 조용한 마스킹이 거짓 통과의 원인이다.
+    for (const a of allowed) console.log(`  허용된 외부 요청: ${a.resourceType} ${a.origin} — ${a.reason}`)
     for (const v of violations) console.log(`  위반: ${v.resourceType} ${v.url}`)
     console.log(`[대조군] ${CONTROL_PATH} → HTTP ${control.status}, /api 요청 ${controlApiCalls.length}건`)
     for (const c of controlApiCalls) console.log(`  관측: ${new URL(c.url).pathname}`)
 
     const failures = []
     if (demo.status !== 200) failures.push(`demo route가 200이 아님 (${demo.status}) — PUBLIC_MOCK_DEMO_ENABLED=1 확인 필요`)
-    if (violations.length > 0) failures.push(`demo 경로에서 비정적 요청 ${violations.length}건 발생`)
+    if (violations.length > 0) {
+      failures.push(`demo 경로에서 비정적 요청 또는 미허용 외부 origin 요청 ${violations.length}건 발생`)
+    }
     if (controlApiCalls.length === 0) {
       failures.push('대조군에서 /api 요청이 0건 — 관측기가 동작하지 않았을 수 있어 demo 결과를 신뢰할 수 없음')
     }
