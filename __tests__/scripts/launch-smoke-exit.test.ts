@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 
-// @ts-expect-error - .mjs 스크립트에는 타입 선언이 없습니다
 import { parseExpectedFailures, reportSmokePayload } from '@/scripts/launch-smoke.mjs'
 
 function smokeCheck(overrides: Record<string, { ok: boolean; message?: string }> = {}) {

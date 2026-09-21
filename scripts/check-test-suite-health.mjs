@@ -6,7 +6,7 @@ import { join } from 'node:path'
 // 기준치 갱신: npm run test:ci의 전체 실행이 정상인지 확인한 뒤 실측 테스트 수를
 // BASELINE_TESTS에 반영하고, 추가/삭제 이유를 커밋 메시지에 남긴다.
 // 실패한 스위트 때문에 줄어든 수에 맞춰 기준치를 낮추지 않는다.
-const BASELINE_TESTS = 449
+const BASELINE_TESTS = 605
 const ALLOWED_DROP = 0.02
 const floor = Math.ceil(BASELINE_TESTS * (1 - ALLOWED_DROP))
 const directory = mkdtempSync(join(tmpdir(), 'rentme-test-health-'))
