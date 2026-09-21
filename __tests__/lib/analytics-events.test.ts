@@ -41,11 +41,25 @@ describe('analytics 이벤트 이름 목록', () => {
 })
 
 describe('익명 전용 이벤트 판정', () => {
-  it('/check 깔때기 3종만 익명 전용이다', () => {
+  /**
+   * 개수를 세는 대신 목록을 통째로 고정한다.
+   *
+   * 숫자만 세면 익명 전용이어야 할 이벤트가 목록에서 **빠져도** 다른 걸
+   * 하나 넣는 순간 통과한다. 여기서 막으려는 건 가입 없이 쓰는 화면의
+   * 이용 기록이 계정과 묶이는 것이라, 무엇이 들어있는지가 중요하다.
+   */
+  it('가입 없이 쓰는 화면의 이벤트만 익명 전용이다', () => {
     for (const name of ANONYMOUS_ONLY_EVENTS) {
       expect(isAnonymousOnlyEvent(name)).toBe(true)
     }
-    expect(ANONYMOUS_ONLY_EVENTS).toHaveLength(3)
+    expect([...ANONYMOUS_ONLY_EVENTS].sort()).toEqual(
+      [
+        'check_result_viewed',
+        'install_guide_clicked',
+        'tester_invite_clicked',
+        'tester_invite_shown',
+      ].sort()
+    )
   })
 
   it('기존 이벤트는 익명 전용이 아니다', () => {
