@@ -3,7 +3,7 @@ import Constants from 'expo-constants';
 import * as Notifications from 'expo-notifications';
 import { Linking, Platform } from 'react-native';
 import { apiClient } from './apiClient';
-import { PUSH_PREFERENCE_KEY, PUSH_TOKEN_KEY } from './storageKeys';
+import { PUSH_PENDING_REVOKE_KEY, PUSH_PREFERENCE_KEY, PUSH_TOKEN_KEY } from './storageKeys';
 
 export type PushPermissionStatus = 'granted' | 'denied' | 'undetermined';
 
@@ -50,20 +50,26 @@ async function configureAndroidChannel(): Promise<void> {
  * 삭제가 한 번 실패했을 때 선호값은 이미 false라 다시는 정리가 돌지 않는다. 저장된
  * 토큰이 없으면 바로 빠지므로, 복귀마다 불려도 실제 요청은 정리가 끝날 때까지만 나간다.
  *
- * 서버 삭제가 실패하면 저장된 토큰을 그대로 두고 다음 복귀에서 다시 시도한다 —
- * 여기에는 실패를 알려 줄 사용자가 없기 때문이다.
+ * 서버 삭제가 실패하면 지울 토큰을 들고 있다가 다음 복귀에서 다시 시도한다 —
+ * 여기에는 실패를 알려 줄 사용자가 없기 때문이다. 실패가 **401**인 경우에는
+ * 그 401이 세션 정리를 태워 `PUSH_TOKEN_KEY`를 이미 비운 뒤이므로, 토큰을
+ * `PUSH_PENDING_REVOKE_KEY`로 옮겨 둔다. 원래 자리에 되돌리면 다음 계정의
+ * 재등록 `PUT`이 생략되어 소유자 이전이 막힌다.
  */
 async function revokeStoredToken(canCallServer: boolean): Promise<void> {
   // 비로그인 상태에서는 서버 토큰이 사용자에 묶여 있어 지울 수 없다. 저장된 토큰을
   // 남겨 두고, 다시 로그인해 초기화가 돌 때 정리한다.
   if (!canCallServer) return;
-  const token = await AsyncStorage.getItem(PUSH_TOKEN_KEY);
+  const token =
+    (await AsyncStorage.getItem(PUSH_TOKEN_KEY)) ??
+    (await AsyncStorage.getItem(PUSH_PENDING_REVOKE_KEY));
   if (!token) return;
 
   try {
     await apiClient.delete(`/notifications/push-token?token=${encodeURIComponent(token)}`);
   } catch {
-    // 서버 행이 그대로다. 저장된 토큰을 남겨 다음 복귀에서 다시 건다.
+    // 서버 행이 그대로다. 지울 토큰을 들고 다음 복귀에서 다시 건다.
+    await AsyncStorage.setItem(PUSH_PENDING_REVOKE_KEY, token);
     return;
   }
 
@@ -75,7 +81,7 @@ async function revokeStoredToken(canCallServer: boolean): Promise<void> {
   } catch {
     // 사용자에게 알릴 것이 없다 — 앱이 방금 앞으로 나온 순간이다.
   }
-  await AsyncStorage.removeItem(PUSH_TOKEN_KEY);
+  await AsyncStorage.multiRemove([PUSH_TOKEN_KEY, PUSH_PENDING_REVOKE_KEY]);
 }
 
 /**

@@ -65,6 +65,7 @@ let apiClient: { clearTokens: () => Promise<void>; get: (url: string) => Promise
 
 const PREFERENCE_KEY = 'push_notifications_enabled'
 const TOKEN_KEY = 'expo_push_token'
+const PENDING_REVOKE_KEY = 'expo_push_token_pending_revoke'
 
 /** 앱 소스를 Expo/React Native 없이 실행 가능한 ESM으로 번들한다. */
 async function loadNotificationService() {
@@ -541,17 +542,21 @@ describe('토큰 수명주기 — 계정 전환과 정리 재시도 (DOW-1117 �
 })
 
 /**
- * QA가 `7f166f63` 재검증 중 잡은 후속 1건. 아직 제품 코드가 고쳐지지 않아 `skip`이다.
- * 수정과 함께 `.skip`을 떼는 것이 완료 조건이다 — [DOW-1117] 코멘트 참고.
+ * QA가 `7f166f63` 재검증 중 잡은 후속 1건. [DOW-1123]에서 고쳤고, 이 블록은 이제
+ * 회귀 방지용이다.
  *
  * `clearTokens()`가 `expo_push_token`까지 지우게 되면서(같은 커밋의 3번 수정),
  * 정리 `DELETE`가 **401**로 실패하는 경로에서 저장값이 401 핸들러에 의해 같이
- * 지워진다. 그러면 `revokeStoredToken()`이 다음 복귀에 지울 토큰을 못 찾아,
+ * 지워졌다. 그러면 `revokeStoredToken()`이 다음 복귀에 지울 토큰을 못 찾아,
  * "서버 삭제가 실패하면 남겨 두고 다시 건다"는 설계 의도(`notificationService.ts`
- * 주석)가 이 경로에서만 조용히 무너진다. 위 `서버 삭제가 실패하면 …` 케이스는
+ * 주석)가 이 경로에서만 조용히 무너졌다. 위 `서버 삭제가 실패하면 …` 케이스는
  * 네트워크 거부(reject)만 태우므로 이 조합을 잡지 못한다.
+ *
+ * 수정은 실패한 토큰을 `expo_push_token_pending_revoke`로 옮겨 둔다. 원래 자리에
+ * 되돌리지 않는 것이 핵심이라, 바로 위 계정 전환 케이스와 함께 봐야 한다 —
+ * `PUSH_TOKEN_KEY`를 복구하는 수정이면 그쪽이 깨진다.
  */
-describe.skip('토큰 수명주기 — 401로 정리에 실패한 뒤 재시도 (DOW-1117 후속 2차)', () => {
+describe('토큰 수명주기 — 401로 정리에 실패한 뒤 재시도 (DOW-1117 후속 2차)', () => {
   it('정리 DELETE가 401이면 저장된 토큰을 남겨 재로그인 후 다시 시도한다', async () => {
     globalThis.__notifShim.onRequest = 'granted'
     await enableNotifications()
@@ -566,8 +571,11 @@ describe.skip('토큰 수명주기 — 401로 정리에 실패한 뒤 재시도 
     await initializeNotifications(true)
     globalThis.fetch = working
 
-    // 서버 행은 그대로다. 저장값이 남아야 재로그인 후 초기화에서 다시 걸 수 있다.
-    expect(globalThis.__notifShim.storage[TOKEN_KEY]).toBe('ExponentPushToken[test]')
+    // 서버 행은 그대로다. 지울 토큰이 남아야 재로그인 후 초기화에서 다시 걸 수 있다.
+    // QA 원안은 `TOKEN_KEY`가 복구되기를 기대했지만, 그 자리는 "재등록을 생략해도
+    // 되는 토큰"을 뜻해 바로 아래 케이스가 깨진다. 값은 대기 자리로 간다.
+    expect(globalThis.__notifShim.storage[PENDING_REVOKE_KEY]).toBe('ExponentPushToken[test]')
+    expect(globalThis.__notifShim.storage[TOKEN_KEY]).toBeUndefined()
 
     // 같은 계정으로 재로그인한 뒤의 복귀.
     captured.length = 0
@@ -575,5 +583,33 @@ describe.skip('토큰 수명주기 — 401로 정리에 실패한 뒤 재시도 
 
     expect(captured.at(-1)!.init.method).toBe('DELETE')
     expect(globalThis.__notifShim.storage[TOKEN_KEY]).toBeUndefined()
+    expect(globalThis.__notifShim.storage[PENDING_REVOKE_KEY]).toBeUndefined()
+  })
+
+  /**
+   * 위 수정이 `TOKEN_KEY`를 되돌리는 방식이면 이 케이스가 깨진다. 401 정리 실패와
+   * 계정 전환이 겹치는 조합이라 두 케이스 어느 쪽도 단독으로는 잡지 못한다.
+   */
+  it('401로 정리에 실패한 뒤 다른 계정이 켜면 토큰 소유자를 다시 올린다', async () => {
+    globalThis.__notifShim.permission = 'granted'
+    globalThis.__notifShim.onRequest = 'granted'
+    await enableNotifications()
+
+    // 세션 만료 + 기기 설정에서 알림 끄기 → 정리 DELETE가 401로 실패한다.
+    const working = globalThis.fetch
+    globalThis.fetch = (() =>
+      Promise.resolve(new Response('{}', { status: 401 }))) as typeof fetch
+    globalThis.__notifShim.permission = 'denied'
+    await initializeNotifications(true)
+    globalThis.fetch = working
+
+    // 다른 계정이 로그인하고, 기기 설정에서 권한을 되돌린 뒤 앱에서 알림을 켠다.
+    // push_tokens.token은 UNIQUE라 이 PUT만이 소유자를 옮긴다.
+    captured.length = 0
+    globalThis.__notifShim.permission = 'granted'
+    const state = await enableNotifications()
+
+    expect(state).toMatchObject({ enabled: true, tokenRegistered: true })
+    expect(captured.filter((c) => c.init.method === 'PUT')).toHaveLength(1)
   })
 })
