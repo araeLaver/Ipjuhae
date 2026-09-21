@@ -93,3 +93,86 @@ describe('launch-smoke 종료 판정', () => {
     ).toBe(false)
   })
 })
+
+// DOW-1131 권장 조치 1번: 필수 항목이 "전부 ok:true"여야 성공이다.
+// ok:false만 세면 API가 항목 자체를 드롭했을 때 조용히 통과한다.
+describe('launch-smoke 필수 항목 판정', () => {
+  const originalExpected = process.env.LAUNCH_SMOKE_EXPECTED_FAILURES
+
+  beforeEach(() => {
+    delete process.env.LAUNCH_SMOKE_EXPECTED_FAILURES
+    vi.spyOn(console, 'log').mockImplementation(() => {})
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+    if (originalExpected === undefined) {
+      delete process.env.LAUNCH_SMOKE_EXPECTED_FAILURES
+    } else {
+      process.env.LAUNCH_SMOKE_EXPECTED_FAILURES = originalExpected
+    }
+  })
+
+  function payloadWithChecks(checks: Record<string, { ok: boolean; message?: string }>) {
+    return {
+      name: 'launch-smoke-route',
+      ok: true,
+      detail: 'status=503',
+      payload: { status: 'degraded', checks },
+    }
+  }
+
+  it.each(['database', 'jwt_secret', 'email', 'storage', 'runtime_env'])(
+    '필수 항목 %s이(가) 응답에서 사라지면 회귀다',
+    (dropped) => {
+      const checks: Record<string, { ok: boolean }> = {
+        database: { ok: true },
+        jwt_secret: { ok: true },
+        email: { ok: true },
+        storage: { ok: true },
+        runtime_env: { ok: true },
+        sms: { ok: false },
+        verification: { ok: false },
+      }
+      delete checks[dropped]
+
+      expect(reportSmokePayload(payloadWithChecks(checks))).toBe(true)
+    }
+  )
+
+  it('sms/verification이 응답에서 사라져도 회귀는 아니다 (필수 항목이 아님)', () => {
+    expect(
+      reportSmokePayload(
+        payloadWithChecks({
+          database: { ok: true },
+          jwt_secret: { ok: true },
+          email: { ok: true },
+          storage: { ok: true },
+          runtime_env: { ok: true },
+        })
+      )
+    ).toBe(false)
+  })
+
+  it('필수 항목은 허용 목록에 넣어도 무시되지 않는다', () => {
+    process.env.LAUNCH_SMOKE_EXPECTED_FAILURES = 'sms,verification,database'
+
+    expect(
+      reportSmokePayload(
+        payloadWithChecks({
+          database: { ok: false, message: 'DB 연결/쿼리 실패' },
+          jwt_secret: { ok: true },
+          email: { ok: true },
+          storage: { ok: true },
+          runtime_env: { ok: true },
+          sms: { ok: false },
+          verification: { ok: false },
+        })
+      )
+    ).toBe(true)
+  })
+
+  it('checks가 빈 객체면 필수 항목 전부 누락이므로 회귀다', () => {
+    expect(reportSmokePayload(payloadWithChecks({}))).toBe(true)
+  })
+})

@@ -60,6 +60,11 @@ async function runCheck({ name, url, method = 'GET', status, body, headers, asse
 // 종료 코드를 1로 만들지 않습니다. 추적: DOW-912
 const DEFAULT_EXPECTED_FAILURES = ['sms', 'verification']
 
+// 런치 판정의 필수 항목. 이 항목들은 (1) 응답 checks에 반드시 존재해야 하고
+// (2) 허용 목록에 넣어도 무시되지 않습니다. 조달 대기 중인 sms/verification과 달리
+// 여기서 깨지는 건 언제나 회귀이므로, 허용 목록으로 가려지면 안 됩니다.
+const REQUIRED_CHECKS = ['database', 'jwt_secret', 'email', 'storage', 'runtime_env']
+
 export function parseExpectedFailures() {
   const raw = process.env.LAUNCH_SMOKE_EXPECTED_FAILURES
   if (raw === undefined) {
@@ -89,15 +94,31 @@ export function reportSmokePayload(launchSmoke) {
 
   const { names: expected, source } = parseExpectedFailures()
   const entries = Object.entries(payloadChecks)
+  // 필수 항목은 허용 목록에서 제외한다 — 허용 목록으로 DB 장애를 가릴 수 없게 한다.
+  const maskedRequired = expected.filter((name) => REQUIRED_CHECKS.includes(name))
+  const effectiveExpected = expected.filter((name) => !REQUIRED_CHECKS.includes(name))
   const failedNames = entries.filter(([, value]) => value?.ok === false).map(([name]) => name)
-  const unexpected = failedNames.filter((name) => !expected.includes(name))
-  const knownGap = failedNames.filter((name) => expected.includes(name))
-  const recovered = expected.filter((name) =>
+  const unexpected = failedNames.filter((name) => !effectiveExpected.includes(name))
+  const knownGap = failedNames.filter((name) => effectiveExpected.includes(name))
+  // 항목이 ok:false인 경우뿐 아니라, 아예 보고되지 않는 경우도 회귀다.
+  // (API가 항목을 드롭하면 failedNames가 비어 조용히 통과하기 때문)
+  const absentRequired = REQUIRED_CHECKS.filter(
+    (name) => !entries.some(([checkName]) => checkName === name)
+  )
+  const recovered = effectiveExpected.filter((name) =>
     entries.some(([checkName, value]) => checkName === name && value?.ok === true)
   )
-  const missing = expected.filter((name) => !entries.some(([checkName]) => checkName === name))
+  const missing = effectiveExpected.filter((name) => !entries.some(([checkName]) => checkName === name))
 
-  console.log(`허용된 예상 실패(${source}): ${expected.length ? expected.join(', ') : '없음'}`)
+  console.log(
+    `허용된 예상 실패(${source}): ${effectiveExpected.length ? effectiveExpected.join(', ') : '없음'}`
+  )
+  for (const name of maskedRequired) {
+    console.log(`⚠️  ${name}은(는) 필수 항목이라 허용 목록에 넣어도 무시됩니다. 깨지면 회귀입니다.`)
+  }
+  for (const name of absentRequired) {
+    console.log(`❌ 회귀 | ${name} | 필수 항목이 응답 checks에 없습니다 (API가 항목을 드롭했는지 확인하세요)`)
+  }
   for (const name of knownGap) {
     const message = payloadChecks[name]?.message
     console.log(`⚠️  known gap | ${name}${message ? ` | ${message}` : ''} — DOW-912에서 추적 중, 실패로 세지 않습니다`)
@@ -113,7 +134,7 @@ export function reportSmokePayload(launchSmoke) {
     console.log(`❌ 회귀 | ${name}${message ? ` | ${message}` : ''}`)
   }
 
-  return unexpected.length > 0
+  return unexpected.length > 0 || absentRequired.length > 0
 }
 
 async function main() {
