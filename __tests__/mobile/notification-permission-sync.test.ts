@@ -473,8 +473,8 @@ describe('앱 재시작 — 저장된 선호값과 OS 권한을 다시 맞춘다
 })
 
 /**
- * QA가 `b6e94891` 재검증 중 잡은 후속 2건. 아직 제품 코드가 고쳐지지 않아 `skip`이다.
- * 수정과 함께 `.skip`을 떼는 것이 이 두 건의 완료 조건이다 — [DOW-1117] 코멘트 참고.
+ * QA가 `b6e94891` 재검증 중 잡은 후속 2건. `7f166f63`이 고쳤고 QA가 재검증했다 —
+ * 이 블록은 이제 회귀 방지용이다. [DOW-1117] 코멘트 참고.
  */
 describe('토큰 수명주기 — 계정 전환과 정리 재시도 (DOW-1117 후속)', () => {
   /**
@@ -523,8 +523,8 @@ describe('토큰 수명주기 — 계정 전환과 정리 재시도 (DOW-1117 �
   })
 
   it('서버 삭제가 끝났으면 복귀마다 같은 DELETE를 되풀이하지 않는다', async () => {
-    // revokeStoredToken은 DELETE와 unregister를 한 try에 묶어, unregister만 실패해도
-    // 저장된 토큰이 남는다. 서버 행은 이미 지워졌는데 복귀마다 DELETE가 다시 나간다.
+    // 서버 행은 이미 지워졌는데 기기 토큰 폐기만 실패하면, 저장값이 남아 복귀마다
+    // 같은 DELETE가 다시 나갔다. `7f166f63`이 두 try를 갈라 고쳤다.
     globalThis.__notifShim.storage[PREFERENCE_KEY] = 'false'
     globalThis.__notifShim.storage[TOKEN_KEY] = 'ExponentPushToken[test]'
     globalThis.__notifShim.permission = 'denied'
@@ -537,5 +537,43 @@ describe('토큰 수명주기 — 계정 전환과 정리 재시도 (DOW-1117 �
     await initializeNotifications(true)
 
     expect(captured.filter((c) => c.init.method === 'DELETE')).toHaveLength(1)
+  })
+})
+
+/**
+ * QA가 `7f166f63` 재검증 중 잡은 후속 1건. 아직 제품 코드가 고쳐지지 않아 `skip`이다.
+ * 수정과 함께 `.skip`을 떼는 것이 완료 조건이다 — [DOW-1117] 코멘트 참고.
+ *
+ * `clearTokens()`가 `expo_push_token`까지 지우게 되면서(같은 커밋의 3번 수정),
+ * 정리 `DELETE`가 **401**로 실패하는 경로에서 저장값이 401 핸들러에 의해 같이
+ * 지워진다. 그러면 `revokeStoredToken()`이 다음 복귀에 지울 토큰을 못 찾아,
+ * "서버 삭제가 실패하면 남겨 두고 다시 건다"는 설계 의도(`notificationService.ts`
+ * 주석)가 이 경로에서만 조용히 무너진다. 위 `서버 삭제가 실패하면 …` 케이스는
+ * 네트워크 거부(reject)만 태우므로 이 조합을 잡지 못한다.
+ */
+describe.skip('토큰 수명주기 — 401로 정리에 실패한 뒤 재시도 (DOW-1117 후속 2차)', () => {
+  it('정리 DELETE가 401이면 저장된 토큰을 남겨 재로그인 후 다시 시도한다', async () => {
+    globalThis.__notifShim.onRequest = 'granted'
+    await enableNotifications()
+
+    // 세션이 서버에서 이미 만료된 기기. 기기 설정에서 알림을 끈 뒤 앱이 앞으로 나온다.
+    const working = globalThis.fetch
+    globalThis.fetch = ((url: string, init: RequestInit = {}) => {
+      captured.push({ url, init })
+      return Promise.resolve(new Response('{}', { status: 401 }))
+    }) as typeof fetch
+    globalThis.__notifShim.permission = 'denied'
+    await initializeNotifications(true)
+    globalThis.fetch = working
+
+    // 서버 행은 그대로다. 저장값이 남아야 재로그인 후 초기화에서 다시 걸 수 있다.
+    expect(globalThis.__notifShim.storage[TOKEN_KEY]).toBe('ExponentPushToken[test]')
+
+    // 같은 계정으로 재로그인한 뒤의 복귀.
+    captured.length = 0
+    await initializeNotifications(true)
+
+    expect(captured.at(-1)!.init.method).toBe('DELETE')
+    expect(globalThis.__notifShim.storage[TOKEN_KEY]).toBeUndefined()
   })
 })
