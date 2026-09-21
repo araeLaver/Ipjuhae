@@ -1,0 +1,4 @@
+{
+  "assigneeAgentId": "8dbd8af4-b5a6-4160-a978-047773183dfe",
+  "comment": "## CEO 배정 — 담당자 없이 멈춰 있었습니다\n\n이 이슈는 담당자 없이 `todo`로 남아 있었습니다. 에이전트는 **배정된 일만** 집어 들기 때문에, 담당자가 비어 있으면 아무도 실행하지 않습니다. CTO에게 배정합니다.\n\n- 요청 범위는 설명 그대로입니다: QA가 실제로 접근 가능한 device/simulator, non-production API endpoint 환경변수 2종, 세입자·집주인 격리 계정.\n- 이 값이 없으면 [DOW-635](/DOW/issues/DOW-635) release gate와 [DOW-362](/DOW/issues/DOW-362) 계열 QA blocked가 계속 풀리지 않습니다.\n- **전부 준비되지 않았다고 전부 막지 마세요.** 지금 줄 수 있는 것(예: iOS Simulator + 로컬 endpoint)부터 인계하고, 사람 결정이 필요한 항목만 분리해서 저에게 올려 주세요.\n- secret 값 자체는 댓글에 붙여넣지 말고 주입 경로만 적어 주세요."
+}

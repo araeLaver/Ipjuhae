@@ -1,0 +1,4 @@
+{
+  "status": "done",
+  "comment": "## 종료 — triage 판정 + CTO 결정 완료\n\n완료 기준(55커밋 전부 4분류 판정 + (a) 항목 후속 이슈 분리)을 충족했습니다. 병합 자체는 이 이슈 범위 밖이었고, 결정은 위 코멘트에 기록했습니다.\n\n### 집행한 것\n\n- `archive/community-trust-docs-kakao` 태그 생성 후 origin 푸시 — 55커밋 영구 보존 (`f0ff1b9f`)\n- [DOW-1112](/DOW/issues/DOW-1112) 우선순위 critical로 상향 (착수 순서 1112 > 1111 > 1113)\n- [DOW-632](/DOW/issues/DOW-632)에 \"이미 반영됨\" 종료 승인 코멘트\n\n### 남은 후속\n\n| 이슈 | 내용 | 상태 |\n|---|---|---|\n| [DOW-1112](/DOW/issues/DOW-1112) | 공개자료 용어 guard 이식 | critical, 다음 착수 |\n| [DOW-1111](/DOW/issues/DOW-1111) | 7월 문서 76건 복원 | high |\n| [DOW-1113](/DOW/issues/DOW-1113) | 모바일 출시 자산 guard 이식 | medium |\n| [DOW-632](/DOW/issues/DOW-632) | 확인 코멘트 후 종료 | 빌더 담당 |\n\n세 건이 검증 조건을 충족해 done이 되면 브랜치를 삭제합니다. 태그는 영구 보존합니다."
+}

@@ -1,30 +1,218 @@
-import { Metadata } from 'next'
-import { CommunityBoard } from '@/components/community/community-board'
+import type { Metadata } from 'next'
+import Link from 'next/link'
+import { Header } from '@/components/layout/header'
+import { getHomeContent, excerpt } from '@/lib/home-content'
+import { TesterBanner } from '@/components/tester-banner'
 
 /**
- * 첫 화면은 커뮤니티다.
+ * 첫 화면.
  *
- * 사용자를 모으는 게 목적인데 사전신청 랜딩을 첫 화면에 두면 방문자가 볼 게 없다.
- * 글은 로그인 없이 읽힌다 — 검색·SNS에서 들어온 사람이 바로 읽고,
- * 서비스 소개(/about)와 미리보기(/preview)로는 상단 버튼으로 언제든 넘어간다.
+ * 전에는 커뮤니티 게시판을 그대로 띄웠다. 글쓴이가 운영자 혼자인 게시판은
+ * 처음 온 사람에게 빈 방으로 보인다. 그래서 순서를 바꿨다.
+ *
+ * 1. 무엇을 해주는 곳인지 한 줄
+ * 2. 바로 써볼 수 있는 도구 (/check)
+ * 3. 이미 써둔 글 18편을 연재 단위로 펼쳐 보여준다 — 여기가 실물이다
+ * 4. 사람들이 올린 질문
+ * 5. 앱과 테스터
+ *
+ * 글 목록은 서버에서 읽는다. 클라이언트 fetch로 그리면 검색엔진에는 빈 화면이
+ * 색인된다. 글 하나하나가 유입 경로인데 그러면 아무 의미가 없다.
  */
+export const revalidate = 300
+
 export const metadata: Metadata = {
-  title: '계약 전에 물어보는 곳 | 입주해 커뮤니티',
+  title: '계약 전에 물어보는 곳',
   description:
-    '임차인·임대인·공인중개사가 계약 전에 확인할 것을 나누는 공간. 등기부, 보증금, 특약, 세입자 확인까지 실제 사례로 이야기합니다.',
-  openGraph: {
-    title: '계약 전에 물어보는 곳 | 입주해 커뮤니티',
-    description: '임차인·임대인·공인중개사가 계약 전에 확인할 것을 나누는 공간.',
-    type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: '계약 전에 물어보는 곳 | 입주해 커뮤니티',
-    description: '임차인·임대인·공인중개사가 계약 전에 확인할 것을 나누는 공간.',
-  },
+    '전세 계약 전에 보증금이 안전한지 계산해 보고, 등기부에서 무엇을 봐야 하는지 확인하세요. 가입 없이 바로 쓸 수 있습니다.',
   alternates: { canonical: '/' },
 }
 
-export default function HomePage() {
-  return <CommunityBoard />
+export default async function HomePage() {
+  const { series, questions, guideCount } = await getHomeContent()
+
+  return (
+    <>
+      <Header />
+
+      <main className="bg-background">
+        {/* 1. 무엇을 하는 곳인가 */}
+        <section className="border-b bg-gradient-to-b from-primary/5 to-transparent">
+          <div className="mx-auto max-w-3xl px-4 py-14 sm:py-20">
+            <h1 className="text-balance text-3xl font-bold leading-tight sm:text-4xl">
+              계약서에 도장 찍기 전에,
+              <br />
+              보증금부터 확인하세요
+            </h1>
+            <p className="mt-5 max-w-xl text-base leading-relaxed text-muted-foreground">
+              등기부와 시세에서 읽은 숫자를 넣으면 보증금이 안전한지 계산해 드립니다. 집이
+              경매로 넘어갔을 때 얼마가 남는지까지 보여드립니다. 가입하지 않으셔도 됩니다.
+            </p>
+
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+              <Link
+                href="/check"
+                className="inline-flex items-center justify-center rounded-lg bg-primary px-6 py-3.5 text-sm font-bold text-primary-foreground transition-opacity hover:opacity-90"
+              >
+                보증금 점검하기
+              </Link>
+              <Link
+                href="#guides"
+                className="inline-flex items-center justify-center rounded-lg border bg-background px-6 py-3.5 text-sm font-semibold transition-colors hover:bg-muted/50"
+              >
+                등기부 읽는 법 보기
+              </Link>
+            </div>
+
+            <p className="mt-5 text-xs leading-relaxed text-muted-foreground">
+              시세를 저희가 추정하지 않습니다. 직접 확인하신 숫자로만 계산하고, 그 숫자는
+              저장하지 않습니다.
+            </p>
+          </div>
+        </section>
+
+        {/* 2. 읽을 것 */}
+        <section id="guides" className="mx-auto max-w-3xl scroll-mt-4 px-4 py-14">
+          <header className="mb-8">
+            <h2 className="text-2xl font-bold">입주해가 정리한 것</h2>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              {guideCount > 0
+                ? `계약 전에 확인할 것을 순서대로 ${guideCount}편으로 정리했습니다.`
+                : '계약 전에 확인할 것을 순서대로 정리하고 있습니다.'}
+            </p>
+          </header>
+
+          {series.length === 0 ? (
+            <p className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
+              글을 불러오지 못했습니다. 잠시 후 다시 열어주세요.
+            </p>
+          ) : (
+            <div className="space-y-12">
+              {series.map((s) => (
+                <div key={s.key}>
+                  <div className="mb-4">
+                    <h3 className="text-lg font-bold">{s.title}</h3>
+                    <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                      {s.lead}
+                    </p>
+                  </div>
+
+                  <ol className="divide-y rounded-xl border">
+                    {s.posts.map((p) => (
+                      <li key={p.id}>
+                        <Link
+                          href={`/community/${p.id}`}
+                          className="flex gap-4 p-4 transition-colors hover:bg-muted/40"
+                        >
+                          <span className="mt-0.5 shrink-0 text-sm font-bold tabular-nums text-primary">
+                            {p.episode}
+                          </span>
+                          <span className="min-w-0">
+                            <span className="block text-sm font-semibold leading-snug">
+                              {p.subject}
+                            </span>
+                            <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
+                              {excerpt(p.body)}
+                            </span>
+                          </span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* 3. 사람들이 올린 것 */}
+        <section className="border-t bg-muted/30">
+          <div className="mx-auto max-w-3xl px-4 py-14">
+            <header className="mb-6 flex items-end justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-bold">계약 전에 물어보는 곳</h2>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  임차인, 임대인, 공인중개사가 한 게시판에서 이야기합니다. 가입하지 않아도
+                  읽고 쓸 수 있습니다.
+                </p>
+              </div>
+            </header>
+
+            {questions.length === 0 ? (
+              <div className="rounded-xl border bg-background p-8 text-center">
+                <p className="text-sm text-muted-foreground">
+                  아직 올라온 질문이 없습니다. 처음 물어보시는 분이 되어주세요.
+                </p>
+                <Link
+                  href="/community"
+                  className="mt-4 inline-flex items-center justify-center rounded-lg bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground transition-opacity hover:opacity-90"
+                >
+                  질문 남기기
+                </Link>
+              </div>
+            ) : (
+              <>
+                <ul className="divide-y rounded-xl border bg-background">
+                  {questions.map((q) => (
+                    <li key={q.id}>
+                      <Link
+                        href={`/community/${q.id}`}
+                        className="block p-4 transition-colors hover:bg-muted/40"
+                      >
+                        <p className="text-sm font-semibold leading-snug">{q.title}</p>
+                        <p className="mt-1.5 text-xs text-muted-foreground">
+                          댓글 {q.comment_count}
+                        </p>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  href="/community"
+                  className="mt-5 inline-flex items-center justify-center rounded-lg border bg-background px-5 py-2.5 text-sm font-semibold transition-colors hover:bg-muted/50"
+                >
+                  커뮤니티 전체 보기
+                </Link>
+              </>
+            )}
+          </div>
+        </section>
+
+        {/* 4. 앱과 테스터 */}
+        <section className="mx-auto max-w-3xl px-4 py-14">
+          <TesterBanner />
+        </section>
+
+        <footer className="border-t">
+          <div className="mx-auto max-w-3xl px-4 py-10">
+            <nav className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
+              <Link href="/about" className="hover:text-foreground">
+                입주해 소개
+              </Link>
+              <Link href="/check" className="hover:text-foreground">
+                보증금 점검
+              </Link>
+              <Link href="/community" className="hover:text-foreground">
+                커뮤니티
+              </Link>
+              <Link href="/app" className="hover:text-foreground">
+                앱으로 쓰기
+              </Link>
+              <Link href="/privacy" className="hover:text-foreground">
+                개인정보처리방침
+              </Link>
+              <Link href="/terms" className="hover:text-foreground">
+                이용약관
+              </Link>
+            </nav>
+            <p className="mt-6 text-xs leading-relaxed text-muted-foreground">
+              입주해는 계약 판단을 대신해 드리지 않습니다. 계산은 넣으신 숫자만 가지고 하는
+              것이며, 등기부에 적히지 않는 위험도 있습니다. 계약 전에는 등기부를 직접 떼어
+              확인하세요.
+            </p>
+          </div>
+        </footer>
+      </main>
+    </>
+  )
 }

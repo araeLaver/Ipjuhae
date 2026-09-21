@@ -28,6 +28,12 @@ export function TesterInvite() {
     })
   }, [])
 
+  function onInstallClick() {
+    track('install_guide_clicked', {
+      properties: { surface: 'web', ...getAttribution() },
+    })
+  }
+
   function onJoinClick() {
     track('tester_invite_clicked', {
       properties: { surface: 'web', ...getAttribution() },
@@ -37,30 +43,42 @@ export function TesterInvite() {
   return (
     <aside className="rounded-xl border border-primary/25 bg-primary/5 p-5">
       <h2 className="text-balance text-base font-bold leading-snug">
-        이 계산, 폰에서도 쓰실 수 있게 하는 중입니다
+        폰에 두고 쓰실 수 있습니다
       </h2>
 
       <p className="mt-2.5 text-sm leading-relaxed text-muted-foreground">
-        안드로이드 앱을 만들어 뒀는데, 정식 출시하려면 12명이 2주 동안 설치해 두어야 합니다.
-        구글 정책이라 사람 수가 안 차면 공개가 안 됩니다. 도와주시면 계속 쓰실 수 있게
-        만들겠습니다.
+        계약은 한 번에 끝나지 않습니다. 집을 몇 군데 보실 거라면 홈 화면에 두고 그때그때
+        넣어보시는 편이 편합니다. 설치는 1분이면 됩니다.
       </p>
 
       <a
-        href={TESTING_URL}
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={onJoinClick}
+        href="/app"
+        onClick={onInstallClick}
         className="mt-4 inline-flex w-full items-center justify-center rounded-lg bg-primary px-4 py-3 text-sm font-bold text-primary-foreground transition-opacity hover:opacity-90 sm:w-auto"
       >
-        테스터로 참여하기
+        설치 방법 보기
       </a>
 
-      <ul className="mt-3.5 space-y-1.5 text-xs leading-relaxed text-muted-foreground">
-        <li>안드로이드 폰과 구글 계정이 필요합니다. 아이폰은 아직 안 됩니다</li>
-        <li>링크에서 테스터 되기를 누르고 설치하시면 됩니다</li>
-        <li>2주 동안 지우지만 않으시면 됩니다</li>
-      </ul>
+      <p className="mt-3.5 text-xs leading-relaxed text-muted-foreground">
+        안드로이드는 설치 파일로, 아이폰은 홈 화면 추가로 바로 쓰실 수 있습니다.
+      </p>
+
+      <div className="mt-4 border-t border-primary/15 pt-4">
+        <p className="text-xs leading-relaxed text-muted-foreground">
+          플레이스토어 정식 출시는 테스터 12명이 14일 동안 참여해야 신청할 수 있습니다.
+          도와주실 수 있다면{' '}
+          <a
+            href={TESTING_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={onJoinClick}
+            className="font-semibold text-primary underline underline-offset-4"
+          >
+            테스터로 참여
+          </a>
+          해 주세요. 안드로이드 폰과 구글 계정이 필요합니다.
+        </p>
+      </div>
     </aside>
   )
 }

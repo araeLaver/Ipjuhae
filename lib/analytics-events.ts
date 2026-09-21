@@ -24,6 +24,7 @@ export const EVENT_NAMES = [
   'check_result_viewed',
   'tester_invite_shown',
   'tester_invite_clicked',
+  'install_guide_clicked',
 ] as const
 
 export type EventName = (typeof EVENT_NAMES)[number]
@@ -45,6 +46,7 @@ export const ANONYMOUS_ONLY_EVENTS = [
   'check_result_viewed',
   'tester_invite_shown',
   'tester_invite_clicked',
+  'install_guide_clicked',
 ] as const satisfies readonly EventName[]
 
 export function isAnonymousOnlyEvent(event: string): boolean {

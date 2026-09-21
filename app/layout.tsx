@@ -8,31 +8,31 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://www.ipjuhae.com'
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
   title: {
-    default: '입주해 | 세입자 프로필 기반 부동산 매칭',
+    default: '입주해 | 계약 전에 물어보는 곳',
     template: '%s | 입주해',
   },
-  description: '신뢰할 수 있는 세입자 프로필로 집주인과 세입자를 매칭하는 서비스',
-  keywords: ['입주해', '세입자 프로필', '임대차 매칭', '전세 구하기', '월세 매칭', '부동산 매칭', '역방향 매칭', '집주인 선택', '임대인 매칭', '세입자 신뢰점수'],
+  description: '전세 계약 전에 보증금이 안전한지 확인하세요. 등기부 읽는 법과 계약 전 확인할 것을 정리해 두었습니다.',
+  keywords: ['입주해', '전세 보증금', '보증금 안전', '깡통전세', '등기부 보는 법', '근저당', '전세사기 예방', '확정일자', '전입신고', '전세 계약 주의사항'],
   openGraph: {
     type: 'website',
     locale: 'ko_KR',
     url: APP_URL,
     siteName: '입주해',
-    title: '입주해 | 세입자 프로필 기반 부동산 매칭',
-    description: '신뢰할 수 있는 세입자 프로필로 집주인과 세입자를 매칭하는 서비스',
+    title: '입주해 | 계약 전에 물어보는 곳',
+    description: '전세 계약 전에 보증금이 안전한지 확인하세요. 숫자를 넣으면 바로 계산해 드립니다.',
     images: [
       {
         url: '/opengraph-image',
         width: 1200,
         height: 630,
-        alt: '입주해 - 세입자 프로필 기반 부동산 매칭 플랫폼',
+        alt: '입주해 - 계약 전에 보증금이 안전한지 확인하는 곳',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: '입주해 | 세입자 프로필 기반 부동산 매칭',
-    description: '신뢰할 수 있는 세입자 프로필로 집주인과 세입자를 매칭하는 서비스',
+    title: '입주해 | 계약 전에 물어보는 곳',
+    description: '전세 계약 전에 보증금이 안전한지 확인하세요. 숫자를 넣으면 바로 계산해 드립니다.',
     images: ['/opengraph-image'],
   },
   robots: {
