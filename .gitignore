@@ -41,3 +41,10 @@ next-env.d.ts
 # 디자인 캔버스 씨딩 결과물 (2MB, 원본은 .dc.html)
 marketing/sns/canvas/ipjuhae-sns-carousels.html
 public/download/
+
+# 에이전트 작업 중 저장소 루트에 생기는 임시 파일. 제품 코드가 아니다.
+/.*.py
+/.*.json
+/.*.md
+!/.gitignore
+__pycache__/
