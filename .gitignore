@@ -43,8 +43,16 @@ marketing/sns/canvas/ipjuhae-sns-carousels.html
 public/download/
 
 # 에이전트 작업 중 저장소 루트에 생기는 임시 파일. 제품 코드가 아니다.
+#
+# 처음엔 /.*.json 처럼 넓게 잡았다가 .eslintrc.json 까지 추적에서 빠져
+# CI의 lint가 설정을 못 찾고 멈췄다. 확장자별로 다르게 다룬다.
+#
+# .py  루트의 점 파일 중 파이썬은 설정이 아니다. 통째로 막는다.
+# .json/.md  설정과 문서가 섞인다. 실제로 쓰인 이름만 막는다.
 /.*.py
-/.*.json
-/.*.md
-!/.gitignore
+/.dow*.json
+/.dow*.md
+/.sub-*.json
+/.comment[0-9]*.json
+/.new780track.md
 __pycache__/
