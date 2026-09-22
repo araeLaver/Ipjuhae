@@ -4,6 +4,7 @@ import { Header } from '@/components/layout/header'
 import { getHomeContent, excerpt } from '@/lib/home-content'
 import { TesterBanner } from '@/components/tester-banner'
 import { POLICIES } from '@/lib/policies'
+import { PolicyNews } from '@/components/policy-news'
 
 /**
  * 첫 화면.
@@ -173,6 +174,9 @@ export default async function HomePage() {
             </Link>
           </div>
         </section>
+
+        {/* 3-2. 정책 소식. 인증키가 없으면 통째로 사라진다 */}
+        <PolicyNews />
 
         {/* 4. 사람들이 올린 것 */}
         <section className="border-t">
