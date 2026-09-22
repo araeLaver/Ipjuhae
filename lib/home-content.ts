@@ -76,7 +76,8 @@ async function fetchPublicPosts(): Promise<HomePost[]> {
   try {
     return await withTimeout(
       query<HomePost>(
-      `SELECT id, title, body, comment_count, view_count, created_at,
+      // 목록에 쓰는 건 첫 줄뿐이다. 본문을 통째로 끌어오면 200건이 그대로 실린다.
+      `SELECT id, title, LEFT(body, 300) AS body, comment_count, view_count, created_at,
               COALESCE(u.user_type, 'guest') AS author_role
          FROM community_posts p
          LEFT JOIN users u ON u.id = p.author_id

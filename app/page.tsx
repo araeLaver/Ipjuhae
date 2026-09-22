@@ -21,7 +21,16 @@ import { POLICIES } from '@/lib/policies'
  * 글 목록은 서버에서 읽는다. 클라이언트 fetch로 그리면 검색엔진에는 빈 화면이
  * 색인된다. 글 하나하나가 유입 경로인데 그러면 아무 의미가 없다.
  */
-export const revalidate = 300
+/**
+ * 요청마다 그린다.
+ *
+ * revalidate로 미리 만들어 두게 했더니 **빌드 시점에는 DB가 없어서** 빈 화면이
+ * 그대로 굳었다. 배포 후에도 "글을 불러오지 못했습니다"가 계속 떴다.
+ * 첫 방문자가 빈 홈을 보는 건 캐시로 아끼는 것보다 비싸다.
+ *
+ * 매달림 대비는 getHomeContent 쪽 시간 제한이 맡는다.
+ */
+export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   // 루트 레이아웃의 title.template은 자식 세그먼트에만 붙는다. `/`는 같은
