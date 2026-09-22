@@ -1,4 +1,5 @@
 import { query } from '@/lib/db'
+import { logger } from '@/lib/logger'
 
 /**
  * 첫 화면에 쓸 글을 서버에서 읽는다.
@@ -76,8 +77,13 @@ async function fetchPublicPosts(): Promise<HomePost[]> {
   try {
     return await withTimeout(
       query<HomePost>(
+      // 컬럼에 반드시 p. 를 붙인다. users 에도 id 와 created_at 이 있어서
+      // 접두사 없이 쓰면 "column reference is ambiguous" 로 쿼리가 통째로 죽는다.
+      // 아래 catch 가 그 오류를 삼켜 홈이 조용히 빈 채로 떴다.
+      //
       // 목록에 쓰는 건 첫 줄뿐이다. 본문을 통째로 끌어오면 200건이 그대로 실린다.
-      `SELECT id, title, LEFT(body, 300) AS body, comment_count, view_count, created_at,
+      `SELECT p.id, p.title, LEFT(p.body, 300) AS body,
+              p.comment_count, p.view_count, p.created_at,
               COALESCE(u.user_type, 'guest') AS author_role
          FROM community_posts p
          LEFT JOIN users u ON u.id = p.author_id
@@ -89,8 +95,10 @@ async function fetchPublicPosts(): Promise<HomePost[]> {
       ),
       []
     )
-  } catch {
-    // 글을 못 읽어도 첫 화면은 뜬다.
+  } catch (error) {
+    // 글을 못 읽어도 첫 화면은 뜬다. 다만 조용히 넘어가지는 않는다.
+    // 모호한 컬럼 참조 하나로 홈이 며칠 빈 채로 떠 있었다.
+    logger.error('첫 화면 글 조회 실패', { error })
     return []
   }
 }
