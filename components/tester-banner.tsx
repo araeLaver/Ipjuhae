@@ -38,7 +38,7 @@ export function TesterBanner() {
 
       <div className="mt-5 flex flex-col gap-3 sm:flex-row">
         <Link
-          href="/app"
+          href="/install"
           onClick={() =>
             track('install_guide_clicked', {
               properties: { surface: 'home', ...getAttribution() },

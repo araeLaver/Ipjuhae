@@ -17,12 +17,12 @@ export const metadata: Metadata = {
   openGraph: {
     title: '입주해 앱으로 쓰기',
     description: '폰에 설치해서 계약 전에 바로 확인하세요.',
-    url: 'https://www.ipjuhae.com/app',
+    url: 'https://www.ipjuhae.com/install',
     siteName: '입주해',
     locale: 'ko_KR',
     type: 'website',
   },
-  alternates: { canonical: 'https://www.ipjuhae.com/app' },
+  alternates: { canonical: 'https://www.ipjuhae.com/install' },
 }
 
 export default function AppPage() {

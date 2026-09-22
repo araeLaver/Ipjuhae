@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { Header } from '@/components/layout/header'
 import { getHomeContent, excerpt } from '@/lib/home-content'
 import { TesterBanner } from '@/components/tester-banner'
+import { POLICIES } from '@/lib/policies'
 
 /**
  * 첫 화면.
@@ -13,8 +14,9 @@ import { TesterBanner } from '@/components/tester-banner'
  * 1. 무엇을 해주는 곳인지 한 줄
  * 2. 바로 써볼 수 있는 도구 (/check)
  * 3. 이미 써둔 글 18편을 연재 단위로 펼쳐 보여준다 — 여기가 실물이다
- * 4. 사람들이 올린 질문
- * 5. 앱과 테스터
+ * 4. 제도 — 기준 하나를 몰라서 보증금 구간을 잘못 잡는 일이 실제로 일어난다
+ * 5. 사람들이 올린 질문
+ * 6. 앱과 테스터
  *
  * 글 목록은 서버에서 읽는다. 클라이언트 fetch로 그리면 검색엔진에는 빈 화면이
  * 색인된다. 글 하나하나가 유입 경로인데 그러면 아무 의미가 없다.
@@ -22,7 +24,9 @@ import { TesterBanner } from '@/components/tester-banner'
 export const revalidate = 300
 
 export const metadata: Metadata = {
-  title: '계약 전에 물어보는 곳',
+  // 루트 레이아웃의 title.template은 자식 세그먼트에만 붙는다. `/`는 같은
+  // 세그먼트라 적용되지 않으므로 브랜드를 직접 적는다.
+  title: '입주해 | 계약 전에 보증금이 안전한지 확인하는 곳',
   description:
     '전세 계약 전에 보증금이 안전한지 계산해 보고, 등기부에서 무엇을 봐야 하는지 확인하세요. 가입 없이 바로 쓸 수 있습니다.',
   alternates: { canonical: '/' },
@@ -125,8 +129,44 @@ export default async function HomePage() {
           )}
         </section>
 
-        {/* 3. 사람들이 올린 것 */}
+        {/* 3. 제도 */}
         <section className="border-t bg-muted/30">
+          <div className="mx-auto max-w-3xl px-4 py-14">
+            <header className="mb-6">
+              <h2 className="text-2xl font-bold">알아두면 보증금을 지키는 제도</h2>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                기준 하나를 몰라서 보증금 구간을 잘못 잡는 일이 실제로 일어납니다. 확인한 것만
+                적고 출처와 확인일을 함께 싣습니다.
+              </p>
+            </header>
+
+            <ul className="grid gap-3 sm:grid-cols-2">
+              {POLICIES.map((p) => (
+                <li key={p.slug}>
+                  <Link
+                    href={`/policy#${p.slug}`}
+                    className="block h-full rounded-xl border bg-background p-4 transition-colors hover:bg-muted/40"
+                  >
+                    <span className="block text-sm font-bold">{p.title}</span>
+                    <span className="mt-1.5 block text-xs leading-relaxed text-muted-foreground">
+                      {p.summary}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+
+            <Link
+              href="/policy"
+              className="mt-5 inline-flex items-center justify-center rounded-lg border bg-background px-5 py-2.5 text-sm font-semibold transition-colors hover:bg-muted/50"
+            >
+              제도 전체 보기
+            </Link>
+          </div>
+        </section>
+
+        {/* 4. 사람들이 올린 것 */}
+        <section className="border-t">
           <div className="mx-auto max-w-3xl px-4 py-14">
             <header className="mb-6 flex items-end justify-between gap-4">
               <div>
@@ -178,7 +218,7 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* 4. 앱과 테스터 */}
+        {/* 5. 앱과 테스터 */}
         <section className="mx-auto max-w-3xl px-4 py-14">
           <TesterBanner />
         </section>
@@ -192,10 +232,13 @@ export default async function HomePage() {
               <Link href="/check" className="hover:text-foreground">
                 보증금 점검
               </Link>
+              <Link href="/policy" className="hover:text-foreground">
+                전세 제도
+              </Link>
               <Link href="/community" className="hover:text-foreground">
                 커뮤니티
               </Link>
-              <Link href="/app" className="hover:text-foreground">
+              <Link href="/install" className="hover:text-foreground">
                 앱으로 쓰기
               </Link>
               <Link href="/privacy" className="hover:text-foreground">

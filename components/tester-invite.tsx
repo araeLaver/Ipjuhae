@@ -52,7 +52,7 @@ export function TesterInvite() {
       </p>
 
       <a
-        href="/app"
+        href="/install"
         onClick={onInstallClick}
         className="mt-4 inline-flex w-full items-center justify-center rounded-lg bg-primary px-4 py-3 text-sm font-bold text-primary-foreground transition-opacity hover:opacity-90 sm:w-auto"
       >

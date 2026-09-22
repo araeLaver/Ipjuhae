@@ -3,11 +3,12 @@
 /**
  * 설치 안내.
  *
- * 기기를 보고 필요한 것만 보여준다. 아이폰 쓰는 사람에게 APK를 보여주면
- * 받았다가 안 열려서 화만 난다. 반대도 마찬가지다.
+ * 기기를 보고 필요한 것만 보여준다. 아이폰 쓰는 사람에게 안드로이드 설치법을
+ * 보여주면 따라 하다가 막히고 만다. 반대도 마찬가지다.
  *
- * 안드로이드에 "출처를 알 수 없는 앱" 경고가 뜨는 걸 숨기지 않는다.
- * 미리 말해 두지 않으면 그 화면에서 그만둔다.
+ * 설치 파일(APK)을 직접 내려주는 길도 만들어 봤다가 접었다. 85MB인 데다
+ * 안드로이드가 "출처를 알 수 없는 앱" 경고를 띄우고, 대부분 거기서 그만둔다.
+ * 지금은 플레이스토어의 테스트 참여 경로가 유일하게 깔끔한 길이다.
  */
 
 import { useEffect, useState } from 'react'
@@ -15,7 +16,7 @@ import { Card } from '@/components/ui/card'
 
 type Platform = 'android' | 'ios' | 'desktop' | 'unknown'
 
-const APK_URL = '/download/ipjuhae.apk'
+const TESTING_URL = 'https://play.google.com/apps/testing/com.ipjuhae.app'
 
 function detect(): Platform {
   if (typeof navigator === 'undefined') return 'unknown'
@@ -42,28 +43,36 @@ function AndroidGuide() {
     <Card className="space-y-4 p-5 sm:p-6">
       <div className="space-y-1.5">
         <h2 className="text-base font-bold">안드로이드</h2>
-        <p className="text-xs text-muted-foreground">설치 파일을 받아서 바로 설치합니다</p>
+        <p className="text-xs text-muted-foreground">
+          플레이스토어에서 받습니다. 지금은 테스트 참여로 열립니다
+        </p>
       </div>
 
       <a
-        href={APK_URL}
+        href={TESTING_URL}
+        target="_blank"
+        rel="noopener noreferrer"
         className="inline-flex w-full items-center justify-center rounded-lg bg-primary px-4 py-3 text-sm font-bold text-primary-foreground transition-opacity hover:opacity-90"
       >
-        설치 파일 받기
+        테스터로 참여하고 설치하기
       </a>
 
       <ol className="space-y-2.5">
-        <Step n={1}>위 버튼을 눌러 파일을 받습니다</Step>
+        <Step n={1}>위 버튼을 누르면 구글 페이지가 열립니다</Step>
         <Step n={2}>
-          받은 파일을 열면 <strong className="font-semibold">출처를 알 수 없는 앱</strong> 이라는
-          안내가 나옵니다. 플레이스토어를 거치지 않아서 뜨는 것이고, 한 번만 허용해 주시면 됩니다
+          <strong className="font-semibold">테스터 되기</strong> 를 누릅니다. 폰에 로그인된 구글
+          계정으로 참여됩니다
         </Step>
-        <Step n={3}>설치를 누릅니다</Step>
+        <Step n={3}>
+          같은 화면의 <strong className="font-semibold">Google Play에서 다운로드</strong> 로
+          설치합니다
+        </Step>
       </ol>
 
       <p className="text-xs leading-relaxed text-muted-foreground">
-        이 파일은 www.ipjuhae.com 에서 직접 내려받습니다. 다른 곳에서 받은 파일은 설치하지
-        마세요.
+        정식 출시 전이라 이 경로로만 설치됩니다. 구글은 새 개인 개발자 계정에 대해 테스터
+        12명이 14일 동안 참여할 것을 요구하는데, 그 조건을 채우는 중입니다. 설치해 두시는 것만으로
+        도움이 됩니다.
       </p>
     </Card>
   )
@@ -107,7 +116,8 @@ function DesktopGuide() {
 
       <ol className="space-y-2.5">
         <Step n={1}>
-          폰 브라우저에서 <strong className="font-semibold">www.ipjuhae.com/app</strong> 을 엽니다
+          폰 브라우저에서 <strong className="font-semibold">www.ipjuhae.com/install</strong> 을
+          엽니다
         </Step>
         <Step n={2}>기기에 맞는 설치 방법이 나옵니다</Step>
       </ol>
