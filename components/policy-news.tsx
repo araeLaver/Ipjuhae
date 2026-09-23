@@ -32,6 +32,9 @@ export async function PolicyNews() {
                 className="block p-4 transition-colors hover:bg-muted/40"
               >
                 <p className="text-sm font-semibold leading-snug">{n.title}</p>
+                {n.ministry ? (
+                  <p className="mt-1 text-xs font-medium text-primary">{n.ministry}</p>
+                ) : null}
                 {n.summary ? (
                   <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
                     {n.summary}

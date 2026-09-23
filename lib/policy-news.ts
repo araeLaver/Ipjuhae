@@ -3,27 +3,46 @@ import { logger } from '@/lib/logger'
 /**
  * 대한민국 정책브리핑 정책뉴스.
  *
- * 공공데이터포털 「문화체육관광부_정책브리핑_정책뉴스_API」를 쓴다.
+ * 공공데이터포털 「문화체육관광부_정책브리핑_정책뉴스_API」.
  * https://www.data.go.kr/data/15095335/openapi.do
  *
- * 세 가지를 지킨다.
+ * 실제로 호출해 확인한 것들 (2026-09-22)
  *
- * 1. **키가 없으면 아무것도 내보내지 않는다.** 빈 칸이나 "곧 제공됩니다"를 두지 않는다.
- *    없는 걸 있는 척하지 않는다.
- * 2. **출처를 반드시 표시한다.** 공공저작물 제1유형이라 출처표시가 의무다.
- *    예의가 아니라 이용 조건이다.
- * 3. **캐시한다.** 개발계정은 하루 1,000회다. 방문자마다 호출하면 금방 막힌다.
+ * - 오퍼레이션은 `policyNewsList2`. `getPolicyNewsList` 류는 전부 없는 서비스다
+ * - `startDate`/`endDate`는 필수고 **최대 3일**까지만 된다. 넘기면 THREE_DAYS_OVER_ERROR
+ * - 응답은 XML이고 항목은 `<NewsItem>`. 본문 필드는 전부 CDATA로 감싸여 있다
+ * - 날짜는 `MM/DD/YYYY HH:mm:ss` 형식이다. 한국 API인데 미국식이라 헷갈린다
+ * - 3일치가 35건쯤 된다. 그중 임대차 관련은 몇 건 없어서 기간을 넉넉히 훑어야 한다
  *
- * 응답 필드 이름은 포털 문서에 공개돼 있지 않아 실제 호출로 확인해야 한다.
- * 그래서 파싱을 느슨하게 두고, 모양이 다르면 빈 목록을 돌려준다.
+ * 지키는 것
+ *
+ * 1. 키가 없으면 아무것도 내보내지 않는다. 빈 칸을 두지 않는다
+ * 2. 출처를 표시한다. 공공누리 제1유형이라 이용 조건이다
+ * 3. 캐시한다. 개발계정은 하루 1,000회다
  */
 
-const ENDPOINT = 'https://apis.data.go.kr/1371000/policyNewsService/policyNewsList'
+const ENDPOINT = 'https://apis.data.go.kr/1371000/policyNewsService2/policyNewsList2'
 
-/** 하루 1,000회 제한. 30분 캐시면 한 화면당 48회면 충분하다. */
+/** 한 번에 조회 가능한 최대 기간. API 제약이다. */
+const MAX_DAYS_PER_CALL = 3
+
+/**
+ * 며칠치를 훑을지. 3일 단위로 나눠 호출하므로 호출 수 = ceil(이 값 / 3).
+ *
+ * 21일로 했더니 임대차 기사가 2건뿐이었다. 정책 발표는 매일 나오는 게 아니다.
+ * 45일이면 15회 호출인데, 30분 캐시가 있어 하루 1,000회 제한에 한참 못 미친다.
+ */
+const LOOKBACK_DAYS = 45
+
+/** 30분. 하루 1,000회 제한 안에서 넉넉하다. */
 const CACHE_SECONDS = 1800
 
-/** 임대차와 상관없는 정책까지 다 보여주면 소음이다. */
+/**
+ * 임대차와 무관한 정책까지 보여주면 소음이다.
+ *
+ * '주거'처럼 넓은 말은 뺐다. 한부모가족 지원이나 재난 이재민 지원까지 딸려 온다.
+ * 나쁜 기사가 아니라 이 화면에서 찾는 것이 아니다.
+ */
 const KEYWORDS = [
   '전세',
   '월세',
@@ -33,118 +52,178 @@ const KEYWORDS = [
   '임차인',
   '임대인',
   '주택임대',
-  '주거',
+  '임대주택',
   '보증보험',
-  '청년 주거',
+  '깡통',
+  '확정일자',
+  '전입신고',
+  '역전세',
+  '전월세',
+  '공공임대',
+  '주거안정',
+  '주거지원',
+  '주거비',
+  '세입자',
 ]
 
+/**
+ * 같은 낱말이라도 우리 얘기가 아닌 것들.
+ *
+ * 농지 임대차가 대표적이다. '임대차'가 들어 있지만 집 이야기가 아니다.
+ */
+const EXCLUDE = ['농지', '농업', '농식품', '축산', '어촌', '산업단지', '상가건물']
+
 export interface PolicyNewsItem {
+  id: string
   title: string
   summary: string
   url: string
-  /** YYYY-MM-DD. 없으면 빈 문자열. */
+  /** YYYY-MM-DD */
   approvedAt: string
+  /** 발표 부처. 없으면 빈 문자열. */
+  ministry: string
 }
 
 export function isPolicyNewsEnabled(): boolean {
   return Boolean(process.env.PUBLIC_DATA_API_KEY)
 }
 
-function pick(row: Record<string, unknown>, keys: string[]): string {
-  for (const k of keys) {
-    const v = row[k]
-    if (typeof v === 'string' && v.trim()) return v.trim()
-  }
-  return ''
+/**
+ * 포털이 주는 인증키는 이미 URL 인코딩돼 있다(%2B, %2F, %3D).
+ * URLSearchParams에 넣으면 퍼센트가 한 번 더 인코딩돼 인증이 깨진다.
+ * 그래서 쿼리 문자열을 직접 이어 붙인다.
+ */
+function buildUrl(key: string, startDate: string, endDate: string): string {
+  const params = `numOfRows=100&pageNo=1&startDate=${startDate}&endDate=${endDate}`
+  return `${ENDPOINT}?serviceKey=${key}&${params}`
 }
 
-/** "20260922" 또는 "2026-09-22 10:00" -> "2026-09-22" */
+function cdata(raw: string): string {
+  const m = raw.match(/<!\[CDATA\[([\s\S]*?)\]\]>/)
+  return (m ? m[1] : raw).trim()
+}
+
+function tag(block: string, name: string): string {
+  const m = block.match(new RegExp(`<${name}>([\\s\\S]*?)</${name}>`))
+  return m ? cdata(m[1]) : ''
+}
+
+/** "09/22/2026 17:42:00" -> "2026-09-22" */
 function normalizeDate(raw: string): string {
-  const digits = raw.replace(/\D/g, '')
-  if (digits.length < 8) return ''
-  return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6, 8)}`
+  const m = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})/)
+  if (!m) return ''
+  return `${m[3]}-${m[1]}-${m[2]}`
 }
 
-function looksRelevant(text: string): boolean {
-  return KEYWORDS.some((k) => text.includes(k))
+/** YYYYMMDD */
+function ymd(d: Date): string {
+  return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`
 }
 
 /**
- * 임대차 관련 정책뉴스를 가져온다.
+ * 태그와 엔티티를 걷어낸다.
  *
- * 실패하면 빈 배열이다. 정책뉴스가 안 떠도 사이트의 나머지는 멀쩡해야 한다.
+ * 제목에도 `&middot;`가 그대로 들어오고 부제에는 `<br>`이 섞인다.
+ * 본문뿐 아니라 제목·부제에도 똑같이 걸어야 화면이 깨지지 않는다.
+ */
+function clean(html: string): string {
+  return html
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&middot;/g, '·')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;|&apos;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function looksRelevant(text: string): boolean {
+  if (EXCLUDE.some((k) => text.includes(k))) return false
+  return KEYWORDS.some((k) => text.includes(k))
+}
+
+async function fetchWindow(key: string, start: Date, end: Date): Promise<PolicyNewsItem[]> {
+  const res = await fetch(buildUrl(key, ymd(start), ymd(end)), {
+    next: { revalidate: CACHE_SECONDS },
+    signal: AbortSignal.timeout(6000),
+  })
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+
+  const xml = await res.text()
+  const blocks = xml.match(/<NewsItem>[\s\S]*?<\/NewsItem>/g) ?? []
+
+  const out: PolicyNewsItem[] = []
+  for (const block of blocks) {
+    const title = clean(tag(block, 'Title'))
+    const url = tag(block, 'OriginalUrl')
+    if (!title || !url.startsWith('https://')) continue
+
+    const subtitle = clean(tag(block, 'SubTitle1'))
+    const contents = clean(tag(block, 'DataContents'))
+
+    // 제목과 부제로만 판단한다.
+    //
+    // 본문까지 훑었더니 "2027년 예산" 기사가 걸렸다. 본문 어딘가에 '월세'가
+    // 한 번 나왔을 뿐 임대차 기사가 아니다. 기사의 주제는 제목에 있다.
+    if (!looksRelevant(`${title} ${subtitle}`)) continue
+
+    out.push({
+      id: tag(block, 'NewsItemId') || url,
+      title,
+      summary: (subtitle || contents).slice(0, 110),
+      url,
+      approvedAt: normalizeDate(tag(block, 'ApproveDate')),
+      ministry: tag(block, 'MinisterCode'),
+    })
+  }
+  return out
+}
+
+/**
+ * 임대차 관련 정책뉴스를 최신순으로 가져온다.
+ *
+ * 한 번에 3일까지만 조회되므로 구간을 나눠 부른다. 한 구간이 실패해도
+ * 나머지는 살린다. 정책 소식이 안 떠도 사이트의 나머지는 멀쩡해야 한다.
  */
 export async function fetchPolicyNews(limit = 5): Promise<PolicyNewsItem[]> {
   const key = process.env.PUBLIC_DATA_API_KEY
   if (!key) return []
 
-  const url = new URL(ENDPOINT)
-  url.searchParams.set('serviceKey', key)
-  url.searchParams.set('numOfRows', '60')
-  url.searchParams.set('pageNo', '1')
-  url.searchParams.set('returnType', 'json')
-
-  try {
-    const res = await fetch(url, {
-      next: { revalidate: CACHE_SECONDS },
-      signal: AbortSignal.timeout(4000),
-    })
-    if (!res.ok) {
-      logger.warn('정책뉴스 응답 오류', { status: res.status })
-      return []
-    }
-
-    const json: unknown = await res.json()
-    const rows = extractRows(json)
-    if (rows.length === 0) {
-      logger.warn('정책뉴스 응답에서 목록을 찾지 못함')
-      return []
-    }
-
-    const items: PolicyNewsItem[] = []
-    for (const row of rows) {
-      const title = pick(row, ['newsItemTitle', 'title', 'NewsItemTitle', 'subTitle'])
-      if (!title) continue
-
-      const summary = pick(row, ['subTitle1', 'subTitle', 'dataContents', 'contents'])
-      const link = pick(row, ['originalUrl', 'linkUrl', 'url'])
-      if (!link.startsWith('https://')) continue
-
-      if (!looksRelevant(`${title} ${summary}`)) continue
-
-      items.push({
-        title,
-        summary: summary.slice(0, 120),
-        url: link,
-        approvedAt: normalizeDate(pick(row, ['approveDate', 'approvalDate', 'regDate'])),
-      })
-      if (items.length >= limit) break
-    }
-    return items
-  } catch (error) {
-    logger.warn('정책뉴스 조회 실패', { error })
-    return []
+  const windows: Array<[Date, Date]> = []
+  const today = new Date()
+  for (let offset = 0; offset < LOOKBACK_DAYS; offset += MAX_DAYS_PER_CALL) {
+    const end = new Date(today)
+    end.setDate(end.getDate() - offset)
+    const start = new Date(end)
+    start.setDate(start.getDate() - (MAX_DAYS_PER_CALL - 1))
+    windows.push([start, end])
   }
-}
 
-/** 응답 껍데기가 기관마다 달라서 흔한 모양을 차례로 찾아본다. */
-function extractRows(json: unknown): Array<Record<string, unknown>> {
-  if (!json || typeof json !== 'object') return []
+  // 순차로 부른다.
+  //
+  // 15개 구간을 한꺼번에 던졌더니 5개가 실패했다. 포털이 동시 요청을 끊는다.
+  // 어차피 30분 캐시라 첫 한 번만 느리면 된다. 목표 건수를 채우면 멈춘다.
+  const seen = new Set<string>()
+  const items: PolicyNewsItem[] = []
+  let failed = 0
 
-  const candidates: unknown[] = []
-  const root = json as Record<string, unknown>
-
-  const body = (root.response as Record<string, unknown> | undefined)?.body ?? root.body
-  if (body && typeof body === 'object') {
-    const b = body as Record<string, unknown>
-    candidates.push(b.items, (b.items as Record<string, unknown> | undefined)?.item)
-  }
-  candidates.push(root.NewsItem, root.items, root.item, root.newsList)
-
-  for (const c of candidates) {
-    if (Array.isArray(c) && c.length > 0 && typeof c[0] === 'object') {
-      return c as Array<Record<string, unknown>>
+  for (const [start, end] of windows) {
+    if (items.length >= limit) break
+    try {
+      for (const item of await fetchWindow(key, start, end)) {
+        if (seen.has(item.id)) continue
+        seen.add(item.id)
+        items.push(item)
+      }
+    } catch {
+      failed += 1
     }
   }
-  return []
+
+  items.sort((a, b) => b.approvedAt.localeCompare(a.approvedAt))
+  return items.slice(0, limit)
 }

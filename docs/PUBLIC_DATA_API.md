@@ -81,3 +81,26 @@ flyctl secrets set PUBLIC_DATA_API_KEY='디코딩키' -a ipjuhae-production
   바꾸는 단계가 따로 필요하다
 - 실거래가는 **전세가**지 매매 시세가 아니다. 보증금 위험 계산에는 매매 시세가 필요하므로
   매매 실거래가 API도 함께 신청하는 이유가 이것이다
+
+## 발급받은 엔드포인트 (2026-09-22 확인)
+
+키 자체는 여기 적지 않는다. `.env.local`과 Fly secrets에만 둔다.
+데이터 포맷은 다섯 개 모두 **XML**이다.
+
+| API | End Point |
+| --- | --- |
+| 정책브리핑 정책뉴스 | `https://apis.data.go.kr/1371000/policyNewsService2` |
+| 아파트 전월세 | `https://apis.data.go.kr/1613000/RTMSDataSvcAptRent` |
+| 아파트 매매 | `https://apis.data.go.kr/1613000/RTMSDataSvcAptTrade` |
+| 연립다세대 전월세 | `https://apis.data.go.kr/1613000/RTMSDataSvcRHRent` |
+| 오피스텔 전월세 | `https://apis.data.go.kr/1613000/RTMSDataSvcOffiRent` |
+
+단독·다가구 전월세는 아직 신청되지 않았다. 다가구는 선순위 보증금 때문에
+가장 위험한 유형이라 나중에라도 받는 편이 좋다.
+
+### 키를 다룰 때
+
+포털이 주는 「일반 인증키(Encoding)」는 이미 URL 인코딩된 문자열이다
+(`%2B`, `%2F`, `%3D`가 들어 있다). `URLSearchParams`에 그대로 넣으면
+퍼센트 기호가 한 번 더 인코딩돼 인증이 실패한다.
+쿼리 문자열을 직접 이어 붙이거나, 디코딩 키를 쓰고 한 번만 인코딩한다.
