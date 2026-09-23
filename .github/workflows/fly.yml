@@ -48,7 +48,27 @@ jobs:
             echo "::error::DISCLOSURE_SIGNING_KEY must be provisioned before deploy."
             exit 1
           fi
-          flyctl deploy --remote-only
+          # Fly 원격 빌더가 rpc Unavailable 로 자주 죽는다. 이 세션에만 네 번이다.
+          # 상태 페이지는 정상이라고 나오고 코드 문제도 아니다.
+          # 두 번 시도한 뒤에도 안 되면 러너에서 직접 빌드한다.
+          # GitHub 러너에는 Docker 가 있으므로 원격 빌더를 아예 거치지 않는다.
+          deploy_remote() {
+            flyctl deploy --remote-only
+          }
+
+          if deploy_remote; then
+            echo "::notice::원격 빌더로 배포 완료."
+          else
+            echo "::warning::원격 빌더 1차 실패. 60초 후 재시도."
+            sleep 60
+            if deploy_remote; then
+              echo "::notice::원격 빌더 재시도로 배포 완료."
+            else
+              echo "::warning::원격 빌더 2회 실패. 러너에서 직접 빌드한다."
+              flyctl deploy --local-only
+              echo "::notice::러너 빌드로 배포 완료."
+            fi
+          fi
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
           TESTED_SHA: ${{ github.event.workflow_run.head_sha }}
