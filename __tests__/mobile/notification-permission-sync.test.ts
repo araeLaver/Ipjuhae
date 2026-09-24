@@ -267,19 +267,42 @@ describe('알림 끄기 — 기기와 서버 양쪽에서 토큰을 지운다', 
   })
 
   it('서버 삭제가 실패해도 기기 토큰은 반드시 폐기한다', async () => {
+    // 되돌리기를 단언보다 먼저 한다. 뒤에 두면 단언이 하나라도 깨지는 순간 거부하는
+    // fetch가 그대로 남아 이 파일의 나머지 케이스까지 통째로 함께 무너진다.
+    const working = globalThis.fetch
     globalThis.fetch = (() => Promise.reject(new Error('offline'))) as typeof fetch
 
     const state = await disableNotifications()
+    globalThis.fetch = working
 
     expect(state.enabled).toBe(false)
     expect(globalThis.__notifShim.unregisterCount).toBe(1)
     expect(globalThis.__notifShim.storage[TOKEN_KEY]).toBeUndefined()
+    expect(globalThis.__notifShim.storage[PENDING_REVOKE_KEY]).toBe('ExponentPushToken[test]')
     expect(state.error).toMatch(/서버 토큰/)
+  })
 
-    globalThis.fetch = ((url: string, init: RequestInit = {}) => {
-      captured.push({ url, init })
-      return Promise.resolve(new Response('{"ok":true}', { status: 200 }))
-    }) as typeof fetch
+  /**
+   * [DOW-1132]. 위 케이스는 기기 토큰이 폐기됐다는 것까지만 본다. 화면에 뜨는 문구는
+   * "다음 연결 때 다시 처리해 주세요"라고 약속하는데, 그 재시도를 실제로 거는 건
+   * `revokeStoredToken()`이고 그쪽은 `PUSH_PENDING_REVOKE_KEY`를 읽는다. 끄기 경로가
+   * 거기에 토큰을 넘겨 두지 않으면 두 저장값이 모두 비어 재시도가 영영 오지 않는다 —
+   * 서버 `push_tokens` 행은 남고 사용자는 처리됐다고 믿는다.
+   */
+  it('서버 삭제가 실패하면 다음 복귀에서 같은 토큰으로 다시 삭제를 건다', async () => {
+    const working = globalThis.fetch
+    globalThis.fetch = (() => Promise.reject(new Error('offline'))) as typeof fetch
+
+    await disableNotifications()
+
+    globalThis.fetch = working
+    captured.length = 0
+    await initializeNotifications(true)
+
+    const deletes = captured.filter((c) => c.init.method === 'DELETE')
+    expect(deletes).toHaveLength(1)
+    expect(deletes[0].url).toContain(encodeURIComponent('ExponentPushToken[test]'))
+    expect(globalThis.__notifShim.storage[PENDING_REVOKE_KEY]).toBeUndefined()
   })
 })
 

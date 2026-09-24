@@ -206,6 +206,11 @@ export async function disableNotifications(): Promise<PushState> {
       await apiClient.delete(`/notifications/push-token?token=${encodeURIComponent(token)}`);
     }
   } catch {
+    // 지울 토큰을 여기서 옮겨 두지 않으면 바로 아래에서 PUSH_TOKEN_KEY가 비워지며 사라진다.
+    // 그러면 아래 문구가 약속한 "다음 연결 때"의 재시도 — revokeStoredToken()이
+    // PUSH_PENDING_REVOKE_KEY를 읽어 거는 DELETE — 가 지울 토큰을 찾지 못한다.
+    // PUSH_TOKEN_KEY로 되돌리지 않는 이유는 revokeStoredToken() 주석을 참고한다.
+    if (token) await AsyncStorage.setItem(PUSH_PENDING_REVOKE_KEY, token);
     error = '이 기기의 서버 토큰 정리를 완료하지 못했습니다. 다음 연결 때 다시 처리해 주세요.';
   }
   try {
