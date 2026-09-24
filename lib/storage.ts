@@ -13,6 +13,7 @@ import { logger } from './logger'
 import crypto from 'node:crypto'
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
 import { optimizeProfileImage, optimizeDocumentImage, validateImage } from './image'
+import { buildUrl } from '@/lib/base-url'
 
 interface UploadResult {
   success: boolean
@@ -89,7 +90,7 @@ async function uploadMock(options: UploadOptions): Promise<UploadResult> {
   logger.info('파일 업로드 (Mock)', { key, contentType: options.contentType })
 
   // Mock URL 생성
-  const url = `${process.env.NEXT_PUBLIC_BASE_URL}/mock-storage/${key}`
+  const url = buildUrl(`mock-storage/${key}`)
 
   return {
     success: true,

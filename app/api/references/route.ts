@@ -8,6 +8,7 @@ import { referenceRequestSchema } from '@/lib/validations'
 import crypto from 'node:crypto'
 import { withIdempotency } from '@/lib/idempotency'
 import { jsonError, jsonSuccess } from '@/lib/api-response'
+import { buildUrl } from '@/lib/base-url'
 
 export async function GET(request: Request) {
   try {
@@ -84,8 +85,7 @@ export async function POST(request: Request) {
           [user.id]
         )
 
-        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
-        const surveyUrl = `${baseUrl}/reference/survey/${token}`
+        const surveyUrl = buildUrl(`reference/survey/${token}`)
         const tenantName = profile?.name || 'tenant'
 
         // best-effort 발송(비차단). SMS 미설정(운영 mock) 시 reject되므로 .catch로

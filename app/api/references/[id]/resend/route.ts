@@ -9,6 +9,7 @@ import { getCurrentUser } from '@/lib/auth'
 import { LandlordReference, Profile } from '@/types/database'
 import { sendReferenceRequestSMS } from '@/lib/sms'
 import crypto from 'node:crypto'
+import { buildUrl } from '@/lib/base-url'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -62,8 +63,7 @@ export async function POST(request: Request, { params }: RouteParams) {
       [user.id]
     )
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
-    const surveyUrl = `${baseUrl}/reference/survey/${newToken}`
+    const surveyUrl = buildUrl(`reference/survey/${newToken}`)
 
     await sendReferenceRequestSMS(
       reference.landlord_phone,

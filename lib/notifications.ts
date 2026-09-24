@@ -6,6 +6,7 @@
 import { query, queryOne } from './db'
 import { sendEmail } from './email'
 import { logger } from './logger'
+import { buildUrl, getBaseUrl } from '@/lib/base-url'
 
 export type NotificationType =
   | 'new_message'
@@ -52,8 +53,8 @@ async function isEmailEnabled(userId: string, type: NotificationType): Promise<b
  * 알림 이메일 HTML 생성
  */
 function buildNotificationEmailHtml(title: string, body: string, link?: string): string {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
-  const fullLink = link ? `${baseUrl}${link}` : baseUrl
+  const baseUrl = getBaseUrl()
+  const fullLink = link ? buildUrl(link) : baseUrl
   return `
     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
       <h2 style="color: #2563eb;">${title}</h2>

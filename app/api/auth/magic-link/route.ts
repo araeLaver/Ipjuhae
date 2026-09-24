@@ -6,6 +6,7 @@ import { generateToken, setAuthCookie } from '@/lib/auth'
 import { sendMagicLink } from '@/lib/email'
 import { emailSchema } from '@/lib/validations'
 import { User } from '@/types/database'
+import { normalizeBaseUrl } from '@/lib/base-url'
 
 const requestBodySchema = z.object({
   email: emailSchema,
@@ -57,10 +58,13 @@ export async function POST(request: NextRequest) {
       throw new Error('토큰 생성에 실패했습니다')
     }
 
-    const baseUrl =
+    // 폴백 순서는 그대로 두고 끝 슬래시만 떼어낸다. 여기서 만든 주소는 메일로 나가서
+    // 되돌릴 수 없으므로 `//`가 섞이면 안 된다.
+    const baseUrl = normalizeBaseUrl(
       process.env.NEXT_PUBLIC_BASE_URL ||
-      process.env.NEXT_PUBLIC_APP_URL ||
-      `https://${request.headers.get('host')}`
+        process.env.NEXT_PUBLIC_APP_URL ||
+        `https://${request.headers.get('host')}`,
+    )
 
     await sendMagicLink(email, token, baseUrl)
 

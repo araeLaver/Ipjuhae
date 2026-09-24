@@ -4,6 +4,7 @@ import { query } from '@/lib/db'
 import { getAdminUser } from '@/lib/admin'
 import { sendEmail } from '@/lib/email'
 import crypto from 'node:crypto'
+import { buildUrl } from '@/lib/base-url'
 
 // POST /api/admin/waitlist/invite — 대기자 초대 발송
 export async function POST(request: Request) {
@@ -41,13 +42,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: '초대할 대기자가 없습니다', invited: 0 })
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.ipjuhae.com'
     let successCount = 0
     const errors: string[] = []
 
     for (const row of targetRows) {
       const token = crypto.randomBytes(32).toString('hex')
-      const inviteUrl = `${baseUrl}/invite/${token}`
+      const inviteUrl = buildUrl(`invite/${token}`, 'https://www.ipjuhae.com')
 
       await query(
         `UPDATE waitlist SET invite_token = $1, invited_at = NOW() WHERE id = $2`,

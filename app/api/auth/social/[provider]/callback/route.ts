@@ -5,6 +5,7 @@ import { generateToken, setAuthCookie } from '@/lib/auth'
 import { exchangeCode, getProfile } from '@/lib/oauth'
 import { safeRedirectPath } from '@/lib/safe-redirect'
 import { AuthProvider, User } from '@/types/database'
+import { getBaseUrl } from '@/lib/base-url'
 
 const VALID_PROVIDERS: AuthProvider[] = ['kakao', 'naver', 'google']
 const STATE_COOKIE = 'oauth_state'
@@ -15,7 +16,7 @@ export async function GET(
   { params }: { params: Promise<{ provider: string }> }
 ) {
   const { provider } = await params
-  const base = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+  const base = getBaseUrl()
 
   if (!VALID_PROVIDERS.includes(provider as AuthProvider)) {
     return NextResponse.redirect(`${base}/login?error=invalid_provider`)

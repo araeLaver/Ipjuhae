@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import TrustScoreEditor from './TrustScoreEditor'
+import { buildUrl } from '@/lib/base-url'
 
 interface UserDetail {
   id: string
@@ -49,8 +50,7 @@ interface Ref {
 }
 
 async function getUserDetail(id: string) {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000'
-  const res = await fetch(`${baseUrl}/api/admin/users/${id}`, {
+  const res = await fetch(buildUrl(`api/admin/users/${id}`), {
     cache: 'no-store',
     // Server-side fetch: admin guard는 layout에서 이미 통과
     // API에서도 guard하므로 쿠키 전달 필요

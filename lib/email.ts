@@ -11,6 +11,7 @@
  */
 
 import { logger } from './logger'
+import { buildUrl } from '@/lib/base-url'
 
 interface EmailResult {
   success: boolean
@@ -185,13 +186,13 @@ export async function sendWelcomeEmail(email: string, name: string): Promise<Ema
         <p>안녕하세요, ${name || '회원'}님!</p>
         <p>입주해에 가입해 주셔서 감사합니다.</p>
         <p>지금 바로 프로필을 완성하고 신뢰점수를 높여보세요.</p>
-        <a href="${process.env.NEXT_PUBLIC_BASE_URL}/profile"
+        <a href="${buildUrl('profile')}"
            style="display: inline-block; background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; margin-top: 16px;">
           프로필 완성하기
         </a>
       </div>
     `,
-    text: `입주해에 오신 것을 환영합니다! 지금 바로 프로필을 완성하세요: ${process.env.NEXT_PUBLIC_BASE_URL}/profile`,
+    text: `입주해에 오신 것을 환영합니다! 지금 바로 프로필을 완성하세요: ${buildUrl('profile')}`,
   })
 }
 
@@ -343,7 +344,7 @@ export async function sendDocumentStatusEmail(
         <p>안녕하세요!</p>
         <p>제출하신 <strong>${typeLabel}</strong>가 ${isApproved ? '승인되었습니다.' : '반려되었습니다.'}</p>
         ${!isApproved && reason ? `<p style="color: #dc2626;"><strong>반려 사유:</strong> ${reason}</p>` : ''}
-        <a href="${process.env.NEXT_PUBLIC_BASE_URL}/profile/verifications"
+        <a href="${buildUrl('profile/verifications')}"
            style="display: inline-block; background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; margin-top: 16px;">
           인증 현황 확인
         </a>

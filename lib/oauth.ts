@@ -1,4 +1,5 @@
 import { AuthProvider } from '@/types/database'
+import { buildUrl } from '@/lib/base-url'
 
 interface OAuthConfig {
   clientId: string
@@ -50,8 +51,9 @@ export function getEnabledProviders(): AuthProvider[] {
 }
 
 function getRedirectUri(provider: AuthProvider): string {
-  const base = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
-  return `${base}/api/auth/social/${provider}/callback`
+  // redirect_uri는 카카오·네이버·구글 콘솔에 등록된 값과 **정확히** 같아야 한다.
+  // 끝 슬래시 하나로 `//api/...`가 되면 불일치로 소셜 로그인 전체가 실패한다.
+  return buildUrl(`api/auth/social/${provider}/callback`)
 }
 
 export function generateState(): string {
