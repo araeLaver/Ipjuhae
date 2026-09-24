@@ -49,6 +49,10 @@ export async function generateMetadata({
   }
 }
 
-export default function CommunityPostPage({ params }: { params: Promise<{ id: string }> }) {
-  return <CommunityPostView params={params} />
+export default async function CommunityPostPage({ params }: { params: Promise<{ id: string }> }) {
+  // `params`를 서버에서 풀어서 넘긴다. 예전에는 Promise를 그대로 넘기고 클라이언트에서
+  // `React.use()`로 풀었는데, `use()`는 React 19 API인 반면 이 저장소의 react는 18.3이다.
+  // 여기서 await하면 그 의존이 사라지고 화면도 단독으로 렌더·검증할 수 있다.
+  const { id } = await params
+  return <CommunityPostView id={id} />
 }

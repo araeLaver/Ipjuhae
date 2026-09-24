@@ -129,6 +129,14 @@ function LoginContent() {
       }
 
       toast.success('로그인 성공!')
+      // 역할 게시판 글처럼 "로그인하면 볼 수 있다"고 보낸 자리로 돌려보낸다.
+      // 외부 주소로 튕기지 않도록 같은 사이트의 절대경로만 받는다(`//host`는 프로토콜 상대 URL이라 제외).
+      const redirect = searchParams?.get('redirect')
+      if (redirect && redirect.startsWith('/') && !redirect.startsWith('//')) {
+        router.push(redirect)
+        router.refresh()
+        return
+      }
       const userType = data.user?.user_type
       if (userType === 'landlord') {
         router.push('/landlord')

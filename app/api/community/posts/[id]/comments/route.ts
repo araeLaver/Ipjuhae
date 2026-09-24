@@ -61,6 +61,19 @@ const createSchema = z.object({ body: z.string().min(1, '내용을 입력해주�
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const user = await getCurrentUser()
 
+  if (!user) {
+    // 글 작성(`posts/route.ts`)·신고(`reports/route.ts`)와 같은 방식으로 익명만 막는다.
+    // 한도는 10분 15회 — 한 글타래에서 주고받는 게 정상이라 글 작성(10분 5회)보다 느슨해야
+    // 하지만, 로그인 없이 쓰는 댓글을 무제한으로 두면 도배 경로가 그대로 열린다.
+    const limited = rateLimit(`community-comment:${getClientIp(request)}`, { limit: 15, windowMs: 10 * 60_000 })
+    if (!limited.success) {
+      return NextResponse.json(
+        { error: '잠시 후 다시 시도해주세요. 짧은 시간에 너무 많이 올렸습니다.' },
+        { status: 429 }
+      )
+    }
+  }
+
   const { id } = await params
   const { post, allowed } = await loadReadablePost(id, user?.user_type ?? null, user?.id ?? null)
   if (!post) return NextResponse.json({ error: '게시글을 찾을 수 없습니다' }, { status: 404 })
