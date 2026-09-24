@@ -16,7 +16,19 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, render } from '@testing-library/react'
 
-let currentPathname = '/home'
+/**
+ * 대조군 경로 — demo 격리 대상이 **아닌** 살아 있는 경로여야 한다.
+ *
+ * 전에는 `/home`이었다. 그 화면은 `/`로 영구 리다이렉트되며 제거됐다
+ * ([DOW-1183](/DOW/issues/DOW-1183)). 죽은 주소를 대조군으로 두면
+ * `isDemoIsolatedPath`가 어떻게 바뀌어도 대조군이 계속 통과해서,
+ * "감시기가 살아 있음"을 증명하려던 이 대조군 자체가 증명을 못 하게 된다.
+ *
+ * `/check`를 쓴다. DB에 의존하지 않고, PWA start_url이라 없어질 가능성이 가장 낮다.
+ */
+const CONTROL_PATH = '/check'
+
+let currentPathname: string = CONTROL_PATH
 
 vi.mock('next/navigation', () => ({
   usePathname: () => currentPathname,
@@ -52,7 +64,7 @@ async function flush() {
 }
 
 beforeEach(() => {
-  currentPathname = '/home'
+  currentPathname = CONTROL_PATH
   vi.stubEnv('PUBLIC_MOCK_DEMO_ENABLED', '1')
 
   fetchSpy = vi.fn(async () => new Response('{}', { status: 200, headers: { 'content-type': 'application/json' } }))
@@ -85,7 +97,7 @@ afterEach(() => {
 
 describe('감시기 대조군 — network 관측이 실제로 동작하는지 먼저 증명한다', () => {
   it('일반 경로에서 Providers를 마운트하면 analytics 호출이 관측된다', async () => {
-    currentPathname = '/home'
+    currentPathname = CONTROL_PATH
 
     render(<Providers><div>본문</div></Providers>)
     await flush()

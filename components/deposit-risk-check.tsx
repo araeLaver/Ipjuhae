@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { TesterInvite } from '@/components/tester-invite'
+import { MarketPricePicker } from '@/components/market-price-picker'
 import { track } from '@/lib/analytics-client'
 import { getAttribution } from '@/lib/attribution'
 import {
@@ -125,6 +126,9 @@ export function DepositRiskCheck() {
           onChange={setPrice}
           placeholder="40000"
         />
+        {/* 시세 칸 바로 아래에 둔다. 막히는 지점에서 손이 닿아야 쓴다. */}
+        <MarketPricePicker onPick={(p) => setPrice(String(p))} />
+
         <Field
           id="deposit"
           label="내 보증금"

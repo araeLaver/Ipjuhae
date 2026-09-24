@@ -256,6 +256,19 @@ export default async function HomePage() {
               <Link href="/install" className="hover:text-foreground">
                 앱으로 쓰기
               </Link>
+              {/*
+                `/home`을 지우면서 이 링크를 넣었다. 회원가입·로그인으로 들어가는
+                유일한 클릭 동선이 "헤더 로고 → /home → 임대인 가입"이었는데,
+                로고 목적지가 `/`로 바뀌면 그 동선이 통째로 끊긴다.
+
+                헤더는 읽는 사람에게 로그인·회원가입을 들이밀지 않기로 해 두었다
+                (`components/layout/header.tsx`). 그 결정은 그대로 두고, 이미
+                계정이 있는 사람이 돌아올 길만 조용한 자리에 남긴다.
+                `/signup`은 `/login` 안에서 이어진다.
+              */}
+              <Link href="/login" className="hover:text-foreground">
+                로그인
+              </Link>
               <Link href="/privacy" className="hover:text-foreground">
                 개인정보처리방침
               </Link>

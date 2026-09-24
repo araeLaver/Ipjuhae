@@ -18,7 +18,10 @@
 
 const baseUrl = (process.argv[2] || 'http://127.0.0.1:3010').replace(/\/$/, '')
 const DEMO_PATH = '/demo/public-mock/listings'
-const CONTROL_PATH = '/home'
+// 대조군은 demo 격리 대상이 아닌 살아 있는 경로여야 한다. 전에는 `/home`이었는데
+// 그 화면은 `/`로 영구 리다이렉트되며 제거됐다(DOW-1183). 리다이렉트를 타고
+// 우연히 통과하는 대조군은 관측기가 죽어도 그 사실을 숨긴다.
+const CONTROL_PATH = '/check'
 
 /**
  * 외부 origin 허용 목록.

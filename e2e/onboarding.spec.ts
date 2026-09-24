@@ -63,6 +63,21 @@ test.describe('네비게이션', () => {
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
   })
 
+  // 서버 리다이렉트여야 한다. 클라이언트에서 `router.push`로 넘기면 크롤러와
+  // JS 없는 요청이 빈 화면을 받는다. 그래서 응답 상태코드를 직접 본다.
+  test('`/home` 직접 방문은 서버가 `/`로 영구 리다이렉트한다 (DOW-1183)', async ({ page }) => {
+    const response = await page.goto('/home')
+
+    await expect(page).toHaveURL(/\/$/)
+
+    // 최종 응답이 아니라 리다이렉트 체인의 첫 응답을 봐야 308을 확인할 수 있다.
+    const chain = response?.request().redirectedFrom()?.response()
+    expect(chain?.status()).toBe(308)
+
+    // 목적지가 실제로 렌더되는지까지 확인한다 — 리다이렉트만 되고 500이면 의미가 없다.
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+  })
+
   test('개인정보처리방침 페이지 접근 가능', async ({ page }) => {
     await page.goto('/privacy')
     await expect(page.getByRole('heading', { name: '개인정보처리방침' })).toBeVisible()

@@ -1,0 +1,20 @@
+fix(listings): DOW-1162 저장되지 않는 "관심 매물" 버튼 제거 (미참조 dead code)
+
+components/listings/FavoriteButton.tsx는 onClick이 alert() 한 줄뿐이고
+저장 요청도 상태도 없었다. 재사용할 수 있는 저장 경로가 없다:
+
+- /api/favorites + /api/favorites/check는 tenant_favorites 기반으로
+  집주인이 "세입자"를 즐겨찾기하는 기능이며 user_type !== 'landlord'를
+  403으로 막는다. 매물(listing/property)에는 쓸 수 없다.
+- 매물 관심목록용 테이블·API·화면은 저장소에 존재하지 않는다.
+
+또한 이 컴포넌트는 어디에서도 import되지 않는다. listings 상세가
+/properties/[id] 로 통합되면서(app/listings/[id]/page.tsx는 redirect만 함)
+고아가 된 잔재다. 새 엔드포인트를 만드는 것은 DOW-1162 범위 밖이므로
+"거짓말하는 버튼보다 없는 버튼" 원칙에 따라 파일을 삭제했다.
+
+검증: npx tsc --noEmit 클린, 테스트 648개/65파일 전체 통과.
+사용자 화면 변화 없음(렌더되지 않던 컴포넌트).
+
+Co-Authored-By: Paperclip <noreply@paperclip.ing>
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
