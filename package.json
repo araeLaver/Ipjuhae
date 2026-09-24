@@ -23,6 +23,7 @@
     "mobile:launch-check": "node scripts/check-mobile-launch.mjs",
     "demo:verify-isolation": "node scripts/verify-demo-network-isolation.mjs",
     "db:migrate": "npx tsx db/migrate.ts",
+    "db:bootstrap": "node scripts/bootstrap-local-db.mjs",
     "trust:backfill": "tsx db/backfill-trust-ledger.ts",
     "trust:smoke": "node scripts/trust-platform-smoke.mjs",
     "patent:evidence": "node scripts/generate-patent-evidence.mjs",
