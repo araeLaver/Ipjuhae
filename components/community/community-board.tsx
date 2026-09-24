@@ -45,6 +45,8 @@ export function CommunityBoard() {
   const [ready, setReady] = useState(false)
   const [tab, setTab] = useState<CommunityAudience>('all')
   const [posts, setPosts] = useState<Post[]>([])
+  /** 목록 조회 실패. `posts`가 빈 배열인 것과 구분해야 "아직 질문이 없어요"로 보이지 않는다. */
+  const [loadFailed, setLoadFailed] = useState(false)
   const [loading, setLoading] = useState(false)
   const [writing, setWriting] = useState(false)
   const [title, setTitle] = useState('')
@@ -70,8 +72,17 @@ export function CommunityBoard() {
     setLoading(true)
     try {
       const res = await fetch(`/api/community/posts?audience=${aud}`)
+      if (!res.ok) {
+        // 목록 조회 실패를 `posts = []`로 삼키면 "아직 질문이 없어요"가 뜬다.
+        // 사용자는 빈 게시판으로 읽고 떠나고, 우리는 장애를 모른다.
+        setLoadFailed(true)
+        return
+      }
       const data = await res.json().catch(() => ({}))
       setPosts(data.posts ?? [])
+      setLoadFailed(false)
+    } catch {
+      setLoadFailed(true)
     } finally {
       setLoading(false)
     }
@@ -367,6 +378,19 @@ export function CommunityBoard() {
 
         {loading ? (
           <div className="flex justify-center py-16"><Spinner /></div>
+        ) : loadFailed ? (
+          <Card className="flex flex-col items-center gap-3 px-6 py-14 text-center">
+            <MessageSquare className="h-8 w-8 text-muted-foreground/60" />
+            <div>
+              <p className="font-semibold">글 목록을 불러오지 못했습니다</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                글이 없는 게 아니라 목록 조회에 실패했습니다. 잠시 후 다시 시도해 주세요.
+              </p>
+            </div>
+            <Button onClick={() => load(tab)} variant="outline" className="mt-1">
+              다시 시도
+            </Button>
+          </Card>
         ) : threads.length === 0 ? (
           <Card className="flex flex-col items-center gap-3 px-6 py-14 text-center">
             <MessageSquare className="h-8 w-8 text-muted-foreground/60" />
