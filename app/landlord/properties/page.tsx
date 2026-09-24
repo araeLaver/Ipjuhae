@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/ui/empty-state'
 import { PageContainer } from '@/components/layout/page-container'
-import { Building, Plus, MapPin, Home, ChevronRight, Star } from 'lucide-react'
+import { AlertCircle, Building, Plus, MapPin, Home, ChevronRight, Star } from 'lucide-react'
 import { Property } from '@/types/database'
 import { toast } from 'sonner'
 
@@ -46,6 +46,7 @@ export default function PropertiesPage() {
   const router = useRouter()
   const [properties, setProperties] = useState<PropertyWithImage[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [featuringId, setFeaturingId] = useState<string | null>(null)
 
   const handleToggleFeature = async (e: React.MouseEvent, propertyId: string) => {
@@ -78,7 +79,7 @@ export default function PropertiesPage() {
   const fetchProperties = async () => {
     try {
       const response = await fetch('/api/landlord/properties')
-      const data = await response.json()
+      const data = await response.json().catch(() => null)
 
       if (!response.ok) {
         if (response.status === 401) {
@@ -89,12 +90,15 @@ export default function PropertiesPage() {
           router.push('/landlord/onboarding')
           return
         }
-        throw new Error(data.error)
+        throw new Error(data?.error ?? '내 매물을 불러오지 못했습니다')
       }
 
       setProperties(data.properties)
+      setLoadError(null)
     } catch (err) {
-      toast.error((err as Error).message)
+      const message = (err as Error).message || '내 매물을 불러오지 못했습니다'
+      toast.error(message)
+      setLoadError(message)
     } finally {
       setIsLoading(false)
     }
@@ -141,7 +145,14 @@ export default function PropertiesPage() {
           </Link>
         </div>
 
-        {properties.length === 0 ? (
+        {loadError ? (
+          <EmptyState
+            icon={<AlertCircle className="h-12 w-12" />}
+            title="내 매물을 불러오지 못했습니다"
+            description="등록된 매물이 없는 상태가 아니라 조회에 실패했습니다. 다시 시도해 주세요."
+            action={{ label: '다시 시도', onClick: fetchProperties }}
+          />
+        ) : properties.length === 0 ? (
           <EmptyState
             icon={<Building className="h-12 w-12" />}
             title="등록된 매물이 없습니다"

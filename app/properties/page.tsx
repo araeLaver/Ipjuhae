@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/ui/empty-state'
 import { PageContainer } from '@/components/layout/page-container'
-import { Building, MapPin, Home, Search, SlidersHorizontal, X } from 'lucide-react'
+import { AlertCircle, Building, MapPin, Home, Search, SlidersHorizontal, X } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface Property {
@@ -58,6 +58,7 @@ export default function PropertiesPage() {
   const [properties, setProperties] = useState<Property[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [nextCursor, setNextCursor] = useState<string | null>(null)
   const [hasMore, setHasMore] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
@@ -91,18 +92,21 @@ export default function PropertiesPage() {
 
       try {
         const res = await fetch(buildQuery(cursor))
-        const data = await res.json()
-        if (!res.ok) throw new Error(data.error)
+        const data = await res.json().catch(() => null)
+        if (!res.ok) throw new Error(data?.error ?? '매물을 불러오지 못했습니다')
 
         if (cursor) {
           setProperties(prev => [...prev, ...data.properties])
         } else {
           setProperties(data.properties)
+          setLoadError(null)
         }
         setNextCursor(data.nextCursor)
         setHasMore(data.hasMore)
       } catch (err) {
-        toast.error((err as Error).message)
+        const message = (err as Error).message || '매물을 불러오지 못했습니다'
+        toast.error(message)
+        if (!cursor) setLoadError(message)
       } finally {
         setIsLoading(false)
         setIsLoadingMore(false)
@@ -240,6 +244,13 @@ export default function PropertiesPage() {
               <Skeleton key={i} className="h-64 rounded-xl" />
             ))}
           </div>
+        ) : loadError ? (
+          <EmptyState
+            icon={<AlertCircle className="h-12 w-12" />}
+            title="매물을 불러오지 못했습니다"
+            description="목록이 비어 있는 것이 아니라 조회에 실패했습니다. 잠시 후 다시 시도해 주세요."
+            action={{ label: '다시 시도', onClick: () => fetchProperties() }}
+          />
         ) : properties.length === 0 ? (
           <EmptyState
             icon={<Building className="h-12 w-12" />}
