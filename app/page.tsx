@@ -253,6 +253,16 @@ export default async function HomePage() {
               <Link href="/community" className="hover:text-foreground">
                 커뮤니티
               </Link>
+              {/*
+                `/home`이 사라지면서 `/properties`로 들어가는 유일한 동선도 같이
+                끊겼다. "헤더 로고 → /home → 매물 찾기"가 전부였고, 헤더 역할별
+                메뉴에는 임차인용 매물 탐색이 없다(`components/layout/header.tsx`).
+                링크가 0개인 것과 쓰는 사람이 0명인 것은 다르므로, 위 로그인과
+                같은 자리에 돌아갈 길만 남긴다. 홈의 읽는 순서는 건드리지 않는다.
+              */}
+              <Link href="/properties" className="hover:text-foreground">
+                매물 찾기
+              </Link>
               <Link href="/install" className="hover:text-foreground">
                 앱으로 쓰기
               </Link>
