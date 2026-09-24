@@ -83,6 +83,16 @@ async function readJson(response: Response) {
   return (await response.json()) as Record<string, any>
 }
 
+const hasDatabaseUrl = Boolean(process.env.DATABASE_URL)
+if (!hasDatabaseUrl) {
+  console.warn(
+    'DATABASE_URL이 없어 실제 Postgres route smoke suite를 건너뜁니다. 로컬 검증은 docs/LOCAL_DB_SETUP.md를 참고하세요.'
+  )
+}
+
+const describeRealDb = hasDatabaseUrl ? describe : describe.skip
+
+describeRealDb('trust routes real DB smoke', () => {
 beforeAll(async () => {
   assertLocalDatabase()
 
@@ -325,4 +335,5 @@ describe('인증 가드 (실제 DB)', () => {
       await query('DELETE FROM users WHERE id = $1', [ghost!.id])
     }
   })
+})
 })

@@ -48,9 +48,18 @@ describe('/home 정리', () => {
 
     // git이 추적하는 소스만 본다. node_modules/.next/문서는 판정 대상이 아니다.
     // git grep은 일치가 없으면 exit 1 + 빈 출력이다 — 그게 통과 조건이다.
+    //
+    // 이 파일 자신은 제외한다. 찾는 문자열을 인자로 들고 있으므로 스스로에게
+    // 걸려 깨끗한 저장소에서도 실패한다. 제외 대상은 이 한 파일뿐이다.
     const result = spawnSync(
       'git',
-      ['grep', '-l', '-F', '-e', 'href="/home"', '-e', "href='/home'", '--', '*.ts', '*.tsx'],
+      [
+        'grep', '-l', '-F',
+        '-e', 'href="/home"',
+        '-e', "href='/home'",
+        '--', '*.ts', '*.tsx',
+        ':(exclude)__tests__/config/home-redirect.test.ts',
+      ],
       { cwd: repoRoot, encoding: 'utf8' },
     )
 
