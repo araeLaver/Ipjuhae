@@ -201,7 +201,7 @@ function checkCsrf(request: NextRequest): boolean {
 }
 
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl
+  const { pathname, search } = request.nextUrl
   const ip = getIp(request)
   const { requestId, traceId } = getRequestContext(request)
 
@@ -311,9 +311,11 @@ export async function middleware(request: NextRequest) {
   const isProtected = protectedPrefixes.some((p) => pathname.startsWith(p))
 
   if (isProtected && !isAuthenticated) {
-    const loginUrl = request.nextUrl.clone()
-    loginUrl.pathname = '/login'
-    loginUrl.searchParams.set('redirect', pathname)
+    // clone()을 쓰면 원래 페이지의 쿼리스트링이 `/login`에 그대로 얹혀서
+    // `?tab=x&redirect=/landlord` 같은 주소가 된다. 로그인 화면이 읽는 파라미터와
+    // 섞이므로 주소를 새로 만들고, 원래 쿼리는 redirect 값 안에 담아 보낸다.
+    const loginUrl = new URL('/login', request.url)
+    loginUrl.searchParams.set('redirect', pathname + search)
     const response = NextResponse.redirect(loginUrl)
     response.headers.set('x-request-id', requestId)
     response.headers.set('x-trace-id', traceId)

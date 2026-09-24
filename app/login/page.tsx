@@ -13,6 +13,7 @@ import { Mail, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 import { SocialLoginButtons } from '@/components/auth/social-login-buttons'
 import { createBrowserClient } from '@/lib/supabase'
+import { safeRedirectPath } from '@/lib/safe-redirect'
 
 const ERROR_MESSAGES: Record<string, string> = {
   missing_code: '인증 코드가 없습니다. 다시 시도해주세요.',
@@ -51,6 +52,11 @@ function LoginContent() {
     password: '',
   })
 
+  // 403 화면 등에서 "로그인하면 이어서 볼 수 있습니다"로 보낸 목적지.
+  // 로그인 수단 세 가지(비밀번호·매직 링크·소셜)가 전부 이 값을 들고 가야
+  // 사용자가 어느 버튼을 눌러도 같은 자리로 돌아온다.
+  const redirectTo = safeRedirectPath(searchParams?.get('redirect'))
+
   // Resend cooldown timer
   useEffect(() => {
     if (cooldown <= 0) return
@@ -66,16 +72,23 @@ function LoginContent() {
     }
   }, [searchParams])
 
-  const sendMagicLink = useCallback(async (email: string) => {
-    const supabase = createBrowserClient()
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
-    })
-    if (error) throw error
-  }, [])
+  const sendMagicLink = useCallback(
+    async (email: string) => {
+      const supabase = createBrowserClient()
+      // 목적지를 콜백 주소에 실어 보낸다. 메일을 열 때는 원래 페이지의 쿼리스트링이
+      // 남아 있지 않으므로 여기서 넘기지 않으면 복귀 경로가 사라진다.
+      const callback = new URL('/auth/callback', window.location.origin)
+      if (redirectTo) callback.searchParams.set('redirect', redirectTo)
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: callback.toString(),
+        },
+      })
+      if (error) throw error
+    },
+    [redirectTo]
+  )
 
   const handleMagicLink = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -130,10 +143,9 @@ function LoginContent() {
 
       toast.success('로그인 성공!')
       // 역할 게시판 글처럼 "로그인하면 볼 수 있다"고 보낸 자리로 돌려보낸다.
-      // 외부 주소로 튕기지 않도록 같은 사이트의 절대경로만 받는다(`//host`는 프로토콜 상대 URL이라 제외).
-      const redirect = searchParams?.get('redirect')
-      if (redirect && redirect.startsWith('/') && !redirect.startsWith('//')) {
-        router.push(redirect)
+      // 외부 주소로 튕기지 않도록 `safeRedirectPath`가 통과시킨 값만 쓴다.
+      if (redirectTo) {
+        router.push(redirectTo)
         router.refresh()
         return
       }
@@ -269,7 +281,7 @@ function LoginContent() {
                     비밀번호로 로그인
                   </Button>
 
-                  <SocialLoginButtons mode="login" />
+                  <SocialLoginButtons mode="login" redirectTo={redirectTo} />
 
                   <p className="text-center text-sm text-muted-foreground">
                     계정이 없으신가요?{' '}
@@ -331,7 +343,7 @@ function LoginContent() {
                     매직 링크로 로그인
                   </Button>
 
-                  <SocialLoginButtons mode="login" />
+                  <SocialLoginButtons mode="login" redirectTo={redirectTo} />
 
                   <p className="text-center text-sm text-muted-foreground">
                     계정이 없으신가요?{' '}

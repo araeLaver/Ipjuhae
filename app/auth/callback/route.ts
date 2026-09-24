@@ -4,6 +4,7 @@ import { createServerClient } from '@/lib/supabase'
 import { queryOne, query } from '@/lib/db'
 import { generateToken, setAuthCookie } from '@/lib/auth'
 import { trackServer } from '@/lib/analytics'
+import { safeRedirectPath } from '@/lib/safe-redirect'
 import { User } from '@/types/database'
 
 const isDev = process.env.NODE_ENV === 'development'
@@ -11,6 +12,9 @@ const isDev = process.env.NODE_ENV === 'development'
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = request.nextUrl
   const code = searchParams.get('code')
+  // 로그인 화면이 매직 링크에 실어 보낸 복귀 자리. 메일에서 열린 주소라 외부 값과
+  // 다를 바 없으므로 같은 사이트 경로인지 반드시 다시 검증한다.
+  const redirectTo = safeRedirectPath(searchParams.get('redirect'))
 
   if (!code) {
     if (isDev) logger.info('[auth/callback] No code parameter — redirecting to login')
@@ -64,9 +68,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL('/onboarding/basic', origin))
     }
 
+    // 신규 가입은 위에서 온보딩으로 보냈다. 여기는 기존 사용자이므로 원래 가려던 자리가
+    // 있으면 그쪽이 우선이다.
     const destination =
-      user.user_type === 'landlord' ? '/landlord' :
-      user.user_type === 'admin' ? '/admin' : '/profile'
+      redirectTo ??
+      (user.user_type === 'landlord' ? '/landlord' :
+       user.user_type === 'admin' ? '/admin' : '/profile')
     if (isDev) logger.info('[auth/callback] Existing user → redirecting to', { destination })
     return NextResponse.redirect(new URL(destination, origin))
   } catch (err) {

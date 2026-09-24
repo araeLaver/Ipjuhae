@@ -5,9 +5,15 @@ import { Button } from '@/components/ui/button'
 
 interface SocialLoginButtonsProps {
   mode: 'login' | 'signup'
+  /**
+   * 로그인 후 돌아갈 자리. 403 화면에서 넘어온 사용자가 소셜 버튼을 눌러도
+   * 같은 글로 복귀하도록 OAuth 시작 주소까지 그대로 들고 간다.
+   * 값 검증은 서버(`/api/auth/social/[provider]`)에서 다시 한다.
+   */
+  redirectTo?: string | null
 }
 
-export function SocialLoginButtons({ mode }: SocialLoginButtonsProps) {
+export function SocialLoginButtons({ mode, redirectTo }: SocialLoginButtonsProps) {
   const label = mode === 'login' ? '로그인' : '가입'
   const [enabled, setEnabled] = useState<string[] | null>(null)
 
@@ -19,7 +25,10 @@ export function SocialLoginButtons({ mode }: SocialLoginButtonsProps) {
   }, [])
 
   const handleSocial = (provider: string) => {
-    window.location.href = `/api/auth/social/${provider}`
+    const start = `/api/auth/social/${provider}`
+    window.location.href = redirectTo
+      ? `${start}?redirect=${encodeURIComponent(redirectTo)}`
+      : start
   }
 
   // Until we know (or if none are configured), render nothing — no broken buttons.

@@ -3,10 +3,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { queryOne } from '@/lib/db'
 import { generateToken, setAuthCookie } from '@/lib/auth'
 import { exchangeCode, getProfile } from '@/lib/oauth'
+import { safeRedirectPath } from '@/lib/safe-redirect'
 import { AuthProvider, User } from '@/types/database'
 
 const VALID_PROVIDERS: AuthProvider[] = ['kakao', 'naver', 'google']
 const STATE_COOKIE = 'oauth_state'
+const REDIRECT_COOKIE = 'oauth_redirect'
 
 export async function GET(
   request: NextRequest,
@@ -38,8 +40,12 @@ export async function GET(
 
   const clearState = (res: NextResponse) => {
     res.cookies.delete(STATE_COOKIE)
+    res.cookies.delete(REDIRECT_COOKIE)
     return res
   }
+
+  // 로그인 시작 시점에 맡겨둔 복귀 자리. 쿠키 값도 그대로 믿지 않고 다시 검증한다.
+  const redirectTo = safeRedirectPath(request.cookies.get(REDIRECT_COOKIE)?.value)
 
   try {
     const accessToken = await exchangeCode(provider as AuthProvider, code)
@@ -55,7 +61,7 @@ export async function GET(
       // 기존 유저 → 바로 로그인
       const token = generateToken(existingUser.id)
       await setAuthCookie(token)
-      return clearState(NextResponse.redirect(`${base}/profile`))
+      return clearState(NextResponse.redirect(new URL(redirectTo ?? '/profile', base)))
     }
 
     // 이메일로 기존 계정 있는지 확인
