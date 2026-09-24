@@ -179,6 +179,51 @@ describe('U1 — 운영자 답 구분', () => {
     expect(badge.className).toContain('bg-primary')
   })
 
+  it('운영자 답 묶음을 배지 말고도 알아볼 수 있게 한다 — 훑는 눈에 걸려야 한다', async () => {
+    mockApi({
+      user: null,
+      postStatus: 200,
+      commentsStatus: 200,
+      comments: [
+        { id: 'c1', body: '옆 사람 추측', created_at: '2026-09-21T00:00:00.000Z', author_name: null, author_role: 'guest' },
+        { id: 'c2', body: '운영자 답변입니다', created_at: '2026-09-21T01:00:00.000Z', author_name: '입주해', author_role: 'admin' },
+      ],
+    })
+    renderView()
+
+    const adminItem = (await screen.findByText('운영자 답변입니다')).closest('li')!
+    const plainItem = screen.getByText('옆 사람 추측').closest('li')!
+
+    // 운영자 쪽만 달라진다. 일반 댓글은 원래 모습 그대로여야 한다 — 질문한 사람을 낮추지 않는다.
+    expect(adminItem.className).not.toBe(plainItem.className)
+    expect(plainItem.className).toBe('rounded-lg border bg-background p-3')
+  })
+
+  it('모르는 author_role이 와도 배지를 만들지 않고 화면도 깨지지 않는다', async () => {
+    mockApi({
+      user: null,
+      postStatus: 200,
+      // 서버가 user_type을 늘리면(예: 'agency') UI가 모르는 값이 그대로 내려온다.
+      post: basePost({ author_role: 'agency', author_name: '모르는역할' }),
+      commentsStatus: 200,
+      comments: [
+        { id: 'c1', body: '모르는 역할의 댓글', created_at: '2026-09-21T00:00:00.000Z', author_name: null, author_role: 'agency' },
+        { id: 'c2', body: '역할이 빈 댓글', created_at: '2026-09-21T01:00:00.000Z', author_name: null, author_role: null },
+      ],
+    })
+    renderView()
+
+    // 본문과 댓글은 그대로 보인다. 모르는 값을 날것으로 찍지도 않는다.
+    await screen.findByText('본문입니다')
+    screen.getByText('모르는 역할의 댓글')
+    screen.getByText('역할이 빈 댓글')
+    expect(screen.queryByText('agency')).toBeNull()
+
+    // 모르는 역할은 운영자 취급도 받지 않는다.
+    const unknownItem = screen.getByText('모르는 역할의 댓글').closest('li')!
+    expect(unknownItem.className).toBe('rounded-lg border bg-background p-3')
+  })
+
   it('본인 글이면 내 글 표시를 하고 신고 버튼을 세우지 않는다', async () => {
     mockApi({ user: { userType: 'tenant' }, postStatus: 200, post: basePost({ is_author: true }), commentsStatus: 200 })
     renderView()

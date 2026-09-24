@@ -272,7 +272,18 @@ export function CommunityPostView({ id }: { id: string }) {
             ) : (
               <ul className="mb-5 space-y-3">
                 {comments.map((c) => (
-                  <li key={c.id} className="rounded-lg border bg-background p-3">
+                  /*
+                    운영자 답은 테두리·바탕을 약하게 달리해 훑을 때 눈에 걸리게 한다. 뜻을 지는 건
+                    어디까지나 '운영자' 배지이고 색은 보조다 — 색을 못 읽어도 정보는 그대로다.
+                    일반 댓글 쪽은 손대지 않는다. 운영자를 올리려고 질문한 사람을 낮추면 안 된다.
+                  */
+                  <li
+                    key={c.id}
+                    className={cn(
+                      'rounded-lg border bg-background p-3',
+                      c.author_role === 'admin' && 'border-primary/40 bg-primary/5',
+                    )}
+                  >
                     <div className="mb-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                       <span>{c.author_name ?? '익명'}</span>
                       <AuthorRoleBadge role={c.author_role} />
