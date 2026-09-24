@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { Header } from '@/components/layout/header'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -41,7 +41,6 @@ function timeAgo(iso: string): string {
 }
 
 export function CommunityBoard() {
-  const router = useRouter()
   const [userType, setUserType] = useState<string | null>(null)
   const [ready, setReady] = useState(false)
   const [tab, setTab] = useState<CommunityAudience>('all')
@@ -51,6 +50,8 @@ export function CommunityBoard() {
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
   const [audience, setAudience] = useState<CommunityAudience>('all')
+  /** 사용자가 대상 게시판을 직접 골랐는가. 골랐다면 탭을 바꿔도 그 선택을 덮어쓰지 않는다. */
+  const [audiencePicked, setAudiencePicked] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   /** 연재별 펼침 여부. 18편을 한 번에 세우면 게시판이 화면 밖으로 밀린다. */
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
@@ -80,8 +81,6 @@ export function CommunityBoard() {
     if (ready) load(tab)
   }, [ready, tab, load])
 
-  const ownAudience = userTypeToAudience(userType)
-
   // 운영자가 정리한 글은 목록에 섞지 않고 위에 따로 세운다.
   // 처음 온 사람이 읽을 것부터 보여야 다시 온다.
   const { guideSeries, guideCount, threads } = useMemo(() => {
@@ -107,11 +106,38 @@ export function CommunityBoard() {
   /** 회차 번호를 떼고 제목만 남긴다. 목록에서는 연재명이 이미 머리에 있다. */
   const shortTitle = (t: string) => t.replace(/^.*?(\d+)화\.\s*/, '')
 
-  function startWriting() {
+  /**
+   * 글이 올라갈 기본 게시판. **지금 보고 있는 탭**을 따른다.
+   * 임대인 탭을 읽다가 글쓰기를 누르면 임대인 게시판에 올라가야 한다.
+   * 탭이 `all`일 때만 로그인 사용자는 본인 역할 게시판, 비로그인은 `all`.
+   */
+  const defaultAudienceFor = useCallback(
+    (currentTab: CommunityAudience): CommunityAudience =>
+      currentTab === 'all' ? (userTypeToAudience(userType) ?? 'all') : currentTab,
+    [userType],
+  )
+
+  /**
+   * 글쓰기 진입점은 전부 이 함수 하나를 부른다.
+   * 예전에는 카드 버튼만 `startWriting()`(역할 게시판으로 맞춤 + 토글)이고
+   * 목록 상단·빈 상태 버튼은 `setWriting(true)`라서, 어디서 열었느냐에 따라
+   * 의도하지 않은 게시판에 글이 올라갔다.
+   * 토글도 없앤다 — 여는 것만 하고 닫기는 `취소` 버튼이 맡는다.
+   */
+  const openWriting = useCallback(() => {
     // 계정을 만들라고 하지 않는다. 익명으로 바로 쓴다.
-    setAudience(ownAudience ?? 'all')
-    setWriting((v) => !v)
-  }
+    setAudience(defaultAudienceFor(tab))
+    setAudiencePicked(false)
+    setWriting(true)
+    document.getElementById('ask')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [defaultAudienceFor, tab])
+
+  // 폼이 열려 있는 동안 탭을 바꾸면 대상도 따라간다.
+  // 단 사용자가 대상 버튼을 직접 누른 뒤에는 그 선택을 덮어쓰지 않는다.
+  useEffect(() => {
+    if (!writing || audiencePicked) return
+    setAudience(defaultAudienceFor(tab))
+  }, [writing, audiencePicked, tab, defaultAudienceFor])
 
   async function submit() {
     if (!title.trim() || !body.trim()) return
@@ -129,7 +155,8 @@ export function CommunityBoard() {
         load(tab)
       } else {
         const d = await res.json().catch(() => null)
-        alert(d?.error ?? '작성에 실패했습니다')
+        // 익명 작성을 전면에 내세운 화면에서 실패만 브라우저 기본 대화상자인 건 맞지 않는다.
+        toast.error(d?.error ?? '작성에 실패했습니다')
       }
     } finally {
       setSubmitting(false)
@@ -201,22 +228,33 @@ export function CommunityBoard() {
                 rows={5}
                 maxLength={10000}
               />
-              {userType && tabs.filter((a) => canPostTo(userType, a)).length > 1 && (
-                <div className="flex flex-wrap gap-2">
-                  {tabs.filter((a) => canPostTo(userType, a)).map((a) => (
-                    <button
-                      key={a}
-                      type="button"
-                      onClick={() => setAudience(a)}
-                      className={`rounded-md px-3 py-1 text-xs font-medium ${
-                        audience === a ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-                      }`}
-                    >
-                      {AUDIENCE_LABELS[a]} 게시판
-                    </button>
-                  ))}
-                </div>
-              )}
+              {/* 어디에 올라가는지 모른 채 올리기를 누르는 상태를 없앤다.
+                  선택 버튼은 권한 있는 사용자에게만 보이지만, 대상 문구는 비로그인 포함 전원에게 보인다. */}
+              <div className="space-y-2">
+                {userType && tabs.filter((a) => canPostTo(userType, a)).length > 1 && (
+                  <div className="flex flex-wrap gap-2">
+                    {tabs.filter((a) => canPostTo(userType, a)).map((a) => (
+                      <button
+                        key={a}
+                        type="button"
+                        onClick={() => {
+                          setAudience(a)
+                          setAudiencePicked(true)
+                        }}
+                        className={`rounded-md px-3 py-1 text-xs font-medium ${
+                          audience === a ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                        }`}
+                      >
+                        {AUDIENCE_LABELS[a]} 게시판
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  <span className="font-semibold text-foreground">{AUDIENCE_LABELS[audience]} 게시판</span>
+                  에 올라갑니다.
+                </p>
+              </div>
               <div className="flex items-center justify-between gap-3">
                 <p className="text-xs text-muted-foreground">익명으로 올라갑니다.</p>
                 <div className="flex gap-2">
@@ -233,7 +271,7 @@ export function CommunityBoard() {
             <>
               <button
                 type="button"
-                onClick={startWriting}
+                onClick={openWriting}
                 className="mt-4 flex w-full items-center gap-2 rounded-lg border border-border bg-background px-4 py-3 text-left text-sm text-muted-foreground transition hover:border-primary/40"
               >
                 <PenLine className="h-4 w-4 shrink-0" />
@@ -320,13 +358,7 @@ export function CommunityBoard() {
               </button>
             ))}
           </div>
-          <Button
-            onClick={() => {
-              setWriting(true)
-              document.getElementById('ask')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-            }}
-            className="shrink-0 gap-1.5"
-          >
+          <Button onClick={openWriting} className="shrink-0 gap-1.5">
             <PenLine className="h-4 w-4" />
             글쓰기
           </Button>
@@ -344,14 +376,7 @@ export function CommunityBoard() {
                 계약 전에 막히는 게 있으면 남겨주세요. 같은 걸 겪은 사람이 답할 수 있습니다.
               </p>
             </div>
-            <Button
-              onClick={() => {
-                setWriting(true)
-                document.getElementById('ask')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-              }}
-              variant="outline"
-              className="mt-1 gap-1.5"
-            >
+            <Button onClick={openWriting} variant="outline" className="mt-1 gap-1.5">
               <PenLine className="h-4 w-4" />
               첫 글 남기기
             </Button>
