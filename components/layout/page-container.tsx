@@ -1,6 +1,5 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { Header } from './header'
 import { cn } from '@/lib/utils'
 
@@ -11,21 +10,6 @@ interface PageContainerProps {
 }
 
 export function PageContainer({ children, maxWidth = 'lg', className }: PageContainerProps) {
-  const [user, setUser] = useState<{ email: string; userType: 'tenant' | 'landlord' } | null>(null)
-
-  useEffect(() => {
-    async function fetchUser() {
-      try {
-        const res = await fetch('/api/auth/me')
-        if (res.ok) {
-          const data = await res.json()
-          setUser(data.user)
-        }
-      } catch {}
-    }
-    fetchUser()
-  }, [])
-
   const maxWidthClass = {
     sm: 'max-w-md',
     md: 'max-w-2xl',
@@ -35,7 +19,7 @@ export function PageContainer({ children, maxWidth = 'lg', className }: PageCont
 
   return (
     <div className="min-h-screen bg-muted/50 dark:bg-background flex flex-col">
-      <Header user={user} />
+      <Header />
       <main className={cn(
         'flex-1 container mx-auto px-4 py-8 animate-fade-in',
         maxWidthClass[maxWidth],

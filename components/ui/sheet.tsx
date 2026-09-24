@@ -30,12 +30,13 @@ export function Sheet({ open, onClose, children, side = 'left' }: SheetProps) {
       <div className="fixed inset-0 bg-black/50 animate-fade-in" onClick={onClose} />
       <div
         className={cn(
-          'fixed top-0 bottom-0 w-[280px] bg-background shadow-elevated transition-transform duration-300 ease-out',
+          'fixed top-0 bottom-0 overflow-y-auto w-[280px] bg-background shadow-elevated transition-transform duration-300 ease-out',
           side === 'left' ? 'left-0' : 'right-0'
         )}
       >
         <div className="flex items-center justify-end p-4">
           <button
+            aria-label="메뉴 닫기"
             onClick={onClose}
             className="rounded-md p-1 hover:bg-muted transition-colors"
           >

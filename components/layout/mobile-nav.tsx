@@ -5,12 +5,13 @@ import { LogOut } from 'lucide-react'
 import { LogoSymbol } from '@/components/brand/logo-symbol'
 import { Avatar } from '@/components/ui/avatar'
 import { Sheet } from '@/components/ui/sheet'
+import { roleLabels, type HeaderUser } from './header-user'
 import { ThemeToggle } from './theme-toggle'
 
 interface MobileNavProps {
   open: boolean
   onClose: () => void
-  user?: { email: string; userType: 'tenant' | 'landlord' } | null
+  user?: HeaderUser | null
   navLinks: { href: string; label: string }[]
   onLogout: () => void
 }
@@ -30,7 +31,7 @@ export function MobileNav({ open, onClose, user, navLinks, onLogout }: MobileNav
             <div>
               <p className="text-sm font-medium truncate max-w-[180px]">{user.email}</p>
               <p className="text-xs text-muted-foreground">
-                {user.userType === 'landlord' ? '집주인' : '세입자'}
+                {roleLabels[user.userType]}
               </p>
             </div>
           </div>
