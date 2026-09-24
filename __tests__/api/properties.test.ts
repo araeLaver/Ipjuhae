@@ -157,7 +157,10 @@ describe('GET /api/properties (public search)', () => {
 describe('GET /api/properties/[id] (public detail)', () => {
   beforeEach(() => vi.clearAllMocks())
 
-  it('returns camelCase property with images and landlord info', async () => {
+  // DOW-1187: 비로그인 조회자에게는 집주인 실명이 마스킹된다. 이 테스트는 이전에
+  // 무마스킹 노출('홍길동')을 고정하고 있었다. 마스킹 판정 자체는
+  // __tests__/api/landlord-profile-consent.test.ts 가 전담한다.
+  it('returns camelCase property with images and masked landlord info for anonymous visitors', async () => {
     vi.mocked(getCurrentUser).mockResolvedValue(null as never)
     vi.mocked(queryOne).mockResolvedValue({
       ...sampleProperty, address_detail: '101동 202호', landlord_name: '\ud64d\uae38\ub3d9', landlord_bio: null, landlord_profile_image: null,
@@ -172,7 +175,7 @@ describe('GET /api/properties/[id] (public detail)', () => {
 
     expect(res.status).toBe(200)
     expect(data.property.monthlyRent).toBe(700000)
-    expect(data.property.landlord.name).toBe('\ud64d\uae38\ub3d9')
+    expect(data.property.landlord.name).toBe('\ud64d*\ub3d9')
     expect(data.property).not.toHaveProperty('addressDetail')
     expect(data.isFavorited).toBe(false)
     expect(queryOne).toHaveBeenCalledWith(

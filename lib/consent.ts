@@ -11,6 +11,8 @@ const DEFAULT_CONSENT_FIELDS = {
   contact: false,
 }
 
+const MASKED_PROFILE_NAME = '비공개'
+
 export type ConsentField = keyof typeof DEFAULT_CONSENT_FIELDS
 
 export interface NormalizedConsentFields extends Record<string, boolean> {
@@ -53,6 +55,41 @@ export async function getActiveConsent(
   )
 
   return consent || null
+}
+
+/**
+ * 목록 응답용 배치 조회. 행마다 getActiveConsent를 부르면 N+1이 된다.
+ * 사용자별로 consent_version이 가장 높은 활성 레코드 하나만 남긴다.
+ * 동의 레코드가 없는 사용자는 Map에 들어가지 않으므로, 호출부에서
+ * `map.get(id) ?? null`을 그대로 getTenantProfileVisibility에 넘기면 fail-closed가 된다.
+ */
+export async function getActiveConsentsByUserIds(
+  userIds: string[],
+  targetRole: ConsentTargetRole,
+  purpose: ConsentPurpose,
+): Promise<Map<string, DataConsent>> {
+  const unique = Array.from(new Set(userIds.filter(Boolean)))
+  if (unique.length === 0) return new Map()
+
+  const rows = await query<DataConsent>(
+    `SELECT DISTINCT ON (user_id) *
+     FROM data_consents
+     WHERE user_id = ANY($1)
+       AND target_role = $2
+       AND purpose = $3
+       AND status = 'active'
+       AND (expires_at IS NULL OR expires_at > NOW())
+     ORDER BY user_id, consent_version DESC`,
+    [unique, targetRole, purpose]
+  )
+
+  return new Map((rows ?? []).map((row) => [row.user_id, row]))
+}
+
+export async function getLandlordProfileConsents(
+  landlordIds: string[]
+): Promise<Map<string, DataConsent>> {
+  return getActiveConsentsByUserIds(landlordIds, 'tenant', 'landlord_profile_view')
 }
 
 export function isConsentActive(consent: DataConsent | null | undefined): consent is DataConsent {
@@ -104,10 +141,12 @@ export function getTenantProfileVisibility(
   }
 }
 
-export function maskProfileName(name: string | null): string | null {
-  if (!name || name.length < 2) return name
-  if (name.length === 2) return `${name[0]}*`
-  return `${name[0]}${'*'.repeat(name.length - 2)}${name[name.length - 1]}`
+export function maskProfileName(name: string | null): string {
+  const normalized = name?.trim()
+  if (!normalized) return MASKED_PROFILE_NAME
+  if (normalized.length === 1) return '*'
+  if (normalized.length === 2) return `${normalized[0]}*`
+  return `${normalized[0]}${'*'.repeat(normalized.length - 2)}${normalized[normalized.length - 1]}`
 }
 
 type TenantProfileExposure = Pick<

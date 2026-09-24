@@ -94,24 +94,31 @@ export async function GET(
       isFavorited = !!fav
     }
 
+    // 본인 조회만 예외. 그 외에는 로그인 여부·역할과 무관하게 동의 판정을 적용한다.
+    // 동의 컨텍스트가 없는 비로그인 조회자는 fail-closed 기본값을 그대로 타서 마스킹된다.
     const isOwner = actor?.id === property.landlord_id
-    const visibility = !isOwner && actor?.user_type === 'tenant'
-      ? getTenantProfileVisibility(await getLandlordProfileConsent(property.landlord_id))
-      : null
+    const visibility = isOwner
+      ? null
+      : getTenantProfileVisibility(await getLandlordProfileConsent(property.landlord_id))
 
-    const landlord = isOwner || !visibility
+    const landlord = visibility
       ? {
+          name: visibility.basic_profile
+            ? property.landlord_name
+            : maskProfileName(property.landlord_name),
+          bio: visibility.bio ? property.landlord_bio : null,
+          profileImage: visibility.contact ? property.landlord_profile_image : null,
+        }
+      : {
           name: property.landlord_name,
           bio: property.landlord_bio,
           profileImage: property.landlord_profile_image,
         }
-      : {
-          name: visibility.basic_profile
-            ? property.landlord_name
-            : maskProfileName(property.landlord_name ?? ''),
-          bio: visibility.bio ? property.landlord_bio : null,
-          profileImage: visibility.contact ? property.landlord_profile_image : null,
-        }
+
+    // 감사 로그는 실제로 나간 것만 기록한다. 전부 마스킹된 조회를
+    // "landlord_profile을 봤다"로 남기면 노출 범위를 실제보다 넓게 기록한다.
+    const landlordProfileExposed =
+      isOwner || Boolean(visibility && (visibility.basic_profile || visibility.bio || visibility.contact))
 
     void recordAccessAudit({
       actorUserId: actor?.id ?? null,
@@ -122,7 +129,7 @@ export async function GET(
       targetId: property.id,
       targetUserId: property.landlord_id,
       purpose: 'property_view',
-      fieldsViewed: actor?.user_type === 'tenant' ? ['property', 'landlord_profile'] : ['property'],
+      fieldsViewed: landlordProfileExposed ? ['property', 'landlord_profile'] : ['property'],
       requestId,
       traceId,
       metadata: {

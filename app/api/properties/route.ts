@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server'
 import { query } from '@/lib/db'
 import { logger } from '@/lib/logger'
+import { getLandlordProfileConsents, getTenantProfileVisibility, maskProfileName } from '@/lib/consent'
 
 interface PropertyListRow {
   id: string
+  landlord_id: string
   title: string
   address: string
   region: string | null
@@ -131,6 +133,7 @@ export async function GET(request: Request) {
         p.is_featured,
         p.featured_until,
         p.boost_score,
+        p.landlord_id,
         pi.image_url as main_image_url,
         lp.name as landlord_name
       FROM properties p
@@ -146,6 +149,11 @@ export async function GET(request: Request) {
     const hasMore = rows.length > limit
     const properties = hasMore ? rows.slice(0, limit) : rows
     const nextCursor = hasMore ? String(offset + limit) : null
+
+    // 공개 목록이라 소유자 컨텍스트가 없다. 집주인 본인이 자기 매물을 목록에서 보더라도
+    // 동의 판정을 그대로 적용한다 — 여기서 조회자별 분기를 두면 아래 public 캐시가
+    // 다른 사용자에게 잘못 재사용된다. 본인 실명 확인은 매물 상세·프로필에서 한다.
+    const consents = await getLandlordProfileConsents(properties.map(p => p.landlord_id))
 
     const response = NextResponse.json({
       properties: properties.map(p => ({
@@ -167,7 +175,9 @@ export async function GET(request: Request) {
         viewCount: p.view_count,
         createdAt: p.created_at,
         mainImageUrl: p.main_image_url,
-        landlordName: p.landlord_name,
+        landlordName: getTenantProfileVisibility(consents.get(p.landlord_id) ?? null).basic_profile
+          ? p.landlord_name
+          : maskProfileName(p.landlord_name),
         isFeatured: p.is_featured,
         featuredUntil: p.featured_until,
       })),
