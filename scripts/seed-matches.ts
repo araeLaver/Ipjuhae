@@ -7,6 +7,7 @@
  */
 
 import { Pool } from 'pg'
+import { resolveDbSsl } from '../lib/db-ssl.mjs'
 
 const DATABASE_URL = process.env.DATABASE_URL
 if (!DATABASE_URL) {
@@ -16,7 +17,7 @@ if (!DATABASE_URL) {
 
 const pool = new Pool({
   connectionString: DATABASE_URL,
-  ssl: DATABASE_URL.includes('localhost') ? false : { rejectUnauthorized: false },
+  ssl: resolveDbSsl(DATABASE_URL),
 })
 
 const DISTRICTS = ['강남구', '마포구', '용산구', '성동구', '종로구', '서초구', '영등포구', '동작구']

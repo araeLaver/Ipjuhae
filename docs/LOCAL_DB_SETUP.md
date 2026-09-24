@@ -2,12 +2,9 @@
 
 QA·개발이 운영 DB를 건드리지 않고 migration·trust smoke·route happy path를 **실제 DB에 태워** 확인하기 위한 절차입니다. 근거: DOW-1156, DOW-362.
 
-`docker compose up -d` 경로는 지금 두 가지 이유로 막혀 있습니다.
+`docker compose up -d` 경로는 이 머신에서 아직 막혀 있습니다 — colima(docker daemon)가 실행 중이 아니고, host 5432는 이미 다른 Postgres가 점유 중입니다. 아래 경로는 docker를 기다리지 않습니다.
 
-- colima(docker daemon)가 실행 중이 아니고, host 5432는 이미 다른 Postgres가 점유 중입니다.
-- compose의 app 컨테이너는 DB host를 서비스명 `db`로 잡는데, `lib/db.ts:8`이 연결 문자열에 `localhost`가 들어있을 때만 SSL을 끄기 때문에 app이 DB에 붙지 못합니다(DOW-1152).
-
-아래 경로는 docker도, DOW-1152 수정도 기다리지 않습니다.
+SSL 분기 결함(DOW-1152)은 닫혔습니다. `lib/db-ssl.mjs`가 hostname으로 판단하므로 `localhost`·`127.0.0.1`·compose 서비스명 `db` 어느 쪽으로 써도 동작합니다.
 
 ## 1. Postgres 준비
 
@@ -33,7 +30,6 @@ npm run db:bootstrap
 안전장치:
 
 - `DATABASE_URL`의 host가 로컬이 아니면 즉시 중단합니다. 운영 DB에는 돌지 않습니다.
-- host가 `127.0.0.1`이면 SSL 분기에 걸리므로 `localhost`로 바꾸라고 알려 주고 중단합니다(DOW-1152).
 - 이미 적용된 DB에 다시 돌려도 안전합니다(`pending=0`).
 
 기대 결과: `[complete] All pending migrations were applied.` / `_migrations` 49행.
@@ -56,7 +52,7 @@ trust smoke 기대 결과:
 
 ## 4. 앱을 이 DB로 띄우기
 
-`.env.local`에 아래를 넣고 `npm run dev`를 씁니다. host는 반드시 `localhost`입니다.
+`.env.local`에 아래를 넣고 `npm run dev`를 씁니다. host는 `localhost`든 `127.0.0.1`이든 됩니다.
 
 ```
 DATABASE_URL=postgresql://<사용자>@localhost:5432/ipjuhae_db
@@ -65,14 +61,20 @@ DB_SCHEMA=ipjuhae
 
 ## compose 경로를 굳이 쓸 때
 
-host 5432 충돌은 코드 수정 없이 피할 수 있습니다. `docker-compose.yml:40`이 이미 오버라이드를 지원합니다.
+host 5432 충돌은 코드 수정 없이 피할 수 있습니다. `docker-compose.yml`이 `POSTGRES_HOST_PORT` 오버라이드를 지원합니다.
 
 ```bash
 colima start
 POSTGRES_HOST_PORT=5433 docker compose up -d db
 ```
 
-다만 **app 컨테이너는 DOW-1152가 닫히기 전까지 DB에 붙지 못합니다**(서비스명 `db`가 `localhost` 매칭이 안 돼 SSL이 켜지고, compose DB는 stock `postgres:16-alpine`이라 SSL이 없음). DB만 컨테이너로 쓰고 앱은 호스트에서 띄우는 조합은 동작합니다.
+app 컨테이너까지 띄울 때는 `.env.local`의 `DATABASE_URL` host를 compose 서비스명 `db`로 씁니다. 컨테이너 안에서 `localhost`는 app 자신을 가리키므로 DB에 닿지 않습니다.
+
+```
+DATABASE_URL=postgresql://ipjuhae:<POSTGRES_PASSWORD>@db:5432/ipjuhae_db
+```
+
+compose DB는 stock `postgres:16-alpine`이라 TLS가 없는데, `db`는 SSL 없이 붙는 호스트로 판단되므로 그대로 동작합니다(DOW-1152). 판단을 덮어써야 하면 `DATABASE_SSL=disable`을 명시합니다.
 
 ## 알려진 제약
 

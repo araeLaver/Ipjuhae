@@ -13,6 +13,7 @@
 
 import { spawnSync } from 'node:child_process'
 import pg from 'pg'
+import { getDatabaseHostname, isLocalDatabaseHost } from '../lib/db-ssl.mjs'
 
 const { Pool } = pg
 
@@ -26,22 +27,15 @@ if (!connectionString) {
 }
 
 // 안전장치: 운영 DB에는 절대 돌지 않는다. host가 로컬이 아니면 즉시 중단한다.
-// 참고로 lib/db.ts와 db/migrate.ts는 연결 문자열에 'localhost'가 들어있을 때만 SSL을
-// 끄므로, 로컬에서는 host를 127.0.0.1이 아니라 localhost로 써야 한다(DOW-1152).
-const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '::1', '[::1]'])
-let host
-try {
-  host = new URL(connectionString).hostname
-} catch {
+// SSL 판단은 lib/db-ssl.mjs가 hostname으로 하므로 localhost / 127.0.0.1 / compose
+// 서비스명 무엇으로 써도 된다(DOW-1152).
+const host = getDatabaseHostname(connectionString)
+if (host === null) {
   console.error('DATABASE_URL을 URL로 해석하지 못했습니다.')
   process.exit(1)
 }
-if (!LOCAL_HOSTS.has(host)) {
+if (!isLocalDatabaseHost(host)) {
   console.error(`로컬 DB에서만 실행할 수 있습니다. 현재 host=${host}`)
-  process.exit(1)
-}
-if (host !== 'localhost') {
-  console.error(`host가 '${host}'라 SSL 분기에 걸립니다. DATABASE_URL의 host를 localhost로 바꿔 주세요(DOW-1152).`)
   process.exit(1)
 }
 

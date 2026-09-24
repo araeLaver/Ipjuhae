@@ -1,6 +1,16 @@
 # Docker Compose v2+ (version field deprecated — omitted)
 # Usage: docker compose up -d
 # Env:  cp .env.example .env.local && edit .env.local
+#
+# .env.local에 최소 이 두 줄이 있어야 app이 db에 붙는다:
+#   POSTGRES_PASSWORD=<임의값>
+#   DATABASE_URL=postgresql://ipjuhae:<같은값>@db:5432/ipjuhae_db
+#
+# 아래 db 서비스는 stock postgres 이미지라 TLS가 없다. SSL 여부는 lib/db-ssl.mjs가
+# hostname으로 판단하므로 host가 db / localhost / 127.0.0.1이면 자동으로 꺼진다.
+# 덮어쓰려면 DATABASE_SSL(또는 PGSSLMODE)을 쓴다. 근거: DOW-1152.
+#
+# host의 5432를 다른 Postgres가 점유 중이면 POSTGRES_HOST_PORT로 바꾼다.
 
 services:
   app:

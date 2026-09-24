@@ -13,6 +13,7 @@
  */
 import pg from 'pg'
 import { SERIES } from '../marketing/sns/carousels.mjs'
+import { resolveDbSsl } from '../lib/db-ssl.mjs'
 
 const DRY = process.argv.includes('--dry')
 
@@ -60,7 +61,7 @@ function composeBody(set, seriesName) {
 
 const client = new pg.Client({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL?.includes('localhost') ? undefined : { rejectUnauthorized: false },
+  ssl: resolveDbSsl(process.env.DATABASE_URL),
 })
 
 await client.connect()

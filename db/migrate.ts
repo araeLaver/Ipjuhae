@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { Pool, type PoolClient } from 'pg'
+import { resolveDbSsl } from '../lib/db-ssl.mjs'
 import {
   assessMigrationBaseline,
   pendingMigrations,
@@ -209,9 +210,7 @@ async function run(): Promise<void> {
 
   const pool = new Pool({
     connectionString: databaseUrl,
-    ssl: databaseUrl.includes('localhost')
-      ? false
-      : { rejectUnauthorized: false },
+    ssl: resolveDbSsl(databaseUrl),
   })
   let client: PoolClient | undefined
   let advisoryLockAcquired = false

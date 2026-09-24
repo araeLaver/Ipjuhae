@@ -1,10 +1,11 @@
 import pg from 'pg'
+import { resolveDbSsl } from '../lib/db-ssl.mjs'
 
 const { Pool } = pg
 const connectionString = process.env.DATABASE_URL
 if (!connectionString) throw new Error('DATABASE_URL is required')
 const schema = process.env.DB_SCHEMA || 'ipjuhae'
-const pool = new Pool({ connectionString, ssl: connectionString.includes('localhost') ? false : { rejectUnauthorized: false } })
+const pool = new Pool({ connectionString, ssl: resolveDbSsl(connectionString) })
 
 const requiredTables = [
   'trust_evidence_nodes', 'trust_fact_nodes', 'trust_derived_nodes', 'trust_dependency_edges',

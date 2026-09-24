@@ -1,13 +1,12 @@
 import { Pool, PoolClient } from 'pg'
+import { resolveDbSsl } from './db-ssl.mjs'
 
 const isProduction = process.env.NODE_ENV === 'production'
 const DB_SCHEMA = process.env.DB_SCHEMA || 'ipjuhae'
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL?.includes('localhost')
-    ? false
-    : { rejectUnauthorized: isProduction },
+  ssl: resolveDbSsl(process.env.DATABASE_URL, { rejectUnauthorized: isProduction }),
   max: 20,
   idleTimeoutMillis: 30_000,
   connectionTimeoutMillis: 5_000,

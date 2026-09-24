@@ -1,4 +1,5 @@
 import { Client } from 'pg'
+import { resolveDbSsl } from '../lib/db-ssl.mjs'
 
 const DB_SCHEMA = process.env.DB_SCHEMA || 'ipjuhae'
 
@@ -16,7 +17,7 @@ export default async function globalSetup(): Promise<void> {
 
   const client = new Client({
     connectionString: url,
-    ssl: url.includes('localhost') ? false : { rejectUnauthorized: false },
+    ssl: resolveDbSsl(url),
   })
 
   await client.connect()
