@@ -33,14 +33,17 @@ const ListingsScreen: React.FC<Props> = ({ navigation }) => {
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // GET /api/listings has no pagination — it returns a single { listings }
   // page (up to 60 rows), amounts already in 만원.
   const fetchListings = useCallback(async () => {
     try {
       setListings(await api.fetchListings());
+      setLoadError(null);
     } catch (error) {
       console.log('Failed to fetch listings:', error);
+      setLoadError('매물을 불러오지 못했습니다');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -110,7 +113,17 @@ const ListingsScreen: React.FC<Props> = ({ navigation }) => {
         contentContainerStyle={styles.listContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListEmptyComponent={
-          <Text style={styles.emptyText}>등록된 매물이 없습니다</Text>
+          loadError ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyTitle}>매물을 불러오지 못했습니다</Text>
+              <Text style={styles.emptySubtitle}>등록된 매물이 없는 상태가 아니라 조회에 실패했습니다.</Text>
+              <TouchableOpacity style={styles.retryButton} onPress={fetchListings}>
+                <Text style={styles.retryText}>다시 시도</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <Text style={styles.emptyText}>등록된 매물이 없습니다</Text>
+          )
         }
       />
     </View>
@@ -147,6 +160,11 @@ const styles = StyleSheet.create({
   metaText: { fontSize: 12, color: '#9A8F87' },
   footer: { paddingVertical: 20 },
   emptyText: { textAlign: 'center', color: '#9A8F87', fontSize: 14, marginTop: 40 },
+  emptyContainer: { alignItems: 'center', paddingTop: 80, paddingHorizontal: 24 },
+  emptyTitle: { fontSize: 18, fontWeight: '600', color: '#4A423C', marginBottom: 6, textAlign: 'center' },
+  emptySubtitle: { fontSize: 14, color: '#9A8F87', textAlign: 'center', marginBottom: 16 },
+  retryButton: { backgroundColor: '#F0663F', borderRadius: 8, paddingHorizontal: 16, paddingVertical: 10 },
+  retryText: { color: '#fff', fontWeight: '600' },
 });
 
 export default ListingsScreen;

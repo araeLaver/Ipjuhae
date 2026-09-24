@@ -37,13 +37,16 @@ const PropertiesScreen: React.FC<Props> = ({ navigation }) => {
   const [properties, setProperties] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const loadProperties = useCallback(async () => {
     try {
       // GET /api/landlord/properties returns { properties, pagination } (원 단위)
       setProperties(await api.fetchLandlordProperties());
+      setLoadError(null);
     } catch (error) {
       console.log('Failed to load properties:', error);
+      setLoadError('내 매물을 불러오지 못했습니다');
     } finally {
       setLoading(false);
     }
@@ -167,11 +170,21 @@ const PropertiesScreen: React.FC<Props> = ({ navigation }) => {
         contentContainerStyle={styles.listContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyIcon}>🏠</Text>
-            <Text style={styles.emptyTitle}>등록된 매물이 없습니다</Text>
-            <Text style={styles.emptySubtitle}>매물을 등록하여 세입자를 찾아보세요</Text>
-          </View>
+          loadError ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyTitle}>내 매물을 불러오지 못했습니다</Text>
+              <Text style={styles.emptySubtitle}>등록된 매물이 없는 상태가 아니라 조회에 실패했습니다.</Text>
+              <TouchableOpacity style={styles.retryButton} onPress={loadProperties}>
+                <Text style={styles.retryText}>다시 시도</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyIcon}>🏠</Text>
+              <Text style={styles.emptyTitle}>등록된 매물이 없습니다</Text>
+              <Text style={styles.emptySubtitle}>매물을 등록하여 세입자를 찾아보세요</Text>
+            </View>
+          )
         }
       />
     </View>
@@ -203,7 +216,9 @@ const styles = StyleSheet.create({
   emptyContainer: { alignItems: 'center', paddingTop: 80 },
   emptyIcon: { fontSize: 48, marginBottom: 12 },
   emptyTitle: { fontSize: 18, fontWeight: '600', color: '#4A423C', marginBottom: 4 },
-  emptySubtitle: { fontSize: 14, color: '#9A8F87' },
+  emptySubtitle: { fontSize: 14, color: '#9A8F87', textAlign: 'center', marginBottom: 16 },
+  retryButton: { backgroundColor: '#F0663F', borderRadius: 8, paddingHorizontal: 16, paddingVertical: 10 },
+  retryText: { color: '#fff', fontWeight: '600' },
 });
 
 export default PropertiesScreen;
