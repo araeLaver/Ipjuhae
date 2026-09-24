@@ -35,11 +35,18 @@ export default function ContractReportsPage() {
 
   const load = useCallback(async () => {
     setLoading(true)
-    const response = await fetch('/api/v1/contract-reports', { cache: 'no-store' })
-    const payload = await response.json()
-    if (response.ok) setReports(payload.reports ?? [])
-    else setError(payload.message ?? '리포트를 불러오지 못했습니다.')
-    setLoading(false)
+    setError('')
+    try {
+      const response = await fetch('/api/v1/contract-reports', { cache: 'no-store' })
+      const payload = await response.json().catch(() => null)
+      if (!response.ok) throw new Error(payload?.message ?? '리포트를 불러오지 못했습니다.')
+      setReports(payload.reports ?? [])
+    } catch (error) {
+      setReports([])
+      setError(error instanceof Error ? error.message : '리포트를 불러오지 못했습니다.')
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
   useEffect(() => {
@@ -117,7 +124,14 @@ export default function ContractReportsPage() {
               <span className="text-xs text-stone-500">총 {reports.length}건</span>
             </div>
             {loading ? <div className="rounded-2xl border border-stone-200 bg-white/80 p-8 text-stone-500">불러오는 중...</div> : null}
-            {!loading && reports.length === 0 ? <div className="rounded-2xl border border-dashed border-stone-400 bg-white/60 p-10 text-center text-stone-500">아직 생성된 리포트가 없습니다.</div> : null}
+            {!loading && error ? (
+              <div className="rounded-2xl border border-red-200 bg-red-50 p-8 text-red-800">
+                <p className="font-bold">리포트를 불러오지 못했습니다</p>
+                <p className="mt-2 text-sm">{error}</p>
+                <button onClick={() => void load()} className="mt-4 rounded-xl border border-red-300 px-4 py-2 text-sm font-bold hover:bg-red-100">다시 시도</button>
+              </div>
+            ) : null}
+            {!loading && !error && reports.length === 0 ? <div className="rounded-2xl border border-dashed border-stone-400 bg-white/60 p-10 text-center text-stone-500">아직 생성된 리포트가 없습니다.</div> : null}
             <div className="space-y-4">
               {reports.map((report) => (
                 <Link key={report.id} href={'/trust/reports/' + report.id} className="group block rounded-2xl border border-stone-200 bg-white/90 p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-orange-400 hover:shadow-lg">
@@ -148,4 +162,3 @@ function Metric({ label, value, tone }: { label: string; value: number; tone: 's
   const style = tone === 'green' ? 'bg-emerald-50 text-emerald-800' : tone === 'orange' ? 'bg-orange-50 text-orange-800' : 'bg-muted text-stone-700'
   return <div className={'rounded-xl px-3 py-2 ' + style}><strong className="block text-lg">{value ?? 0}</strong>{label}</div>
 }
-

@@ -19,12 +19,22 @@ interface Card {
 export default function TrustCardsPage() {
   const [cards, setCards] = useState<Card[]>([])
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(true)
 
   const load = useCallback(async () => {
-    const response = await fetch('/api/v1/trust-cards', { cache: 'no-store' })
-    const payload = await response.json()
-    if (response.ok) setCards(payload.cards ?? [])
-    else setError(payload.message ?? 'Trust Card를 불러오지 못했습니다.')
+    setLoading(true)
+    setError('')
+    try {
+      const response = await fetch('/api/v1/trust-cards', { cache: 'no-store' })
+      const payload = await response.json().catch(() => null)
+      if (!response.ok) throw new Error(payload?.message ?? 'Trust Card를 불러오지 못했습니다.')
+      setCards(payload.cards ?? [])
+    } catch (error) {
+      setCards([])
+      setError(error instanceof Error ? error.message : 'Trust Card를 불러오지 못했습니다.')
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
   useEffect(() => {
@@ -50,8 +60,15 @@ export default function TrustCardsPage() {
             <Link href="/trust-center" className="rounded-full border border-stone-300 px-4 py-2 text-sm">신뢰센터</Link>
           </div>
         </header>
-        {error ? <div className="mt-5 rounded-xl bg-red-50 p-4 text-red-800">{error}</div> : null}
+        {error ? (
+          <div className="mt-5 rounded-xl bg-red-50 p-4 text-red-800">
+            <p className="font-bold">Trust Card를 불러오지 못했습니다</p>
+            <p className="mt-1 text-sm">{error}</p>
+            <button onClick={() => void load()} className="mt-3 rounded-full border border-red-300 px-4 py-2 text-xs font-bold hover:bg-red-100">다시 시도</button>
+          </div>
+        ) : null}
         <section className="mt-7 grid gap-4 md:grid-cols-2">
+          {loading ? <div className="rounded-3xl bg-white/80 p-10 text-center text-stone-500">불러오는 중...</div> : null}
           {cards.map((card) => (
             <article key={card.id} className="rounded-3xl border border-white/40 bg-white/95 p-6 shadow-lg">
               <div className="flex items-start justify-between gap-3">
@@ -71,10 +88,9 @@ export default function TrustCardsPage() {
               {card.status === 'issued' ? <button onClick={() => void revoke(card.id)} className="mt-5 rounded-full border border-red-300 px-4 py-2 text-xs font-bold text-red-700 hover:bg-red-50">즉시 회수</button> : null}
             </article>
           ))}
-          {cards.length === 0 ? <div className="rounded-3xl border border-dashed border-white/60 bg-white/80 p-10 text-center text-stone-500">발급된 Trust Card가 없습니다.</div> : null}
+          {!loading && !error && cards.length === 0 ? <div className="rounded-3xl border border-dashed border-white/60 bg-white/80 p-10 text-center text-stone-500">발급된 Trust Card가 없습니다.</div> : null}
         </section>
       </div>
     </main>
   )
 }
-

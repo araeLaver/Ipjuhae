@@ -41,6 +41,7 @@ export default function TransactionsPage() {
   const [ready, setReady] = useState(false)
   const [txns, setTxns] = useState<Txn[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
   const [open, setOpen] = useState(false)
   const [address, setAddress] = useState('')
   const [deposit, setDeposit] = useState('')
@@ -57,11 +58,16 @@ export default function TransactionsPage() {
 
   const load = useCallback(async () => {
     setLoading(true)
+    setLoadError('')
     try {
       const res = await fetch('/api/v1/transactions', { cache: 'no-store' })
       if (res.status === 401) { router.push('/login?redirect=/trust/transactions'); return }
-      const data = await res.json()
+      const data = await res.json().catch(() => null)
+      if (!res.ok) throw new Error(data?.error ?? '거래 목록을 불러오지 못했습니다')
       setTxns(data.transactions ?? [])
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : '거래 목록을 불러오지 못했습니다')
+      setTxns([])
     } finally {
       setLoading(false)
     }
@@ -138,6 +144,12 @@ export default function TransactionsPage() {
 
         {loading ? (
           <div className="flex justify-center py-16"><Spinner /></div>
+        ) : loadError ? (
+          <Card className="space-y-3 p-6 text-sm">
+            <p className="font-semibold text-destructive">거래 목록을 불러오지 못했습니다</p>
+            <p className="text-muted-foreground">{loadError}</p>
+            <Button variant="outline" onClick={load}>다시 시도</Button>
+          </Card>
         ) : txns.length === 0 ? (
           <EmptyState icon={<FileText className="h-10 w-10" />} title="등록된 거래가 없어요" description="거래를 등록하면 신뢰 리포트를 만들 수 있어요." />
         ) : (
