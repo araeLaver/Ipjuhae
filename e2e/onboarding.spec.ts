@@ -71,7 +71,8 @@ test.describe('네비게이션', () => {
     await expect(page).toHaveURL(/\/$/)
 
     // 최종 응답이 아니라 리다이렉트 체인의 첫 응답을 봐야 308을 확인할 수 있다.
-    const chain = response?.request().redirectedFrom()?.response()
+    // response() 는 Promise 를 돌려준다 — await 없이 status() 를 부르면 타입이 깨진다.
+    const chain = await response?.request().redirectedFrom()?.response()
     expect(chain?.status()).toBe(308)
 
     // 목적지가 실제로 렌더되는지까지 확인한다 — 리다이렉트만 되고 500이면 의미가 없다.
