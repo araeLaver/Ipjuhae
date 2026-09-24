@@ -1,11 +1,16 @@
 import { test, expect } from './fixtures'
+import { HOME_TITLE, HOME_PRIMARY_ACTION_HREF } from '@/lib/site-metadata'
 
 test.describe('인증 흐름', () => {
+  // 09-17 커뮤니티 전환으로 `/`가 매물 랜딩에서 보증금 점검 랜딩으로 바뀌었는데
+  // 이 테스트가 옛 화면(`신뢰받는 매물 찾기`·`매물 둘러보기`)을 그대로 기대해
+  // 계속 실패했다. 카피를 다시 하드코딩하지 않고, 타이틀은 화면과 같은 상수를
+  // 쓰고 대표 행동은 목적지로 확인한다.
   test('랜딩페이지 접근 가능', async ({ page }) => {
     await page.goto('/')
-    await expect(page).toHaveTitle(/입주해 - 안전한 임대의 시작/)
-    await expect(page.getByRole('heading', { name: '신뢰받는 매물 찾기' })).toBeVisible()
-    await expect(page.getByRole('link', { name: '매물 둘러보기' })).toBeVisible()
+    await expect(page).toHaveTitle(HOME_TITLE)
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+    await expect(page.locator(`main a[href="${HOME_PRIMARY_ACTION_HREF}"]`).first()).toBeVisible()
   })
 
   test('회원가입 페이지 접근 가능', async ({ page }) => {

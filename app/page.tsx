@@ -5,6 +5,7 @@ import { getHomeContent, excerpt } from '@/lib/home-content'
 import { TesterBanner } from '@/components/tester-banner'
 import { POLICIES } from '@/lib/policies'
 import { PolicyNews } from '@/components/policy-news'
+import { HOME_TITLE } from '@/lib/site-metadata'
 
 /**
  * 첫 화면.
@@ -36,7 +37,8 @@ export const dynamic = 'force-dynamic'
 export const metadata: Metadata = {
   // 루트 레이아웃의 title.template은 자식 세그먼트에만 붙는다. `/`는 같은
   // 세그먼트라 적용되지 않으므로 브랜드를 직접 적는다.
-  title: '입주해 | 계약 전에 보증금이 안전한지 확인하는 곳',
+  // 문구는 e2e와 공유한다 — lib/site-metadata.ts 주석 참고.
+  title: HOME_TITLE,
   description:
     '전세 계약 전에 보증금이 안전한지 계산해 보고, 등기부에서 무엇을 봐야 하는지 확인하세요. 가입 없이 바로 쓸 수 있습니다.',
   alternates: { canonical: '/' },

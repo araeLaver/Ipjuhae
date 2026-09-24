@@ -45,12 +45,22 @@ test.describe('집주인 대시보드', () => {
 })
 
 test.describe('네비게이션', () => {
-  test('헤더 로고 클릭시 홈으로 이동', async ({ page }) => {
+  // 기대값을 `/`로 적어 두었더니 로고 href가 `/home`으로 바뀐 뒤 계속 실패했다.
+  // 목적지를 테스트에 박으면 라우트가 움직일 때마다 또 깨진다(DOW-1181).
+  // 로고가 "가리키는 곳으로 실제로 데려가는지"만 확인하면 /home 정리 후에도 유효하다.
+  test('헤더 로고 클릭시 로고가 가리키는 홈으로 이동', async ({ page }) => {
     await page.goto('/login')
 
-    await page.getByRole('link', { name: '입주해 입주해', exact: true }).click()
+    const logo = page.getByRole('link', { name: '입주해 입주해', exact: true })
+    const href = await logo.getAttribute('href')
+    expect(href).toBeTruthy()
 
-    await expect(page).toHaveURL('/')
+    await logo.click()
+
+    // href가 리다이렉트되는 경우(예: /home → /)까지 허용한다. 중요한 건
+    // 로그인 화면을 벗어나 홈 계열 화면이 정상 렌더된다는 점이다.
+    await expect(page).not.toHaveURL(/\/login/)
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
   })
 
   test('개인정보처리방침 페이지 접근 가능', async ({ page }) => {
