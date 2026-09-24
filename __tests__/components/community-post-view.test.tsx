@@ -252,7 +252,12 @@ describe('U2 — 신고 UI', () => {
     expect(toastSuccess).toHaveBeenCalledWith('신고가 접수됐습니다. 운영자가 확인합니다.')
   })
 
-  it('숨김 처리되면 안내 후 커뮤니티로 보낸다', async () => {
+  /**
+   * DOW-1161 패턴 D-2. 이전 동작은 `toast.success` 직후 `router.push('/')`였다.
+   * 3초짜리 토스트와 화면 전환이 겹쳐 사용자는 둘 중 하나를 놓쳤고, 신고를 눌렀을 뿐인데
+   * 화면이 설명 없이 바뀌었다. 자동 이동을 없애고 이유를 말하는 결과 화면으로 바꾼다.
+   */
+  it('숨김 처리돼도 자동으로 이동하지 않고, 왜 사라졌는지 말한 뒤 이동은 버튼으로 받는다', async () => {
     mockApi({
       user: null,
       postStatus: 200,
@@ -265,10 +270,17 @@ describe('U2 — 신고 UI', () => {
     fireEvent.click(screen.getByRole('button', { name: '욕설·혐오' }))
     fireEvent.click(screen.getByRole('button', { name: '신고 접수' }))
 
-    await waitFor(() => expect(routerPush).toHaveBeenCalledWith('/'))
+    await screen.findByText('신고가 접수돼 이 글은 보이지 않게 됐습니다')
     expect(toastSuccess).toHaveBeenCalledWith(
       '신고가 접수됐습니다. 신고가 쌓여 이 글은 보이지 않게 처리됐습니다.',
     )
+    // 보던 글은 치운다 — 숨겨졌다고 말해 놓고 그대로 두면 말과 화면이 다르다.
+    expect(screen.queryByText('본문입니다')).toBeNull()
+    // 이동은 사용자가 누를 때만.
+    expect(routerPush).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByRole('button', { name: '커뮤니티로 돌아가기' }))
+    expect(routerPush).toHaveBeenCalledWith('/')
   })
 
   it('접수 실패는 toast로 알린다', async () => {

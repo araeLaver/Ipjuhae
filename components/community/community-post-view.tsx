@@ -10,6 +10,8 @@ import { Button, buttonVariants } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import { Spinner } from '@/components/ui/spinner'
+import { EmptyState } from '@/components/ui/empty-state'
+import { ShieldAlert } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { AUDIENCE_LABELS, roleLabel, type CommunityAudience } from '@/lib/community'
 
@@ -55,6 +57,8 @@ export function CommunityPostView({ id }: { id: string }) {
   const [reporting, setReporting] = useState(false)
   const [reportReason, setReportReason] = useState('')
   const [reportSubmitting, setReportSubmitting] = useState(false)
+  /** 내 신고로 이 글이 숨겨졌는가. 본문 자리를 결과 화면으로 바꾸는 조건이다. */
+  const [hiddenByReport, setHiddenByReport] = useState(false)
 
   // 403을 받았을 때 "로그인하면 보인다"인지 "역할이 달라서 못 본다"인지 갈라야 해서
   // 보는 사람이 누구인지 먼저 확인한다. 목록 화면과 같은 경로를 쓴다.
@@ -145,7 +149,10 @@ export function CommunityPostView({ id }: { id: string }) {
       setReportReason('')
       if (data?.hidden) {
         toast.success('신고가 접수됐습니다. 신고가 쌓여 이 글은 보이지 않게 처리됐습니다.')
-        router.push('/')
+        // 자동 이동하지 않는다(DOW-1161 패턴 D-2). 사용자는 신고를 눌렀지 화면을 떠나겠다고
+        // 한 적이 없고, 3초짜리 토스트와 화면 전환이 겹치면 둘 중 하나를 놓친다.
+        // 보던 글이 사라진 이유를 이 자리에서 말하고, 이동은 버튼으로 받는다.
+        setHiddenByReport(true)
       } else {
         toast.success('신고가 접수됐습니다. 운영자가 확인합니다.')
       }
@@ -160,7 +167,16 @@ export function CommunityPostView({ id }: { id: string }) {
       <main className="container mx-auto max-w-3xl px-4 py-8">
         <Link href="/" className="mb-4 inline-block text-sm text-muted-foreground hover:text-foreground">← 커뮤니티</Link>
 
-        {loading || (error?.forbidden && !viewerKnown) ? (
+        {hiddenByReport ? (
+          <Card className="p-6">
+            <EmptyState
+              icon={<ShieldAlert className="h-10 w-10" />}
+              title="신고가 접수돼 이 글은 보이지 않게 됐습니다"
+              description="운영자가 확인합니다. 결과는 따로 안내되지 않습니다."
+              action={{ label: '커뮤니티로 돌아가기', onClick: () => router.push('/') }}
+            />
+          </Card>
+        ) : loading || (error?.forbidden && !viewerKnown) ? (
           <div className="flex justify-center py-16"><Spinner /></div>
         ) : error ? (
           <Card className="p-6 text-center">
