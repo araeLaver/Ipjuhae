@@ -536,6 +536,14 @@ export interface CommunityPost {
   authorRole: string
 }
 
+export interface CommunityComment {
+  id: string
+  body: string
+  createdAt: string
+  authorName: string | null
+  authorRole: string | null
+}
+
 interface PostRow {
   id: string
   audience: CommunityAudience
@@ -547,6 +555,14 @@ interface PostRow {
   created_at: string
   author_name: string | null
   author_role: string
+}
+
+interface CommentRow {
+  id: string
+  body: string
+  created_at: string
+  author_name: string | null
+  author_role: string | null
 }
 
 const toPost = (r: PostRow): CommunityPost => ({
@@ -562,6 +578,14 @@ const toPost = (r: PostRow): CommunityPost => ({
   authorRole: r.author_role,
 })
 
+const toComment = (r: CommentRow): CommunityComment => ({
+  id: r.id,
+  body: r.body,
+  createdAt: r.created_at,
+  authorName: r.author_name,
+  authorRole: r.author_role,
+})
+
 /** GET /api/community/posts?audience= */
 export async function fetchCommunityPosts(audience: CommunityAudience = 'all'): Promise<CommunityPost[]> {
   const res = await apiClient.get<{ posts: PostRow[] }>(`/community/posts?audience=${audience}`)
@@ -572,6 +596,12 @@ export async function fetchCommunityPosts(audience: CommunityAudience = 'all'): 
 export async function fetchCommunityPost(id: string): Promise<CommunityPost> {
   const res = await apiClient.get<{ post: PostRow }>(`/community/posts/${id}`)
   return toPost(res.post)
+}
+
+/** GET /api/community/posts/[id]/comments */
+export async function fetchCommunityComments(postId: string): Promise<CommunityComment[]> {
+  const res = await apiClient.get<{ comments: CommentRow[] }>(`/community/posts/${postId}/comments`)
+  return (res.comments ?? []).map(toComment)
 }
 
 /** POST /api/community/posts */

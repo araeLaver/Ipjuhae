@@ -62,6 +62,7 @@ export type MainTabParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
+const GuestTab = createBottomTabNavigator<{ DepositCheck: undefined; Community: undefined; Auth: undefined }>();
 
 const TabIcon = ({ name, focused }: { name: string; focused: boolean }) => {
   const icons: Record<string, string> = {
@@ -71,6 +72,7 @@ const TabIcon = ({ name, focused }: { name: string; focused: boolean }) => {
     Community: '💭',
     Messages: '💬',
     Profile: '👤',
+    Auth: '👤',
   };
   return (
     <Text style={[styles.tabIcon, focused && styles.tabIconFocused]}>
@@ -127,7 +129,7 @@ const PlaceholderScreen = () => (
  * 가입 없이도 직접 돌려볼 게 있어야 한 번은 쓴다. 보증금 점검을 첫 탭으로 둔다.
  */
 const GuestNavigator = () => (
-  <Tab.Navigator
+  <GuestTab.Navigator
     initialRouteName="DepositCheck"
     screenOptions={({ route }) => ({
       headerShown: false,
@@ -145,13 +147,14 @@ const GuestNavigator = () => (
       tabBarIcon: ({ focused }) => <TabIcon name={route.name} focused={focused} />,
     })}
   >
-    <Tab.Screen
+    <GuestTab.Screen
       name="DepositCheck"
       component={DepositCheckScreen}
       options={{ tabBarLabel: '보증금 점검' }}
     />
-    <Tab.Screen name="Community" component={CommunityScreen} options={{ tabBarLabel: '커뮤니티' }} />
-  </Tab.Navigator>
+    <GuestTab.Screen name="Community" component={CommunityScreen} options={{ tabBarLabel: '커뮤니티' }} />
+    <GuestTab.Screen name="Auth" component={AuthNavigator} options={{ tabBarLabel: '로그인 / 회원가입' }} />
+  </GuestTab.Navigator>
 );
 
 const AppNavigator = () => {
@@ -249,8 +252,7 @@ const AppNavigator = () => {
           </>
         ) : (
           <>
-            {/* 가입을 권할 단계가 아니다. 로그인 없이도 커뮤니티를 읽고 쓸 수 있어야
-                웹과 앞뒤가 맞는다. 로그인은 커뮤니티 안에서 언제든 갈 수 있다. */}
+            {/* 게스트 기능과 로그인 진입 경로를 함께 제공한다. */}
             <Stack.Screen name="Main" component={GuestNavigator} />
             <Stack.Screen
               name="CommunityPost"
