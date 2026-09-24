@@ -96,7 +96,9 @@ describe('MVP API smoke flows', () => {
     }))
   })
 
-  it('landlord receives minimum tenant fields when explicit verification consent is absent', async () => {
+  // DOW-1134: 동의 레코드가 없으면 fail-closed로 전부 마스킹한다. 이 테스트는 이전에
+  // 실명 '김민수'와 trust_score 88이 그대로 노출되는 것을 고정하고 있었다.
+  it('landlord receives fully masked tenant fields when no consent record exists', async () => {
     vi.mocked(getCurrentUser).mockResolvedValue({ id: landlordId, email: 'landlord@example.com' } as never)
     vi.mocked(queryOne).mockResolvedValue({ id: landlordId, user_type: 'landlord' })
     vi.mocked(query)
@@ -134,8 +136,10 @@ describe('MVP API smoke flows', () => {
     expect(data.total_count).toBe(1)
     expect(data.tenants[0]).toMatchObject({
       user_id: tenantId,
-      name: '김민수',
-      trust_score: 88,
+      name: '김*수',
+      age_range: null,
+      family_type: null,
+      trust_score: 0,
       reference_count: 0,
       verified: { employment: false, income: false, credit: false },
     })

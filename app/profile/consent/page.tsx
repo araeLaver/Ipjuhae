@@ -22,11 +22,11 @@ const FIELD_OPTIONS: Array<{ key: ConsentField; label: string }> = [
 ]
 
 const DEFAULT_ALLOWED_FIELDS: Record<ConsentField, boolean> = {
-  basic_profile: true,
-  verification: true,
+  basic_profile: false,
+  verification: false,
   bio: false,
   references: false,
-  trust_score: true,
+  trust_score: false,
   contact: false,
 }
 
@@ -345,4 +345,3 @@ export default function ConsentPage() {
     </PageContainer>
   )
 }
-

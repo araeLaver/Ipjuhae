@@ -3,11 +3,11 @@ import { DataConsent, ConsentPurpose, ConsentTargetRole } from '@/types/database
 import { Profile } from '@/types/database'
 
 const DEFAULT_CONSENT_FIELDS = {
-  basic_profile: true,
+  basic_profile: false,
   verification: false,
   bio: false,
   references: false,
-  trust_score: true,
+  trust_score: false,
   contact: false,
 }
 
@@ -91,7 +91,9 @@ export interface TenantProfileFieldVisibility {
 export function getTenantProfileVisibility(
   consent: DataConsent | null
 ): TenantProfileFieldVisibility {
-  const fields = normalizeConsentFields(consent?.allowed_fields)
+  const fields = isConsentActive(consent)
+    ? normalizeConsentFields(consent.allowed_fields)
+    : normalizeConsentFields(null)
   return {
     basic_profile: fields.basic_profile,
     verification: fields.verification,
@@ -168,8 +170,7 @@ export function applyTenantProfileVisibility(
 }
 
 export function getVisibleConsentFields(visibility: TenantProfileFieldVisibility): string[] {
-  const entries = Object.entries(visibility).filter(([, value]) => value).map(([field]) => field)
-  return entries.length > 0 ? entries : ['basic_profile']
+  return Object.entries(visibility).filter(([, value]) => value).map(([field]) => field)
 }
 
 export function toConsentRole(userType: string | null | undefined): ConsentTargetRole | null {

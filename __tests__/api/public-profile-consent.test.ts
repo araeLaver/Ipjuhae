@@ -231,10 +231,7 @@ describe('GET /api/profile/[id] — 동의 기반 필드 노출', () => {
     )
   })
 
-  // 현행 동작 고정: 동의 레코드가 없으면 normalizeConsentFields의 기본값이 적용되어
-  // basic_profile / trust_score가 열린 상태가 된다. 라우트 주석은 "전부 마스킹"이라고
-  // 적혀 있으나 실제 동작은 아래와 같다. 변경 시 이 테스트가 먼저 깨지도록 고정해 둔다.
-  it('[현행 고정] 동의 레코드가 없는 집주인도 기본값으로 실명·신뢰점수를 본다', async () => {
+  it('동의 레코드가 없는 집주인 → 실명·신뢰점수 포함 전부 마스킹된다', async () => {
     vi.mocked(getCurrentUser).mockResolvedValue(asUser(landlordUserId, 'landlord'))
     vi.mocked(queryOne)
       .mockResolvedValueOnce(tenantProfile())
@@ -244,7 +241,30 @@ describe('GET /api/profile/[id] — 동의 기반 필드 노출', () => {
     const data = await res.json()
 
     expect(res.status).toBe(200)
-    expect(data.profile.name).toBe('김민수')
+    expect(data.profile.name).toBe('김*수')
+    expect(data.profile.age_range).toBeNull()
     expect(data.profile.bio).toBeNull()
+    expect(data.profile.trust_score).toBe(0)
+    expect(recordAccessAudit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        fieldsViewed: [],
+      })
+    )
+  })
+
+  it('동의 철회 후 활성 레코드가 없으면 다시 기본 공개로 열리지 않는다', async () => {
+    vi.mocked(getCurrentUser).mockResolvedValue(asUser(landlordUserId, 'landlord'))
+    vi.mocked(queryOne)
+      .mockResolvedValueOnce(tenantProfile())
+      .mockResolvedValueOnce(null)
+
+    const res = await GET(request(), routeParams)
+    const data = await res.json()
+
+    expect(res.status).toBe(200)
+    expect(data.profile.name).toBe('김*수')
+    expect(data.profile.family_type).toBeNull()
+    expect(data.profile.pets).toEqual([])
+    expect(data.profile.trust_score).toBe(0)
   })
 })

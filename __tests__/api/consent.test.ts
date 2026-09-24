@@ -163,7 +163,7 @@ describe('POST /api/consent', () => {
     expect((calls[3][1] as unknown[])[4]).toBe('updated')
   })
 
-  it('허용 필드 누락분은 기본값으로 정규화되어 저장된다', async () => {
+  it('허용 필드 누락분은 비공개 기본값으로 정규화되어 저장된다', async () => {
     vi.mocked(getCurrentUser).mockResolvedValue(asUser())
     const calls: unknown[][] = []
     vi.mocked(transaction).mockImplementation(async (fn) => {
@@ -188,11 +188,11 @@ describe('POST /api/consent', () => {
 
     const insertedFields = (calls[1][1] as unknown[])[3] as Record<string, boolean>
     expect(insertedFields).toEqual({
-      basic_profile: true,
+      basic_profile: false,
       verification: false,
       bio: false,
       references: true,
-      trust_score: true,
+      trust_score: false,
       contact: false,
     })
   })
