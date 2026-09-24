@@ -120,4 +120,34 @@ describe('getClientIp', () => {
 
     expect(getClientIp(request)).toBe('203.0.113.1')
   })
+
+  // DOW-1165: x-forwarded-for 맨 앞 값은 클라이언트가 실어 보낼 수 있고 Fly Proxy는
+  // 거기에 덧붙이기만 한다. 그 값을 키로 쓰면 요청마다 헤더를 바꿔 한도를 빠져나간다.
+  it('fly-client-ip가 위조 가능한 x-forwarded-for·x-real-ip를 모두 앞지른다', () => {
+    const request = {
+      headers: new Headers({
+        'fly-client-ip': '198.51.100.7',
+        'x-forwarded-for': '203.0.113.1, 198.51.100.7',
+        'x-real-ip': '203.0.113.50',
+      }),
+    } as unknown as Request
+
+    expect(getClientIp(request)).toBe('198.51.100.7')
+  })
+
+  it('공격자가 x-forwarded-for를 바꿔도 fly-client-ip가 같으면 같은 키가 된다', () => {
+    const spoofs = ['1.1.1.1', '2.2.2.2', '3.3.3.3']
+    const ips = spoofs.map(
+      (spoof) =>
+        getClientIp({
+          headers: new Headers({
+            'fly-client-ip': '198.51.100.9',
+            'x-forwarded-for': `${spoof}, 198.51.100.9`,
+          }),
+        } as unknown as Request)
+    )
+
+    expect(new Set(ips).size).toBe(1)
+    expect(ips[0]).toBe('198.51.100.9')
+  })
 })

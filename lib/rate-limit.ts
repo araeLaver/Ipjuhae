@@ -61,8 +61,27 @@ export function apiRateLimit(ip: string): RateLimitResult {
   return rateLimit(`api:${ip}`, { limit: 60, windowMs: 60_000 })
 }
 
-/** 요청에서 IP 추출 */
+/**
+ * 요청에서 IP 추출.
+ *
+ * `x-forwarded-for`를 먼저 보면 안 된다. 클라이언트가 이 헤더를 직접 실어 보내면
+ * Fly Proxy는 **거기에 덧붙이기만** 하므로 맨 앞 값이 공격자가 고른 문자열이 된다.
+ * 요청마다 다른 값을 넣으면 rate limit 키가 매번 달라져 한도가 사실상 사라진다.
+ * Fly 문서도 이 헤더를 "위조 시도에 주의해 다뤄야 한다"고 못박고 `Fly-Client-IP`를
+ * 권한다 — https://fly.io/docs/networking/request-headers/
+ *
+ * `fly-client-ip`는 Fly Proxy가 직접 채우고 클라이언트가 보낸 값은 덮어써지므로
+ * 위조할 수 없다. 운영(`ipjuhae-production`)은 앞에 다른 리버스 프록시가 없어
+ * (응답 헤더 `server: Fly/...`, `via: 1.1 fly.io`, Cloudflare 없음) 이 값이 곧
+ * 클라이언트 IP다. **앞에 Cloudflare 같은 프록시를 두게 되면** 이 값이 그 프록시의
+ * IP로 바뀌어 전원이 한 키를 공유하게 되니, 그때는 해당 프록시 전용 헤더로 다시 판단할 것.
+ *
+ * 아래 폴백은 로컬·테스트용이다. `fly-client-ip`가 없는 환경에서만 쓰이고,
+ * 신뢰 경계 밖의 값이라는 점을 알고 쓴다.
+ */
 export function getClientIp(request: Request): string {
+  const flyClientIp = request.headers.get('fly-client-ip')
+  if (flyClientIp) return flyClientIp.trim()
   const forwarded = request.headers.get('x-forwarded-for')
   if (forwarded) return forwarded.split(',')[0].trim()
   const real = request.headers.get('x-real-ip')

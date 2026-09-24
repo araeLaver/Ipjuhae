@@ -132,7 +132,18 @@ async function checkRateLimit(
   return { allowed, retryAfter: 60 }
 }
 
+/**
+ * `lib/rate-limit.ts`의 `getClientIp`와 같은 이유로 `fly-client-ip`를 먼저 본다.
+ * `x-forwarded-for` 맨 앞 값은 클라이언트가 위조할 수 있어 rate limit 키로 쓰면
+ * 한도가 무력화된다. 자세한 근거는 그 함수 주석 참고.
+ *
+ * 여기서 lib을 import하지 않고 같은 로직을 두는 이유: middleware는 Edge 런타임이라
+ * 모듈 하나를 잘못 끌어오면 전면 장애가 된다(과거 `jsonwebtoken` 사례).
+ * 헤더 한 줄을 읽는 코드라 중복을 감수한다.
+ */
 function getIp(request: NextRequest): string {
+  const flyClientIp = request.headers.get('fly-client-ip')
+  if (flyClientIp) return flyClientIp.trim()
   const forwarded = request.headers.get('x-forwarded-for')
   if (forwarded) return forwarded.split(',')[0].trim()
   const real = request.headers.get('x-real-ip')

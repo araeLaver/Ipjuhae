@@ -26,18 +26,18 @@ import { queryOne, transaction } from '@/lib/db'
 
 const POST_ID = '11111111-1111-1111-1111-111111111111'
 
-function commentRequest(ip: string): Request {
+function commentRequest(ip: string, extraHeaders: Record<string, string> = {}): Request {
   return new Request(`http://localhost:3000/api/community/posts/${POST_ID}/comments`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-forwarded-for': ip },
+    headers: { 'Content-Type': 'application/json', 'x-forwarded-for': ip, ...extraHeaders },
     body: JSON.stringify({ body: '댓글입니다' }),
   })
 }
 
 const params = Promise.resolve({ id: POST_ID })
 
-async function postComment(ip: string) {
-  return POST(commentRequest(ip), { params })
+async function postComment(ip: string, extraHeaders: Record<string, string> = {}) {
+  return POST(commentRequest(ip, extraHeaders), { params })
 }
 
 describe('POST /api/community/posts/[id]/comments — 익명 rate limit', () => {
@@ -80,6 +80,40 @@ describe('POST /api/community/posts/[id]/comments — 익명 rate limit', () => 
     const other = await postComment('203.0.113.13')
 
     expect(other.status).toBe(201)
+  })
+
+  /**
+   * DOW-1165. 위 테스트들은 `x-forwarded-for`를 키로 삼는다 — 그런데 그 헤더는
+   * 클라이언트가 직접 실어 보낼 수 있고 Fly Proxy는 거기에 덧붙이기만 한다.
+   * 즉 한도가 걸려 있어도 요청마다 헤더를 바꾸면 그냥 빠져나갈 수 있었다.
+   * 운영에서 실제로 들어오는 모양(`fly-client-ip` + 위조된 `x-forwarded-for`)으로
+   * 눌러서, 한도가 위조 불가능한 값으로 세어지는지 확인한다.
+   */
+  it('x-forwarded-for를 매번 바꿔도 fly-client-ip가 같으면 한도에 걸린다', async () => {
+    vi.mocked(getCurrentUser).mockResolvedValue(null)
+    const realIp = '198.51.100.20'
+
+    const statuses: number[] = []
+    for (let i = 0; i < 16; i++) {
+      // 매 요청 앞자리에 다른 IP를 심는다 — 공격자가 할 수 있는 일이다.
+      statuses.push((await postComment(`203.0.113.${i}, ${realIp}`, { 'fly-client-ip': realIp })).status)
+    }
+
+    expect(statuses.slice(0, 15)).toEqual(Array(15).fill(201))
+    expect(statuses[15]).toBe(429)
+  })
+
+  it('한도 초과 응답은 무엇이 일어났는지 문구로 알린다 — 조용히 실패하지 않는다', async () => {
+    vi.mocked(getCurrentUser).mockResolvedValue(null)
+    const realIp = '198.51.100.21'
+
+    for (let i = 0; i < 15; i++) await postComment(realIp, { 'fly-client-ip': realIp })
+    const blocked = await postComment(realIp, { 'fly-client-ip': realIp })
+
+    expect(blocked.status).toBe(429)
+    // 클라이언트(`community-post-view.tsx`)는 이 `error` 문구를 그대로 toast에 띄운다.
+    // 비어 있으면 '댓글 작성 실패'로 뭉개져 왜 막혔는지 알 수 없게 된다.
+    expect((await blocked.json()).error).toBe('잠시 후 다시 시도해주세요. 짧은 시간에 너무 많이 올렸습니다.')
   })
 
   it('로그인 사용자는 글 작성 경로와 같이 이 한도를 적용받지 않는다', async () => {
