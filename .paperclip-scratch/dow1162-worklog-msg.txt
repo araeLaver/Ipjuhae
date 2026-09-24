@@ -1,4 +1,0 @@
-docs: DOW-1162 관심 매물 버튼 제거 작업 기록 (재사용 가능한 저장 경로 없음)
-
-Co-Authored-By: Paperclip <noreply@paperclip.ing>
-Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>

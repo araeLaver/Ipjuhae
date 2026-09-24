@@ -56,3 +56,4 @@ public/download/
 /.comment[0-9]*.json
 /.new780track.md
 __pycache__/
+/.paperclip-scratch/
