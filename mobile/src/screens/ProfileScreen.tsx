@@ -2,7 +2,7 @@
  * Profile Screen — tenant profile dashboard or landlord profile
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
   Image,
   RefreshControl,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { CompositeNavigationProp, useFocusEffect } from '@react-navigation/native';
@@ -36,8 +37,13 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
   const [profile, setProfile] = useState<TenantProfile | null>(null);
   const [verifications, setVerifications] = useState<VerificationStatus | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const hasLoadedRef = useRef(false);
 
   const loadProfile = useCallback(async () => {
+    if (!hasLoadedRef.current) {
+      setLoading(true);
+    }
     try {
       if (user?.userType === 'tenant') {
         // /api/profile → { profile } (snake_case); /api/verifications → { verification }
@@ -48,10 +54,13 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
         setProfile(prof);
         setVerifications(verif);
       }
+      hasLoadedRef.current = true;
       setLoadError(null);
     } catch (error) {
       console.log('Failed to load profile:', error);
       setLoadError('프로필을 불러오지 못했습니다');
+    } finally {
+      setLoading(false);
     }
   }, [user?.userType]);
 
@@ -82,6 +91,14 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   const isTenant = user?.userType === 'tenant';
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#F0663F" />
+      </View>
+    );
+  }
 
   return (
     <ScrollView
@@ -198,6 +215,7 @@ const MenuItem: React.FC<{ icon: string; label: string; onPress: () => void }> =
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FBF6EF' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FBF6EF' },
   header: {
     backgroundColor: '#fff',
     paddingTop: 60,

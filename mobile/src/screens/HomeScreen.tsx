@@ -3,7 +3,7 @@
  * Shows different content based on user type (tenant/landlord)
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { CompositeNavigationProp, useFocusEffect } from '@react-navigation/native';
@@ -36,8 +37,13 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
   const [profileComplete, setProfileComplete] = useState(false);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const hasLoadedRef = useRef(false);
 
   const loadData = useCallback(async () => {
+    if (!hasLoadedRef.current) {
+      setLoading(true);
+    }
     try {
       if (user?.userType === 'tenant') {
         const profile = await api.fetchTenantProfile();
@@ -46,10 +52,13 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
       } else if (user?.userType === 'landlord') {
         setStats(await api.fetchLandlordStats());
       }
+      hasLoadedRef.current = true;
       setLoadError(null);
     } catch (error) {
       console.log('Failed to load home data:', error);
       setLoadError('홈 정보를 불러오지 못했습니다');
+    } finally {
+      setLoading(false);
     }
   }, [user?.userType]);
 
@@ -66,6 +75,14 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
   }, [loadData]);
 
   const isTenant = user?.userType === 'tenant';
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#F0663F" />
+      </View>
+    );
+  }
 
   return (
     <ScrollView
@@ -206,6 +223,7 @@ const QuickAction: React.FC<{
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FBF6EF' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FBF6EF' },
   welcomeSection: {
     backgroundColor: '#F0663F',
     paddingHorizontal: 24,

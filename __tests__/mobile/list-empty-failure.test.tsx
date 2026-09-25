@@ -209,6 +209,15 @@ describe('모바일 목록 실패 상태', () => {
     expect(screen.getByText('다시 시도')).toBeVisible()
   })
 
+  it('홈 최초 로딩은 신뢰 점수 0과 구분한다', () => {
+    api.fetchTenantProfile.mockImplementationOnce(() => new Promise(() => {}))
+    render(<HomeScreen navigation={{ navigate: vi.fn() }} />)
+
+    expect(screen.getByRole('progressbar')).toBeVisible()
+    expect(screen.queryByText('신뢰 점수')).toBeNull()
+    expect(screen.queryByText('0')).toBeNull()
+  })
+
   it('프로필 로드 실패를 미완성 프로필로 감추지 않는다', async () => {
     api.fetchTenantProfile.mockRejectedValueOnce(new Error('503'))
     api.fetchVerificationStatus.mockRejectedValueOnce(new Error('503'))
@@ -218,12 +227,31 @@ describe('모바일 목록 실패 상태', () => {
     expect(screen.getByText('다시 시도')).toBeVisible()
   })
 
+  it('프로필 최초 로딩은 미완성 프로필과 구분한다', () => {
+    api.fetchTenantProfile.mockImplementationOnce(() => new Promise(() => {}))
+    api.fetchVerificationStatus.mockImplementationOnce(() => new Promise(() => {}))
+    render(<ProfileScreen navigation={{ navigate: vi.fn() }} />)
+
+    expect(screen.getByRole('progressbar')).toBeVisible()
+    expect(screen.queryByText('신뢰 점수')).toBeNull()
+    expect(screen.queryByText('미인증')).toBeNull()
+  })
+
   it('인증 로드 실패를 제출 서류 없음으로 감추지 않는다', async () => {
     api.fetchVerificationStatus.mockRejectedValueOnce(new Error('503'))
     render(<VerificationScreen navigation={{ navigate: vi.fn() }} />)
 
     await screen.findByText('인증 정보를 불러오지 못했습니다')
     expect(screen.getByText('다시 시도')).toBeVisible()
+  })
+
+  it('인증 최초 로딩은 제출 서류 없음과 구분한다', () => {
+    api.fetchVerificationStatus.mockImplementationOnce(() => new Promise(() => {}))
+    render(<VerificationScreen navigation={{ navigate: vi.fn() }} />)
+
+    expect(screen.getByRole('progressbar')).toBeVisible()
+    expect(screen.queryByText('미인증')).toBeNull()
+    expect(screen.queryByText('서류 제출')).toBeNull()
   })
 
   it('성공하면 실패 화면이 아니라 빈 결과 화면을 보여준다', async () => {

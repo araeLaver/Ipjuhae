@@ -2,7 +2,7 @@
  * Verification Management Screen
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   Alert,
   RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
@@ -54,15 +55,23 @@ const VerificationScreen: React.FC<Props> = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [uploading, setUploading] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const hasLoadedRef = useRef(false);
 
   const loadVerifications = useCallback(async () => {
+    if (!hasLoadedRef.current) {
+      setLoading(true);
+    }
     try {
       // GET /api/verifications returns { verification } (snake_case row)
       setVerifications(await api.fetchVerificationStatus());
+      hasLoadedRef.current = true;
       setLoadError(null);
     } catch (error) {
       console.log('Failed to load verifications:', error);
       setLoadError('인증 정보를 불러오지 못했습니다');
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -118,6 +127,14 @@ const VerificationScreen: React.FC<Props> = ({ navigation }) => {
       default: return false;
     }
   };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#F0663F" />
+      </View>
+    );
+  }
 
   return (
     <ScrollView
@@ -185,6 +202,7 @@ const VerificationScreen: React.FC<Props> = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FBF6EF' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FBF6EF' },
   header: { padding: 24, paddingTop: 16 },
   title: { fontSize: 22, fontWeight: 'bold', color: '#262220' },
   subtitle: { fontSize: 14, color: '#6B625C', marginTop: 4 },
