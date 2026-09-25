@@ -10,6 +10,19 @@ const nextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
 
+  /**
+   * demo 캡처를 뜰 때만 Next.js dev indicator 배지를 끈다 (DOW-1150).
+   *
+   * `/demo/*`는 production에서 404라 **dev에서만 존재한다.** 그래서 이 화면의 캡처에는
+   * 항상 좌하단 dev 배지가 같이 찍히는데, 그 캡처의 용도가 K-DATA 같은 외부 제출물이라
+   * 제출 이미지에 개발 도구 UI가 박혀 나간다.
+   *
+   * 전역으로 끄지 않는 이유: 평소 개발에서는 이 배지가 빌드 상태를 알려주는 쓸모가 있다.
+   * `PUBLIC_MOCK_DEMO_ENABLED`는 캡처를 뜰 때만 세우는 값이고 production에서는 애초에
+   * 세워지지 않으므로, 이 조건이 일반 개발과 운영에 영향을 주지 않는다.
+   */
+  ...(process.env.PUBLIC_MOCK_DEMO_ENABLED === '1' ? { devIndicators: false } : {}),
+
   // External packages that must not be bundled (server-side native/CJS)
   serverExternalPackages: ['pg', 'pg-connection-string', 'pgpass', 'bcryptjs'],
 
