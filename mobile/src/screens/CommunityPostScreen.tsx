@@ -22,6 +22,8 @@ import * as api from '../services/api';
 import { ROLE_LABELS } from '../lib/community';
 import { colors } from '../theme';
 
+const roleLabels = ROLE_LABELS as Record<string, string>;
+
 interface Props {
   navigation: NativeStackNavigationProp<RootStackParamList, 'CommunityPost'>;
   route: RouteProp<RootStackParamList, 'CommunityPost'>;
@@ -135,9 +137,9 @@ const CommunityPostScreen: React.FC<Props> = ({ route }) => {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.metaRow}>
         <Text style={styles.author}>{post.authorName ?? '익명'}</Text>
-        {ROLE_LABELS[post.authorRole] ? (
+        {roleLabels[post.authorRole] ? (
           <Text style={[styles.roleTag, post.authorRole === 'admin' && styles.roleTagAdmin]}>
-            {ROLE_LABELS[post.authorRole]}
+            {roleLabels[post.authorRole]}
           </Text>
         ) : null}
         <Text style={styles.time}>
@@ -206,9 +208,9 @@ const CommunityPostScreen: React.FC<Props> = ({ route }) => {
             >
               <View style={styles.commentMetaRow}>
                 <Text style={styles.commentAuthor}>{comment.authorName ?? '익명'}</Text>
-                {comment.authorRole && ROLE_LABELS[comment.authorRole] ? (
+                {comment.authorRole && roleLabels[comment.authorRole] ? (
                   <Text style={[styles.roleTag, comment.authorRole === 'admin' && styles.roleTagAdmin]}>
-                    {ROLE_LABELS[comment.authorRole]}
+                    {roleLabels[comment.authorRole]}
                   </Text>
                 ) : null}
               </View>

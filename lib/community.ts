@@ -20,7 +20,7 @@ import { ROLE_LABELS } from '../mobile/src/lib/roles';
 export { ROLE_LABELS };
 
 export function roleLabel(userType: string | null | undefined): string | null {
-  return userType ? (ROLE_LABELS[userType] ?? null) : null
+  return userType ? ((ROLE_LABELS as Record<string, string>)[userType] ?? null) : null
 }
 
 export function isCommunityAudience(value: unknown): value is CommunityAudience {

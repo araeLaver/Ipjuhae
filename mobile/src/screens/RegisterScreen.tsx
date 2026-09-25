@@ -16,10 +16,11 @@ import {
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../navigation/AppNavigator';
-import { SIGNUP_ROLES, SignupRole } from '../lib/roles';
+import { SIGNUP_ROLES } from '../lib/roles';
 import { useAuth } from '../contexts/AuthContext';
 
 type RegisterScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Register'>;
+type SignupRole = 'tenant' | 'landlord' | 'broker';
 
 interface Props {
   navigation: RegisterScreenNavigationProp;
@@ -76,7 +77,7 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
               accessibilityRole="radio"
               accessibilityState={{ selected: userType === value }}
               style={[styles.typeButton, userType === value && styles.typeButtonActive]}
-              onPress={() => setUserType(value)}
+              onPress={() => setUserType(value as SignupRole)}
             >
               <Text style={[styles.typeText, userType === value && styles.typeTextActive]}>{label}</Text>
             </TouchableOpacity>

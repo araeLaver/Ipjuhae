@@ -51,6 +51,8 @@ interface Props {
 
 export { ROLE_LABELS };
 
+const roleLabels = ROLE_LABELS as Record<string, string>;
+
 function timeAgo(iso: string): string {
   const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
   if (mins < 1) return '방금';
@@ -196,9 +198,9 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
       <View style={styles.metaRow}>
         <Text style={styles.boardTag}>{AUDIENCE_LABELS[item.audience] ?? '전체'}</Text>
         <Text style={styles.author}>{item.authorName ?? '익명'}</Text>
-        {ROLE_LABELS[item.authorRole] ? (
+        {roleLabels[item.authorRole] ? (
           <Text style={[styles.roleTag, item.authorRole === 'admin' && styles.roleTagAdmin]}>
-            {ROLE_LABELS[item.authorRole]}
+            {roleLabels[item.authorRole]}
           </Text>
         ) : null}
         <Text style={styles.time}>{timeAgo(item.createdAt)}</Text>
