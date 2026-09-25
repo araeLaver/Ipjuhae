@@ -57,8 +57,12 @@ public/download/
 /.new780track.md
 __pycache__/
 /.paperclip-scratch/
+/.paperclip-tools/
 
 # Expo prebuild 산출물. managed workflow라 소스가 아니며, 공유 워크트리에서
 # 다른 에이전트의 git status를 오염시킨다. APK 빌드 때마다 다시 생성된다.
 mobile/android/
 mobile/ios/
+
+# Expo CLI 로컬 캐시. prebuild/APK 빌드마다 아이콘 리사이즈 결과가 쌓인다.
+mobile/.expo/
