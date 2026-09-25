@@ -95,7 +95,21 @@ afterEach(() => {
   vi.unstubAllEnvs()
 })
 
+/**
+ * 아래 두 대조군은 **증명하는 것이 다르다.** 변이로 확인한 결과다
+ * (`scripts/dow-1174-control-mutation.mjs`, [DOW-1174](/DOW/issues/DOW-1174)).
+ *
+ * `/check`를 격리 대상에 넣는 변이를 걸면 첫 번째만 빨개지고 두 번째는 통과한다.
+ * 두 번째가 `Header`를 타는데, `Header`의 `/api/auth/me` 호출이
+ * `isDemoIsolatedPath`를 보지 않고 무조건 나가기 때문이다.
+ *
+ * 그래서 두 번째는 **CONTROL_PATH가 죽은 주소가 돼도 계속 통과한다.**
+ * `/home`이 삭제됐을 때 이 테스트는 아무것도 알려주지 못했을 것이다.
+ * 대조 경로의 생존을 지키는 것은 첫 번째뿐이므로, 경로를 바꿀 때는
+ * 첫 번째가 변이에서 죽는지로 판단해야 한다.
+ */
 describe('감시기 대조군 — network 관측이 실제로 동작하는지 먼저 증명한다', () => {
+  // 경로 대조군: CONTROL_PATH가 살아 있고 격리 대상이 아님을 증명한다.
   it('일반 경로에서 Providers를 마운트하면 analytics 호출이 관측된다', async () => {
     currentPathname = CONTROL_PATH
 
@@ -105,7 +119,8 @@ describe('감시기 대조군 — network 관측이 실제로 동작하는지 �
     expect(observedRequests()).toContain('/api/analytics/event')
   })
 
-  it('PageContainer를 마운트하면 auth 조회가 관측된다', async () => {
+  // 감시기 대조군: fetch 가로채기가 동작함만 증명한다. 경로와 무관하다.
+  it('PageContainer를 마운트하면 auth 조회가 관측된다 — 경로와 무관한 fetch 감시기 확인', async () => {
     render(<PageContainer><div>본문</div></PageContainer>)
     await flush()
 
