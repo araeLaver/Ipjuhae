@@ -66,3 +66,8 @@ mobile/ios/
 
 # Expo CLI 로컬 캐시. prebuild/APK 빌드마다 아이콘 리사이즈 결과가 쌓인다.
 mobile/.expo/
+
+# Firebase Android 설정. 이 저장소는 public이고 이 파일에는 Firebase API key와
+# sender ID가 들어 있다. 로컬에만 두고, EAS에는 file 타입 환경변수
+# GOOGLE_SERVICES_JSON으로 올린다. 절차: docs/mobile-fcm-setup.md (DOW-1222)
+mobile/google-services.json
