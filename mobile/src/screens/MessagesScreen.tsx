@@ -18,6 +18,7 @@ import { CompositeNavigationProp, useFocusEffect } from '@react-navigation/nativ
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { RootStackParamList, MainTabParamList } from '../navigation/AppNavigator';
 import * as api from '../services/api';
+import { ROLE_LABELS } from '../lib/roles';
 import { Conversation } from '../types';
 
 type MessagesScreenNavigationProp = CompositeNavigationProp<
@@ -97,7 +98,7 @@ const MessagesScreen: React.FC<Props> = ({ navigation }) => {
         <View style={styles.nameRow}>
           <Text style={styles.userName}>{item.otherUser.name}</Text>
           <Text style={styles.userType}>
-            {item.otherUser.userType === 'landlord' ? '집주인' : '세입자'}
+            {ROLE_LABELS[item.otherUser.userType] ?? '회원'}
           </Text>
         </View>
         <Text style={styles.lastMessage} numberOfLines={1}>

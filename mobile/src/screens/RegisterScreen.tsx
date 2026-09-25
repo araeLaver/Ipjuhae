@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../navigation/AppNavigator';
+import { SIGNUP_ROLES, SignupRole } from '../lib/roles';
 import { useAuth } from '../contexts/AuthContext';
 
 type RegisterScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Register'>;
@@ -30,7 +31,7 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
-  const [userType, setUserType] = useState<'tenant' | 'landlord'>('tenant');
+  const [userType, setUserType] = useState<SignupRole>('tenant');
   const [loading, setLoading] = useState(false);
 
   const handleRegister = async () => {
@@ -69,22 +70,17 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
         {/* User Type Selection */}
         <Text style={styles.label}>유형 선택</Text>
         <View style={styles.typeRow}>
-          <TouchableOpacity
-            style={[styles.typeButton, userType === 'tenant' && styles.typeButtonActive]}
-            onPress={() => setUserType('tenant')}
-          >
-            <Text style={[styles.typeText, userType === 'tenant' && styles.typeTextActive]}>
-              세입자
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.typeButton, userType === 'landlord' && styles.typeButtonActive]}
-            onPress={() => setUserType('landlord')}
-          >
-            <Text style={[styles.typeText, userType === 'landlord' && styles.typeTextActive]}>
-              집주인
-            </Text>
-          </TouchableOpacity>
+          {SIGNUP_ROLES.map(({ value, label }) => (
+            <TouchableOpacity
+              key={value}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: userType === value }}
+              style={[styles.typeButton, userType === value && styles.typeButtonActive]}
+              onPress={() => setUserType(value)}
+            >
+              <Text style={[styles.typeText, userType === value && styles.typeTextActive]}>{label}</Text>
+            </TouchableOpacity>
+          ))}
         </View>
 
         <Text style={styles.label}>이름</Text>

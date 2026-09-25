@@ -1,6 +1,10 @@
 /**
  * Home Dashboard Screen
- * Shows different content based on user type (tenant/landlord)
+ *
+ * 역할별로 다른 홈을 보여준다. `tenant`/`landlord`에는 각자의 대시보드를,
+ * 그 밖의 역할(`broker`·`admin`)에는 **지금 앱에서 실제로 할 수 있는 것**
+ * (커뮤니티·메시지·프로필)만 안내한다. 없는 기능을 있는 척하지 않으려고
+ * 빈 집주인 대시보드로 떨어뜨리지 않는다. (DOW-1197 C2)
  */
 
 import React, { useState, useCallback, useRef } from 'react';
@@ -18,6 +22,7 @@ import { CompositeNavigationProp, useFocusEffect } from '@react-navigation/nativ
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { RootStackParamList, MainTabParamList } from '../navigation/AppNavigator';
 import { useAuth } from '../contexts/AuthContext';
+import { ROLE_LABELS } from '../lib/roles';
 import * as api from '../services/api';
 import { DashboardStats } from '../types';
 
@@ -30,6 +35,15 @@ interface Props {
   navigation: HomeScreenNavigationProp;
 }
 
+/** 홈이 보여줄 화면 종류. `other`는 앱에 전용 대시보드가 아직 없는 역할(`broker`·`admin`). */
+type HomeVariant = 'tenant' | 'landlord' | 'other';
+
+export function homeVariantFor(userType: string | null | undefined): HomeVariant {
+  if (userType === 'tenant') return 'tenant';
+  if (userType === 'landlord') return 'landlord';
+  return 'other';
+}
+
 const HomeScreen: React.FC<Props> = ({ navigation }) => {
   const { user } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
@@ -40,16 +54,18 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const hasLoadedRef = useRef(false);
 
+  const variant = homeVariantFor(user?.userType);
+
   const loadData = useCallback(async () => {
     if (!hasLoadedRef.current) {
       setLoading(true);
     }
     try {
-      if (user?.userType === 'tenant') {
+      if (variant === 'tenant') {
         const profile = await api.fetchTenantProfile();
         setTrustScore(profile?.trustScore ?? 0);
         setProfileComplete(profile?.isComplete ?? false);
-      } else if (user?.userType === 'landlord') {
+      } else if (variant === 'landlord') {
         setStats(await api.fetchLandlordStats());
       }
       hasLoadedRef.current = true;
@@ -60,7 +76,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
     } finally {
       setLoading(false);
     }
-  }, [user?.userType]);
+  }, [variant]);
 
   useFocusEffect(
     useCallback(() => {
@@ -74,7 +90,8 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
     setRefreshing(false);
   }, [loadData]);
 
-  const isTenant = user?.userType === 'tenant';
+  const isTenant = variant === 'tenant';
+  const roleLabel = user?.userType ? ROLE_LABELS[user.userType] : null;
 
   if (loading) {
     return (
@@ -107,7 +124,11 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
           안녕하세요, {user?.name || '회원'}님!
         </Text>
         <Text style={styles.welcomeSubtext}>
-          {isTenant ? '나에게 맞는 집을 찾아보세요' : '매물을 관리하고 세입자를 만나보세요'}
+          {variant === 'tenant'
+            ? '나에게 맞는 집을 찾아보세요'
+            : variant === 'landlord'
+              ? '매물을 관리하고 세입자를 만나보세요'
+              : '커뮤니티와 프로필을 이용해 보세요'}
         </Text>
       </View>
 
@@ -130,8 +151,19 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
         </TouchableOpacity>
       )}
 
+      {/* broker·admin: 앱에 전용 대시보드가 아직 없다는 사실을 그대로 말한다 */}
+      {variant === 'other' && (
+        <View style={styles.noticeCard}>
+          <Text style={styles.noticeTitle}>앱 전용 화면은 아직 준비 중입니다</Text>
+          <Text style={styles.noticeBody}>
+            {roleLabel ?? '이 역할'} 계정의 매물·고객 관리 기능은 웹에서 이용해 주세요. 앱에서는
+            커뮤니티와 메시지, 프로필을 바로 쓸 수 있습니다.
+          </Text>
+        </View>
+      )}
+
       {/* Landlord: Stats */}
-      {!isTenant && stats && (
+      {variant === 'landlord' && stats && (
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>{stats.propertyCount}</Text>
@@ -156,7 +188,28 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>빠른 메뉴</Text>
         <View style={styles.quickActions}>
-          {isTenant ? (
+          {variant === 'other' ? (
+            <>
+              <QuickAction
+                icon="💭"
+                label="커뮤니티"
+                color="#E3EFE9"
+                onPress={() => navigation.navigate('Community' as any)}
+              />
+              <QuickAction
+                icon="💬"
+                label="메시지"
+                color="#FCE7F3"
+                onPress={() => navigation.navigate('Messages' as any)}
+              />
+              <QuickAction
+                icon="👤"
+                label="프로필"
+                color="#FBF1D8"
+                onPress={() => navigation.navigate('Profile' as any)}
+              />
+            </>
+          ) : isTenant ? (
             <>
               <QuickAction
                 icon="🏠"
@@ -263,6 +316,20 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   trustHint: { fontSize: 12, color: '#9A8F87', marginTop: 8 },
+  noticeCard: {
+    backgroundColor: '#fff',
+    marginHorizontal: 16,
+    marginTop: -16,
+    borderRadius: 12,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  noticeTitle: { fontSize: 16, fontWeight: '600', color: '#4A423C' },
+  noticeBody: { fontSize: 13, color: '#6B625C', marginTop: 8, lineHeight: 19 },
   statsRow: {
     flexDirection: 'row',
     paddingHorizontal: 16,

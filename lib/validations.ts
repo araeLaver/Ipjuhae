@@ -23,7 +23,7 @@ export const loginSchema = z.object({
 export const signupSchema = z.object({
   email: emailSchema,
   password: passwordSchema,
-  userType: z.enum(['tenant', 'landlord']).optional().default('tenant'),
+  userType: z.enum(['tenant', 'landlord', 'broker']).optional().default('tenant'),
 })
 
 // ===== Profile =====

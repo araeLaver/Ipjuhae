@@ -1,5 +1,6 @@
 'use client'
 
+import { SIGNUP_ROLES, SignupRole } from '@/mobile/src/lib/roles'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -22,7 +23,7 @@ export default function SignupPage() {
     email: '',
     password: '',
     confirmPassword: '',
-    userType: 'tenant' as 'tenant' | 'landlord',
+    userType: 'tenant' as SignupRole,
   })
   const [termsAgreed, setTermsAgreed] = useState(false)
   const [privacyAgreed, setPrivacyAgreed] = useState(false)
@@ -77,6 +78,8 @@ export default function SignupPage() {
 
       if (formData.userType === 'landlord') {
         router.push('/landlord/onboarding')
+      } else if (formData.userType === 'broker') {
+        router.push('/community')
       } else {
         router.push('/onboarding/basic')
       }
@@ -155,32 +158,20 @@ export default function SignupPage() {
                   <RadioGroup
                     value={formData.userType}
                     onValueChange={(value) =>
-                      setFormData((prev) => ({ ...prev, userType: value as 'tenant' | 'landlord' }))
+                      setFormData((prev) => ({ ...prev, userType: value as SignupRole }))
                     }
-                    className="grid grid-cols-2 gap-4"
+                    className="grid grid-cols-3 gap-4"
                   >
-                    <div>
-                      <RadioGroupItem value="tenant" id="tenant" className="peer sr-only" />
-                      <Label
-                        htmlFor="tenant"
-                        className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent/10 peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer transition-colors"
-                      >
-                        <User className="mb-3 h-6 w-6" />
-                        <span className="font-medium">세입자</span>
-                        <span className="text-xs text-muted-foreground">집을 구하고 있어요</span>
-                      </Label>
-                    </div>
-                    <div>
-                      <RadioGroupItem value="landlord" id="landlord" className="peer sr-only" />
-                      <Label
-                        htmlFor="landlord"
-                        className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent/10 peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer transition-colors"
-                      >
-                        <Building className="mb-3 h-6 w-6" />
-                        <span className="font-medium">집주인</span>
-                        <span className="text-xs text-muted-foreground">세입자를 찾고 있어요</span>
-                      </Label>
-                    </div>
+                    {SIGNUP_ROLES.map(({ value, label }) => (
+                      <div key={value}>
+                        <RadioGroupItem value={value} id={value} className="peer sr-only" />
+                        <Label htmlFor={value} className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent/10 peer-data-[state=checked]:border-primary cursor-pointer transition-colors">
+                          {value === 'tenant' ? <User className="mb-3 h-6 w-6" /> : <Building className="mb-3 h-6 w-6" />}
+                          <span className="font-medium">{label}</span>
+                          {value !== 'broker' && <span className="text-xs text-muted-foreground">{value === 'tenant' ? '집을 구하고 있어요' : '세입자를 찾고 있어요'}</span>}
+                        </Label>
+                      </div>
+                    ))}
                   </RadioGroup>
                 </div>
 

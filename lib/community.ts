@@ -16,12 +16,8 @@ export const AUDIENCE_LABELS: Record<CommunityAudience, string> = {
  * 이 배지로 구분한다. 게시판 라벨(AUDIENCE_LABELS)이 "어느 판에 올렸나"라면
  * 이건 "누가 썼나"다.
  */
-export const ROLE_LABELS: Record<string, string> = {
-  tenant: '임차인',
-  landlord: '임대인',
-  broker: '공인중개사',
-  admin: '운영자',
-}
+import { ROLE_LABELS } from '../mobile/src/lib/roles';
+export { ROLE_LABELS };
 
 export function roleLabel(userType: string | null | undefined): string | null {
   return userType ? (ROLE_LABELS[userType] ?? null) : null

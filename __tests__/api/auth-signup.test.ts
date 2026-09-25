@@ -70,6 +70,30 @@ describe('POST /api/auth/signup', () => {
     )
   })
 
+  it('회원가입 성공 — broker', async () => {
+    vi.mocked(queryOne).mockResolvedValue(null) // no existing user
+    vi.mocked(hashPassword).mockResolvedValue('hashed-pw')
+    vi.mocked(query).mockResolvedValue([{ id: 'new-broker-1', email: 'new@example.com', user_type: 'broker' }])
+    vi.mocked(generateToken).mockReturnValue('jwt-token')
+    vi.mocked(setAuthCookie).mockResolvedValue(undefined)
+
+    const res = await POST(makeRequest({
+      email: 'new@example.com',
+      password: 'password123',
+      userType: 'broker',
+    }))
+    const data = await res.json()
+
+    expect(res.status).toBe(200)
+    expect(data.success).toBe(true)
+    expect(data.userId).toBe('new-broker-1')
+    expect(hashPassword).toHaveBeenCalledWith('password123')
+    expect(query).toHaveBeenCalledWith(
+      expect.stringContaining('INSERT INTO users'),
+      ['new@example.com', 'hashed-pw', 'broker']
+    )
+  })
+
   it('회원가입 성공 — landlord', async () => {
     vi.mocked(queryOne).mockResolvedValue(null)
     vi.mocked(hashPassword).mockResolvedValue('hashed-pw')

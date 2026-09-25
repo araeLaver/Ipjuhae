@@ -10,6 +10,7 @@ import { pathToFileURL } from 'node:url'
 import { TextEncoder } from 'node:util'
 
 let dir: string
+let RegisterScreen: React.ComponentType<any>
 let ListingsScreen: React.ComponentType<any>
 let PropertiesScreen: React.ComponentType<any>
 let TenantBrowseScreen: React.ComponentType<any>
@@ -21,6 +22,7 @@ let ProfileScreen: React.ComponentType<any>
 let VerificationScreen: React.ComponentType<any>
 
 const api = {
+  register: vi.fn(),
   fetchListings: vi.fn(),
   fetchLandlordProperties: vi.fn(),
   fetchTenants: vi.fn(),
@@ -83,7 +85,7 @@ export const submitVerificationDocument=(...a)=>globalThis.__mobileListQA.submit
 `)
 
   const auth = join(dir, 'auth.js')
-  writeFileSync(auth, `export const useAuth = () => ({ user: globalThis.__mobileListQAUser.current, logout: () => {} });`)
+  writeFileSync(auth, `export const useAuth = () => ({ user: globalThis.__mobileListQAUser.current, logout: () => {}, register: (...args) => globalThis.__mobileListQA.register(...args) });`)
   const imageService = join(dir, 'imageService.js')
   writeFileSync(imageService, `export const pickImage = async () => null; export const takePhoto = async () => null;
 export default { pickImage, takePhoto };`)
@@ -101,6 +103,7 @@ export default { pickImage, takePhoto };`)
 
   await build({
     entryPoints: [
+      'mobile/src/screens/RegisterScreen.tsx',
       'mobile/src/screens/ListingsScreen.tsx',
       'mobile/src/screens/PropertiesScreen.tsx',
       'mobile/src/screens/TenantBrowseScreen.tsx',
@@ -119,6 +122,7 @@ export default { pickImage, takePhoto };`)
     plugins: [plugin],
   })
 
+  RegisterScreen = (await import(/* @vite-ignore */ pathToFileURL(join(dir, 'RegisterScreen.js')).href)).default
   ListingsScreen = (await import(/* @vite-ignore */ pathToFileURL(join(dir, 'ListingsScreen.js')).href)).default
   PropertiesScreen = (await import(/* @vite-ignore */ pathToFileURL(join(dir, 'PropertiesScreen.js')).href)).default
   TenantBrowseScreen = (await import(/* @vite-ignore */ pathToFileURL(join(dir, 'TenantBrowseScreen.js')).href)).default
@@ -316,5 +320,40 @@ describe('6화면 재시도 복구', () => {
     expect(screen.queryByText(errorTitle)).toBeNull()
     expect(screen.queryByText('다시 시도')).toBeNull()
     expect(screen.getAllByText(successText).length).toBeGreaterThan(0)
+  })
+})
+
+
+describe('공인중개사 가입과 역할별 화면', () => {
+  it('공인중개사를 선택해 broker로 가입 요청한다', async () => {
+    render(<RegisterScreen navigation={{ goBack: vi.fn() }} />)
+    fireEvent.click(screen.getByText('공인중개사'))
+    fireEvent.change(screen.getByPlaceholderText('이름'), { target: { value: '중개사' } })
+    fireEvent.change(screen.getByPlaceholderText('email@example.com'), { target: { value: 'broker@example.com' } })
+    fireEvent.change(screen.getByPlaceholderText('8자 이상'), { target: { value: 'password123' } })
+    fireEvent.change(screen.getByPlaceholderText('비밀번호 확인'), { target: { value: 'password123' } })
+    fireEvent.click(screen.getByRole('button', { name: '회원가입' }))
+    await waitFor(() => expect(api.register).toHaveBeenCalledWith('broker@example.com', 'password123', '중개사', 'broker'))
+  })
+
+  it.each(['broker', 'admin'])('%s 홈은 커뮤니티·프로필로 이동하며 집주인 기능을 표시하지 않는다', async userType => {
+    authUser.current = { userType, name: 'QA' }
+    const navigate = vi.fn()
+    render(<HomeScreen navigation={{ navigate }} />)
+    await screen.findByText('커뮤니티와 프로필을 이용해 보세요')
+    expect(screen.queryByText('매물 관리')).toBeNull()
+    expect(screen.queryByText('세입자 탐색')).toBeNull()
+    expect(api.fetchLandlordStats).not.toHaveBeenCalled()
+    expect(api.fetchTenantProfile).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByText('커뮤니티'))
+    expect(navigate).toHaveBeenCalledWith('Community')
+    fireEvent.click(screen.getByText('프로필'))
+    expect(navigate).toHaveBeenCalledWith('Profile')
+  })
+
+  it.each([['broker', '공인중개사'], ['admin', '운영자'], ['tenant', '임차인'], ['landlord', '임대인'], ['unknown', '회원']])('대화 상대 %s 라벨을 표시한다', async (userType, label) => {
+    api.fetchConversations.mockResolvedValue([{ id: '1', otherUser: { name: '상대방', userType }, unreadCount: 0 }])
+    render(<MessagesScreen navigation={{ navigate: vi.fn() }} />)
+    expect(await screen.findByText(label)).toBeVisible()
   })
 })

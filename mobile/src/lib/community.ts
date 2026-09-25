@@ -27,12 +27,8 @@ export const AUDIENCE_LABELS: Record<CommunityAudience, string> = {
  *
  * 게시판 라벨(AUDIENCE_LABELS)이 "어느 판에 올렸나"라면 이건 "누가 썼나"다.
  */
-export const ROLE_LABELS: Record<string, string> = {
-  tenant: '임차인',
-  landlord: '임대인',
-  broker: '공인중개사',
-  admin: '운영자',
-};
+import { ROLE_LABELS } from './roles';
+export { ROLE_LABELS };
 
 export function isCommunityAudience(value: unknown): value is CommunityAudience {
   return typeof value === 'string' && (COMMUNITY_AUDIENCES as string[]).includes(value);
