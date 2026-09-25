@@ -21,6 +21,7 @@ import { RootStackParamList, MainTabParamList } from '../navigation/AppNavigator
 import { useAuth } from '../contexts/AuthContext';
 import * as api from '../services/api';
 import { TenantProfile, VerificationStatus } from '../types';
+import { ROLE_LABELS } from '../lib/roles';
 
 type ProfileScreenNavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<MainTabParamList, 'Profile'>,
@@ -91,6 +92,7 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   const isTenant = user?.userType === 'tenant';
+  const roleLabel = user?.userType ? (ROLE_LABELS[user.userType] ?? '회원') : '회원';
 
   if (loading) {
     return (
@@ -130,7 +132,7 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
         <Text style={styles.email}>{user?.email}</Text>
         <View style={styles.typeBadge}>
           <Text style={styles.typeText}>
-            {isTenant ? '세입자' : '집주인'}
+            {roleLabel}
           </Text>
         </View>
       </View>

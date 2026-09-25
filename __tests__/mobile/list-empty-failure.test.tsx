@@ -356,4 +356,19 @@ describe('공인중개사 가입과 역할별 화면', () => {
     render(<MessagesScreen navigation={{ navigate: vi.fn() }} />)
     expect(await screen.findByText(label)).toBeVisible()
   })
+
+  it.each([['broker', '공인중개사'], ['admin', '운영자'], ['tenant', '임차인'], ['landlord', '임대인']])('프로필 배지는 %s 역할을 %s로 표시한다', async (userType, label) => {
+    authUser.current = { userType, name: 'QA', email: `${userType}@example.test` }
+    api.fetchTenantProfile.mockResolvedValue(null)
+    api.fetchVerificationStatus.mockResolvedValue(null)
+
+    render(<ProfileScreen navigation={{ navigate: vi.fn() }} />)
+
+    expect(await screen.findByText(label)).toBeVisible()
+    if (userType === 'broker' || userType === 'admin') {
+      expect(screen.queryByText('집주인')).toBeNull()
+      expect(api.fetchTenantProfile).not.toHaveBeenCalled()
+      expect(api.fetchVerificationStatus).not.toHaveBeenCalled()
+    }
+  })
 })
