@@ -75,10 +75,10 @@ describe('DOW-1136 확정 규칙을 그대로 지킨다', () => {
 })
 
 
-it('웹과 앱 역할 라벨은 같은 원본 객체를 참조한다', async () => {
+it('웹과 앱 커뮤니티 역할 라벨이 같다', async () => {
   const web = await import('../../lib/community')
   const mobile = await import('../../mobile/src/lib/community')
-  const roles = await import('../../mobile/src/lib/roles')
-  expect(web.ROLE_LABELS).toBe(roles.ROLE_LABELS)
-  expect(mobile.ROLE_LABELS).toBe(roles.ROLE_LABELS)
+  const webRoles = await import('../../lib/roles')
+  expect(web.ROLE_LABELS).toEqual(webRoles.ROLE_LABELS)
+  expect(mobile.ROLE_LABELS).toEqual(webRoles.ROLE_LABELS)
 })

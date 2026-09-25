@@ -1,6 +1,6 @@
 'use client'
 
-import { SIGNUP_ROLES } from '@/mobile/src/lib/roles'
+import { SIGNUP_ROLES, SignupRole } from '@/lib/roles'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -15,8 +15,6 @@ import { User, Building } from 'lucide-react'
 import { toast } from 'sonner'
 import { SocialLoginButtons } from '@/components/auth/social-login-buttons'
 import { TermsConsent } from '@/components/auth/terms-consent'
-
-type SignupRole = 'tenant' | 'landlord' | 'broker'
 
 export default function SignupPage() {
   const router = useRouter()
