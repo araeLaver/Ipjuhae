@@ -2,7 +2,7 @@
 // 모바일 화면은 로드 실패를 "비어 있음"으로 감추지 않는다.
 // 실패 / 빈 결과 / 로딩이 서로 다른 렌더 결과여야 하고, 실패에는 재시도 경로가 있어야 한다.
 import React from 'react'
-import { render, screen, cleanup } from '@testing-library/react'
+import { render, screen, cleanup, fireEvent, waitFor } from '@testing-library/react'
 import { beforeAll, afterAll, afterEach, beforeEach, describe, it, expect, vi } from 'vitest'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -136,7 +136,7 @@ afterAll(() => {
 })
 
 beforeEach(() => {
-  vi.clearAllMocks()
+  vi.resetAllMocks()
   state.__mobileListQA = api
   authUser.current = { userType: 'tenant', name: 'QA', id: 'qa-user' }
   ;(globalThis as any).__mobileListQAUser = authUser
@@ -279,5 +279,42 @@ describe('모바일 목록 실패 상태', () => {
     await screen.findByText('대화를 시작해보세요')
     expect(screen.queryByText('대화 내용을 불러오지 못했습니다')).toBeNull()
     expect(screen.queryByText('다시 시도')).toBeNull()
+  })
+})
+
+
+describe('6화면 재시도 복구', () => {
+  const cases = [
+    ['대화 목록', () => MessagesScreen, 'fetchConversations', [], '대화를 불러오지 못했습니다', '아직 대화가 없습니다'],
+    ['매칭', () => MatchesScreen, 'fetchMatches', [], '매칭 결과를 불러오지 못했습니다', '매칭 결과가 없습니다'],
+    ['대화방', () => ChatRoomScreen, 'fetchMessages', [], '대화 내용을 불러오지 못했습니다', '대화를 시작해보세요'],
+    ['홈', () => HomeScreen, 'fetchTenantProfile', null, '홈 정보를 불러오지 못했습니다', '신뢰 점수'],
+    ['프로필', () => ProfileScreen, 'fetchTenantProfile', null, '프로필을 불러오지 못했습니다', 'QA'],
+    ['인증', () => VerificationScreen, 'fetchVerificationStatus', null, '인증 정보를 불러오지 못했습니다', '서류 제출'],
+  ] as const
+
+  it.each(cases)('%s: 최초 대기 → 실패 → 재시도 → 성공을 구분한다', async (_name, component, method, result, errorTitle, successText) => {
+    let rejectFirst!: (reason: Error) => void
+    let resolveRetry!: (value: unknown) => void
+    api.fetchVerificationStatus.mockResolvedValue(null)
+    api[method]
+      .mockImplementationOnce(() => new Promise((_resolve, reject) => { rejectFirst = reject }))
+      .mockImplementationOnce(() => new Promise(resolve => { resolveRetry = resolve }))
+    const Component = component()
+    render(<Component navigation={{ navigate: vi.fn() }} route={{ params: { conversationId: 'c1' } }} />)
+    expect(screen.getByRole('progressbar')).toBeVisible()
+    expect(screen.queryByText(errorTitle)).toBeNull()
+    expect(screen.queryAllByText(successText)).toHaveLength(0)
+
+    rejectFirst(new Error('503'))
+    await screen.findByText(errorTitle)
+    expect(screen.queryByRole('progressbar')).toBeNull()
+    fireEvent.click(screen.getByText('다시 시도'))
+    expect(api[method]).toHaveBeenCalledTimes(2)
+    resolveRetry(result)
+    await waitFor(() => expect(screen.queryByText(errorTitle)).toBeNull())
+    expect(screen.queryByText(errorTitle)).toBeNull()
+    expect(screen.queryByText('다시 시도')).toBeNull()
+    expect(screen.getAllByText(successText).length).toBeGreaterThan(0)
   })
 })
