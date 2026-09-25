@@ -234,4 +234,22 @@ describe('모바일 목록 실패 상태', () => {
     expect(screen.queryByText('대화를 불러오지 못했습니다')).toBeNull()
     expect(screen.queryByText('다시 시도')).toBeNull()
   })
+
+  it('매칭이 0건이면 실패가 아니라 빈 결과로 보여준다', async () => {
+    api.fetchMatches.mockResolvedValue([])
+    render(<MatchesScreen navigation={{ navigate: vi.fn() }} />)
+
+    await screen.findByText('매칭 결과가 없습니다')
+    expect(screen.queryByText('매칭 결과를 불러오지 못했습니다')).toBeNull()
+    expect(screen.queryByText('다시 시도')).toBeNull()
+  })
+
+  it('대화방에 메시지가 없으면 실패가 아니라 시작 안내를 보여준다', async () => {
+    api.fetchMessages.mockResolvedValue([])
+    render(<ChatRoomScreen route={{ params: { conversationId: 'c1' } }} />)
+
+    await screen.findByText('대화를 시작해보세요')
+    expect(screen.queryByText('대화 내용을 불러오지 못했습니다')).toBeNull()
+    expect(screen.queryByText('다시 시도')).toBeNull()
+  })
 })
