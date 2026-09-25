@@ -9,9 +9,35 @@
  * 한쪽만 바꾸면 이 테스트가 깨진다.
  */
 
+import fs from 'node:fs'
+import path from 'node:path'
+import vm from 'node:vm'
+import ts from 'typescript'
 import { describe, expect, it } from 'vitest'
 import * as web from '@/lib/community'
-import * as app from '../../mobile/src/lib/community'
+
+type MobileCommunity = typeof web
+
+function loadMobileCommunity(): MobileCommunity {
+  const filename = path.resolve(__dirname, '../../mobile/src/lib/community.ts')
+  const source = fs.readFileSync(filename, 'utf8')
+  const { outputText } = ts.transpileModule(source, {
+    compilerOptions: {
+      module: ts.ModuleKind.CommonJS,
+      target: ts.ScriptTarget.ES2020,
+    },
+    fileName: filename,
+  })
+  const sandbox = {
+    exports: {} as Record<string, unknown>,
+    module: { exports: {} as Record<string, unknown> },
+  }
+  sandbox.module.exports = sandbox.exports
+  vm.runInNewContext(outputText, sandbox, { filename })
+  return sandbox.module.exports as MobileCommunity
+}
+
+const app = loadMobileCommunity()
 
 /** `null`(비로그인)과 서버가 실제로 내려주는 역할 전부, 그리고 모르는 값 하나. */
 const USER_TYPES = [null, undefined, 'tenant', 'landlord', 'broker', 'admin', 'nonsense'] as const
@@ -77,8 +103,7 @@ describe('DOW-1136 확정 규칙을 그대로 지킨다', () => {
 
 it('웹과 앱 커뮤니티 역할 라벨이 같다', async () => {
   const web = await import('../../lib/community')
-  const mobile = await import('../../mobile/src/lib/community')
   const webRoles = await import('../../lib/roles')
   expect(web.ROLE_LABELS).toEqual(webRoles.ROLE_LABELS)
-  expect(mobile.ROLE_LABELS).toEqual(webRoles.ROLE_LABELS)
+  expect(app.ROLE_LABELS).toEqual(webRoles.ROLE_LABELS)
 })
