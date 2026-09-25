@@ -144,6 +144,22 @@ afterEach(cleanup)
 
 const AUTH_TOKEN_KEY = 'auth_token'
 
+/**
+ * 거부 사유를 `Error`로 받는다.
+ *
+ * `apiClient.get()`은 `Promise<unknown>`이라 `.catch((e: Error) => e)`의 결과가
+ * `unknown`으로 뭉개져 `error.message`가 타입 오류가 난다. 거부하지 않으면
+ * 그 자체로 실패다 — 통과한 요청을 조용히 넘기면 케이스가 무의미해진다.
+ */
+async function rejectionOf(promise: Promise<unknown>): Promise<Error> {
+  return promise.then(
+    () => {
+      throw new Error('요청이 거부될 줄 알았는데 성공했다')
+    },
+    (error: Error) => error
+  )
+}
+
 describe('A2 — 서버 오류 문구가 사용자에게 그대로 전달된다', () => {
   it('403의 한국어 문구를 보여주고 HTTP 403을 노출하지 않는다', async () => {
     // 실측(prod): 이 저장소의 API 라우트는 `json({ error })` 형태다.
@@ -161,14 +177,14 @@ describe('A2 — 서버 오류 문구가 사용자에게 그대로 전달된다'
 
   it('서버가 문구를 주지 않으면 상태코드별 한국어 폴백을 쓴다', async () => {
     fetchMock.mockResolvedValue(json(500, {}))
-    const error = await mod.apiClient.get('/community/posts').catch((e: Error) => e)
+    const error = await rejectionOf(mod.apiClient.get('/community/posts'))
     expect(error.message).toContain('서버에 문제가 생겼어요')
     expect(error.message).not.toMatch(/HTTP|500/)
   })
 
   it('본문이 JSON이 아니어도 개발자 문자열을 노출하지 않는다', async () => {
     fetchMock.mockResolvedValue(new Response('<html>502 Bad Gateway</html>', { status: 502 }))
-    const error = await mod.apiClient.get('/community/posts').catch((e: Error) => e)
+    const error = await rejectionOf(mod.apiClient.get('/community/posts'))
     expect(error.message).toContain('서버에 문제가 생겼어요')
     expect(error.message).not.toMatch(/HTTP|502|html/i)
   })
@@ -178,9 +194,7 @@ describe('A2 — 서버 오류 문구가 사용자에게 그대로 전달된다'
     fetchMock.mockResolvedValue(json(401, { error: '이메일 또는 비밀번호가 올바르지 않습니다' }))
     const listener = vi.fn()
     const off = mod.apiClient.onUnauthorized(listener)
-    const error = await mod.apiClient
-      .post('/auth/login', { email: 'a@b.c', password: 'x' })
-      .catch((e: Error) => e)
+    const error = await rejectionOf(mod.apiClient.post('/auth/login', { email: 'a@b.c', password: 'x' }))
     off()
     expect(error.message).toBe('이메일 또는 비밀번호가 올바르지 않습니다')
     expect(error).not.toBeInstanceOf(mod.SessionExpiredError)
@@ -207,9 +221,7 @@ describe('A3 — uploadFile도 request()와 같은 401 처리를 탄다', () => 
   it('업로드 실패 문구도 `Upload failed: 413`이 아니라 한국어다', async () => {
     await mod.apiClient.setTokens('good-token')
     fetchMock.mockResolvedValue(json(413, {}))
-    const error = await mod.apiClient
-      .uploadFile('/verification/documents', file)
-      .catch((e: Error) => e)
+    const error = await rejectionOf(mod.apiClient.uploadFile('/verification/documents', file))
     expect(error.message).toBe('파일 용량이 너무 큽니다.')
     expect(error.message).not.toMatch(/Upload failed/)
   })

@@ -539,7 +539,11 @@ describe('토큰 수명주기 — 계정 전환과 정리 재시도 (DOW-1117 �
     const working = globalThis.fetch
     globalThis.fetch = (() =>
       Promise.resolve(new Response('{}', { status: 401 }))) as typeof fetch
-    await expect(apiClient.get('/me')).rejects.toThrow('UNAUTHORIZED')
+    // DOW-1194 이후 401의 메시지는 사용자에게 그대로 보이는 한국어 안내다.
+    // 개발자용 식별자는 `code`로 옮겼으므로 여기서도 `code`를 본다 —
+    // 이 케이스가 고정하려는 것은 문구가 아니라 "401이 push token까지 비운다"다.
+    const unauthorized = await apiClient.get('/me').catch((error: Error) => error)
+    expect((unauthorized as { code?: string }).code).toBe('UNAUTHORIZED')
     globalThis.fetch = working
 
     expect(globalThis.__notifShim.storage[TOKEN_KEY]).toBeUndefined()

@@ -91,12 +91,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       // 인증 token을 지우기 전에 현재 계정의 push token을 해제한다.
       await disableNotifications().catch(() => undefined);
-      await api.logout();
+      // 서버 로그아웃이 실패해도(세션이 이미 죽었거나 오프라인) 로그아웃은
+      // 진행한다. 여기서 던지면 호출부에 catch가 없어 그대로 미처리 거부가
+      // 되는데, 정작 아래 `finally`에서 기기 쪽 로그아웃은 이미 끝난 뒤다.
+      await api.logout().catch(() => undefined);
     } finally {
       await apiClient.clearTokens();
       setUser(null);
       // 스스로 로그아웃한 사람에게 "세션이 만료되었습니다"를 띄우지 않는다.
-      // (로그아웃 요청 자체가 401로 돌아오면 구독자가 먼저 켜 놓는다.)
+      // `/auth/logout`은 `AUTH_ENTRY_POINTS`라 401이어도 만료 구독자를 켜지
+      // 않지만, 로그아웃 직전에 날아간 다른 요청이 켜 놓았을 수 있다.
       setSessionExpiredMessage(null);
     }
   };

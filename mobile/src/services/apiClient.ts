@@ -78,6 +78,25 @@ export function pickServerMessage(body: unknown): string | null {
   return null;
 }
 
+/**
+ * 401이 "세션 만료"가 아니라 "자격 증명 실패"인 요청들.
+ *
+ * 처음에는 "토큰을 들고 보낸 401만 만료"로 갈랐는데, 그러면 토큰이 이미
+ * 비워진 뒤에 날아간 요청(복귀 시 재조회, 알림 토큰 정리)의 401이 복구
+ * 경로를 타지 못했다. 실제로 `notificationService`의 정리 `DELETE`가
+ * 그 구멍에 빠져 DOW-1117 회귀 테스트 3건이 깨졌다.
+ *
+ * 가르는 기준은 토큰 유무가 아니라 **요청의 성격**이다. 로그인·가입은
+ * 401이 정상 응답이고, 그 문구(`이메일 또는 비밀번호가 올바르지 않습니다`)를
+ * 그대로 보여줘야 한다. 로그아웃의 401은 이미 끝난 세션이라 알릴 것이 없다.
+ */
+const AUTH_ENTRY_POINTS = ['/auth/login', '/auth/signup', '/auth/register', '/auth/logout'];
+
+function isAuthEntryPoint(url: string): boolean {
+  const path = url.split('?')[0];
+  return AUTH_ENTRY_POINTS.some((entry) => path === entry || path.startsWith(`${entry}/`));
+}
+
 type UnauthorizedListener = () => void;
 
 class ApiClient {
@@ -169,10 +188,9 @@ class ApiClient {
       headers,
     });
 
-    // 토큰을 들고 보낸 401만 "세션 만료"다. 로그인·회원가입처럼 토큰 없이
-    // 보낸 요청의 401은 서버 문구(`이메일 또는 비밀번호가 올바르지 않습니다`)를
-    // 그대로 보여줘야 한다.
-    if (response.status === 401 && token) {
+    // 로그인·가입·로그아웃을 뺀 모든 401은 "세션 만료"다. 토큰 유무로 가르지
+    // 않는 이유는 `AUTH_ENTRY_POINTS` 주석 참고.
+    if (response.status === 401 && !isAuthEntryPoint(url)) {
       return this.handleSessionExpired();
     }
 
@@ -223,7 +241,8 @@ class ApiClient {
 
     // 업로드도 `request()`와 같은 401 처리를 탄다. 예전에는 이 경로만 빠져 있어
     // 서류 제출(VerificationScreen)에서 만료 토큰이 기기에 그대로 남았다.
-    if (response.status === 401 && token) {
+    // 업로드 경로에 로그인·가입은 없으므로 401은 전부 세션 만료다.
+    if (response.status === 401) {
       return this.handleSessionExpired();
     }
 
