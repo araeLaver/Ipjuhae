@@ -13,9 +13,9 @@ import { ArrowRight, MessageSquare, PenLine } from 'lucide-react'
 import {
   AUDIENCE_LABELS,
   canPostTo,
+  defaultAudienceFor as audienceForTab,
   roleLabel,
   readableAudiences,
-  userTypeToAudience,
   type CommunityAudience,
 } from '@/lib/community'
 
@@ -117,14 +117,9 @@ export function CommunityBoard() {
   /** 회차 번호를 떼고 제목만 남긴다. 목록에서는 연재명이 이미 머리에 있다. */
   const shortTitle = (t: string) => t.replace(/^.*?(\d+)화\.\s*/, '')
 
-  /**
-   * 글이 올라갈 기본 게시판. **지금 보고 있는 탭**을 따른다.
-   * 임대인 탭을 읽다가 글쓰기를 누르면 임대인 게시판에 올라가야 한다.
-   * 탭이 `all`일 때만 로그인 사용자는 본인 역할 게시판, 비로그인은 `all`.
-   */
+  // 규칙 자체는 `lib/community.ts`에 있다. 앱도 같은 판정을 쓰기 때문이다(DOW-1196).
   const defaultAudienceFor = useCallback(
-    (currentTab: CommunityAudience): CommunityAudience =>
-      currentTab === 'all' ? (userTypeToAudience(userType) ?? 'all') : currentTab,
+    (currentTab: CommunityAudience): CommunityAudience => audienceForTab(currentTab, userType),
     [userType],
   )
 

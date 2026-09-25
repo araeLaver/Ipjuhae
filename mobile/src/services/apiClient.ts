@@ -37,6 +37,27 @@ export class SessionExpiredError extends Error {
 }
 
 /**
+ * 서버가 내려준 실패. `message`는 이미 사용자에게 보여도 되는 한국어다.
+ *
+ * `status`를 들고 다니는 이유: 화면이 "권한이 없어 못 본다"(403)와 "지금 못
+ * 불러왔다"(네트워크·500)를 갈라 말해야 하는데, 문구만으로는 구분할 수 없다.
+ * 예전에는 커뮤니티 화면이 모든 실패를 `이 게시판은 볼 수 없어요`로 덮어,
+ * 비행기 모드도 "볼 수 없는 게시판"으로 읽혔다.
+ *
+ * 네트워크 자체가 끊긴 경우는 `fetch`가 던지므로 이 오류가 아니다 — 호출부는
+ * `instanceof ApiError`로 "서버가 답은 했다"를 구분할 수 있다.
+ */
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    readonly status: number
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
+/**
  * 상태코드별 한국어 폴백. 서버가 문구를 주지 않을 때만 쓴다.
  * `HTTP 403` 같은 개발자 문자열이 사용자에게 보이지 않게 하는 마지막 방어선이다.
  */
@@ -196,7 +217,10 @@ class ApiClient {
 
     if (!response.ok) {
       const body = await response.json().catch(() => null);
-      throw new Error(pickServerMessage(body) ?? fallbackMessage(response.status));
+      throw new ApiError(
+        pickServerMessage(body) ?? fallbackMessage(response.status),
+        response.status
+      );
     }
 
     if (response.status === 204) return {} as T;
@@ -248,7 +272,10 @@ class ApiClient {
 
     if (!response.ok) {
       const body = await response.json().catch(() => null);
-      throw new Error(pickServerMessage(body) ?? fallbackMessage(response.status));
+      throw new ApiError(
+        pickServerMessage(body) ?? fallbackMessage(response.status),
+        response.status
+      );
     }
     return response.json();
   }

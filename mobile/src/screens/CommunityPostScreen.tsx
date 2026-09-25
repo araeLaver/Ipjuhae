@@ -3,13 +3,24 @@
  */
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  ActivityIndicator,
+  TouchableOpacity,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  Alert,
+} from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import * as api from '../services/api';
+import { ROLE_LABELS } from '../lib/community';
 import { colors } from '../theme';
-import { ROLE_LABELS } from './CommunityScreen';
 
 interface Props {
   navigation: NativeStackNavigationProp<RootStackParamList, 'CommunityPost'>;
@@ -24,6 +35,8 @@ const CommunityPostScreen: React.FC<Props> = ({ route }) => {
   const [commentsError, setCommentsError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [draft, setDraft] = useState('');
+  const [posting, setPosting] = useState(false);
 
   const loadComments = useCallback(async () => {
     setCommentsLoading(true);
@@ -55,6 +68,30 @@ const CommunityPostScreen: React.FC<Props> = ({ route }) => {
     load();
     loadComments();
   }, [load, loadComments]);
+
+  /**
+   * 댓글을 남긴다. 로그인하지 않아도 된다 — 서버가 익명 댓글을 허용한다.
+   *
+   * 올린 뒤 목록을 다시 불러온다. 낙관적으로 화면에만 끼워 넣으면, 서버가
+   * 거른 글(도배 한도·정화)이 내 화면에만 남아 있는 상태가 된다.
+   */
+  async function submitComment() {
+    const body = draft.trim();
+    if (!body || posting) return;
+    setPosting(true);
+    try {
+      await api.createCommunityComment(postId, body);
+      setDraft('');
+      await loadComments();
+    } catch (e) {
+      Alert.alert(
+        '남기지 못했어요',
+        e instanceof Error && e.message ? e.message : '잠시 후 다시 시도해주세요.'
+      );
+    } finally {
+      setPosting(false);
+    }
+  }
 
   function report() {
     Alert.alert('이 글을 신고할까요?', '사유를 골라주세요.', [
@@ -91,6 +128,10 @@ const CommunityPostScreen: React.FC<Props> = ({ route }) => {
   const created = new Date(post.createdAt);
 
   return (
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.metaRow}>
         <Text style={styles.author}>{post.authorName ?? '익명'}</Text>
@@ -107,8 +148,9 @@ const CommunityPostScreen: React.FC<Props> = ({ route }) => {
       <Text style={styles.title}>{post.title}</Text>
       <Text style={styles.body}>{post.body}</Text>
 
+      {/* 댓글 수는 아래 댓글 머리글에서 한 번만 말한다. 같은 숫자를 두 줄 걸러
+          두 번 두면 어느 쪽이 진짜인지 읽는 사람이 판단해야 한다. */}
       <View style={styles.statRow}>
-        <Text style={styles.stat}>{commentsError ? '댓글' : `댓글 ${comments.length}`}</Text>
         <Text style={styles.stat}>조회 {post.viewCount}</Text>
         <TouchableOpacity onPress={report} style={styles.reportBtn}>
           <Text style={styles.reportText}>신고</Text>
@@ -117,6 +159,31 @@ const CommunityPostScreen: React.FC<Props> = ({ route }) => {
 
       <View style={styles.commentsSection}>
         <Text style={styles.commentsTitle}>{commentsError ? '댓글' : `댓글 ${comments.length}`}</Text>
+
+        {/* 앱에는 입력창 자체가 없어서 읽기 전용이었다. 커뮤니티가 성립하려면
+            물어본 곳에서 답이 와야 한다. 가입 없이 바로 쓴다. */}
+        <View style={styles.composer}>
+          <TextInput
+            style={styles.composerInput}
+            placeholder="답을 남겨주세요. 주소와 건물명은 적지 말아주세요."
+            placeholderTextColor={colors.faint}
+            value={draft}
+            onChangeText={setDraft}
+            multiline
+            textAlignVertical="top"
+            maxLength={2000}
+          />
+          <View style={styles.composerFoot}>
+            <Text style={styles.composerNote}>익명으로 올라갑니다.</Text>
+            <TouchableOpacity
+              style={[styles.composerBtn, (posting || !draft.trim()) && styles.composerBtnOff]}
+              onPress={submitComment}
+              disabled={posting || !draft.trim()}
+            >
+              <Text style={styles.composerBtnText}>{posting ? '올리는 중' : '댓글 남기기'}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
 
         {commentsLoading ? (
           <ActivityIndicator style={styles.commentsLoader} color={colors.primary} />
@@ -151,6 +218,7 @@ const CommunityPostScreen: React.FC<Props> = ({ route }) => {
         )}
       </View>
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -189,6 +257,30 @@ const styles = StyleSheet.create({
   reportText: { fontSize: 12, color: colors.muted, textDecorationLine: 'underline' },
   commentsSection: { marginTop: 28 },
   commentsTitle: { fontSize: 15, fontWeight: '800', color: colors.ink, marginBottom: 12 },
+  composer: {
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+    backgroundColor: colors.surface,
+  },
+  composerInput: { minHeight: 72, fontSize: 14, color: colors.ink, lineHeight: 21, padding: 0 },
+  composerFoot: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 10,
+  },
+  composerNote: { fontSize: 12, color: colors.faint },
+  composerBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: colors.primary,
+  },
+  composerBtnOff: { opacity: 0.4 },
+  composerBtnText: { fontSize: 13, fontWeight: '800', color: colors.white },
   commentsLoader: { marginVertical: 20 },
   commentsState: {
     alignItems: 'center',

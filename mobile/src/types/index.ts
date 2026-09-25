@@ -6,7 +6,15 @@
  * by the API layer (services/api.ts) regardless of what the server returns.
  */
 
-export type UserType = 'tenant' | 'landlord' | 'admin';
+/**
+ * `broker`(공인중개사)는 서버가 실제로 내려주는 역할인데 여기 없어서, 앱은
+ * 중개사 계정을 "역할 미상"으로 취급했다. 커뮤니티가 읽을 수 있는 판을
+ * 역할로 가르므로(DOW-1196 C4) 이 타입이 좁으면 중개사에게 본인 판이
+ * 아예 보이지 않는다.
+ *
+ * 가입·홈·메시지까지 중개사를 1급 역할로 반영하는 것은 DOW-1197이다.
+ */
+export type UserType = 'tenant' | 'landlord' | 'broker' | 'admin';
 
 export interface User {
   id: string;

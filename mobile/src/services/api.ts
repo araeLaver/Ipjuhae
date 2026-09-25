@@ -520,7 +520,10 @@ export async function fetchTenants(): Promise<TenantProfile[]> {
 
 // ─── 커뮤니티 ───────────────────────────────────────────────────────────────
 
-export type CommunityAudience = 'all' | 'tenant' | 'landlord' | 'broker'
+// 게시판 종류·라벨·읽기 쓰기 판정은 `src/lib/community.ts` 한 곳에 있다.
+// 여기서 또 선언하면 두 벌이 되어 조용히 갈라진다.
+export type { CommunityAudience } from '../lib/community'
+import type { CommunityAudience } from '../lib/community'
 
 export interface CommunityPost {
   id: string
@@ -602,6 +605,21 @@ export async function fetchCommunityPost(id: string): Promise<CommunityPost> {
 export async function fetchCommunityComments(postId: string): Promise<CommunityComment[]> {
   const res = await apiClient.get<{ comments: CommentRow[] }>(`/community/posts/${postId}/comments`)
   return (res.comments ?? []).map(toComment)
+}
+
+/**
+ * POST /api/community/posts/[id]/comments
+ *
+ * 로그인 없이도 쓴다 — 서버가 익명 댓글을 허용한다(비로그인은 10분 15회 한도).
+ * 물어보면 답이 오는 게 커뮤니티의 전부인데, 앱에 이 함수가 없어서 앱은
+ * 읽기 전용이었다.
+ *
+ * 반드시 `apiClient`를 경유한다. 직접 `fetch`를 쓰면 `x-mobile-client` 헤더가
+ * 빠져 CSRF에 403으로 전량 조용히 버려진다.
+ */
+export async function createCommunityComment(postId: string, body: string): Promise<string> {
+  const res = await apiClient.post<{ id: string }>(`/community/posts/${postId}/comments`, { body })
+  return res.id
 }
 
 /** POST /api/community/posts */

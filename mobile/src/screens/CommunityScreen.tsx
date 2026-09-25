@@ -8,7 +8,7 @@
  * 처음 들어온 사람이 읽을 것부터 봐야 다시 온다. 웹(/)과 같은 구성이다.
  */
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -28,6 +28,16 @@ import { CompositeNavigationProp, useFocusEffect } from '@react-navigation/nativ
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { RootStackParamList, MainTabParamList } from '../navigation/AppNavigator';
 import * as api from '../services/api';
+import { ApiError } from '../services/apiClient';
+import { useAuth } from '../contexts/AuthContext';
+import {
+  AUDIENCE_LABELS,
+  ROLE_LABELS,
+  canPostTo,
+  defaultAudienceFor,
+  readableAudiences,
+  type CommunityAudience,
+} from '../lib/community';
 import { colors } from '../theme';
 
 type Nav = CompositeNavigationProp<
@@ -39,19 +49,7 @@ interface Props {
   navigation: Nav;
 }
 
-const TABS: { key: api.CommunityAudience; label: string }[] = [
-  { key: 'all', label: '전체' },
-  { key: 'tenant', label: '임차인' },
-  { key: 'landlord', label: '임대인' },
-  { key: 'broker', label: '중개사무소' },
-];
-
-export const ROLE_LABELS: Record<string, string> = {
-  tenant: '임차인',
-  landlord: '임대인',
-  broker: '공인중개사',
-  admin: '운영자',
-};
+export { ROLE_LABELS };
 
 function timeAgo(iso: string): string {
   const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
@@ -66,24 +64,55 @@ function timeAgo(iso: string): string {
 const episodeNo = (t: string) => Number(/(\d+)화/.exec(t)?.[1] ?? 999);
 
 const CommunityScreen: React.FC<Props> = ({ navigation }) => {
-  const [tab, setTab] = useState<api.CommunityAudience>('all');
+  const { user } = useAuth();
+  const userType = user?.userType ?? null;
+
+  const [tab, setTab] = useState<CommunityAudience>('all');
   const [posts, setPosts] = useState<api.CommunityPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** 권한 때문에 막힌 것인가. 그렇다면 "다시 시도"를 권하지 않는다. */
+  const [forbidden, setForbidden] = useState(false);
   const [writing, setWriting] = useState(false);
   const [draftTitle, setDraftTitle] = useState('');
   const [draftBody, setDraftBody] = useState('');
+  const [audience, setAudience] = useState<CommunityAudience>('all');
+  /** 사용자가 대상 게시판을 직접 골랐는가. 골랐다면 탭을 바꿔도 덮어쓰지 않는다. */
+  const [audiencePicked, setAudiencePicked] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   /** 연재별 펼침 여부. 18편을 한 번에 세우면 게시판이 화면 밖으로 밀린다. */
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
-  const load = useCallback(async (audience: api.CommunityAudience) => {
+  // 웹과 같은 판정으로 읽을 수 있는 판만 세운다(`lib/community.ts`).
+  // 4탭을 고정으로 보여주고 누르면 막던 때에는, 읽을 수 없는 판이 있다는 걸
+  // 눌러 봐야만 알 수 있었다.
+  const tabs = useMemo(() => readableAudiences(userType), [userType]);
+
+  // 로그아웃 등으로 보던 탭을 더는 읽을 수 없게 되면 공용 판으로 내린다.
+  // 안 그러면 사라진 탭이 계속 선택된 채 남아 목록이 비어 보인다.
+  useEffect(() => {
+    if (!tabs.includes(tab)) setTab('all');
+  }, [tabs, tab]);
+
+  const load = useCallback(async (aud: CommunityAudience) => {
     setError(null);
+    setForbidden(false);
     try {
-      setPosts(await api.fetchCommunityPosts(audience));
+      setPosts(await api.fetchCommunityPosts(aud));
     } catch (e) {
-      setError('이 게시판은 볼 수 없어요');
+      // 권한(403)과 그 밖의 실패를 갈라 말한다. `catch` 하나로 전부
+      // `이 게시판은 볼 수 없어요`로 덮으면 비행기 모드·서버 500까지
+      // "볼 수 없는 게시판"으로 읽힌다.
+      const denied = e instanceof ApiError && e.status === 403;
+      setForbidden(denied);
+      setError(
+        denied
+          ? '이 게시판은 볼 수 없어요'
+          : e instanceof Error && e.message
+            ? e.message
+            : '게시글을 불러오지 못했어요'
+      );
       setPosts([]);
     } finally {
       setLoading(false);
@@ -121,19 +150,39 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
   /** 회차 번호를 떼고 제목만 남긴다. 목록에서는 연재명이 이미 머리에 있다. */
   const shortTitle = (t: string) => t.replace(/^.*?(\d+)화\.\s*/, '');
 
+  /** 글쓰기 진입점은 전부 이 함수 하나를 부른다. 어디서 열었든 대상이 같아야 한다. */
+  const openWriting = useCallback(() => {
+    setAudience(defaultAudienceFor(tab, userType));
+    setAudiencePicked(false);
+    setWriting(true);
+  }, [tab, userType]);
+
+  // 폼이 열려 있는 동안 탭을 바꾸면 대상도 따라간다.
+  // 단 사용자가 대상 버튼을 직접 누른 뒤에는 그 선택을 덮어쓰지 않는다.
+  useEffect(() => {
+    if (!writing || audiencePicked) return;
+    setAudience(defaultAudienceFor(tab, userType));
+  }, [writing, audiencePicked, tab, userType]);
+
+  /** 대상 게시판을 직접 고를 수 있는 사람인가. 고를 판이 둘 이상일 때만 보인다. */
+  const postableAudiences = useMemo(
+    () => (userType ? tabs.filter((a) => canPostTo(userType, a)) : []),
+    [tabs, userType]
+  );
+
   async function submitPost() {
     if (!draftTitle.trim() || !draftBody.trim() || submitting) return;
     setSubmitting(true);
     try {
-      // 계정 없이 쓴다. 익명 글은 '전체' 판으로만 간다.
-      await api.createCommunityPost({ audience: 'all', title: draftTitle, body: draftBody });
+      // 로그인하지 않아도 쓴다. 비로그인 글은 공용 판으로만 간다.
+      await api.createCommunityPost({ audience, title: draftTitle, body: draftBody });
       setDraftTitle('');
       setDraftBody('');
       setWriting(false);
-      setTab('all');
-      await load('all');
+      setTab(audience);
+      await load(audience);
     } catch (e) {
-      Alert.alert('올리지 못했어요', '잠시 후 다시 시도해주세요.');
+      Alert.alert('올리지 못했어요', e instanceof Error && e.message ? e.message : '잠시 후 다시 시도해주세요.');
     } finally {
       setSubmitting(false);
     }
@@ -145,9 +194,7 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
       onPress={() => navigation.navigate('CommunityPost', { postId: item.id })}
     >
       <View style={styles.metaRow}>
-        <Text style={styles.boardTag}>
-          {TABS.find((t) => t.key === item.audience)?.label ?? '전체'}
-        </Text>
+        <Text style={styles.boardTag}>{AUDIENCE_LABELS[item.audience] ?? '전체'}</Text>
         <Text style={styles.author}>{item.authorName ?? '익명'}</Text>
         {ROLE_LABELS[item.authorRole] ? (
           <Text style={[styles.roleTag, item.authorRole === 'admin' && styles.roleTagAdmin]}>
@@ -183,7 +230,7 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
           지역과 보증금, 등기부에서 본 것만 적어주시면 같이 봅니다.
           주소와 건물명은 적지 말아주세요.
         </Text>
-        <TouchableOpacity style={styles.askInput} onPress={() => setWriting(true)}>
+        <TouchableOpacity style={styles.askInput} onPress={openWriting}>
           <Text style={styles.askInputText}>지금 막히는 게 무엇인가요</Text>
         </TouchableOpacity>
         <Text style={styles.askNote}>운영자가 직접 답합니다. 가입하지 않아도 익명으로 쓸 수 있어요.</Text>
@@ -233,16 +280,18 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
       )}
 
       <View style={styles.tabs}>
-        {TABS.map((t) => (
+        {tabs.map((key) => (
           <TouchableOpacity
-            key={t.key}
-            style={[styles.tab, tab === t.key && styles.tabActive]}
+            key={key}
+            style={[styles.tab, tab === key && styles.tabActive]}
             onPress={() => {
-              setTab(t.key);
+              setTab(key);
               setLoading(true);
             }}
           >
-            <Text style={[styles.tabText, tab === t.key && styles.tabTextActive]}>{t.label}</Text>
+            <Text style={[styles.tabText, tab === key && styles.tabTextActive]}>
+              {AUDIENCE_LABELS[key]}
+            </Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -298,6 +347,35 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
           textAlignVertical="top"
           maxLength={10000}
         />
+
+        {/* 어디에 올라가는지 모른 채 올리기를 누르는 상태를 없앤다.
+            선택 버튼은 권한 있는 사용자에게만 보이지만, 대상 문구는 비로그인 포함 전원에게 보인다.
+            (웹 `community-board.tsx`와 같은 규칙) */}
+        <View style={styles.audienceBox}>
+          {postableAudiences.length > 1 && (
+            <View style={styles.audienceRow}>
+              {postableAudiences.map((a) => (
+                <TouchableOpacity
+                  key={a}
+                  style={[styles.audienceChip, audience === a && styles.audienceChipOn]}
+                  onPress={() => {
+                    setAudience(a);
+                    setAudiencePicked(true);
+                  }}
+                >
+                  <Text style={[styles.audienceChipText, audience === a && styles.audienceChipTextOn]}>
+                    {AUDIENCE_LABELS[a]} 게시판
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+          <Text style={styles.audienceNote}>
+            <Text style={styles.audienceNoteStrong}>{AUDIENCE_LABELS[audience]} 게시판</Text>에
+            올라갑니다.
+          </Text>
+        </View>
+
         <Text style={styles.modalNote}>익명으로 올라갑니다.</Text>
       </KeyboardAvoidingView>
     </Modal>
@@ -321,6 +399,12 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
               <Text style={styles.emptySub}>
                 계약 전에 막히는 게 있으면 남겨주세요.{'\n'}같은 걸 겪은 사람이 답할 수 있습니다.
               </Text>
+            )}
+            {/* 권한으로 막힌 판은 다시 눌러도 같으므로 재시도를 권하지 않는다. */}
+            {error && !forbidden && (
+              <TouchableOpacity style={styles.retryBtn} onPress={() => load(tab)}>
+                <Text style={styles.retryText}>다시 시도</Text>
+              </TouchableOpacity>
             )}
           </View>
         }
@@ -489,9 +573,32 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
 
+  audienceBox: { paddingHorizontal: 20, paddingTop: 14, gap: 8 },
+  audienceRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  audienceChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: colors.tint,
+  },
+  audienceChipOn: { backgroundColor: colors.primary },
+  audienceChipText: { fontSize: 12, fontWeight: '600', color: colors.muted },
+  audienceChipTextOn: { color: colors.white },
+  audienceNote: { fontSize: 12, color: colors.muted },
+  audienceNoteStrong: { fontWeight: '800', color: colors.ink },
+
   empty: { alignItems: 'center', paddingTop: 50, paddingHorizontal: 30 },
   emptyTitle: { fontSize: 15, fontWeight: '700', color: colors.muted },
   emptySub: { fontSize: 13, color: colors.faint, marginTop: 8, textAlign: 'center', lineHeight: 20 },
+  retryBtn: {
+    marginTop: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
+  retryText: { fontSize: 13, fontWeight: '700', color: colors.ink },
 });
 
 export default CommunityScreen;

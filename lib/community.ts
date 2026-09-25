@@ -50,3 +50,20 @@ export function canPostTo(userType: string | null | undefined, audience: Communi
   const role = userTypeToAudience(userType)
   return audience === 'all' || audience === role
 }
+
+/**
+ * 글이 올라갈 기본 게시판. **지금 보고 있는 탭**을 따른다.
+ *
+ * 임대인 탭을 읽다가 글쓰기를 누르면 임대인 게시판에 올라가야 한다.
+ * 탭이 `all`일 때만 로그인 사용자는 본인 역할 게시판, 비로그인은 `all`.
+ *
+ * 웹 화면 안에 있던 규칙을 여기로 올렸다. 앱도 같은 판정을 써야 하는데
+ * (DOW-1196), 화면 컴포넌트 안에 있으면 앱이 참조할 수도, 갈라졌는지
+ * 확인할 수도 없다.
+ */
+export function defaultAudienceFor(
+  currentTab: CommunityAudience,
+  userType: string | null | undefined,
+): CommunityAudience {
+  return currentTab === 'all' ? (userTypeToAudience(userType) ?? 'all') : currentTab
+}

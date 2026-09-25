@@ -23,21 +23,20 @@ beforeAll(async () => {
   const shim = join(dir, 'native.js')
   writeFileSync(shim, `import React from 'react';
 const flatten = s => Array.isArray(s) ? Object.assign({}, ...s.filter(Boolean).map(flatten)) : s;
-const element = tag => ({children, style, onPress}) => React.createElement(tag, {style: flatten(style), onClick:onPress}, children);
+const element = tag => ({children, style, onPress, disabled}) => React.createElement(tag, {style: flatten(style), onClick:onPress, disabled}, children);
 export const View=element('div'), Text=element('span'), ScrollView=element('section'), TouchableOpacity=element('button');
+export const KeyboardAvoidingView=element('div');
 export const ActivityIndicator=()=>React.createElement('progress');
 export const StyleSheet={create:s=>s}; export const Alert={alert:()=>{}};
+export const Platform={OS:'ios', select:o=>o.ios};
+export const TextInput=({value,onChangeText,placeholder,style,multiline})=>React.createElement(multiline?'textarea':'input',{value:value??'',placeholder,style:flatten(style),onChange:e=>onChangeText&&onChangeText(e.target.value)});
 `)
-  // 목록 화면 전체를 로드하지 않고 실제 소스의 역할 표만 사용한다.
-  const roles = join(dir, 'roles.ts')
-  const source = readFileSync('mobile/src/screens/CommunityScreen.tsx', 'utf8')
-  const declaration = source.match(/export const ROLE_LABELS: Record<string, string> = \{[\s\S]*?\};/)?.[0]
-  if (!declaration) throw new Error('ROLE_LABELS 선언을 찾지 못했습니다')
-  writeFileSync(roles, declaration)
+  // 역할 표는 `src/lib/community.ts`에 있다. 예전에는 화면 소스에서 정규식으로
+  // 선언을 긁어 왔는데, 표가 다른 파일로 옮겨가자 그대로 깨졌다 — 소스 문자열에
+  // 기대는 하네스의 전형적인 값이다. 이제는 실제 모듈을 그대로 번들한다.
   const client = join(dir, 'client.js')
-  writeFileSync(client, 'export const apiClient={get:(...args)=>globalThis.__communityQA.get(...args)};')
+  writeFileSync(client, 'export const apiClient={get:(...args)=>globalThis.__communityQA.get(...args),post:(...args)=>globalThis.__communityQA.get(...args)};')
   await build({ entryPoints:['mobile/src/screens/CommunityPostScreen.tsx'], bundle:true, platform:'node', format:'esm', outfile:join(dir,'screen.mjs'), external:['react'], plugins:[{name:'qa-native',setup(b){
-    b.onResolve({filter:/^\.\/CommunityScreen$/},()=>({path:roles}))
     b.onResolve({filter:/^react-native$/},()=>({path:shim}))
     b.onResolve({filter:/^\.\/apiClient$/},()=>({path:client}))
   }}] })
@@ -54,7 +53,9 @@ it('정상 목록·운영자 배지와 강조·익명 이름·실제 개수를 �
   respond([row('admin'),row('unknown','c2')]); mount()
   const body = await screen.findByText('댓글 본문 c1')
   expect(screen.getByText('댓글 본문 c2')).toBeVisible()
-  expect(screen.getAllByText('댓글 2')).toHaveLength(2)
+  // 예전에는 본문 아래와 댓글 머리글에 같은 숫자를 나란히 두 번 뒀다(DOW-1196 E2).
+  // 이제는 댓글 머리글 한 곳에서만 말한다.
+  expect(screen.getAllByText('댓글 2')).toHaveLength(1)
   expect(screen.queryByText('댓글 99')).toBeNull()
   expect(screen.getAllByText('익명')).toHaveLength(2)
   expect(screen.getAllByText('운영자')).toHaveLength(1)
@@ -68,7 +69,7 @@ it.each(['unknown',null])('알 수 없거나 없는 역할 %s는 배지를 표�
 })
 it('빈 목록은 댓글 0과 빈 상태를 표시한다',async()=>{
   respond([]); mount(); await screen.findByText('아직 댓글이 없어요')
-  expect(screen.getAllByText('댓글 0')).toHaveLength(2)
+  expect(screen.getAllByText('댓글 0')).toHaveLength(1)
 })
 it('조회 실패에서는 숫자를 숨기고 재시도로 복구한다',async()=>{
   get.mockImplementation(async (path:string)=>{if(path.endsWith('/comments'))throw new Error('503');return {post}})
@@ -77,7 +78,7 @@ it('조회 실패에서는 숫자를 숨기고 재시도로 복구한다',async(
   expect(screen.queryByText('아직 댓글이 없어요')).toBeNull()
   respond([row('admin')]); fireEvent.click(screen.getByText('다시 시도'))
   await screen.findByText('댓글 본문 c1')
-  expect(screen.getAllByText('댓글 1')).toHaveLength(2)
+  expect(screen.getAllByText('댓글 1')).toHaveLength(1)
   expect(screen.queryByText('댓글을 불러오지 못했어요')).toBeNull()
 })
 it('댓글 응답 대기 중에는 빈 목록 메시지를 노출하지 않는다',async()=>{
