@@ -8,6 +8,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, Text, StyleSheet } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
+import SessionExpiredBanner from '../components/SessionExpiredBanner';
 
 // Screens
 import LoginScreen from '../screens/LoginScreen';
@@ -169,8 +170,10 @@ const AppNavigator = () => {
   }
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <View style={styles.root}>
+      <SessionExpiredBanner />
+      <NavigationContainer>
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
         {isAuthenticated ? (
           <>
             <Stack.Screen name="Main" component={MainTabNavigator} />
@@ -262,12 +265,14 @@ const AppNavigator = () => {
             <Stack.Screen name="Auth" component={AuthNavigator} />
           </>
         )}
-      </Stack.Navigator>
-    </NavigationContainer>
+        </Stack.Navigator>
+      </NavigationContainer>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  root: { flex: 1 },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',

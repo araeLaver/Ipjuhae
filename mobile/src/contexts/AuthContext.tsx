@@ -3,7 +3,7 @@
  */
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { apiClient } from '../services/apiClient';
+import { apiClient, SESSION_EXPIRED_MESSAGE } from '../services/apiClient';
 import * as api from '../services/api';
 import { disableNotifications } from '../services/notificationService';
 import { User } from '../types';
@@ -16,6 +16,9 @@ interface AuthContextType {
   register: (email: string, password: string, name: string, userType: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  /** 세션이 끊겨 비인증 상태로 돌아왔을 때 보여줄 안내. 평소에는 null이다. */
+  sessionExpiredMessage: string | null;
+  dismissSessionExpired: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -23,6 +26,25 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [sessionExpiredMessage, setSessionExpiredMessage] = useState<string | null>(null);
+
+  const dismissSessionExpired = useCallback(() => setSessionExpiredMessage(null), []);
+
+  /**
+   * 세션 만료(401)를 받으면 `user`를 비운다.
+   *
+   * `AppNavigator`가 `isAuthenticated`로 스택을 가르므로, 이 연결이 없으면
+   * 토큰이 지워진 뒤에도 인증 스택에 남아 모든 화면이 실패만 하고 로그인으로
+   * 갈 길이 없다(앱 강제 종료가 유일한 탈출구였다).
+   */
+  useEffect(
+    () =>
+      apiClient.onUnauthorized(() => {
+        setUser(null);
+        setSessionExpiredMessage(SESSION_EXPIRED_MESSAGE);
+      }),
+    []
+  );
 
   const refreshUser = useCallback(async () => {
     try {
@@ -53,6 +75,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const token = await api.login(email, password);
     await apiClient.setTokens(token);
     setUser(await api.fetchMe());
+    setSessionExpiredMessage(null);
   };
 
   const register = async (email: string, password: string, _name: string, userType: string) => {
@@ -61,6 +84,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const token = await api.signup(email, password, userType);
     await apiClient.setTokens(token);
     setUser(await api.fetchMe());
+    setSessionExpiredMessage(null);
   };
 
   const logout = async () => {
@@ -71,6 +95,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } finally {
       await apiClient.clearTokens();
       setUser(null);
+      // 스스로 로그아웃한 사람에게 "세션이 만료되었습니다"를 띄우지 않는다.
+      // (로그아웃 요청 자체가 401로 돌아오면 구독자가 먼저 켜 놓는다.)
+      setSessionExpiredMessage(null);
     }
   };
 
@@ -84,6 +111,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         register,
         logout,
         refreshUser,
+        sessionExpiredMessage,
+        dismissSessionExpired,
       }}
     >
       {children}
