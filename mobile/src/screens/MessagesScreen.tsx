@@ -33,13 +33,16 @@ const MessagesScreen: React.FC<Props> = ({ navigation }) => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const loadConversations = useCallback(async () => {
     try {
       // GET /api/messages/conversations returns { conversations, pagination }
       setConversations(await api.fetchConversations());
+      setLoadError(null);
     } catch (error) {
       console.log('Failed to load conversations:', error);
+      setLoadError('대화를 불러오지 못했습니다');
     } finally {
       setLoading(false);
     }
@@ -131,7 +134,17 @@ const MessagesScreen: React.FC<Props> = ({ navigation }) => {
         contentContainerStyle={styles.listContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListEmptyComponent={
-          <Text style={styles.emptyText}>아직 대화가 없습니다</Text>
+          loadError ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyTitle}>대화를 불러오지 못했습니다</Text>
+              <Text style={styles.emptySubtitle}>대화가 없는 상태가 아니라 조회에 실패했습니다.</Text>
+              <TouchableOpacity style={styles.retryButton} onPress={loadConversations}>
+                <Text style={styles.retryText}>다시 시도</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <Text style={styles.emptyText}>아직 대화가 없습니다</Text>
+          )
         }
       />
     </View>
@@ -179,6 +192,17 @@ const styles = StyleSheet.create({
   },
   unreadText: { fontSize: 11, fontWeight: 'bold', color: '#fff' },
   emptyText: { textAlign: 'center', color: '#9A8F87', fontSize: 14, marginTop: 60 },
+  emptyContainer: { alignItems: 'center', marginTop: 60, paddingHorizontal: 24 },
+  emptyTitle: { fontSize: 16, fontWeight: '600', color: '#4A423C' },
+  emptySubtitle: { fontSize: 14, color: '#9A8F87', marginTop: 4, textAlign: 'center' },
+  retryButton: {
+    marginTop: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+    backgroundColor: '#F0663F',
+  },
+  retryText: { fontSize: 14, fontWeight: '600', color: '#fff' },
 });
 
 export default MessagesScreen;

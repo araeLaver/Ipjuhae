@@ -53,13 +53,16 @@ const VerificationScreen: React.FC<Props> = ({ navigation }) => {
   const [verifications, setVerifications] = useState<VerificationStatus | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [uploading, setUploading] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const loadVerifications = useCallback(async () => {
     try {
       // GET /api/verifications returns { verification } (snake_case row)
       setVerifications(await api.fetchVerificationStatus());
+      setLoadError(null);
     } catch (error) {
       console.log('Failed to load verifications:', error);
+      setLoadError('인증 정보를 불러오지 못했습니다');
     }
   }, []);
 
@@ -121,6 +124,18 @@ const VerificationScreen: React.FC<Props> = ({ navigation }) => {
       style={styles.container}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
     >
+      {loadError && (
+        <View style={styles.loadErrorBanner}>
+          <Text style={styles.loadErrorTitle}>인증 정보를 불러오지 못했습니다</Text>
+          <Text style={styles.loadErrorSubtitle}>
+            제출한 서류가 없는 상태가 아니라 조회에 실패했습니다.
+          </Text>
+          <TouchableOpacity style={styles.retryButton} onPress={loadVerifications}>
+            <Text style={styles.retryText}>다시 시도</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       <View style={styles.header}>
         <Text style={styles.title}>인증 관리</Text>
         <Text style={styles.subtitle}>
@@ -213,6 +228,25 @@ const styles = StyleSheet.create({
   uploadButtonDisabled: { opacity: 0.6 },
   uploadButtonText: { fontSize: 14, fontWeight: '600', color: '#fff' },
   bottomPadding: { height: 48 },
+  loadErrorBanner: {
+    margin: 16,
+    padding: 16,
+    borderRadius: 12,
+    backgroundColor: '#FFF3DC',
+    borderWidth: 1,
+    borderColor: '#F4977B',
+    alignItems: 'center',
+  },
+  loadErrorTitle: { fontSize: 16, fontWeight: '600', color: '#4A423C' },
+  loadErrorSubtitle: { fontSize: 14, color: '#9A8F87', marginTop: 4, textAlign: 'center' },
+  retryButton: {
+    marginTop: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+    backgroundColor: '#F0663F',
+  },
+  retryText: { fontSize: 14, fontWeight: '600', color: '#fff' },
 });
 
 export default VerificationScreen;

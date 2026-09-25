@@ -27,6 +27,7 @@ const ChatRoomScreen: React.FC<Props> = ({ route }) => {
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const flatListRef = useRef<FlatList>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -34,8 +35,10 @@ const ChatRoomScreen: React.FC<Props> = ({ route }) => {
     try {
       // GET /api/messages/conversations/[id] returns { conversation, messages }
       setMessages(await api.fetchMessages(conversationId));
+      setLoadError(null);
     } catch (error) {
       console.log('Failed to load messages:', error);
+      setLoadError('대화 내용을 불러오지 못했습니다');
     } finally {
       setLoading(false);
     }
@@ -141,10 +144,20 @@ const ChatRoomScreen: React.FC<Props> = ({ route }) => {
         contentContainerStyle={styles.messageList}
         onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyIcon}>💬</Text>
-            <Text style={styles.emptyText}>대화를 시작해보세요</Text>
-          </View>
+          loadError ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyTitle}>대화 내용을 불러오지 못했습니다</Text>
+              <Text style={styles.emptySubtitle}>메시지가 없는 상태가 아니라 조회에 실패했습니다.</Text>
+              <TouchableOpacity style={styles.retryButton} onPress={loadMessages}>
+                <Text style={styles.retryText}>다시 시도</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyIcon}>💬</Text>
+              <Text style={styles.emptyText}>대화를 시작해보세요</Text>
+            </View>
+          )
         }
       />
       <View style={styles.inputContainer}>
@@ -195,6 +208,16 @@ const styles = StyleSheet.create({
   emptyContainer: { alignItems: 'center', paddingTop: 80 },
   emptyIcon: { fontSize: 48, marginBottom: 12 },
   emptyText: { fontSize: 16, color: '#9A8F87' },
+  emptyTitle: { fontSize: 16, fontWeight: '600', color: '#4A423C' },
+  emptySubtitle: { fontSize: 14, color: '#9A8F87', marginTop: 4, textAlign: 'center', paddingHorizontal: 24 },
+  retryButton: {
+    marginTop: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+    backgroundColor: '#F0663F',
+  },
+  retryText: { fontSize: 14, fontWeight: '600', color: '#fff' },
 });
 
 export default ChatRoomScreen;

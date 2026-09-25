@@ -26,13 +26,16 @@ const MatchesScreen: React.FC<Props> = ({ navigation }) => {
   const [matches, setMatches] = useState<MatchedListing[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const loadMatches = useCallback(async () => {
     try {
       // GET /api/matches returns { matches: [{ listing, score, reasons, ... }] }
       setMatches(await api.fetchMatches());
+      setLoadError(null);
     } catch (error) {
       console.log('Failed to load matches:', error);
+      setLoadError('매칭 결과를 불러오지 못했습니다');
     } finally {
       setLoading(false);
     }
@@ -105,10 +108,20 @@ const MatchesScreen: React.FC<Props> = ({ navigation }) => {
         contentContainerStyle={styles.listContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyTitle}>매칭 결과가 없습니다</Text>
-            <Text style={styles.emptySubtext}>프로필의 선호 조건을 설정해주세요</Text>
-          </View>
+          loadError ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyTitle}>매칭 결과를 불러오지 못했습니다</Text>
+              <Text style={styles.emptySubtext}>매칭 결과가 없는 상태가 아니라 조회에 실패했습니다.</Text>
+              <TouchableOpacity style={styles.retryButton} onPress={loadMatches}>
+                <Text style={styles.retryText}>다시 시도</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyTitle}>매칭 결과가 없습니다</Text>
+              <Text style={styles.emptySubtext}>프로필의 선호 조건을 설정해주세요</Text>
+            </View>
+          )
         }
       />
     </View>
@@ -142,7 +155,15 @@ const styles = StyleSheet.create({
   reasonText: { fontSize: 11, color: '#C2451F' },
   emptyContainer: { alignItems: 'center', marginTop: 60 },
   emptyTitle: { fontSize: 16, fontWeight: '600', color: '#4A423C' },
-  emptySubtext: { fontSize: 14, color: '#9A8F87', marginTop: 4 },
+  emptySubtext: { fontSize: 14, color: '#9A8F87', marginTop: 4, textAlign: 'center' },
+  retryButton: {
+    marginTop: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+    backgroundColor: '#F0663F',
+  },
+  retryText: { fontSize: 14, fontWeight: '600', color: '#fff' },
 });
 
 export default MatchesScreen;
