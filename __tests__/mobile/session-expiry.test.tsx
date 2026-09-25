@@ -266,6 +266,24 @@ describe('A1 — 세션이 끊기면 비인증 화면으로 돌아가고 안내�
     expect(storage.get(AUTH_TOKEN_KEY)).toBeUndefined()
   })
 
+  it('문구 없는 401(`/auth/me`의 실제 응답)에서도 복구 경로를 탄다', async () => {
+    // 실측(2026-09-25, prod): 만료 토큰으로 `GET /api/auth/me` →
+    // `401 {"user":null}`. 다른 라우트(`/notifications` 등)와 달리 `error`
+    // 필드가 없다. 그런데 `refreshUser()`가 부르는 곳이 바로 여기라,
+    // 본문에 문구가 있어야 복구가 돌아가면 가장 중요한 경로가 막힌다.
+    storage.set(AUTH_TOKEN_KEY, 'valid-token')
+    fetchMock.mockResolvedValue(json(200, loggedIn))
+    mount()
+    await screen.findByText('인증 스택')
+
+    fetchMock.mockResolvedValue(json(401, { user: null }))
+    fireEvent.click(screen.getByText('다시 불러오기'))
+
+    await screen.findByText('비인증 스택')
+    expect(screen.getByText(mod.SESSION_EXPIRED_MESSAGE)).toBeVisible()
+    expect(storage.get(AUTH_TOKEN_KEY)).toBeUndefined()
+  })
+
   it('화면과 무관한 백그라운드 요청의 401도 같은 복구 경로를 탄다', async () => {
     storage.set(AUTH_TOKEN_KEY, 'valid-token')
     fetchMock.mockResolvedValue(json(200, loggedIn))
