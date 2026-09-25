@@ -97,7 +97,7 @@ Currently in beta — feedback and questions welcome!
 - Trust score algorithm (employment × 30 + income × 30 + credit × 40)
 - Verification badge system with document upload
 - Real-time messaging
-- Deployed on Koyeb with CI/CD (GitHub Actions)
+- Deployed on Fly with CI/CD (GitHub Actions)
 
 ---
 

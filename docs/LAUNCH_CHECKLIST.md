@@ -77,7 +77,7 @@ npm run launch:check:dry-run
 - [ ] `DISCLOSURE_SIGNING_KEY` is a separate production-only random value of at least 32 bytes and is not reused as `JWT_SECRET`.
 - [ ] `CRON_SECRET` is a production-only random value and cron callers send `Authorization: Bearer <CRON_SECRET>`.
 - [ ] `NEXT_PUBLIC_APP_URL` and `NEXT_PUBLIC_BASE_URL` are the final public HTTPS origin.
-- [ ] Docker/Koyeb routes traffic to container port `8000`.
+- [ ] Fly routes traffic to container port `8000` through `fly.toml` `http_service.internal_port`.
 - [ ] `/api/health` returns `200` with `database: "ok"` after deployment.
 
 ## Feature configuration
@@ -98,7 +98,7 @@ npm run launch:check:dry-run
 - [ ] `server.js` can read `.next/required-server-files.json`; this requires `npm run build` or the Docker build stage.
 - [ ] Socket.IO is served at `/api/ws`; reverse proxy must allow WebSocket upgrade and polling.
 - [ ] SSE endpoint `/api/messages/conversations/[id]/stream` is not buffered by the proxy.
-- [ ] Koyeb scaling remains `min: 1`, `max: 1` until Socket.IO fan-out is backed by a shared adapter.
+- [ ] Fly runs as a single machine with `min_machines_running = 1` until Socket.IO fan-out is backed by a shared adapter.
 - [ ] Cron endpoint `/api/cron/references` is called on the intended schedule with the cron secret.
 - [ ] Upload provider is not `mock` for production document/property/profile image flows.
 - [ ] Internal analytics uses the `analytics_events` table; no external analytics provider is currently wired.

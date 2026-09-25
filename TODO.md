@@ -70,7 +70,7 @@
 - [x] 레퍼런스 토큰 보안 강화 (crypto.randomBytes, 7일 만료)
 - [x] 입력값 sanitization (XSS 방지 - lib/sanitize.ts)
 - [x] DB 마이그레이션 전략 (db/migrate.ts)
-- [ ] 에러 로깅 연동 (Sentry) — 현재 instrumentation.ts에서 noop 비활성화 상태(DSN 미설정, Koyeb nano 컴파일 타임아웃 회피). 활성화 시 인스턴스 small↑ 필요
+- [ ] 에러 로깅 연동 (Sentry) — 현재 instrumentation.ts에서 noop 비활성화 상태(DSN 미설정). 활성화 후 Fly 인스턴스 메모리 여유와 빌드 시간을 재검증 필요
 - [x] 환경변수 프로덕션 설정
 - [x] SMS 프로바이더 연동 (NHN Cloud / Twilio)
 - [x] 이메일 프로바이더 연동 (Resend / SendGrid)

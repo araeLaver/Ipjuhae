@@ -32,7 +32,7 @@ JWT_SECRET=replace-with-openssl-rand-base64-32
 CRON_SECRET=replace-with-openssl-rand-base64-32
 ```
 
-`NODE_ENV`는 `.env.local`에 넣지 않습니다. Docker/Koyeb 같은 런타임 환경에서 `production`으로 설정하고, 로컬 `next dev`와 `next build`는 Next.js가 직접 설정하게 둡니다.
+`NODE_ENV`는 `.env.local`에 넣지 않습니다. Fly Docker 런타임에서 `production`으로 설정하고, 로컬 `next dev`와 `next build`는 Next.js가 직접 설정하게 둡니다.
 
 `NEXT_PUBLIC_APP_URL`과 `NEXT_PUBLIC_BASE_URL`은 OAuth redirect, 이메일/알림 링크, Socket.IO CORS, 일부 서버 컴포넌트 fetch 기준 URL에 쓰입니다. 둘 다 실제 공개 도메인으로 맞춥니다.
 
@@ -63,11 +63,11 @@ DATABASE_URL=postgresql://... DB_SCHEMA=ipjuhae npm run db:migrate
 
 Supabase SQL Editor에 오래된 `supabase/schema.sql`을 붙여넣는 방식은 이 저장소의 현재 마이그레이션 경로와 맞지 않습니다.
 
-## 5. Koyeb/Docker 배포
+## 5. Fly/Docker 배포
 
-이 저장소의 `Dockerfile`은 runner stage에서 `PORT=8000`을 노출하고 `node server.js`를 실행합니다. `koyeb.yaml`도 `8000` 포트와 `/api/health` 헬스체크를 기준으로 합니다.
+이 저장소의 프로덕션 배포 대상은 Fly입니다. `fly.toml`은 `Dockerfile`로 이미지를 빌드하고, 컨테이너 내부 포트 `8000`으로 트래픽을 보냅니다. `Dockerfile`은 runner stage에서 `PORT=8000`을 노출하고 `node server.js`를 실행합니다.
 
-배포 전에 Koyeb Secret 또는 환경 변수로 최소 다음 값을 설정합니다.
+배포 전에 Fly runtime secret 또는 환경 변수로 최소 다음 값을 설정합니다.
 
 - `DATABASE_URL`
 - `JWT_SECRET`
