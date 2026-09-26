@@ -127,7 +127,7 @@ export function DepositRiskCheck() {
           placeholder="40000"
         />
         {/* 시세 칸 바로 아래에 둔다. 막히는 지점에서 손이 닿아야 쓴다. */}
-        <MarketPricePicker onPick={(p) => setPrice(String(p))} />
+        <MarketPricePicker onPick={(p) => setPrice(String(p))} depositManwon={Number(deposit) || undefined} />
 
         <Field
           id="deposit"

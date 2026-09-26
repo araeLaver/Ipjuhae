@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card } from '@/components/ui/card'
 import { manwon } from '@/lib/deposit-risk'
+import { summarizeRents, compareDeposit, type RentSummary } from '@/lib/rent-summary'
 
 interface Trade {
   name: string
@@ -30,6 +31,8 @@ interface Trade {
 
 interface Props {
   onPick: (priceManwon: number) => void
+  /** 지금 입력된 보증금(만원). 전세 시세와 비교해 보여주는 데만 쓴다. */
+  depositManwon?: number
 }
 
 /**
@@ -55,10 +58,13 @@ function daumSdk(): DaumPostcodeSdk | undefined {
 
 const SCRIPT_SRC = '//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js'
 
-export function MarketPricePicker({ onPick }: Props) {
+export function MarketPricePicker({ onPick, depositManwon }: Props) {
   const [region, setRegion] = useState<{ lawdCd: string; label: string } | null>(null)
   const [keyword, setKeyword] = useState('')
   const [trades, setTrades] = useState<Trade[] | null>(null)
+  /** 고른 거래의 단지·면적으로 조회한 전세 요약. 없으면 안 보여준다. */
+  const [rent, setRent] = useState<{ summary: RentSummary; label: string } | null>(null)
+  const [rentLoading, setRentLoading] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -98,6 +104,37 @@ export function MarketPricePicker({ onPick }: Props) {
     document.body.appendChild(script)
   }
 
+  /**
+   * 매매가를 채우고, 같은 단지·같은 면적의 전세도 함께 불러온다.
+   *
+   * 매매 시세만 보면 내 보증금이 과한지 감이 안 온다. "이 단지 전세는 보통
+   * 이 정도"가 있어야 판단이 선다. 비교는 참고일 뿐 계산에는 넣지 않는다.
+   */
+  async function pick(t: Trade) {
+    onPick(t.priceManwon)
+    if (!region) return
+
+    setRentLoading(true)
+    setRent(null)
+    try {
+      const params = new URLSearchParams({
+        lawdCd: region.lawdCd,
+        keyword: t.name,
+        areaM2: String(t.areaM2),
+        type: 'rent',
+      })
+      const res = await fetch(`/api/market-price?${params}`)
+      if (!res.ok) return
+      const json = await res.json()
+      const summary = summarizeRents(json.jeonse ?? [])
+      if (summary) setRent({ summary, label: `${t.name} ${t.areaM2}㎡` })
+    } catch {
+      // 전세 참고 정보가 없어도 시세 입력은 이미 끝났다. 조용히 넘어간다.
+    } finally {
+      setRentLoading(false)
+    }
+  }
+
   async function search() {
     if (!region) return
     setLoading(true)
@@ -109,6 +146,7 @@ export function MarketPricePicker({ onPick }: Props) {
       const json = await res.json()
       if (!res.ok) throw new Error(json.error ?? '조회에 실패했습니다')
       setTrades(json.trades ?? [])
+      setRent(null)
     } catch (e) {
       setError(e instanceof Error ? e.message : '조회에 실패했습니다')
       setTrades(null)
@@ -174,7 +212,7 @@ export function MarketPricePicker({ onPick }: Props) {
               <li key={`${t.name}-${t.dealtAt}-${i}`}>
                 <button
                   type="button"
-                  onClick={() => onPick(t.priceManwon)}
+                  onClick={() => pick(t)}
                   className="w-full rounded-lg border px-3 py-2.5 text-left transition-colors hover:bg-muted/50"
                 >
                   <span className="flex items-baseline justify-between gap-3">
@@ -194,6 +232,74 @@ export function MarketPricePicker({ onPick }: Props) {
           <p className="text-xs text-muted-foreground">출처: 국토교통부 실거래가</p>
         </div>
       ) : null}
+
+      {rentLoading ? (
+        <p className="text-xs text-muted-foreground">같은 단지 전세를 찾는 중입니다</p>
+      ) : null}
+
+      {rent ? <RentReference rent={rent} depositManwon={depositManwon} /> : null}
     </Card>
+  )
+}
+
+/**
+ * 같은 단지 전세가 얼마에 나갔는지.
+ *
+ * 매매 시세만으로는 내 보증금이 과한지 감이 안 온다. 평균 대신 중앙값과
+ * 범위를 쓰고 몇 건인지 밝힌다 — 3건짜리 통계를 5건짜리처럼 보여주면
+ * 그 숫자를 믿고 계약한다.
+ */
+function RentReference({
+  rent,
+  depositManwon,
+}: {
+  rent: { summary: RentSummary; label: string }
+  depositManwon?: number
+}) {
+  const { summary, label } = rent
+  const comparison = depositManwon ? compareDeposit(depositManwon, summary) : null
+
+  return (
+    <div className="space-y-3 rounded-lg bg-muted/40 p-4">
+      <div>
+        <p className="text-sm font-semibold">{label} 전세 실거래</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          최근 6개월 {summary.count}건 · 마지막 거래 {summary.latestAt}
+        </p>
+      </div>
+
+      <dl className="space-y-1.5 text-sm">
+        <div className="flex items-center justify-between gap-4">
+          <dt className="text-muted-foreground">가운데값</dt>
+          <dd className="font-bold tabular-nums">{manwon(summary.medianManwon)}</dd>
+        </div>
+        <div className="flex items-center justify-between gap-4">
+          <dt className="text-muted-foreground">범위</dt>
+          <dd className="tabular-nums">
+            {manwon(summary.minManwon)} ~ {manwon(summary.maxManwon)}
+          </dd>
+        </div>
+      </dl>
+
+      {comparison ? (
+        <div className="border-t pt-3">
+          <p className="text-sm font-semibold">{comparison.headline}</p>
+          <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+            {comparison.detail}
+          </p>
+        </div>
+      ) : (
+        <p className="border-t pt-3 text-xs leading-relaxed text-muted-foreground">
+          보증금을 넣으시면 이 단지 전세와 비교해 드립니다.
+        </p>
+      )}
+
+      {summary.count < 5 ? (
+        <p className="text-xs leading-relaxed text-muted-foreground">
+          거래가 {summary.count}건뿐입니다. 층과 향, 수리 여부에 따라 실제로는 더 벌어질 수
+          있습니다.
+        </p>
+      ) : null}
+    </div>
   )
 }
