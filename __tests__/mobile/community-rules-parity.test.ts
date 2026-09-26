@@ -18,8 +18,8 @@ import * as web from '@/lib/community'
 
 type MobileCommunity = typeof web
 
-function loadMobileCommunity(): MobileCommunity {
-  const filename = path.resolve(__dirname, '../../mobile/src/lib/community.ts')
+function loadMobileModule<T>(moduleName: 'community' | 'roles'): T {
+  const filename = path.resolve(__dirname, `../../mobile/src/lib/${moduleName}.ts`)
   const source = fs.readFileSync(filename, 'utf8')
   const { outputText } = ts.transpileModule(source, {
     compilerOptions: {
@@ -34,10 +34,10 @@ function loadMobileCommunity(): MobileCommunity {
   }
   sandbox.module.exports = sandbox.exports
   vm.runInNewContext(outputText, sandbox, { filename })
-  return sandbox.module.exports as MobileCommunity
+  return sandbox.module.exports as T
 }
 
-const app = loadMobileCommunity()
+const app = loadMobileModule<MobileCommunity>('community')
 
 /** `null`(비로그인)과 서버가 실제로 내려주는 역할 전부, 그리고 모르는 값 하나. */
 const USER_TYPES = [null, undefined, 'tenant', 'landlord', 'broker', 'admin', 'nonsense'] as const
@@ -106,4 +106,11 @@ it('웹과 앱 커뮤니티 역할 라벨이 같다', async () => {
   const webRoles = await import('../../lib/roles')
   expect(web.ROLE_LABELS).toEqual(webRoles.ROLE_LABELS)
   expect(app.ROLE_LABELS).toEqual(webRoles.ROLE_LABELS)
+})
+
+it('웹과 앱 가입 역할의 값·문구·순서가 같다', async () => {
+  const webRoles = await import('../../lib/roles')
+  const mobileRoles = loadMobileModule<typeof webRoles>('roles')
+  expect(mobileRoles.SIGNUP_ROLES).toEqual(webRoles.SIGNUP_ROLES)
+  expect(mobileRoles.ROLE_LABELS).toEqual(webRoles.ROLE_LABELS)
 })
