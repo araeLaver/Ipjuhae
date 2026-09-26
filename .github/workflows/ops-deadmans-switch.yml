@@ -16,13 +16,19 @@
 #   배포까지 같이 막힌다. 파일명을 CI(`ci.yml`)와 구분해 둔 이유도 이것이다.
 #
 # 자격증명
-#   저장소 secret 이 0개다. gist 가 public 이라 읽는 쪽에 토큰이 필요 없다.
-#   감시 대상 주소(gist id)는 파일에 박지 않고 repo variable 로 넘긴다.
+#   **토큰이 0개다.** gist 가 public 이라 읽는 쪽에 자격증명이 필요 없고,
+#   GITHUB_TOKEN 조차 쓰지 않는다. 공개 저장소에 장기 자격증명을 넣지 않는 것이
+#   이 설계의 전제다.
 #
-# 설정값 (repo variables)
-#   OPS_DEADMANS_GIST_ID       필수. heartbeat gist id
-#   OPS_DEADMANS_GIST_OWNER    필수. gist 소유 계정 (raw 폴백 경로에 필요)
-#   OPS_DEADMANS_MAX_AGE_SEC   선택. 기본 1200. heartbeat 이 이보다 오래되면 실패
+# 설정값
+#   secrets.OPS_DEADMANS_GIST_ID   필수. heartbeat gist id.
+#       variable 이 아니라 secret 인 이유: 공개 저장소의 Actions 로그는 누구나 읽을
+#       수 있고, `run` 스텝의 env 블록은 로그에 그대로 찍힌다. variable 로 두면
+#       "감시 대상 주소를 공개 저장소에 박아 두지 않는다"는 조건이 로그에서 깨진다.
+#       이것은 자격증명이 아니므로 위의 "토큰 0개"와 충돌하지 않는다.
+#   vars.OPS_DEADMANS_GIST_OWNER   필수. gist 소유 계정 (raw 폴백 경로에 필요).
+#       저장소 소유자와 같아 숨길 것이 없으므로 variable 로 둔다.
+#   vars.OPS_DEADMANS_MAX_AGE_SEC  선택. 기본 1200. heartbeat 이 이보다 오래되면 실패
 #
 # 되돌리기: 이 파일 1개 + gist 1개 삭제.
 
@@ -49,9 +55,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      # 판정기 파일만 가져온다. 자격증명은 러너에 남기지 않는다.
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+          sparse-checkout-cone-mode: false
+
       - name: heartbeat 확인
         env:
-          GIST_ID: ${{ vars.OPS_DEADMANS_GIST_ID }}
+          GIST_ID: ${{ secrets.OPS_DEADMANS_GIST_ID }}
           GIST_OWNER: ${{ vars.OPS_DEADMANS_GIST_OWNER }}
           MAX_AGE_SEC: ${{ vars.OPS_DEADMANS_MAX_AGE_SEC || '1200' }}
         run: python3 .github/scripts/ops_deadmans_switch.py
