@@ -155,3 +155,41 @@ describe('매직 링크 콜백 — 메일에 실어 보낸 자리로 돌려보�
     expect(location.pathname).toBe('/landlord')
   })
 })
+
+/**
+ * 운영 실측(2026-09-26)에서 `/auth/callback`의 Location이
+ * `https://0.0.0.0:8000/login?error=missing_code`로 나갔다. `request.nextUrl.origin`이
+ * 공개 주소가 아니라 컨테이너 바인드 주소로 잡히기 때문이다. 매직 링크로 로그인한
+ * 사람은 닿을 수 없는 주소로 튕긴다 — 복귀 자리를 옳게 골라도 도착을 못 한다.
+ *
+ * 위 시험들은 요청 호스트와 `NEXT_PUBLIC_BASE_URL`이 똑같이 localhost:3000이라
+ * 이 어긋남을 볼 수 없었다. 그래서 여기서는 둘을 일부러 다르게 둔다.
+ */
+describe('매직 링크 콜백 — 공개 주소로 돌려보낸다 (내부 바인드 주소 금지)', () => {
+  const internalOrigin = 'https://0.0.0.0:8000'
+
+  beforeEach(() => {
+    process.env.NEXT_PUBLIC_BASE_URL = 'https://www.ipjuhae.com'
+  })
+
+  it('code가 없을 때도 공개 주소의 /login으로 보낸다', async () => {
+    const res = await magicCallback(new NextRequest(`${internalOrigin}/auth/callback`))
+
+    const location = locationOf(res)
+    expect(location.host).toBe('www.ipjuhae.com')
+    expect(location.pathname).toBe('/login')
+    expect(location.searchParams.get('error')).toBe('missing_code')
+  })
+
+  it('복귀 자리로 보낼 때도 호스트는 공개 주소다', async () => {
+    vi.mocked(queryOne).mockResolvedValueOnce({ id: 'u3', user_type: 'tenant' })
+
+    const res = await magicCallback(
+      new NextRequest(`${internalOrigin}/auth/callback?code=c1&redirect=%2Fcommunity%2Fabc`)
+    )
+
+    const location = locationOf(res)
+    expect(location.host).toBe('www.ipjuhae.com')
+    expect(location.pathname).toBe('/community/abc')
+  })
+})

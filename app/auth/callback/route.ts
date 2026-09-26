@@ -5,12 +5,17 @@ import { queryOne, query } from '@/lib/db'
 import { generateToken, setAuthCookie } from '@/lib/auth'
 import { trackServer } from '@/lib/analytics'
 import { safeRedirectPath } from '@/lib/safe-redirect'
+import { getBaseUrl } from '@/lib/base-url'
 import { User } from '@/types/database'
 
 const isDev = process.env.NODE_ENV === 'development'
 
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = request.nextUrl
+  const { searchParams } = request.nextUrl
+  // 운영에서 `request.nextUrl.origin`은 공개 주소가 아니라 컨테이너 바인드 주소
+  // (`https://0.0.0.0:8000`)로 잡힌다. 그 값으로 Location을 만들면 매직 링크로
+  // 로그인한 사용자가 닿을 수 없는 주소로 튕긴다. 소셜 콜백과 같은 단일 지점을 쓴다.
+  const origin = getBaseUrl()
   const code = searchParams.get('code')
   // 로그인 화면이 매직 링크에 실어 보낸 복귀 자리. 메일에서 열린 주소라 외부 값과
   // 다를 바 없으므로 같은 사이트 경로인지 반드시 다시 검증한다.
