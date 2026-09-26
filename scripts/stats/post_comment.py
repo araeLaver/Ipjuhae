@@ -1,4 +1,7 @@
-"""Paperclip 이슈에 마크다운 댓글을 올린다. 사용: python3 post_comment.py <issueId> <파일>"""
+"""Paperclip 이슈에 마크다운 댓글을 올린다. 사용: python3 post_comment.py <issueId> <파일|->
+
+파일 자리에 `-` 를 주면 표준입력에서 본문을 읽는다.
+"""
 import json
 import os
 import sys
@@ -27,6 +30,6 @@ def post(issue_id, body):
 
 
 if __name__ == '__main__':
-    text = open(sys.argv[2], encoding='utf-8').read()
+    text = sys.stdin.read() if sys.argv[2] == '-' else open(sys.argv[2], encoding='utf-8').read()
     res = post(sys.argv[1], text)
     print(json.dumps(res, ensure_ascii=False)[:300])
