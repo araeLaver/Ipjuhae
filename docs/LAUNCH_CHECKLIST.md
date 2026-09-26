@@ -153,6 +153,16 @@ After deploy, verify:
 > 4번은 기기에 저장된 등록 토큰도 필요합니다. 1·2·3번의 권한 UI 관측은 별도로 남길 수 있지만,
 > 2번은 전후 process가 같아야 재시작 없는 복귀의 증거로 인정합니다.
 > Android FCM 설정 절차는 [docs/mobile-fcm-setup.md](./mobile-fcm-setup.md)를 참고합니다.
+>
+> **2번은 Android 버전을 골라야 측정할 수 있습니다 — API 32(Android 12L) 이하를 쓰세요.**
+> `POST_NOTIFICATIONS`는 API 33에서 도입된 런타임 권한이라, Android 13 이상에서는 설정의
+> 알림 토글이 곧 런타임 권한 회수이고 OS가 앱 process를 죽입니다(API 36 실측:
+> `Killing <pid>:com.ipjuhae.app ... PermissionHelper`). 그 환경에서 재시작 후 OFF를 보고
+> 2번을 통과로 적으면 **거짓 통과**입니다 — 재시작 없는 복귀를 검증한 것이 아닙니다.
+> API 32 이하에서는 같은 조작이 `NotificationManager` 설정 변경이라 process가 유지되므로
+> 전후 PID가 같은 상태로 2번을 판정할 수 있습니다(API 32 실측 통과, DOW-1173).
+> 측정할 때 PID를 전·후로 남기고, `logcat`에서 다른 패키지의 `Killing` 줄이 잡히는지도
+> 같이 확인하세요. 아무 줄도 안 잡히면 탐지 자체가 죽은 것이라 "안 죽었다"가 거짓 음성입니다.
 
 - [ ] 앱에서 알림을 켜고 권한을 허용한 뒤, 기기 설정에서 알림 권한을 끄고 **앱을 재시작**한다 → 알림 설정 화면의 Switch가 OFF, 안내 문구는 "기기 설정에서 알림 권한이 꺼져 있습니다."
 - [ ] 같은 상황에서 **앱을 재시작하지 않고** 기기 설정에서 앱으로 복귀한다 → 잠깐 로딩 표시 후 Switch가 OFF로 바뀐다(켜진 채로 남으면 회귀).
