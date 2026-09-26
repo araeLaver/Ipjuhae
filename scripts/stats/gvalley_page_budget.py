@@ -28,15 +28,31 @@ def split_sections(lines, start, end, level='### '):
     return secs
 
 
+def strip_fenced(lines):
+    """코드펜스(```) 내부는 본문에서 제외한다.
+
+    도표는 이미지로 삽입되므로 mermaid 소스 자체는 출력물의 본문 글자가
+    아니다. 이 구분을 하지 않으면 도표 소스가 본문으로 이중 계산되어
+    페이지 수가 과대 추정된다.
+    """
+    out, inside = [], False
+    for line in lines:
+        if line.strip().startswith('```'):
+            inside = not inside
+            continue
+        if not inside:
+            out.append(line)
+    return out
+
+
 def measure(lines):
     text = '\n'.join(lines)
     rows = [l for l in lines if l.strip().startswith('|')]
     diagrams = text.count('```') // 2
-    prose = [l for l in lines
+    prose = [l for l in strip_fenced(lines)
              if l.strip()
              and not l.strip().startswith('|')
-             and not l.strip().startswith('#')
-             and not l.strip().startswith('```')]
+             and not l.strip().startswith('#')]
     flat = re.sub(r'\[([^\]]*)\]\([^)]*\)', r'\1', '\n'.join(prose))
     flat = re.sub(r'[*`>]', '', flat)
     return len(re.findall(r'\S', flat)), len(rows), diagrams
