@@ -190,13 +190,27 @@ describe('DOW-1236 — 익명 표시', () => {
     expect(screen.queryByText('박운영')).toBeNull()
   })
 
-  it('표시 이름은 역할에서 만든다 — 일반은 익명, 운영자는 운영자 이름', async () => {
+  it('표시 이름은 역할에서 만든다 — 일반은 익명, 운영자는 브랜드 이름', async () => {
     mockApi(namedPayload)
     renderView()
 
     // 글 + 일반 댓글 = 익명 2개. 운영자 댓글만 다른 이름을 받는다.
     await waitFor(() => expect(screen.getAllByText('익명')).toHaveLength(2))
-    screen.getByText('입주해 운영자')
+    screen.getByText('입주해')
+  })
+
+  it("'운영자'는 화면에 한 번만 나온다 — 배지에만, 이름에는 없다", async () => {
+    mockApi(namedPayload)
+    renderView()
+
+    await screen.findByText('로그인 상태로 남긴 댓글')
+    // 배지가 들어 있는 meta 줄(이름 + 배지)만 본다. 본문에 '운영자'가 들어간 글은 세지 않는다.
+    const badge = screen.getByText('운영자')
+    expect(badge.className).toContain('bg-primary')
+    const metaLine = badge.parentElement!.textContent ?? ''
+    // 이름을 '입주해 운영자'로 되돌리면 2가 되어 깨진다.
+    expect(metaLine.match(/운영자/g)).toHaveLength(1)
+    expect(metaLine).toContain('입주해')
   })
 
   it('일반 역할 배지는 세우지 않는다 — 익명 게시판에서 역할 라벨은 신원 범위를 좁힌다', async () => {

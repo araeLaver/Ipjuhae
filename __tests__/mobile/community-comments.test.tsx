@@ -61,8 +61,9 @@ it('정상 목록·운영자 배지와 강조·익명 이름·실제 개수를 �
   expect(screen.queryByText('댓글 99')).toBeNull()
   // 표시 이름은 역할에서 나온다 — 글(guest)과 모르는 역할 댓글이 '익명', 운영자만 따로.
   expect(screen.getAllByText('익명')).toHaveLength(2)
-  expect(screen.getAllByText('입주해 운영자')).toHaveLength(1)
-  expect(screen.getAllByText('운영자')).toHaveLength(1)
+  expect(screen.getAllByText('입주해')).toHaveLength(1)
+  // '운영자'는 배지에만 — 이름에 다시 넣으면 2개가 되어 깨진다(DOW-1236 판정).
+  expect(screen.getAllByText((_,el)=>!!el&&el.children.length===0&&(el.textContent??'').includes('운영자'))).toHaveLength(1)
   expect(body.parentElement?.style.backgroundColor).not.toBe(screen.getByText('댓글 본문 c2').parentElement?.style.backgroundColor)
   expect(get).toHaveBeenCalledWith('/community/posts/p1/comments')
 })
@@ -106,7 +107,7 @@ it('응답에 실명이 실려 와도 화면에 찍지 않고, 역할에서 만�
   // 일반 역할 배지는 세우지 않는다 — 익명 게시판에서 역할 라벨은 신원 범위를 좁힌다.
   expect(screen.queryByText('임차인')).toBeNull()
   expect(screen.getAllByText('익명')).toHaveLength(2)
-  expect(screen.getAllByText('입주해 운영자')).toHaveLength(1)
+  expect(screen.getAllByText('입주해')).toHaveLength(1)
 })
 it('입력창 안내가 지킬 수 있는 만큼만 약속한다 — 작성 계정 기록을 밝힌다',async()=>{
   respond([]); mount()

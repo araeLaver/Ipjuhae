@@ -23,8 +23,13 @@ export function roleLabel(userType: string | null | undefined): string | null {
   return userType ? ((ROLE_LABELS as Record<string, string>)[userType] ?? null) : null
 }
 
-/** 운영자 글·댓글에 붙는 표시 이름. DB 이름이 아니라 역할에서 나온다. */
-export const ADMIN_DISPLAY_NAME = '입주해 운영자'
+/**
+ * 운영자 글·댓글에 붙는 표시 이름. DB 이름이 아니라 역할에서 나온다.
+ *
+ * '운영자'를 여기 넣지 않는다 — 역할은 `AuthorRoleBadge`가 강조색으로 지고 있어서,
+ * 이름에까지 넣으면 같은 화면에 '운영자'가 두 번 나온다(DOW-1236 판정).
+ */
+export const ADMIN_DISPLAY_NAME = '입주해'
 /** 그 외 전부. 커뮤니티는 익명 게시판이다. */
 export const ANONYMOUS_DISPLAY_NAME = '익명'
 
