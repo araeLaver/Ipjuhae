@@ -56,7 +56,6 @@ function basePost(overrides: Record<string, unknown> = {}) {
     view_count: 3,
     comment_count: 7,
     created_at: '2026-09-20T00:00:00.000Z',
-    author_name: null,
     author_role: 'guest',
     is_author: false,
     ...overrides,
@@ -151,13 +150,63 @@ describe('D4 — 댓글 조회 실패', () => {
       post: basePost({ comment_count: 7 }),
       commentsStatus: 200,
       comments: [
-        { id: 'c1', body: '첫 댓글', created_at: '2026-09-21T00:00:00.000Z', author_name: null, author_role: 'guest' },
-        { id: 'c2', body: '둘째 댓글', created_at: '2026-09-21T01:00:00.000Z', author_name: null, author_role: 'guest' },
+        { id: 'c1', body: '첫 댓글', created_at: '2026-09-21T00:00:00.000Z', author_role: 'guest' },
+        { id: 'c2', body: '둘째 댓글', created_at: '2026-09-21T01:00:00.000Z', author_role: 'guest' },
       ],
     })
     renderView()
 
     await screen.findByText('댓글 2')
+  })
+})
+
+/**
+ * DOW-1236 — "익명으로 올라갑니다"라고 적어 두고 로그인 사용자의 실명을 찍던 결함.
+ *
+ * 판정은 **화면에 찍힌 글자**로 한다. 서버 쪽 판정(응답에 `author_name` 키가 없다)은
+ * `__tests__/api/community-anonymity.test.ts`가 본다. 여기서 보는 것은 하나 더다 —
+ * 어떤 경로로 이름이 응답에 실려 와도 화면이 그걸 쓰지 않는다. 캐시된 예전 응답,
+ * 배포 순서가 어긋난 서버, 되돌아온 `COALESCE`가 전부 이 경우에 해당한다.
+ */
+describe('DOW-1236 — 익명 표시', () => {
+  const namedPayload = {
+    user: { userType: 'tenant' },
+    postStatus: 200,
+    post: { ...basePost(), author_name: '김철수' },
+    commentsStatus: 200,
+    comments: [
+      { id: 'c1', body: '로그인 상태로 남긴 댓글', created_at: '2026-09-21T00:00:00.000Z', author_name: '이영희', author_role: 'tenant' },
+      { id: 'c2', body: '운영자 답변입니다', created_at: '2026-09-21T01:00:00.000Z', author_name: '박운영', author_role: 'admin' },
+    ],
+  }
+
+  it('응답에 실명이 실려 와도 화면에는 찍지 않는다', async () => {
+    mockApi(namedPayload)
+    renderView()
+
+    await screen.findByText('로그인 상태로 남긴 댓글')
+    expect(screen.queryByText('김철수')).toBeNull()
+    expect(screen.queryByText('이영희')).toBeNull()
+    expect(screen.queryByText('박운영')).toBeNull()
+  })
+
+  it('표시 이름은 역할에서 만든다 — 일반은 익명, 운영자는 운영자 이름', async () => {
+    mockApi(namedPayload)
+    renderView()
+
+    // 글 + 일반 댓글 = 익명 2개. 운영자 댓글만 다른 이름을 받는다.
+    await waitFor(() => expect(screen.getAllByText('익명')).toHaveLength(2))
+    screen.getByText('입주해 운영자')
+  })
+
+  it('일반 역할 배지는 세우지 않는다 — 익명 게시판에서 역할 라벨은 신원 범위를 좁힌다', async () => {
+    mockApi(namedPayload)
+    renderView()
+
+    await screen.findByText('로그인 상태로 남긴 댓글')
+    expect(screen.queryByText('임차인')).toBeNull()
+    // 운영자 배지는 남는다(DOW-1176).
+    expect(screen.getByText('운영자').className).toContain('bg-primary')
   })
 })
 
@@ -168,8 +217,8 @@ describe('U1 — 운영자 답 구분', () => {
       postStatus: 200,
       commentsStatus: 200,
       comments: [
-        { id: 'c1', body: '옆 사람 추측', created_at: '2026-09-21T00:00:00.000Z', author_name: null, author_role: 'guest' },
-        { id: 'c2', body: '운영자 답변입니다', created_at: '2026-09-21T01:00:00.000Z', author_name: '입주해', author_role: 'admin' },
+        { id: 'c1', body: '옆 사람 추측', created_at: '2026-09-21T00:00:00.000Z', author_role: 'guest' },
+        { id: 'c2', body: '운영자 답변입니다', created_at: '2026-09-21T01:00:00.000Z', author_role: 'admin' },
       ],
     })
     renderView()
@@ -185,8 +234,8 @@ describe('U1 — 운영자 답 구분', () => {
       postStatus: 200,
       commentsStatus: 200,
       comments: [
-        { id: 'c1', body: '옆 사람 추측', created_at: '2026-09-21T00:00:00.000Z', author_name: null, author_role: 'guest' },
-        { id: 'c2', body: '운영자 답변입니다', created_at: '2026-09-21T01:00:00.000Z', author_name: '입주해', author_role: 'admin' },
+        { id: 'c1', body: '옆 사람 추측', created_at: '2026-09-21T00:00:00.000Z', author_role: 'guest' },
+        { id: 'c2', body: '운영자 답변입니다', created_at: '2026-09-21T01:00:00.000Z', author_role: 'admin' },
       ],
     })
     renderView()
@@ -204,11 +253,11 @@ describe('U1 — 운영자 답 구분', () => {
       user: null,
       postStatus: 200,
       // 서버가 user_type을 늘리면(예: 'agency') UI가 모르는 값이 그대로 내려온다.
-      post: basePost({ author_role: 'agency', author_name: '모르는역할' }),
+      post: basePost({ author_role: 'agency' }),
       commentsStatus: 200,
       comments: [
-        { id: 'c1', body: '모르는 역할의 댓글', created_at: '2026-09-21T00:00:00.000Z', author_name: null, author_role: 'agency' },
-        { id: 'c2', body: '역할이 빈 댓글', created_at: '2026-09-21T01:00:00.000Z', author_name: null, author_role: null },
+        { id: 'c1', body: '모르는 역할의 댓글', created_at: '2026-09-21T00:00:00.000Z', author_role: 'agency' },
+        { id: 'c2', body: '역할이 빈 댓글', created_at: '2026-09-21T01:00:00.000Z', author_role: null },
       ],
     })
     renderView()

@@ -23,6 +23,25 @@ export function roleLabel(userType: string | null | undefined): string | null {
   return userType ? ((ROLE_LABELS as Record<string, string>)[userType] ?? null) : null
 }
 
+/** 운영자 글·댓글에 붙는 표시 이름. DB 이름이 아니라 역할에서 나온다. */
+export const ADMIN_DISPLAY_NAME = '입주해 운영자'
+/** 그 외 전부. 커뮤니티는 익명 게시판이다. */
+export const ANONYMOUS_DISPLAY_NAME = '익명'
+
+/**
+ * 글쓴이 표시 이름.
+ *
+ * **계정 이름을 쓰지 않는다.** 커뮤니티는 익명 게시판이고 닉네임 필드가 없어서, 표시에
+ * 쓸 수 있는 이름은 `profiles.name`(임차인 검증용 실명)뿐이다. 그래서 서버가 이름을
+ * 아예 내려보내지 않고(DOW-1236), 표시 이름은 역할 하나에서 만든다.
+ *
+ * 운영자만 예외다 — 공식 답변 자리가 '익명'으로 찍히면 그것도 사실과 다르다.
+ * 닉네임 체계를 도입하면 이 함수 한 곳만 바꾸면 된다.
+ */
+export function authorDisplayName(role: string | null | undefined): string {
+  return role === 'admin' ? ADMIN_DISPLAY_NAME : ANONYMOUS_DISPLAY_NAME
+}
+
 export function isCommunityAudience(value: unknown): value is CommunityAudience {
   return typeof value === 'string' && (COMMUNITY_AUDIENCES as string[]).includes(value)
 }

@@ -79,7 +79,6 @@ const post = (id: string, title: string) => ({
   title,
   body: '본문입니다',
   audience: 'all',
-  author_name: '익명',
   author_role: null,
   category: null,
   created_at: '2026-09-25T00:00:00.000Z',

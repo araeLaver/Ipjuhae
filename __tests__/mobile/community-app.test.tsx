@@ -51,7 +51,6 @@ const postRow = (over: Record<string, unknown> = {}) => ({
   view_count: 12,
   comment_count: 1,
   created_at: new Date(2026, 8, 20).toISOString(),
-  author_name: null,
   author_role: 'tenant',
   ...over,
 })
@@ -60,7 +59,6 @@ const commentRow = (over: Record<string, unknown> = {}) => ({
   id: 'c1',
   body: '근저당이 시세의 70%를 넘으면 위험합니다.',
   created_at: new Date(2026, 8, 21).toISOString(),
-  author_name: null,
   author_role: 'broker',
   ...over,
 })

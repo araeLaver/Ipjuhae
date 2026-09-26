@@ -19,10 +19,18 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import * as api from '../services/api';
-import { ROLE_LABELS } from '../lib/community';
+import { ROLE_LABELS, authorDisplayName } from '../lib/community';
 import { colors } from '../theme';
 
 const roleLabels = ROLE_LABELS as Record<string, string>;
+
+/**
+ * 역할 배지는 **운영자만** 세운다. 익명 게시판에서 일반 역할 라벨(임차인·임대인·중개사)은
+ * 글쓴이의 신원 범위를 좁힌다. DOW-1176이 배지를 넣은 취지는 운영자 답을 눈에 걸리게
+ * 하는 것 하나였다. (DOW-1236 UX 판정 — 웹 `AuthorRoleBadge`와 같은 규칙)
+ */
+const roleBadgeLabel = (role: string | null | undefined): string | null =>
+  role === 'admin' ? (roleLabels[role] ?? null) : null;
 
 interface Props {
   navigation: NativeStackNavigationProp<RootStackParamList, 'CommunityPost'>;
@@ -136,11 +144,9 @@ const CommunityPostScreen: React.FC<Props> = ({ route }) => {
     >
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.metaRow}>
-        <Text style={styles.author}>{post.authorName ?? '익명'}</Text>
-        {roleLabels[post.authorRole] ? (
-          <Text style={[styles.roleTag, post.authorRole === 'admin' && styles.roleTagAdmin]}>
-            {roleLabels[post.authorRole]}
-          </Text>
+        <Text style={styles.author}>{authorDisplayName(post.authorRole)}</Text>
+        {roleBadgeLabel(post.authorRole) ? (
+          <Text style={[styles.roleTag, styles.roleTagAdmin]}>{roleBadgeLabel(post.authorRole)}</Text>
         ) : null}
         <Text style={styles.time}>
           {created.getMonth() + 1}월 {created.getDate()}일
@@ -176,7 +182,11 @@ const CommunityPostScreen: React.FC<Props> = ({ route }) => {
             maxLength={2000}
           />
           <View style={styles.composerFoot}>
-            <Text style={styles.composerNote}>익명으로 올라갑니다.</Text>
+            {/* 지킬 수 있는 만큼만 약속한다 — 이름은 표시되지 않지만 작성 계정은
+                신고 처리를 위해 저장된다(DOW-1236). */}
+            <Text style={styles.composerNote}>
+              익명으로 올라갑니다. 신고 처리를 위해 작성 계정만 내부에 기록됩니다.
+            </Text>
             <TouchableOpacity
               style={[styles.composerBtn, (posting || !draft.trim()) && styles.composerBtnOff]}
               onPress={submitComment}
@@ -207,11 +217,9 @@ const CommunityPostScreen: React.FC<Props> = ({ route }) => {
               style={[styles.commentCard, comment.authorRole === 'admin' && styles.commentCardAdmin]}
             >
               <View style={styles.commentMetaRow}>
-                <Text style={styles.commentAuthor}>{comment.authorName ?? '익명'}</Text>
-                {comment.authorRole && roleLabels[comment.authorRole] ? (
-                  <Text style={[styles.roleTag, comment.authorRole === 'admin' && styles.roleTagAdmin]}>
-                    {roleLabels[comment.authorRole]}
-                  </Text>
+                <Text style={styles.commentAuthor}>{authorDisplayName(comment.authorRole)}</Text>
+                {roleBadgeLabel(comment.authorRole) ? (
+                  <Text style={[styles.roleTag, styles.roleTagAdmin]}>{roleBadgeLabel(comment.authorRole)}</Text>
                 ) : null}
               </View>
               <Text style={styles.commentBody}>{comment.body}</Text>
@@ -274,7 +282,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: 10,
   },
-  composerNote: { fontSize: 12, color: colors.faint },
+  // 안내 문구가 한 줄보다 길다. flex 없이 두면 좁은 화면에서 '댓글 남기기' 버튼을 밀어낸다.
+  composerNote: { flex: 1, marginRight: 10, fontSize: 12, color: colors.faint },
   composerBtn: {
     paddingHorizontal: 14,
     paddingVertical: 8,

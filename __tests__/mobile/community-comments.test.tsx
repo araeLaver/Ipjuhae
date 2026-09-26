@@ -44,7 +44,9 @@ export const TextInput=({value,onChangeText,placeholder,style,multiline})=>React
 })
 afterAll(()=>{ if(dir) rmSync(dir,{recursive:true,force:true}); delete (globalThis as any).__communityQA })
 afterEach(cleanup)
-const row = (role: string | null, id='c1') => ({id, body:`댓글 본문 ${id}`, created_at:'2026-09-24', author_name:null, author_role:role})
+// `author_name`은 서버가 더 이상 내려보내지 않는다(DOW-1236). 그래도 일부러 실은다 —
+// 캐시된 예전 응답이나 배포 순서가 어긋난 서버가 이름을 보내와도 화면이 쓰지 않아야 한다.
+const row = (role: string | null, id='c1') => ({id, body:`댓글 본문 ${id}`, created_at:'2026-09-24', author_name:'댓글실명', author_role:role})
 const post = {id:'p1',title:'검증 글',body:'본문',created_at:'2026-09-24',author_name:'작성자',author_role:'guest',comment_count:99,view_count:3}
 beforeEach(()=>{get.mockReset(); state.__communityQA={get}})
 function respond(comments: unknown[]) { get.mockImplementation(async (path:string)=>path.endsWith('/comments')?{comments}:{post}) }
@@ -57,7 +59,9 @@ it('정상 목록·운영자 배지와 강조·익명 이름·실제 개수를 �
   // 이제는 댓글 머리글 한 곳에서만 말한다.
   expect(screen.getAllByText('댓글 2')).toHaveLength(1)
   expect(screen.queryByText('댓글 99')).toBeNull()
+  // 표시 이름은 역할에서 나온다 — 글(guest)과 모르는 역할 댓글이 '익명', 운영자만 따로.
   expect(screen.getAllByText('익명')).toHaveLength(2)
+  expect(screen.getAllByText('입주해 운영자')).toHaveLength(1)
   expect(screen.getAllByText('운영자')).toHaveLength(1)
   expect(body.parentElement?.style.backgroundColor).not.toBe(screen.getByText('댓글 본문 c2').parentElement?.style.backgroundColor)
   expect(get).toHaveBeenCalledWith('/community/posts/p1/comments')
@@ -88,4 +92,23 @@ it('댓글 응답 대기 중에는 빈 목록 메시지를 노출하지 않는�
   expect(screen.getByRole('progressbar')).toBeVisible()
   expect(screen.queryByText('아직 댓글이 없어요')).toBeNull()
   resolve({comments:[]}); await waitFor(()=>expect(screen.queryByRole('progressbar')).toBeNull())
+})
+
+/**
+ * DOW-1236 — 입력창은 "익명으로 올라갑니다"라고 적어 두고 로그인 사용자의 실명을 찍던 결함.
+ * 앱 쪽 판정은 화면에 찍힌 글자로 한다.
+ */
+it('응답에 실명이 실려 와도 화면에 찍지 않고, 역할에서 만든 이름만 쓴다',async()=>{
+  respond([row('tenant'),row('admin','c2')]); mount()
+  await screen.findByText('댓글 본문 c1')
+  expect(screen.queryByText('작성자')).toBeNull()
+  expect(screen.queryByText('댓글실명')).toBeNull()
+  // 일반 역할 배지는 세우지 않는다 — 익명 게시판에서 역할 라벨은 신원 범위를 좁힌다.
+  expect(screen.queryByText('임차인')).toBeNull()
+  expect(screen.getAllByText('익명')).toHaveLength(2)
+  expect(screen.getAllByText('입주해 운영자')).toHaveLength(1)
+})
+it('입력창 안내가 지킬 수 있는 만큼만 약속한다 — 작성 계정 기록을 밝힌다',async()=>{
+  respond([]); mount()
+  await screen.findByText('익명으로 올라갑니다. 신고 처리를 위해 작성 계정만 내부에 기록됩니다.')
 })

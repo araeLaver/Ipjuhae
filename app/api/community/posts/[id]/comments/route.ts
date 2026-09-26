@@ -8,12 +8,20 @@ import { sanitizeUserInput } from '@/lib/sanitize'
 import { logger } from '@/lib/logger'
 import { readableAudiences, type CommunityAudience } from '@/lib/community'
 
+/**
+ * 댓글 응답 한 줄.
+ *
+ * 작성자를 가리키는 값(`author_id`·`author_name`)은 **일부러 없다.** 댓글 입력창이
+ * 익명이라고 약속하고, `profiles.name`은 임차인 검증용 실명이다. `author_id`는 계속
+ * 저장하되(신고·정화 경로에 필요) 조회 응답에는 싣지 않는다. 표시 이름은 클라이언트가
+ * `author_role`에서 만든다(`authorDisplayName`). (DOW-1236)
+ */
 interface CommentRow {
   id: string
-  author_id: string
   body: string
   created_at: string
-  author_name: string | null
+  /** 작성자 계정의 역할. 운영자 답을 옆 사람 추측과 구분하는 유일한 근거다. */
+  author_role: string
 }
 
 async function loadReadablePost(postId: string, userType: string | null, userId: string | null) {
@@ -37,12 +45,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
   try {
     const comments = await query<CommentRow>(
-      `SELECT c.id, c.author_id,
-        COALESCE(u.user_type, 'guest') AS author_role, c.body, c.created_at,
-              COALESCE(pr.name, u.name) AS author_name
+      `SELECT c.id, c.body, c.created_at,
+              COALESCE(u.user_type, 'guest') AS author_role
          FROM community_comments c
          LEFT JOIN users u ON u.id = c.author_id
-         LEFT JOIN profiles pr ON pr.user_id = c.author_id
         WHERE c.post_id = $1 AND c.deleted_at IS NULL AND c.hidden_at IS NULL
         ORDER BY c.created_at ASC
         LIMIT 200`,

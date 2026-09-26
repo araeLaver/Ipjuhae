@@ -525,6 +525,13 @@ export async function fetchTenants(): Promise<TenantProfile[]> {
 export type { CommunityAudience } from '../lib/community'
 import type { CommunityAudience } from '../lib/community'
 
+/**
+ * 커뮤니티 글.
+ *
+ * 글쓴이 이름 필드가 **없다.** 서버가 `author_name`을 내려보내지 않는다(DOW-1236) —
+ * 커뮤니티는 익명 게시판이고, 표시에 쓸 수 있는 유일한 이름이 임차인 검증용 실명이었다.
+ * 화면에 찍는 이름은 `authorDisplayName(authorRole)`로 만든다.
+ */
 export interface CommunityPost {
   id: string
   audience: CommunityAudience
@@ -534,8 +541,7 @@ export interface CommunityPost {
   viewCount: number
   commentCount: number
   createdAt: string
-  authorName: string | null
-  /** 글쓴이 계정의 역할. 게시판을 쪼개지 않고 이 값으로 구분한다. */
+  /** 글쓴이 계정의 역할. 게시판을 쪼개지 않고 이 값으로 구분한다. 표시 이름의 근거이기도 하다. */
   authorRole: string
 }
 
@@ -543,7 +549,6 @@ export interface CommunityComment {
   id: string
   body: string
   createdAt: string
-  authorName: string | null
   authorRole: string | null
 }
 
@@ -556,7 +561,6 @@ interface PostRow {
   view_count: number
   comment_count: number
   created_at: string
-  author_name: string | null
   author_role: string
 }
 
@@ -564,7 +568,6 @@ interface CommentRow {
   id: string
   body: string
   created_at: string
-  author_name: string | null
   author_role: string | null
 }
 
@@ -577,7 +580,6 @@ const toPost = (r: PostRow): CommunityPost => ({
   viewCount: r.view_count,
   commentCount: r.comment_count,
   createdAt: r.created_at,
-  authorName: r.author_name,
   authorRole: r.author_role,
 })
 
@@ -585,7 +587,6 @@ const toComment = (r: CommentRow): CommunityComment => ({
   id: r.id,
   body: r.body,
   createdAt: r.created_at,
-  authorName: r.author_name,
   authorRole: r.author_role,
 })
 

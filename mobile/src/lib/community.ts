@@ -34,6 +34,21 @@ export const ROLE_LABELS: Record<string, string> = {
   admin: '운영자',
 };
 
+/** 운영자 글·댓글에 붙는 표시 이름. DB 이름이 아니라 역할에서 나온다. */
+export const ADMIN_DISPLAY_NAME = '입주해 운영자';
+/** 그 외 전부. 커뮤니티는 익명 게시판이다. */
+export const ANONYMOUS_DISPLAY_NAME = '익명';
+
+/**
+ * 글쓴이 표시 이름 — 웹 `lib/community.ts`의 `authorDisplayName`과 같은 판정.
+ *
+ * 계정 이름을 쓰지 않는다. 서버가 `author_name`을 내려보내지 않고(DOW-1236), 표시
+ * 이름은 역할 하나에서 만든다. 운영자만 예외 — 공식 답변 자리가 '익명'이면 사실과 다르다.
+ */
+export function authorDisplayName(role: string | null | undefined): string {
+  return role === 'admin' ? ADMIN_DISPLAY_NAME : ANONYMOUS_DISPLAY_NAME;
+}
+
 export function isCommunityAudience(value: unknown): value is CommunityAudience {
   return typeof value === 'string' && (COMMUNITY_AUDIENCES as string[]).includes(value);
 }

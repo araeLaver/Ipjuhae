@@ -13,9 +13,16 @@ import {
   type CommunityAudience,
 } from '@/lib/community'
 
+/**
+ * 목록 응답 한 줄.
+ *
+ * 작성자를 가리키는 값(`author_id`·`author_name`)은 **일부러 없다.** 커뮤니티는 익명
+ * 게시판이고 글쓰기 화면이 그렇게 약속한다. `profiles.name`은 임차인 검증용 실명이라
+ * 내려보내면 약속이 깨지고, `author_id`는 같은 계정의 글을 전부 엮을 수 있는 값이다.
+ * 표시 이름은 클라이언트가 `author_role`에서 만든다(`authorDisplayName`). (DOW-1236)
+ */
 interface PostRow {
   id: string
-  author_id: string
   audience: string
   category: string | null
   title: string
@@ -23,7 +30,6 @@ interface PostRow {
   view_count: number
   comment_count: number
   created_at: string
-  author_name: string | null
   /** 작성자 계정의 역할. 한 게시판을 쓰므로 누가 쓴 글인지는 이걸로 구분한다. */
   author_role: string
 }
@@ -54,13 +60,11 @@ export async function GET(request: Request) {
 
   try {
     const rows = await query<PostRow>(
-      `SELECT p.id, p.author_id, p.audience, p.category, p.title, p.body,
+      `SELECT p.id, p.audience, p.category, p.title, p.body,
               p.view_count, p.comment_count, p.created_at,
-              COALESCE(pr.name, u.name) AS author_name,
               COALESCE(u.user_type, 'guest') AS author_role
          FROM community_posts p
          LEFT JOIN users u ON u.id = p.author_id
-         LEFT JOIN profiles pr ON pr.user_id = p.author_id
         WHERE p.deleted_at IS NULL AND p.hidden_at IS NULL
           AND p.audience = ANY($1::text[])
         ORDER BY p.created_at DESC

@@ -10,11 +10,12 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Spinner } from '@/components/ui/spinner'
 import { ArrowRight, MessageSquare, PenLine } from 'lucide-react'
+import { AuthorRoleBadge } from '@/components/community/author-role-badge'
 import {
   AUDIENCE_LABELS,
+  authorDisplayName,
   canPostTo,
   defaultAudienceFor as audienceForTab,
-  roleLabel,
   readableAudiences,
   type CommunityAudience,
 } from '@/lib/community'
@@ -27,7 +28,7 @@ interface Post {
   comment_count: number
   view_count: number
   created_at: string
-  author_name: string | null
+  /** 글쓴이 역할. 표시 이름도 이 값에서 만든다 — 서버는 이름을 내려보내지 않는다(DOW-1236). */
   author_role: string
 }
 
@@ -262,7 +263,11 @@ export function CommunityBoard() {
                 </p>
               </div>
               <div className="flex items-center justify-between gap-3">
-                <p className="text-xs text-muted-foreground">익명으로 올라갑니다.</p>
+                {/* 지킬 수 있는 만큼만 약속한다. 이름은 어디에도 표시되지 않지만
+                    작성 계정은 신고 처리를 위해 저장된다(DOW-1236). */}
+                <p className="text-xs text-muted-foreground">
+                  익명으로 올라갑니다. 신고 처리를 위해 작성 계정만 내부에 기록됩니다.
+                </p>
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={() => setWriting(false)}>
                     취소
@@ -407,19 +412,8 @@ export function CommunityBoard() {
                 <Link href={`/community/${p.id}`} className="block px-4 py-4 transition-colors hover:bg-muted/50">
                   <div className="mb-1.5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                     <span className="rounded bg-muted px-1.5 py-0.5">{AUDIENCE_LABELS[p.audience]}</span>
-                    <span>{p.author_name ?? '익명'}</span>
-                    {roleLabel(p.author_role) && (
-                      <span
-                        className={
-                          'rounded px-1.5 py-0.5 font-medium ' +
-                          (p.author_role === 'admin'
-                            ? 'bg-primary text-primary-foreground'
-                            : 'border border-border text-foreground/70')
-                        }
-                      >
-                        {roleLabel(p.author_role)}
-                      </span>
-                    )}
+                    <span>{authorDisplayName(p.author_role)}</span>
+                    <AuthorRoleBadge role={p.author_role} />
                     <span className="ml-auto">{timeAgo(p.created_at)}</span>
                   </div>
                   <p className="font-semibold leading-snug">{p.title}</p>

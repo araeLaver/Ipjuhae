@@ -33,6 +33,7 @@ import { useAuth } from '../contexts/AuthContext';
 import {
   AUDIENCE_LABELS,
   ROLE_LABELS,
+  authorDisplayName,
   canPostTo,
   defaultAudienceFor,
   readableAudiences,
@@ -52,6 +53,13 @@ interface Props {
 export { ROLE_LABELS };
 
 const roleLabels = ROLE_LABELS as Record<string, string>;
+
+/**
+ * 역할 배지는 **운영자만.** 익명 게시판에서 일반 역할 라벨은 글쓴이의 신원 범위를 좁힌다.
+ * (DOW-1236 UX 판정 — 웹 `AuthorRoleBadge`·앱 `CommunityPostScreen`과 같은 규칙)
+ */
+const roleBadgeLabel = (role: string | null | undefined): string | null =>
+  role === 'admin' ? (roleLabels[role] ?? null) : null;
 
 function timeAgo(iso: string): string {
   const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
@@ -197,11 +205,9 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
     >
       <View style={styles.metaRow}>
         <Text style={styles.boardTag}>{AUDIENCE_LABELS[item.audience] ?? '전체'}</Text>
-        <Text style={styles.author}>{item.authorName ?? '익명'}</Text>
-        {roleLabels[item.authorRole] ? (
-          <Text style={[styles.roleTag, item.authorRole === 'admin' && styles.roleTagAdmin]}>
-            {roleLabels[item.authorRole]}
-          </Text>
+        <Text style={styles.author}>{authorDisplayName(item.authorRole)}</Text>
+        {roleBadgeLabel(item.authorRole) ? (
+          <Text style={[styles.roleTag, styles.roleTagAdmin]}>{roleBadgeLabel(item.authorRole)}</Text>
         ) : null}
         <Text style={styles.time}>{timeAgo(item.createdAt)}</Text>
       </View>
@@ -378,7 +384,9 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
           </Text>
         </View>
 
-        <Text style={styles.modalNote}>익명으로 올라갑니다.</Text>
+        {/* 지킬 수 있는 만큼만 약속한다 — 이름은 표시되지 않지만 작성 계정은
+            신고 처리를 위해 저장된다(DOW-1236). */}
+        <Text style={styles.modalNote}>익명으로 올라갑니다. 신고 처리를 위해 작성 계정만 내부에 기록됩니다.</Text>
       </KeyboardAvoidingView>
     </Modal>
   );

@@ -13,7 +13,7 @@ import { Spinner } from '@/components/ui/spinner'
 import { EmptyState } from '@/components/ui/empty-state'
 import { ShieldAlert } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { AUDIENCE_LABELS, roleLabel, type CommunityAudience } from '@/lib/community'
+import { AUDIENCE_LABELS, authorDisplayName, roleLabel, type CommunityAudience } from '@/lib/community'
 
 interface Post {
   id: string
@@ -23,8 +23,10 @@ interface Post {
   view_count: number
   comment_count: number
   created_at: string
-  author_name: string | null
-  /** 서버가 내려주는 글쓴이 역할. 운영자 답을 옆 사람 추측과 구분하는 근거다. */
+  /**
+   * 서버가 내려주는 글쓴이 역할. 운영자 답을 옆 사람 추측과 구분하는 근거다.
+   * 표시 이름도 이 값에서 만든다 — 서버는 이름을 내려보내지 않는다(DOW-1236).
+   */
   author_role: string | null
   /** 보고 있는 사람이 글쓴이인가. 본인 글에는 신고 버튼을 세우지 않는다. */
   is_author: boolean
@@ -33,7 +35,6 @@ interface Comment {
   id: string
   body: string
   created_at: string
-  author_name: string | null
   author_role: string | null
 }
 
@@ -213,7 +214,7 @@ export function CommunityPostView({ id }: { id: string }) {
             <Card className="mb-6 p-5">
               <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                 <span className="rounded bg-secondary px-1.5 py-0.5 text-secondary-foreground">{AUDIENCE_LABELS[post.audience]}</span>
-                <span>{post.author_name ?? '익명'}</span>
+                <span>{authorDisplayName(post.author_role)}</span>
                 <AuthorRoleBadge role={post.author_role} />
                 {post.is_author && <span className="rounded border border-border px-1.5 py-0.5">내 글</span>}
               </div>
@@ -301,7 +302,7 @@ export function CommunityPostView({ id }: { id: string }) {
                     )}
                   >
                     <div className="mb-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                      <span>{c.author_name ?? '익명'}</span>
+                      <span>{authorDisplayName(c.author_role)}</span>
                       <AuthorRoleBadge role={c.author_role} />
                     </div>
                     <p className="whitespace-pre-wrap text-sm">{c.body}</p>
