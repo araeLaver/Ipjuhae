@@ -1,0 +1,57 @@
+# 운영 dead-man's-switch (DOW-1202)
+#
+# 무엇을 보는가
+#   운영 호스트의 on-host 워처가 `GET /api/health/backup` 을 60초마다 찌르고, 그
+#   결과를 public gist 에 heartbeat 으로 밀어 올린다. 이 워크플로는 **GitHub 쪽에서**
+#   그 heartbeat 이 끊기지 않았는지 본다.
+#
+# 왜 필요한가
+#   워처가 감시 대상과 같은 호스트에 있다. 호스트가 죽으면 워처도 같이 죽고 아무도
+#   모른다. DOW-1170 에서 실제로 16시간 동안 백업이 0건이었는데 API 는 내내 200 이었다.
+#   감시 대상이 http://127.0.0.1:3100 이라 밖에서 긁을 수 없으므로, 안에서 밖으로
+#   핑을 보내고 핑이 끊기는 것을 밖에서 잡는 형태여야 한다.
+#
+# ⚠️ 이 워크플로는 **실패가 정상 동작**이다.
+#   branch protection 의 required check 에 절대 넣지 말 것. 넣는 순간 호스트가 죽을 때
+#   배포까지 같이 막힌다. 파일명을 CI(`ci.yml`)와 구분해 둔 이유도 이것이다.
+#
+# 자격증명
+#   저장소 secret 이 0개다. gist 가 public 이라 읽는 쪽에 토큰이 필요 없다.
+#   감시 대상 주소(gist id)는 파일에 박지 않고 repo variable 로 넘긴다.
+#
+# 설정값 (repo variables)
+#   OPS_DEADMANS_GIST_ID       필수. heartbeat gist id
+#   OPS_DEADMANS_GIST_OWNER    필수. gist 소유 계정 (raw 폴백 경로에 필요)
+#   OPS_DEADMANS_MAX_AGE_SEC   선택. 기본 1200. heartbeat 이 이보다 오래되면 실패
+#
+# 되돌리기: 이 파일 1개 + gist 1개 삭제.
+
+name: ops dead-mans-switch
+
+on:
+  schedule:
+    # 15분 주기. public 저장소라 Actions 분은 무료다.
+    - cron: '*/15 * * * *'
+  # 수신 증거 채취와 수동 확인용.
+  workflow_dispatch:
+
+# 읽기만 한다. gist 는 미인증으로 읽으므로 GITHUB_TOKEN 조차 쓰지 않는다.
+permissions:
+  contents: read
+
+concurrency:
+  group: ops-deadmans-switch
+  cancel-in-progress: false
+
+jobs:
+  heartbeat:
+    name: heartbeat 신선도·경보 상태
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: heartbeat 확인
+        env:
+          GIST_ID: ${{ vars.OPS_DEADMANS_GIST_ID }}
+          GIST_OWNER: ${{ vars.OPS_DEADMANS_GIST_OWNER }}
+          MAX_AGE_SEC: ${{ vars.OPS_DEADMANS_MAX_AGE_SEC || '1200' }}
+        run: python3 .github/scripts/ops_deadmans_switch.py
