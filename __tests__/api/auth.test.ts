@@ -59,6 +59,15 @@ function mockCookieStore() {
   } as unknown as Awaited<ReturnType<typeof cookies>>)
 }
 
+// vi.clearAllMocks()는 호출 기록만 지우고 mockResolvedValueOnce 큐는 남깁니다.
+// 소비되지 않은 once 값이 다음 describe의 첫 호출로 새어나가 엉뚱한 테스트를
+// 깨뜨리는 것을 막습니다 (DOW-1224). vi.resetAllMocks()를 쓰지 않는 이유는
+// 그쪽이 vi.mock 팩토리에서 준 기본 구현(authRateLimit 등)까지 지우기 때문입니다.
+beforeEach(() => {
+  vi.mocked(queryOne).mockReset()
+  vi.mocked(query).mockReset()
+})
+
 describe('POST /api/auth/signup', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -66,9 +75,7 @@ describe('POST /api/auth/signup', () => {
   })
 
   it('creates a new tenant and sets auth cookie', async () => {
-    vi.mocked(queryOne)
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce(null)
+    vi.mocked(queryOne).mockResolvedValueOnce(null)
     vi.mocked(query).mockResolvedValueOnce([
       { id: 'user-1', email: 'new@example.com', user_type: 'tenant', password_hash: 'hashed' },
     ])
@@ -88,9 +95,7 @@ describe('POST /api/auth/signup', () => {
   })
 
   it('creates a landlord user with correct user_type', async () => {
-    vi.mocked(queryOne)
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce(null)
+    vi.mocked(queryOne).mockResolvedValueOnce(null)
     vi.mocked(query).mockResolvedValueOnce([
       { id: 'user-2', email: 'landlord@example.com', user_type: 'landlord', password_hash: 'hashed' },
     ])
@@ -107,9 +112,7 @@ describe('POST /api/auth/signup', () => {
   })
 
   it('returns 400 for duplicate email', async () => {
-    vi.mocked(queryOne)
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce({ id: 'existing-user' })
+    vi.mocked(queryOne).mockResolvedValueOnce({ id: 'existing-user' })
 
     const res = await signup(jsonRequest('http://localhost/api/auth/signup', 'POST', {
       email: 'existing@example.com',

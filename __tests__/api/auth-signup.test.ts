@@ -155,6 +155,77 @@ describe('POST /api/auth/signup', () => {
     expect(res.status).toBe(429)
   })
 
+  // ── 베타 초대 게이트 제거 회귀 방지 (DOW-1224) ────────────────────────────
+  // beta_config.beta_enabled 분기나 waitlist 초대 토큰 조회가 다시 들어오면
+  // 아래 3개 테스트가 실패합니다. 되살리지 마세요.
+  describe('베타 초대 게이트 제거 (DOW-1224)', () => {
+    /**
+     * DB가 beta_enabled='true'를 돌려주는 상황을 재현합니다.
+     * 게이트가 남아 있으면 초대 토큰 없는 가입이 403으로 막힙니다.
+     */
+    function mockDbWithBetaEnabled() {
+      vi.mocked(queryOne).mockImplementation(async (sql: string) => {
+        if (/beta_config/i.test(sql)) return { value: 'true' } as never
+        if (/waitlist/i.test(sql)) return null as never
+        return null as never // users 조회 → 기존 사용자 없음
+      })
+      vi.mocked(hashPassword).mockResolvedValue('hashed-pw')
+      vi.mocked(query).mockResolvedValue([
+        { id: 'new-user-3', email: 'nobeta@example.com', user_type: 'tenant' },
+      ])
+      vi.mocked(generateToken).mockReturnValue('jwt-token')
+      vi.mocked(setAuthCookie).mockResolvedValue(undefined)
+    }
+
+    function allSql(): string[] {
+      return [
+        ...vi.mocked(queryOne).mock.calls.map((c) => String(c[0])),
+        ...vi.mocked(query).mock.calls.map((c) => String(c[0])),
+      ]
+    }
+
+    it('beta_enabled=true여도 초대 토큰 없이 가입 성공', async () => {
+      mockDbWithBetaEnabled()
+
+      const res = await POST(makeRequest({
+        email: 'nobeta@example.com',
+        password: 'password123',
+        userType: 'tenant',
+      }))
+      const data = await res.json()
+
+      expect(res.status).toBe(200)
+      expect(data.success).toBe(true)
+    })
+
+    it('가입 경로가 beta_config·waitlist를 전혀 조회하지 않음', async () => {
+      mockDbWithBetaEnabled()
+
+      await POST(makeRequest({
+        email: 'nobeta@example.com',
+        password: 'password123',
+        userType: 'tenant',
+      }))
+
+      expect(allSql().filter((sql) => /beta_config/i.test(sql))).toEqual([])
+      expect(allSql().filter((sql) => /waitlist/i.test(sql))).toEqual([])
+    })
+
+    it('inviteToken을 보내도 waitlist에 쓰지 않고 가입 성공', async () => {
+      mockDbWithBetaEnabled()
+
+      const res = await POST(makeRequest({
+        email: 'nobeta@example.com',
+        password: 'password123',
+        userType: 'tenant',
+        inviteToken: 'some-legacy-token',
+      }))
+
+      expect(res.status).toBe(200)
+      expect(allSql().filter((sql) => /waitlist/i.test(sql))).toEqual([])
+    })
+  })
+
   it('DB insert 오류 → 500', async () => {
     vi.mocked(queryOne).mockResolvedValue(null)
     vi.mocked(hashPassword).mockResolvedValue('hashed')
