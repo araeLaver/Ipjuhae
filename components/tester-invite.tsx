@@ -15,10 +15,9 @@
  */
 
 import { useEffect } from 'react'
+import Link from 'next/link'
 import { track } from '@/lib/analytics-client'
 import { getAttribution } from '@/lib/attribution'
-
-const TESTING_URL = 'https://play.google.com/apps/testing/com.ipjuhae.app'
 
 export function TesterInvite() {
   // 이 컴포넌트는 결과를 본 뒤에만 렌더된다. 즉 마운트 = 노출이다.
@@ -67,15 +66,13 @@ export function TesterInvite() {
         <p className="text-xs leading-relaxed text-muted-foreground">
           플레이스토어 정식 출시는 테스터 12명이 14일 동안 참여해야 신청할 수 있습니다.
           도와주실 수 있다면{' '}
-          <a
-            href={TESTING_URL}
-            target="_blank"
-            rel="noopener noreferrer"
+          <Link
+            href="/tester"
             onClick={onJoinClick}
             className="font-semibold text-primary underline underline-offset-4"
           >
             테스터로 참여
-          </a>
+          </Link>
           해 주세요. 안드로이드 폰과 구글 계정이 필요합니다.
         </p>
       </div>

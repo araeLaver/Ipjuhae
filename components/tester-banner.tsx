@@ -16,8 +16,6 @@ import Link from 'next/link'
 import { track } from '@/lib/analytics-client'
 import { getAttribution } from '@/lib/attribution'
 
-const TESTING_URL = 'https://play.google.com/apps/testing/com.ipjuhae.app'
-
 export function TesterBanner() {
   useEffect(() => {
     track('tester_invite_shown', {
@@ -48,10 +46,8 @@ export function TesterBanner() {
         >
           설치 방법 보기
         </Link>
-        <a
-          href={TESTING_URL}
-          target="_blank"
-          rel="noopener noreferrer"
+        <Link
+          href="/tester"
           onClick={() =>
             track('tester_invite_clicked', {
               properties: { surface: 'home', ...getAttribution() },
@@ -60,7 +56,7 @@ export function TesterBanner() {
           className="inline-flex items-center justify-center rounded-lg border bg-background px-5 py-3 text-sm font-semibold transition-colors hover:bg-muted/50"
         >
           안드로이드 테스터로 참여
-        </a>
+        </Link>
       </div>
 
       <div className="mt-6 border-t border-primary/15 pt-5">
