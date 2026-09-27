@@ -38,40 +38,67 @@ const LOOKBACK_DAYS = 45
 const CACHE_SECONDS = 1800
 
 /**
- * 임대차와 무관한 정책까지 보여주면 소음이다.
+ * 무엇을 임대차 기사로 볼 것인가.
  *
- * '주거'처럼 넓은 말은 뺐다. 한부모가족 지원이나 재난 이재민 지원까지 딸려 온다.
- * 나쁜 기사가 아니라 이 화면에서 찾는 것이 아니다.
+ * 낱말 하나로 판정했더니 "25조 늘어난 내년 청년 예산"과 부총리의 경제 브리핑이
+ * 들어왔다. 둘 다 제목에는 임대차가 없고 부제에 '공공임대'가 한 번 스쳤을 뿐이다.
+ *
+ * 그래서 낱말을 두 갈래로 나눈다.
+ *
+ * STRONG  이 낱말이 나오면 주제가 임대차다. 제목이든 부제든 걸리면 통과
+ * WEAK    넓은 주거 정책 용어다. 예산·복지 기사에도 흔히 섞인다.
+ *         **제목에 있을 때만** 통과시킨다. 제목은 기사의 주제를 적는 자리다
  */
-const KEYWORDS = [
+const STRONG_KEYWORDS = [
   '전세',
   '월세',
+  '전월세',
   '임대차',
   '보증금',
   '전세사기',
   '임차인',
   '임대인',
-  '주택임대',
-  '임대주택',
-  '보증보험',
-  '깡통',
+  '역전세',
   '확정일자',
   '전입신고',
-  '역전세',
-  '전월세',
-  '공공임대',
-  '주거안정',
-  '주거지원',
-  '주거비',
-  '세입자',
+  '보증보험',
+  '깡통',
 ]
+
+const WEAK_KEYWORDS = ['공공임대', '임대주택', '주택임대', '주거안정', '주거지원', '주거비', '세입자']
 
 /**
  * 같은 낱말이라도 우리 얘기가 아닌 것들.
  *
  * 농지 임대차가 대표적이다. '임대차'가 들어 있지만 집 이야기가 아니다.
+ * 재난 지원도 뺀다 — 이재민 월세 지원은 임대차 정책이 아니라 재해 복구다.
+ * 계약을 앞둔 사람이 찾는 화면에서는 소음이다.
  */
-const EXCLUDE = ['농지', '농업', '농식품', '축산', '어촌', '산업단지', '상가건물']
+const EXCLUDE = [
+  '농지',
+  '농업',
+  '농식품',
+  '축산',
+  '어촌',
+  '산업단지',
+  '상가건물',
+  '이재민',
+  '호우',
+  '수해',
+  '산불',
+]
+
+/**
+ * 이 기사가 임대차 기사인가.
+ *
+ * 제목과 부제를 따로 받는다. 어디에 나왔는지가 판정을 가르기 때문이다.
+ */
+export function isRentalPolicy(title: string, subtitle: string): boolean {
+  const whole = `${title} ${subtitle}`
+  if (EXCLUDE.some((k) => whole.includes(k))) return false
+  if (STRONG_KEYWORDS.some((k) => whole.includes(k))) return true
+  return WEAK_KEYWORDS.some((k) => title.includes(k))
+}
 
 export interface PolicyNewsItem {
   id: string
@@ -141,11 +168,6 @@ function clean(html: string): string {
     .trim()
 }
 
-function looksRelevant(text: string): boolean {
-  if (EXCLUDE.some((k) => text.includes(k))) return false
-  return KEYWORDS.some((k) => text.includes(k))
-}
-
 async function fetchWindow(key: string, start: Date, end: Date): Promise<PolicyNewsItem[]> {
   const res = await fetch(buildUrl(key, ymd(start), ymd(end)), {
     next: { revalidate: CACHE_SECONDS },
@@ -165,11 +187,9 @@ async function fetchWindow(key: string, start: Date, end: Date): Promise<PolicyN
     const subtitle = clean(tag(block, 'SubTitle1'))
     const contents = clean(tag(block, 'DataContents'))
 
-    // 제목과 부제로만 판단한다.
-    //
-    // 본문까지 훑었더니 "2027년 예산" 기사가 걸렸다. 본문 어딘가에 '월세'가
-    // 한 번 나왔을 뿐 임대차 기사가 아니다. 기사의 주제는 제목에 있다.
-    if (!looksRelevant(`${title} ${subtitle}`)) continue
+    // 본문은 보지 않는다. 본문까지 훑었더니 "2027년 예산" 기사가 걸렸다.
+    // 본문 어딘가에 '월세'가 한 번 나왔을 뿐 임대차 기사가 아니다.
+    if (!isRentalPolicy(title, subtitle)) continue
 
     out.push({
       id: tag(block, 'NewsItemId') || url,
