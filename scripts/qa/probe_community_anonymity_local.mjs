@@ -6,10 +6,11 @@
  * 배포된 것과 같은 revision 을 로컬 실DB 로 띄우고, 실명이 들어간 계정이 쓴 글·댓글을
  * 넣어 응답을 직접 받는다.
  *
- * 판정 두 겹
+ * 판정 세 겹
  *  1) 금지 키 부재 — `author_name`·`author_id`
  *  2) 표식 문자열 부재 — fixture 가 넣은 계정 실명이 응답 본문 어디에도 없어야 한다.
  *     키만 보면 다른 키에 이름이 실려 나가는 경우를 놓친다.
+ *  3) `author_role` 값이 `admin`·`member` 뿐 — 일반 역할 라벨도 신원 범위를 좁힌다 (DOW-1262)
  *
  * 사용: node scripts/qa/probe_community_anonymity_local.mjs [baseUrl]
  */
@@ -18,6 +19,10 @@ import { Client } from 'pg'
 const BASE = process.argv[2] || 'http://127.0.0.1:3999'
 const FORBIDDEN_KEYS = ['author_name', 'author_id', 'name', 'email', 'phone', 'author_hash']
 const MARKERS = ['QA표식임차인이름', 'QA표식임대인이름', 'QA표식운영자이름']
+// DOW-1262: 익명 게시판 payload 는 운영자 여부만 내려보낸다. 일반 역할 라벨은
+// 그 자체로 글쓴이의 신원 범위를 좁히므로 값 집합까지 판정한다.
+const ALLOWED_ROLES = ['admin', 'member']
+const FORBIDDEN_ROLES = ['tenant', 'landlord', 'broker', 'guest']
 
 const fails = []
 const lines = []
@@ -35,6 +40,17 @@ function checkMarkers(label, rawText) {
 function checkKeys(label, keys) {
   const bad = keys.filter((k) => FORBIDDEN_KEYS.includes(k))
   if (bad.length > 0) fails.push(`${label}: 금지 키 노출 ${JSON.stringify(bad)}`)
+}
+
+/** 역할 값 판정. 허용 목록 밖은 전부 실패로 본다 — 새 역할이 생겨도 조용히 새지 않는다. */
+function checkRoles(label, roles, rawText) {
+  const bad = roles.filter((r) => !ALLOWED_ROLES.includes(r))
+  if (bad.length > 0) fails.push(`${label}: 허용 밖 author_role 값 ${JSON.stringify(bad)}`)
+  // `audience` 는 **게시판 라벨**이지 글쓴이의 역할이 아니다(임차인 게시판 글은
+  // `audience: "tenant"`). 빼지 않으면 정상 응답에 거짓 FAIL 이 난다.
+  const scanned = rawText.replace(/"audience":"[^"]*"/g, '"audience":"<board>"')
+  const leaked = FORBIDDEN_ROLES.filter((r) => scanned.includes(`"${r}"`))
+  if (leaked.length > 0) fails.push(`${label}: 응답 본문에 계정 역할 문자열 ${JSON.stringify(leaked)}`)
 }
 
 async function getJson(path) {
@@ -77,6 +93,9 @@ if (fixture.rows.length === 0) {
   lines.push(`  글 수: ${json?.posts?.length ?? 0}`)
   lines.push(`  item 키: ${JSON.stringify(keysOf(item))}`)
   checkKeys('목록 item', keysOf(item))
+  const listRoles = [...new Set((json?.posts ?? []).map((p) => p.author_role))]
+  lines.push(`  author_role 값 집합: ${JSON.stringify(listRoles)}`)
+  checkRoles('목록', listRoles, text)
   const hits = checkMarkers('목록', text)
   lines.push(`  실명 표식 출현: ${hits}종`)
   if (res.status !== 200) fails.push(`목록 상태코드 ${res.status}`)
@@ -92,6 +111,7 @@ for (const row of fixture.rows) {
   lines.push(`  post 키: ${JSON.stringify(keysOf(detail.json?.post))}`)
   lines.push(`  author_role 값: ${JSON.stringify(detail.json?.post?.author_role ?? null)}`)
   checkKeys(`상세(${who})`, keysOf(detail.json?.post))
+  checkRoles(`상세(${who})`, [detail.json?.post?.author_role].filter(Boolean), detail.text)
   lines.push(`  실명 표식 출현: ${checkMarkers(`상세(${who})`, detail.text)}종`)
   if (detail.res.status !== 200) fails.push(`상세(${who}) 상태코드 ${detail.res.status}`)
 
@@ -104,6 +124,7 @@ for (const row of fixture.rows) {
   lines.push(`  item 키(전 행 합집합): ${JSON.stringify(itemKeys)}`)
   lines.push(`  author_role 값 분포: ${JSON.stringify([...new Set(arr.map((c) => c.author_role))])}`)
   checkKeys(`댓글(${who})`, itemKeys)
+  checkRoles(`댓글(${who})`, [...new Set(arr.map((c) => c.author_role))], comments.text)
   lines.push(`  실명 표식 출현: ${checkMarkers(`댓글(${who})`, comments.text)}종`)
   if (comments.res.status !== 200) fails.push(`댓글(${who}) 상태코드 ${comments.res.status}`)
   // 행이 0이면 키에 대해 아무것도 증명하지 못한다 — 통과로 적지 않는다.
@@ -113,7 +134,7 @@ for (const row of fixture.rows) {
 console.log(lines.join('\n'))
 console.log('')
 if (fails.length === 0) {
-  console.log('PASS — 금지 키 없음, 계정 실명 표식 없음, 댓글 행 존재')
+  console.log('PASS — 금지 키 없음, 계정 실명 표식 없음, author_role 은 admin/member 뿐, 댓글 행 존재')
   process.exit(0)
 }
 console.log(`FAIL ${fails.length}건`)

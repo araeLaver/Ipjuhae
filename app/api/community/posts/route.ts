@@ -30,8 +30,14 @@ interface PostRow {
   view_count: number
   comment_count: number
   created_at: string
-  /** 작성자 계정의 역할. 한 게시판을 쓰므로 누가 쓴 글인지는 이걸로 구분한다. */
-  author_role: string
+  /**
+   * 운영자 여부만. `admin` 아니면 전부 `member`다.
+   *
+   * 실제 역할(`tenant`·`landlord`·`broker`)을 내려보내지 않는다 — 익명 게시판에서 역할
+   * 라벨은 글쓴이의 신원 범위를 좁히고, 화면은 이 값을 운영자 판정에만 쓴다
+   * (`AuthorRoleBadge`는 `admin`이 아니면 아무것도 렌더하지 않는다). (DOW-1262)
+   */
+  author_role: 'admin' | 'member'
 }
 
 // GET /api/community/posts?audience=&page=&limit=
@@ -62,7 +68,7 @@ export async function GET(request: Request) {
     const rows = await query<PostRow>(
       `SELECT p.id, p.audience, p.category, p.title, p.body,
               p.view_count, p.comment_count, p.created_at,
-              COALESCE(u.user_type, 'guest') AS author_role
+              CASE WHEN u.user_type = 'admin' THEN 'admin' ELSE 'member' END AS author_role
          FROM community_posts p
          LEFT JOIN users u ON u.id = p.author_id
         WHERE p.deleted_at IS NULL AND p.hidden_at IS NULL

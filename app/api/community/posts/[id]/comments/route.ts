@@ -20,8 +20,14 @@ interface CommentRow {
   id: string
   body: string
   created_at: string
-  /** 작성자 계정의 역할. 운영자 답을 옆 사람 추측과 구분하는 유일한 근거다. */
-  author_role: string
+  /**
+   * 운영자 여부만. `admin` 아니면 전부 `member`다 — 비로그인 익명 댓글도 `member`로
+   * 나간다(예전 `guest`를 남기면 로그인 여부가 드러난다).
+   *
+   * 운영자 답을 옆 사람 추측과 구분하는 근거는 그대로 남고, 일반 역할
+   * (`tenant`·`landlord`·`broker`)은 payload 에서 사라진다. (DOW-1262)
+   */
+  author_role: 'admin' | 'member'
 }
 
 async function loadReadablePost(postId: string, userType: string | null, userId: string | null) {
@@ -46,7 +52,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   try {
     const comments = await query<CommentRow>(
       `SELECT c.id, c.body, c.created_at,
-              COALESCE(u.user_type, 'guest') AS author_role
+              CASE WHEN u.user_type = 'admin' THEN 'admin' ELSE 'member' END AS author_role
          FROM community_comments c
          LEFT JOIN users u ON u.id = c.author_id
         WHERE c.post_id = $1 AND c.deleted_at IS NULL AND c.hidden_at IS NULL

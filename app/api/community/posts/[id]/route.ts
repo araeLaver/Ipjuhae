@@ -20,7 +20,8 @@ interface PostRow {
   body: string
   view_count: number
   comment_count: number
-  author_role: string
+  /** 운영자 여부만 — `admin` 아니면 전부 `member`다. (DOW-1262) */
+  author_role: 'admin' | 'member'
   created_at: string
 }
 
@@ -35,7 +36,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     const post = await queryOne<PostRow>(
       `SELECT p.id, p.author_id, p.audience, p.category, p.title, p.body,
               p.view_count, p.comment_count, p.created_at,
-              COALESCE(u.user_type, 'guest') AS author_role
+              CASE WHEN u.user_type = 'admin' THEN 'admin' ELSE 'member' END AS author_role
          FROM community_posts p
          LEFT JOIN users u ON u.id = p.author_id
         WHERE p.id = $1 AND p.deleted_at IS NULL AND p.hidden_at IS NULL`,

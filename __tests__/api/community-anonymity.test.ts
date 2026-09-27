@@ -22,6 +22,14 @@ import { getCurrentUser } from '@/lib/auth'
 const VIEWER = { id: 'viewer-1', user_type: 'tenant' } as never
 const AUTHOR_ID = '11111111-1111-1111-1111-111111111111'
 
+/**
+ * DB `users.user_type`에 실제로 들어 있는 값. 글은 임차인이, 댓글은 운영자가 썼다.
+ *
+ * payload가 이 값을 그대로 내려보내면 안 된다 — 익명 게시판에서 `tenant`·`landlord`는
+ * 글쓴이의 신원 범위를 좁힌다. 아래 mock이 SELECT 식을 보고 이 값을 접어서 준다. (DOW-1262)
+ */
+const ACCOUNT_ROLE = { post: 'tenant', comment: 'admin' } as const
+
 /** DB가 실제로 돌려주는 모양. 라우트가 SELECT에서 뺐으므로 이름·계정 id는 여기에 없다. */
 const postRow = {
   id: 'p1',
@@ -84,6 +92,14 @@ function simulateDb() {
     const selectList = sql.split('FROM')[0] ?? ''
     if (/AS author_name/.test(selectList)) row.author_name = '김철수'
     if (/author_id/.test(selectList)) row.author_id = AUTHOR_ID
+    // author_role도 SELECT 식을 따라간다(DOW-1262). 고정 값을 돌려주면 SQL을
+    // `COALESCE(u.user_type, 'guest')`로 되돌려도 payload 판정이 통과해 버린다.
+    // 계정 역할은 `ACCOUNT_ROLE`이고, 접는 식이 들어 있을 때만 admin/member로 좁혀 준다.
+    if (/CASE WHEN u\.user_type = 'admin' THEN 'admin' ELSE 'member' END AS author_role/.test(selectList)) {
+      row.author_role = ACCOUNT_ROLE[base === commentRow ? 'comment' : 'post'] === 'admin' ? 'admin' : 'member'
+    } else if (/AS author_role/.test(selectList)) {
+      row.author_role = ACCOUNT_ROLE[base === commentRow ? 'comment' : 'post']
+    }
     return row
   }
   vi.mocked(query).mockImplementation((async (sql: string) =>
@@ -112,7 +128,8 @@ describe.each([
 
     const payload = await response.json()
     expect(forbiddenKeys(payload)).toEqual([])
-    expect(payload.posts[0].author_role).toBe('tenant')
+    // 계정은 임차인인데 payload는 'member'여야 한다 (DOW-1262)
+    expect(payload.posts[0].author_role).toBe('member')
   })
 
   it('상세 응답에 작성자 이름·계정 id가 없다 — 본인 글 표시는 is_author로 남는다', async () => {
@@ -122,7 +139,7 @@ describe.each([
     const payload = await response.json()
     expect(forbiddenKeys(payload)).toEqual([])
     expect(payload.post.is_author).toBe(false)
-    expect(payload.post.author_role).toBe('tenant')
+    expect(payload.post.author_role).toBe('member')
   })
 
   it('댓글 응답에 작성자 이름·계정 id가 없다', async () => {
@@ -159,5 +176,52 @@ describe('SQL — 실명 경로 자체를 끊는다', () => {
     expect(sql).not.toMatch(/\bprofiles\b/)
     // 운영자 식별 근거는 남아 있어야 한다(DOW-1176).
     expect(sql).toMatch(/AS author_role/)
+  })
+})
+
+/**
+ * DOW-1262 — 일반 역할 라벨도 payload 에서 뺀다.
+ *
+ * 실명·계정 id 를 막아도 `author_role: 'tenant'`는 익명 게시판에서 글쓴이의 신원 범위를
+ * 좁힌다. 화면은 이 값을 운영자 판정에만 쓰므로(`AuthorRoleBadge`는 `admin`이 아니면
+ * 렌더하지 않는다) 비운영자를 한 값으로 접어도 소비처는 그대로 동작한다.
+ */
+describe('일반 역할 라벨이 payload에 실리지 않는다', () => {
+  const ROLE_LEAKS = ['tenant', 'landlord', 'broker', 'guest']
+
+  beforeEach(() => {
+    vi.mocked(getCurrentUser).mockResolvedValue(null as never)
+  })
+
+  it.each([
+    ['목록', listRequest],
+    ['상세', detailRequest],
+    ['댓글', commentsRequest],
+  ])('%s 응답 본문 어디에도 계정 역할 문자열이 없다', async (_label, run) => {
+    const response = await run()
+    expect(response.status).toBe(200)
+
+    // 키를 특정하지 않고 본문 전체를 본다 — 다른 키에 역할이 실려 나가는 경우까지 잡는다.
+    const raw = JSON.stringify(await response.json())
+    for (const role of ROLE_LEAKS) expect(raw).not.toContain(`"${role}"`)
+    expect(raw).toMatch(/"author_role":"(admin|member)"/)
+  })
+
+  it.each([
+    ['목록', listRequest],
+    ['상세', detailRequest],
+    ['댓글', commentsRequest],
+  ])('%s SQL은 user_type을 그대로 내보내지 않고 admin/member로 접는다', async (_label, run) => {
+    await run()
+
+    const statements = [...vi.mocked(query).mock.calls, ...vi.mocked(queryOne).mock.calls].map(([sql]) => String(sql))
+    const selects = statements.filter((s) => s.includes('SELECT') && /FROM community_(posts|comments)/.test(s))
+    expect(selects.length).toBeGreaterThan(0)
+    const sql = selects.find((s) => /AS author_role/.test(s))
+    expect(sql).toBeDefined()
+
+    // 세 라우트가 같은 표현을 써야 한다 — 하나만 달라지면 그 경로만 역할을 흘린다.
+    expect(sql).toMatch(/CASE WHEN u\.user_type = 'admin' THEN 'admin' ELSE 'member' END AS author_role/)
+    expect(sql).not.toMatch(/COALESCE\(u\.user_type/)
   })
 })
