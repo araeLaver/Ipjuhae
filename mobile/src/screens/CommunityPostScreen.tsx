@@ -41,6 +41,10 @@ const CommunityPostScreen: React.FC<Props> = ({ route }) => {
   const { postId } = route.params;
   const [post, setPost] = useState<api.CommunityPost | null>(null);
   const [comments, setComments] = useState<api.CommunityComment[]>([]);
+  const [commentsTotal, setCommentsTotal] = useState(0);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [moreLoading, setMoreLoading] = useState(false);
+  const [moreError, setMoreError] = useState(false);
   const [commentsLoading, setCommentsLoading] = useState(true);
   const [commentsError, setCommentsError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -48,16 +52,24 @@ const CommunityPostScreen: React.FC<Props> = ({ route }) => {
   const [draft, setDraft] = useState('');
   const [posting, setPosting] = useState(false);
 
-  const loadComments = useCallback(async () => {
-    setCommentsLoading(true);
+  const loadComments = useCallback(async (cursor?: string) => {
+    if (cursor) setMoreLoading(true);
+    else setCommentsLoading(true);
+    setMoreError(false);
     setCommentsError(null);
     try {
-      setComments(await api.fetchCommunityComments(postId));
+      const page = await api.fetchCommunityCommentsPage(postId, cursor);
+      setComments(previous => cursor
+        ? [...previous, ...page.comments.filter(c => !previous.some(p => p.id === c.id))]
+        : page.comments);
+      setCommentsTotal(page.total ?? page.comments.length);
+      setNextCursor(page.nextCursor ?? null);
     } catch (e) {
-      setComments([]);
-      setCommentsError('댓글을 불러오지 못했어요');
+      if (cursor) setMoreError(true);
+      else { setComments([]); setCommentsError('댓글을 불러오지 못했어요'); }
     } finally {
       setCommentsLoading(false);
+      setMoreLoading(false);
     }
   }, [postId]);
 
@@ -166,7 +178,7 @@ const CommunityPostScreen: React.FC<Props> = ({ route }) => {
       </View>
 
       <View style={styles.commentsSection}>
-        <Text style={styles.commentsTitle}>{commentsError ? '댓글' : `댓글 ${comments.length}`}</Text>
+        <Text style={styles.commentsTitle}>{commentsError ? '댓글' : `댓글 ${commentsTotal}`}</Text>
 
         {/* 앱에는 입력창 자체가 없어서 읽기 전용이었다. 커뮤니티가 성립하려면
             물어본 곳에서 답이 와야 한다. 가입 없이 바로 쓴다. */}
@@ -202,7 +214,7 @@ const CommunityPostScreen: React.FC<Props> = ({ route }) => {
         ) : commentsError ? (
           <View style={styles.commentsState}>
             <Text style={styles.commentsStateText}>{commentsError}</Text>
-            <TouchableOpacity onPress={loadComments} style={styles.retryBtn}>
+            <TouchableOpacity onPress={() => loadComments()} style={styles.retryBtn}>
               <Text style={styles.retryText}>다시 시도</Text>
             </TouchableOpacity>
           </View>
@@ -225,6 +237,11 @@ const CommunityPostScreen: React.FC<Props> = ({ route }) => {
               <Text style={styles.commentBody}>{comment.body}</Text>
             </View>
           ))
+        )}
+        {nextCursor && !commentsError && (
+          <TouchableOpacity disabled={moreLoading} onPress={() => loadComments(nextCursor)} style={styles.retryBtn}>
+            <Text style={styles.retryText}>{moreLoading ? '불러오는 중…' : moreError ? '댓글 더 보기 다시 시도' : '댓글 더 보기'}</Text>
+          </TouchableOpacity>
         )}
       </View>
     </ScrollView>

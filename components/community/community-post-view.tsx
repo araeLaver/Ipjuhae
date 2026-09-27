@@ -48,6 +48,10 @@ export function CommunityPostView({ id }: { id: string }) {
   const [post, setPost] = useState<Post | null>(null)
   const [comments, setComments] = useState<Comment[]>([])
   /** 댓글 조회 실패. `comments`가 빈 배열인 것과 구분해야 "댓글 0"으로 보이지 않는다. */
+  const [commentsTotal, setCommentsTotal] = useState(0)
+  const [nextCursor, setNextCursor] = useState<string | null>(null)
+  const [moreLoading, setMoreLoading] = useState(false)
+  const [moreFailed, setMoreFailed] = useState(false)
   const [commentsFailed, setCommentsFailed] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<LoadError | null>(null)
@@ -71,17 +75,28 @@ export function CommunityPostView({ id }: { id: string }) {
       .finally(() => setViewerKnown(true))
   }, [])
 
-  const loadComments = useCallback(async () => {
+  const loadComments = useCallback(async (cursor?: string) => {
+    setMoreLoading(true)
+    setMoreFailed(false)
     try {
-      const cRes = await fetch(`/api/community/posts/${id}/comments`)
+      const cRes = await fetch(`/api/community/posts/${id}/comments${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ''}`)
       if (!cRes.ok) {
-        setCommentsFailed(true)
+        if (cursor) setMoreFailed(true)
+        else setCommentsFailed(true)
         return
       }
-      setComments((await cRes.json()).comments ?? [])
+      const data = await cRes.json()
+      setComments(previous => cursor
+        ? [...previous, ...(data.comments ?? []).filter((c: Comment) => !previous.some(p => p.id === c.id))]
+        : data.comments ?? [])
+      setCommentsTotal(data.total ?? data.comments?.length ?? 0)
+      setNextCursor(data.nextCursor ?? null)
       setCommentsFailed(false)
     } catch {
-      setCommentsFailed(true)
+      if (cursor) setMoreFailed(true)
+      else setCommentsFailed(true)
+    } finally {
+      setMoreLoading(false)
     }
   }, [id])
 
@@ -274,17 +289,17 @@ export function CommunityPostView({ id }: { id: string }) {
             </Card>
 
             {/*
-              개수는 `comments.length`를 쓴다. 서버의 `post.comment_count`는 작성 때만 +1 되고
+              개수는 서버가 집계한 공개 댓글 수를 쓴다. 서버의 `post.comment_count`는 작성 때만 +1 되고
               삭제·숨김에서 줄지 않아, 바로 아래 실제로 그려진 목록과 어긋난다.
               조회에 실패했을 때는 아예 숫자를 내지 않는다 — 실패를 "댓글 0"으로 보여주던 게 이번 결함이다.
             */}
             <h2 className="mb-3 text-sm font-semibold">
-              {commentsFailed ? '댓글' : `댓글 ${comments.length}`}
+              {commentsFailed ? '댓글' : `댓글 ${commentsTotal}`}
             </h2>
             {commentsFailed ? (
               <Card className="mb-5 flex flex-col items-center gap-2 p-5 text-center">
                 <p className="text-sm text-muted-foreground">댓글을 불러오지 못했습니다.</p>
-                <Button variant="outline" size="sm" onClick={loadComments}>다시 시도</Button>
+                <Button variant="outline" size="sm" onClick={() => loadComments()}>다시 시도</Button>
               </Card>
             ) : (
               <ul className="mb-5 space-y-3">
@@ -311,6 +326,12 @@ export function CommunityPostView({ id }: { id: string }) {
               </ul>
             )}
 
+            {nextCursor && !commentsFailed && (
+              <Button className="mb-5" variant="outline" disabled={moreLoading}
+                onClick={() => loadComments(nextCursor)}>
+                {moreLoading ? '불러오는 중…' : moreFailed ? '댓글 더 보기 다시 시도' : '댓글 더 보기'}
+              </Button>
+            )}
             <div className="space-y-2">
               <Textarea placeholder="댓글을 입력하세요" value={body} onChange={(e) => setBody(e.target.value)} rows={3} maxLength={2000} />
               <div className="flex justify-end">

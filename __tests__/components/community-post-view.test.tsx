@@ -363,3 +363,23 @@ describe('U2 — 신고 UI', () => {
     expect(routerPush).not.toHaveBeenCalled()
   })
 })
+
+it('서버 전체 개수와 다음 페이지를 표시하고 실패 후 기존 댓글을 유지한다', async () => {
+  let failed=true
+  vi.stubGlobal('fetch',vi.fn(async(input: RequestInfo | URL)=>{
+    const url=String(input)
+    if(url.includes('/auth/me')) return new Response('{}',{status:401})
+    if(url.includes('?cursor=')) return failed ? new Response('{}',{status:503}) : Response.json({comments:[{id:'c201',body:'마지막 댓글',author_role:'member'}],total:201,nextCursor:null})
+    if(url.includes('/comments')) return Response.json({comments:[{id:'c1',body:'첫 댓글',author_role:'member'}],total:201,nextCursor:'cursor-200'})
+    return Response.json({post:basePost()})
+  }))
+  render(<CommunityPostView id={POST_ID} />)
+  await screen.findByText('첫 댓글')
+  expect(screen.getByText('댓글 201')).toBeVisible()
+  fireEvent.click(screen.getByText('댓글 더 보기'))
+  await screen.findByText('댓글 더 보기 다시 시도')
+  expect(screen.getByText('첫 댓글')).toBeVisible()
+  failed=false; fireEvent.click(screen.getByText('댓글 더 보기 다시 시도'))
+  await screen.findByText('마지막 댓글')
+  expect(screen.queryByText('댓글 더 보기')).toBeNull()
+})

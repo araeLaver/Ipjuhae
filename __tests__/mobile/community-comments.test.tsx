@@ -113,3 +113,20 @@ it('입력창 안내가 지킬 수 있는 만큼만 약속한다 — 작성 계�
   respond([]); mount()
   await screen.findByText('익명으로 올라갑니다. 신고 처리를 위해 작성 계정만 내부에 기록됩니다.')
 })
+
+it('전체 댓글 수를 표시하고 다음 페이지 실패 후 재시도한다',async()=>{
+  let failed = true
+  get.mockImplementation(async(path:string)=>{
+    if(path.includes('?cursor=')) { if(failed) throw new Error('503'); return {comments:[row('member','c201')],total:201,nextCursor:null} }
+    if(path.endsWith('/comments')) return {comments:[row('member')],total:201,nextCursor:'cursor-200'}
+    return {post}
+  })
+  mount(); await screen.findByText('댓글 본문 c1')
+  expect(screen.getByText('댓글 201')).toBeVisible()
+  fireEvent.click(screen.getByText('댓글 더 보기'))
+  await screen.findByText('댓글 더 보기 다시 시도')
+  expect(screen.getByText('댓글 본문 c1')).toBeVisible()
+  failed=false; fireEvent.click(screen.getByText('댓글 더 보기 다시 시도'))
+  await screen.findByText('댓글 본문 c201')
+  expect(screen.queryByText('댓글 더 보기')).toBeNull()
+})

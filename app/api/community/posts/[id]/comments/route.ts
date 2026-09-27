@@ -20,6 +20,7 @@ interface CommentRow {
   id: string
   body: string
   created_at: string
+  cursor_time: string
   /**
    * 운영자 여부만. `admin` 아니면 전부 `member`다 — 비로그인 익명 댓글도 `member`로
    * 나간다(예전 `guest`를 남기면 로그인 여부가 드러난다).
@@ -49,18 +50,40 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   if (!post) return NextResponse.json({ error: '게시글을 찾을 수 없습니다' }, { status: 404 })
   if (!allowed) return NextResponse.json({ error: '접근할 수 없는 게시글입니다' }, { status: 403 })
 
+  const search = new URL(request.url).searchParams
+  let cursor: { time: string; id: string } | null = null
+  if (search.has('cursor')) {
+    try {
+      cursor = z.object({ time: z.string().min(1).max(64), id: z.string().uuid() })
+        .parse(JSON.parse(Buffer.from(search.get('cursor')!, 'base64url').toString()))
+      if (!Number.isFinite(Date.parse(cursor.time))) throw new Error('invalid timestamp')
+    } catch {
+      return NextResponse.json({ error: '잘못된 댓글 커서입니다' }, { status: 400 })
+    }
+  }
   try {
-    const comments = await query<CommentRow>(
-      `SELECT c.id, c.body, c.created_at,
+    const rows = await query<CommentRow>(
+      `SELECT c.id, c.body, c.created_at, c.created_at::text AS cursor_time,
               CASE WHEN u.user_type = 'admin' THEN 'admin' ELSE 'member' END AS author_role
          FROM community_comments c
          LEFT JOIN users u ON u.id = c.author_id
         WHERE c.post_id = $1 AND c.deleted_at IS NULL AND c.hidden_at IS NULL
-        ORDER BY c.created_at ASC
-        LIMIT 200`,
-      [id]
+          AND ($2::timestamptz IS NULL OR (c.created_at, c.id) > ($2::timestamptz, $3::uuid))
+        ORDER BY c.created_at ASC, c.id ASC
+        LIMIT 201`,
+      [id, cursor?.time ?? null, cursor?.id ?? null]
     )
-    return NextResponse.json({ comments })
+    const count = await queryOne<{ total: string }>(
+      `SELECT COUNT(*) AS total FROM community_comments
+        WHERE post_id = $1 AND deleted_at IS NULL AND hidden_at IS NULL`, [id]
+    )
+    const page = rows.slice(0, 200)
+    const last = page.at(-1)
+    const nextCursor = rows.length > 200 && last
+      ? Buffer.from(JSON.stringify({ time: last.cursor_time, id: last.id })).toString('base64url')
+      : null
+    const comments = page.map(({ cursor_time, ...comment }) => comment)
+    return NextResponse.json({ comments, total: Number(count?.total ?? 0), nextCursor })
   } catch (error) {
     logger.error('댓글 조회 오류', { error })
     return NextResponse.json({ error: '댓글을 불러오지 못했습니다' }, { status: 500 })

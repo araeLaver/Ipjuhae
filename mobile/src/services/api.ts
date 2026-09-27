@@ -602,6 +602,13 @@ export async function fetchCommunityPost(id: string): Promise<CommunityPost> {
   return toPost(res.post)
 }
 
+export async function fetchCommunityCommentsPage(postId: string, cursor?: string) {
+  const res = await apiClient.get<{ comments: CommentRow[]; total: number; nextCursor: string | null }>(
+    `/community/posts/${postId}/comments${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ''}`
+  )
+  return { comments: (res.comments ?? []).map(toComment), total: res.total, nextCursor: res.nextCursor }
+}
+
 /** GET /api/community/posts/[id]/comments */
 export async function fetchCommunityComments(postId: string): Promise<CommunityComment[]> {
   const res = await apiClient.get<{ comments: CommentRow[] }>(`/community/posts/${postId}/comments`)
