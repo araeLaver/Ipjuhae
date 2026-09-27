@@ -99,14 +99,16 @@ afterEach(() => {
  * 아래 두 대조군은 **증명하는 것이 다르다.** 변이로 확인한 결과다
  * (`scripts/dow-1174-control-mutation.mjs`, [DOW-1174](/DOW/issues/DOW-1174)).
  *
- * `/check`를 격리 대상에 넣는 변이를 걸면 첫 번째만 빨개지고 두 번째는 통과한다.
- * 두 번째가 `Header`를 타는데, `Header`의 `/api/auth/me` 호출이
- * `isDemoIsolatedPath`를 보지 않고 무조건 나가기 때문이다.
+ * **[DOW-1221](/DOW/issues/DOW-1221)에서 바뀌었다.** 이제 두 대조군 모두 경로 판정을 탄다
+ * (`Header`의 `/api/auth/me`를 `isDemoIsolatedPath` 게이트 아래로 넣었다).
+ * `/check`를 격리 대상에 넣는 변이를 걸면 **둘 다 빨개진다.**
  *
- * 그래서 두 번째는 **CONTROL_PATH가 죽은 주소가 돼도 계속 통과한다.**
- * `/home`이 삭제됐을 때 이 테스트는 아무것도 알려주지 못했을 것이다.
- * 대조 경로의 생존을 지키는 것은 첫 번째뿐이므로, 경로를 바꿀 때는
- * 첫 번째가 변이에서 죽는지로 판단해야 한다.
+ * 예전에는 두 번째가 `Header`의 무조건 `fetch`를 타서, `isDemoIsolatedPath`가 어떻게
+ * 바뀌든 — CONTROL_PATH가 죽은 주소가 돼도 — 계속 통과했다. `/home`이 삭제됐을 때
+ * 이 테스트가 아무것도 알려주지 못한 이유다. 그 구멍은 이제 없다.
+ *
+ * 증명하는 것은 여전히 다르다. 첫 번째는 `Providers`의 analytics 경로를, 두 번째는
+ * `PageContainer` → `Header`의 auth 경로를 지킨다. 한쪽만 남기지 말 것.
  */
 describe('감시기 대조군 — network 관측이 실제로 동작하는지 먼저 증명한다', () => {
   // 경로 대조군: CONTROL_PATH가 살아 있고 격리 대상이 아님을 증명한다.
@@ -119,8 +121,12 @@ describe('감시기 대조군 — network 관측이 실제로 동작하는지 �
     expect(observedRequests()).toContain('/api/analytics/event')
   })
 
-  // 감시기 대조군: fetch 가로채기가 동작함만 증명한다. 경로와 무관하다.
-  it('PageContainer를 마운트하면 auth 조회가 관측된다 — 경로와 무관한 fetch 감시기 확인', async () => {
+  // 감시기 대조군: fetch 가로채기가 동작함을 증명한다.
+  // DOW-1221 이후로는 경로 대조군이기도 하다 — Header가 게이트를 타므로
+  // CONTROL_PATH가 격리 대상이 되면 이 테스트도 빨개진다.
+  it('일반 경로에서 PageContainer를 마운트하면 auth 조회가 관측된다 — fetch 감시기 확인', async () => {
+    currentPathname = CONTROL_PATH
+
     render(<PageContainer><div>본문</div></PageContainer>)
     await flush()
 
@@ -167,6 +173,33 @@ describe('demo route 격리 — 실제 render에서 network 호출이 0건이어
       currentPathname = pathname
 
       render(<Providers><div>본문</div></Providers>)
+      await flush()
+
+      expect(observedRequests(), `${pathname}에서 network 호출 발생`).toEqual([])
+    }
+  })
+
+  // 아래 두 건이 DOW-1221이 막는 구멍이다. header.tsx의 isIsolated 게이트를 지우면
+  // 둘 다 '/api/auth/me'를 관측하고 빨개진다. 위의 기존 5건은 그래도 통과한다 —
+  // demo 화면이 PageContainer를 안 쓰는 관례로만 피하고 있었기 때문이다.
+  it('demo 경로에서 PageContainer를 마운트해도 auth 조회가 나가지 않는다', async () => {
+    currentPathname = DEMO_PATH
+
+    render(<PageContainer><div>demo 본문</div></PageContainer>)
+    await flush()
+
+    expect(observedRequests()).toEqual([])
+  })
+
+  it('demo 하위 경로 전체에서 공통 shell이 auth 조회를 하지 않는다', async () => {
+    for (const pathname of ['/demo', '/demo/public-mock/listings', '/demo/새경로']) {
+      cleanup()
+      fetchSpy.mockClear()
+      sendBeaconSpy.mockClear()
+      xhrOpenSpy.mockClear()
+      currentPathname = pathname
+
+      render(<PageContainer><div>본문</div></PageContainer>)
       await flush()
 
       expect(observedRequests(), `${pathname}에서 network 호출 발생`).toEqual([])

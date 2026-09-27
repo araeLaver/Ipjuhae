@@ -10,6 +10,7 @@ import { DropdownMenu, DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import { MobileNav } from './mobile-nav'
 import { ThemeToggle } from './theme-toggle'
 import { NotificationCenter } from '@/components/notifications/notification-center'
+import { isDemoIsolatedPath } from '@/lib/demo-isolation'
 
 import type { HeaderUser } from './header-user'
 
@@ -71,9 +72,18 @@ export function Header({ user: providedUser }: HeaderProps = {}) {
   const [mobileOpen, setMobileOpen] = useState(false)
 
   const user = providedUser === undefined ? sessionUser : providedUser
+  const isIsolated = isDemoIsolatedPath(pathname)
 
   useEffect(() => {
     if (providedUser !== undefined) return
+    // /demo/* 는 "운영 API 호출 없음"을 화면에 고지한다. 판정은 lib/demo-isolation.ts
+    // 한 곳에만 둔다 — 여기서 startsWith('/demo')를 다시 쓰면 판정이 두 곳으로 갈라진다.
+    // setUser(null) 은 명시적으로 한다: 일반 경로에서 로그인한 채 demo 경로로 넘어오면
+    // sessionUser 잔상이 demo 화면에 실제 이메일을 그린다. (DOW-1221)
+    if (isIsolated) {
+      setUser(null)
+      return
+    }
     const controller = new AbortController()
     setMobileOpen(false)
     fetch('/api/auth/me', { cache: 'no-store', signal: controller.signal })
@@ -83,7 +93,7 @@ export function Header({ user: providedUser }: HeaderProps = {}) {
       })
       .catch(() => { if (!controller.signal.aborted) setUser(null) })
     return () => controller.abort()
-  }, [pathname, providedUser])
+  }, [isIsolated, providedUser])
 
   const handleLogout = async () => {
     setLogoutError(false)
@@ -159,8 +169,6 @@ export function Header({ user: providedUser }: HeaderProps = {}) {
                 </button>
               </>
             ) : (
-              // 아직 가입을 권할 단계가 아니다. 읽는 사람에게 로그인·회원가입을
-              // 들이밀지 않는다. /login 주소는 그대로 살아 있다.
               null
             )}
           </div>

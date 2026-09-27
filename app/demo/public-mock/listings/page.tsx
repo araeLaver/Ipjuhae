@@ -24,8 +24,9 @@ export default function PublicMockListingsPage() {
   assertDemoEnabled()
 
   return (
-    // 공통 PageContainer를 쓰지 않는다. 그 shell의 Header는 마운트 시 /api/auth/me를 호출해서
-    // 이 화면의 "운영 API 호출 없음" 고지를 깨뜨린다. demo 전용 정적 shell로 대체한다.
+    // 공통 PageContainer를 쓰지 않는다. 지금은 레이아웃 선택이지 금지가 아니다 —
+    // Header의 /api/auth/me 는 isDemoIsolatedPath 게이트 아래에 있어서
+    // demo 경로에서 마운트해도 호출이 나가지 않는다 (DOW-1221).
     <div className="min-h-screen bg-muted/50">
       <main className="container mx-auto max-w-6xl space-y-6 px-4 py-6">
         <section className="rounded-lg border border-amber-300 bg-amber-50 p-5 text-amber-950">
