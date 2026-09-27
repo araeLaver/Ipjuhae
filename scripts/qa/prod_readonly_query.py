@@ -41,6 +41,78 @@ const { Client } = require('/app/node_modules/pg');
   await c.end();
 })().catch((e) => { console.log('QUERY_ERROR', e.message); process.exit(1); });
 """,
+    # DOW-1268: 프로덕션 payload 의 author_role 이 전부 admin 으로 나오는데, 그것만으로는
+    # 새 코드(CASE WHEN → admin/member)와 옛 코드(COALESCE → 원본 역할)를 구분할 수 없다.
+    # 옛 코드에서도 운영자 글은 admin 이기 때문이다. 그래서 **작성자 원본 user_type 분포**를
+    # 직접 세어, 프로덕션에 애초에 비운영자 작성 행이 있는지(=구분 가능한 입력이 있는지)를
+    # 확정한다. 집계만 출력한다.
+    'community-author-roles': r"""
+const { Client } = require('/app/node_modules/pg');
+(async () => {
+  const c = new Client({ connectionString: process.env.DATABASE_URL });
+  await c.connect();
+  await c.query('set search_path to ipjuhae, public');
+  const posts = await c.query("select coalesce(u.user_type,'(null)') t, count(*)::int n from community_posts p left join users u on u.id = p.author_id group by 1 order by 2 desc");
+  const comments = await c.query("select coalesce(u.user_type,'(null)') t, count(*)::int n from community_comments c2 left join users u on u.id = c2.author_id group by 1 order by 2 desc");
+  const totals = await c.query("select (select count(*)::int from community_posts) posts, (select count(*)::int from community_comments) comments");
+  console.log(JSON.stringify({
+    postsByAuthorUserType: posts.rows,
+    commentsByAuthorUserType: comments.rows,
+    totals: totals.rows[0],
+  }));
+  await c.end();
+})().catch((e) => { console.log('QUERY_ERROR', e.message); process.exit(1); });
+""",
+    # DOW-1268: 위 조회에서 비운영자(= user_type null) 작성 글 2건이 나왔는데 공개 목록에는
+    # 18건만 잡힌다. 그 2건이 **왜** 안 보이는지(삭제/숨김/게시판 권한)를 알아야 그것을
+    # 옛 코드와 새 코드를 구분하는 입력으로 쓸 수 있는지 판정된다. id·플래그만 출력한다.
+    'community-hidden-authors': r"""
+const { Client } = require('/app/node_modules/pg');
+(async () => {
+  const c = new Client({ connectionString: process.env.DATABASE_URL });
+  await c.connect();
+  await c.query('set search_path to ipjuhae, public');
+  const r = await c.query("select p.id, p.audience, (p.author_id is null) author_id_null, (p.deleted_at is not null) deleted, (p.hidden_at is not null) hidden, (u.id is null) user_missing, coalesce(u.user_type,'(null)') user_type from community_posts p left join users u on u.id = p.author_id where u.user_type is null or u.user_type <> 'admin' order by p.created_at");
+  console.log(JSON.stringify({ nonAdminAuthoredPosts: r.rows }));
+  await c.end();
+})().catch((e) => { console.log('QUERY_ERROR', e.message); process.exit(1); });
+""",
+    # DOW-1268: 프로덕션 데이터에는 비운영자 작성 행이 하나도 없어서(2건은 soft-delete)
+    # payload 만으로는 새 코드와 옛 코드를 구분할 수 없다. 그래서 **배포된 빌드 산출물**을
+    # 직접 본다. 새 식 `CASE WHEN u.user_type` 이 있고 옛 식 `COALESCE(u.user_type,'guest')`
+    # 가 없어야 배포가 먹은 것이다. 파일 경로와 출현 횟수만 출력한다.
+    'deployed-sql-marker': r"""
+const fs = require('fs');
+const path = require('path');
+const NEW = 'CASE WHEN u.user_type';
+const OLD = "COALESCE(u.user_type, 'guest')";
+const OLD2 = "COALESCE(u.user_type,'guest')";
+const hits = { new: [], old: [] };
+let scanned = 0;
+const walk = (dir) => {
+  let entries = [];
+  try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch (e) { return; }
+  for (const e of entries) {
+    const p = path.join(dir, e.name);
+    if (e.isDirectory()) { if (e.name !== 'cache') walk(p); continue; }
+    if (!/\.(js|mjs|cjs)$/.test(e.name)) continue;
+    let src = '';
+    try { src = fs.readFileSync(p, 'utf8'); } catch (err) { continue; }
+    scanned++;
+    const n = src.split(NEW).length - 1;
+    const o = (src.split(OLD).length - 1) + (src.split(OLD2).length - 1);
+    if (n) hits.new.push({ file: p.replace('/app/', ''), count: n });
+    if (o) hits.old.push({ file: p.replace('/app/', ''), count: o });
+  }
+};
+walk('/app/.next/server');
+console.log(JSON.stringify({
+  scannedFiles: scanned,
+  newExpr: hits.new,
+  oldExpr: hits.old,
+  verdict: hits.new.length > 0 && hits.old.length === 0 ? 'PASS-new-code-deployed' : 'FAIL-check-hits',
+}));
+""",
 }
 
 name = sys.argv[1] if len(sys.argv) > 1 else ''
