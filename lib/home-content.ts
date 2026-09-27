@@ -17,7 +17,12 @@ export interface HomePost {
   comment_count: number
   view_count: number
   created_at: string
-  author_role: string
+  /**
+   * 익명 게시판이라 계정 역할(`tenant`·`landlord`·`guest`)을 그대로 두지 않는다.
+   * 여기서 좁혀 놓는 이유는 다음 소비처가 화면으로 넘기려 할 때 타입에서 막히게
+   * 하려는 것이다 — 값만 접어 두면 같은 결함이 조용히 다시 들어온다. (DOW-1275)
+   */
+  author_role: 'admin' | 'member'
 }
 
 /** 연재 하나. 제목 앞의 "N화."로 순서를 잡는다. */
@@ -82,9 +87,13 @@ async function fetchPublicPosts(): Promise<HomePost[]> {
       // 아래 catch 가 그 오류를 삼켜 홈이 조용히 빈 채로 떴다.
       //
       // 목록에 쓰는 건 첫 줄뿐이다. 본문을 통째로 끌어오면 200건이 그대로 실린다.
+      // author_role 은 계정 역할을 그대로 내려보내지 않는다. 운영자만 구분하고 나머지는
+      // 전부 member 로 접는다 — 커뮤니티 3개 라우트와 같은 식이다. 여기는 화면으로
+      // 넘기는 소비처가 아직 없어 유출은 아니었지만, 하나 생기는 순간 유출이 된다.
+      // (DOW-1262 의 결정, DOW-1275 에서 이 마지막 조회에 적용)
       `SELECT p.id, p.title, LEFT(p.body, 300) AS body,
               p.comment_count, p.view_count, p.created_at,
-              COALESCE(u.user_type, 'guest') AS author_role
+              CASE WHEN u.user_type = 'admin' THEN 'admin' ELSE 'member' END AS author_role
          FROM community_posts p
          LEFT JOIN users u ON u.id = p.author_id
         WHERE p.deleted_at IS NULL
