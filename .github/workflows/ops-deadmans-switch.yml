@@ -15,35 +15,51 @@
 #   branch protection 의 required check 에 절대 넣지 말 것. 넣는 순간 호스트가 죽을 때
 #   배포까지 같이 막힌다. 파일명을 CI(`ci.yml`)와 구분해 둔 이유도 이것이다.
 #
+# 통지는 **run 실패 알림이 아니라 GitHub Issue** 로 나간다 (DOW-1202 실측)
+#   이 계정 알림 수신함에는 워크플로 실행 알림이 단 한 건도 도착한 적이 없다
+#   (표본 45건 전부 PullRequest). run 을 빨갛게 만드는 것만으로는 아무도 모른다.
+#   반면 Issue/PR 알림은 도착한다. 그래서 경보를 Issue 로 낸다.
+#   - 경보 진입: `ops-deadmans-switch` 라벨 이슈를 열고 저장소 소유자에게 배정
+#   - 경보 지속: 이미 열린 이슈가 있으면 아무것도 하지 않는다 (15분마다 도배 금지)
+#   - 경보 해제: 열린 이슈를 댓글과 함께 닫는다
+#   워처와 같은 edge-trigger 규약이다 (endpoint 는 level, 통지는 edge — DOW-1180).
+#
 # 자격증명
-#   **토큰이 0개다.** gist 가 public 이라 읽는 쪽에 자격증명이 필요 없고,
-#   GITHUB_TOKEN 조차 쓰지 않는다. 공개 저장소에 장기 자격증명을 넣지 않는 것이
-#   이 설계의 전제다.
+#   **장기 자격증명이 0개다.** gist 가 public 이라 읽는 쪽에 자격증명이 필요 없다.
+#   이슈를 쓸 때만 런 단위로 발급·폐기되는 GITHUB_TOKEN 을 쓴다. PAT 는 쓰지 않는다.
 #
 # 설정값
 #   secrets.OPS_DEADMANS_GIST_ID   필수. heartbeat gist id.
 #       variable 이 아니라 secret 인 이유: 공개 저장소의 Actions 로그는 누구나 읽을
 #       수 있고, `run` 스텝의 env 블록은 로그에 그대로 찍힌다. variable 로 두면
 #       "감시 대상 주소를 공개 저장소에 박아 두지 않는다"는 조건이 로그에서 깨진다.
-#       이것은 자격증명이 아니므로 위의 "토큰 0개"와 충돌하지 않는다.
+#       이것은 자격증명이 아니므로 위의 "장기 자격증명 0개"와 충돌하지 않는다.
 #   vars.OPS_DEADMANS_GIST_OWNER   필수. gist 소유 계정 (raw 폴백 경로에 필요).
 #       저장소 소유자와 같아 숨길 것이 없으므로 variable 로 둔다.
-#   vars.OPS_DEADMANS_MAX_AGE_SEC  선택. 기본 1200. heartbeat 이 이보다 오래되면 실패
+#   vars.OPS_DEADMANS_MAX_AGE_SEC  선택. 기본 1200. heartbeat 이 이보다 오래되면 경보
 #
-# 되돌리기: 이 파일 1개 + gist 1개 삭제.
+# 알려진 한계 — 스케줄 발화가 best-effort 다 (DOW-1202 실측)
+#   `*/15` 로 걸어 두었지만 GitHub 이 실제로 발화시킨 것은 워크플로 등록 후
+#   4시간 23분 동안 17회 기대 대비 **1회**였다. GitHub 스케줄은 고부하 시 지연·유실된다
+#   (공개 저장소에서 특히). 따라서 이 스위치의 실효 탐지 지연은 15분이 아니라
+#   **수십 분~수 시간**으로 봐야 한다. 그래도 DOW-1170 에서 실제로 겪은 실패
+#   모드(16시간 무통지)에 비하면 개선이지만, "15분 내 탐지"로 적어 두면 거짓이 된다.
+#
+# 되돌리기: 이 파일 1개 + 판정기 1개 + gist 1개 삭제.
 
 name: ops dead-mans-switch
 
 on:
   schedule:
-    # 15분 주기. public 저장소라 Actions 분은 무료다.
+    # 15분 주기(best-effort — 위 "알려진 한계" 참조). public 저장소라 Actions 분은 무료다.
     - cron: '*/15 * * * *'
   # 수신 증거 채취와 수동 확인용.
   workflow_dispatch:
 
-# 읽기만 한다. gist 는 미인증으로 읽으므로 GITHUB_TOKEN 조차 쓰지 않는다.
+# gist 는 미인증으로 읽는다. 쓰기는 경보 이슈에만 필요하다.
 permissions:
   contents: read
+  issues: write
 
 concurrency:
   group: ops-deadmans-switch
@@ -62,9 +78,113 @@ jobs:
           sparse-checkout: .github/scripts
           sparse-checkout-cone-mode: false
 
+      # 판정만 한다. 통지는 다음 스텝이 맡으므로 여기서 job 을 끝내지 않는다.
       - name: heartbeat 확인
+        id: check
+        continue-on-error: true
         env:
           GIST_ID: ${{ secrets.OPS_DEADMANS_GIST_ID }}
           GIST_OWNER: ${{ vars.OPS_DEADMANS_GIST_OWNER }}
           MAX_AGE_SEC: ${{ vars.OPS_DEADMANS_MAX_AGE_SEC || '1200' }}
         run: python3 .github/scripts/ops_deadmans_switch.py
+
+      # 판정기가 status 를 못 내보낸 것 자체가 이상이다. 통과시키지 않는다.
+      - name: 판정 결과 존재 확인
+        id: verdict
+        env:
+          STATUS: ${{ steps.check.outputs.status }}
+          OUTCOME: ${{ steps.check.outcome }}
+        run: |
+          if [ "$STATUS" != "ok" ] && [ "$STATUS" != "alert" ]; then
+            echo "::error title=ops dead-mans-switch::판정기가 status 를 내보내지 않았습니다 (outcome=$OUTCOME). 판정 불가는 통과가 아닙니다."
+            echo "status=alert" >> "$GITHUB_OUTPUT"
+            echo "broken=1" >> "$GITHUB_OUTPUT"
+          else
+            echo "status=$STATUS" >> "$GITHUB_OUTPUT"
+            echo "broken=0" >> "$GITHUB_OUTPUT"
+          fi
+
+      # 경보 진입 — 열린 경보 이슈가 없을 때만 새로 연다.
+      - name: 경보 이슈 개설
+        if: steps.verdict.outputs.status == 'alert'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          OWNER: ${{ github.repository_owner }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          HEADLINE: ${{ steps.check.outputs.headline }}
+          DETAIL: ${{ steps.check.outputs.detail }}
+          BROKEN: ${{ steps.verdict.outputs.broken }}
+        run: |
+          set -euo pipefail
+          gh label create ops-deadmans-switch --repo "$REPO" \
+            --color B60205 --description "운영 dead-mans-switch 경보 (자동 생성)" 2>/dev/null || true
+          open_issue=$(gh issue list --repo "$REPO" --label ops-deadmans-switch \
+            --state open --limit 1 --json number --jq '.[0].number // empty')
+          if [ -n "$open_issue" ]; then
+            echo "이미 열린 경보 이슈 #$open_issue 가 있습니다 — 도배하지 않고 종료합니다."
+            exit 0
+          fi
+          if [ "$BROKEN" = "1" ]; then
+            headline="판정기가 결과를 내보내지 못했습니다"
+            detail="- 판정기 스텝이 status 를 내보내지 않았습니다. 워크플로/판정기 자체를 확인하세요."
+          else
+            headline="$HEADLINE"
+            detail="$DETAIL"
+          fi
+          {
+            echo "## 운영 백업 health 감시 경보"
+            echo
+            echo "$detail"
+            echo
+            echo "### 무엇을 보아야 하는가"
+            echo
+            echo "- 운영 호스트가 살아 있는지, on-host 워처(\`ai.paperclip.backup-watch\`)가 떠 있는지"
+            echo "- \`GET /api/health/backup\` 이 실제로 무엇을 반환하는지"
+            echo "- heartbeat 이 멈춘 것이면 호스트/워처 문제, \`alerting=true\` 면 백업 자체가 밀린 것"
+            echo
+            echo "이 이슈는 heartbeat 이 정상으로 돌아오면 자동으로 닫힙니다. 수동으로 닫지 마세요 —"
+            echo "닫으면 같은 장애가 다시 이슈를 열어 경보가 중복됩니다."
+            echo
+            echo "판정 run: $RUN_URL"
+            echo
+            echo "<sub>ops dead-mans-switch (DOW-1202) 자동 생성</sub>"
+          } > /tmp/ops-alert-body.md
+          gh issue create --repo "$REPO" \
+            --title "🚨 ops dead-mans-switch: $headline" \
+            --label ops-deadmans-switch \
+            --assignee "$OWNER" \
+            --body-file /tmp/ops-alert-body.md
+
+      # 경보 해제 — 열려 있던 경보 이슈를 닫는다.
+      - name: 경보 해제 시 이슈 종결
+        if: steps.verdict.outputs.status == 'ok'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          DETAIL: ${{ steps.check.outputs.detail }}
+        run: |
+          set -euo pipefail
+          open_issue=$(gh issue list --repo "$REPO" --label ops-deadmans-switch \
+            --state open --limit 1 --json number --jq '.[0].number // empty')
+          if [ -z "$open_issue" ]; then
+            echo "열린 경보 이슈가 없습니다 — 할 일이 없습니다."
+            exit 0
+          fi
+          {
+            echo "## 복구 확인 — heartbeat 정상"
+            echo
+            echo "$DETAIL"
+            echo
+            echo "판정 run: $RUN_URL"
+          } > /tmp/ops-recovery-body.md
+          gh issue comment "$open_issue" --repo "$REPO" --body-file /tmp/ops-recovery-body.md
+          gh issue close "$open_issue" --repo "$REPO" --reason completed
+
+      # run 도 빨갛게 남긴다. 통지는 이슈가 하지만 run 이력이 초록이면 사후 추적이 어렵다.
+      - name: 경보면 run 실패로 남김
+        if: steps.verdict.outputs.status == 'alert'
+        run: |
+          echo "::error title=ops dead-mans-switch::경보 상태입니다 — 위 경보 이슈를 확인하세요."
+          exit 1
