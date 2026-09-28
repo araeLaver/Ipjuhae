@@ -19,7 +19,7 @@ interface ConversationRow {
   created_at: string
   other_user_name: string
   other_user_id: string
-  other_user_type: 'landlord' | 'tenant'
+  other_user_type: UserType
   last_message: string | null
   unread_count: number
 }
@@ -29,11 +29,37 @@ interface CountRow {
 }
 
 interface UserRow {
-  user_type: 'landlord' | 'tenant'
+  user_type: UserType
 }
 
 interface IdRow {
   id: string
+}
+
+type UserType = 'tenant' | 'landlord' | 'broker' | 'admin'
+
+function placeConversationParticipants(
+  currentUser: { id: string; userType: UserType },
+  targetUser: { id: string; userType: UserType }
+) {
+  if (currentUser.userType === 'landlord') {
+    return { landlordId: currentUser.id, tenantId: targetUser.id }
+  }
+
+  if (targetUser.userType === 'landlord') {
+    return { landlordId: targetUser.id, tenantId: currentUser.id }
+  }
+
+  if (currentUser.userType === 'tenant') {
+    return { landlordId: targetUser.id, tenantId: currentUser.id }
+  }
+
+  if (targetUser.userType === 'tenant') {
+    return { landlordId: currentUser.id, tenantId: targetUser.id }
+  }
+
+  const [landlordId, tenantId] = [currentUser.id, targetUser.id].sort()
+  return { landlordId, tenantId }
 }
 
 // GET /api/messages/conversations - 대화방 목록 조회
@@ -74,8 +100,8 @@ export async function GET(request: Request) {
           ELSE c.landlord_id
         END as other_user_id,
         CASE
-          WHEN c.landlord_id = $1 THEN 'tenant'
-          ELSE 'landlord'
+          WHEN c.landlord_id = $1 THEN tu.user_type
+          ELSE lu.user_type
         END as other_user_type,
         -- 마지막 메시지
         (
@@ -93,6 +119,8 @@ export async function GET(request: Request) {
       FROM conversations c
       LEFT JOIN profiles lp ON c.landlord_id = lp.user_id
       LEFT JOIN profiles tp ON c.tenant_id = tp.user_id
+      LEFT JOIN users lu ON c.landlord_id = lu.id
+      LEFT JOIN users tu ON c.tenant_id = tu.id
       WHERE c.landlord_id = $1 OR c.tenant_id = $1
       ORDER BY c.last_message_at DESC
       LIMIT $2 OFFSET $3`,
@@ -179,17 +207,17 @@ export async function POST(request: Request) {
 
     const targetUserType = targetResult[0].user_type
 
-    // 집주인-세입자 간에만 대화 가능
     if (currentUserType === targetUserType) {
       return NextResponse.json(
-        { error: '집주인과 세입자 간에만 대화할 수 있습니다' },
+        { error: '서로 다른 역할끼리만 대화할 수 있습니다' },
         { status: 400 }
       )
     }
 
-    // landlord_id와 tenant_id 결정
-    const landlordId = currentUserType === 'landlord' ? payload.userId : targetUserId
-    const tenantId = currentUserType === 'tenant' ? payload.userId : targetUserId
+    const { landlordId, tenantId } = placeConversationParticipants(
+      { id: payload.userId, userType: currentUserType },
+      { id: targetUserId, userType: targetUserType }
+    )
 
     // 기존 대화방 확인
     const existingConversation = await query<IdRow>(
