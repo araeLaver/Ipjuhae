@@ -11,7 +11,7 @@
  * 다 보여준다. 하나만 골라 "시세입니다"라고 말하면 그 순간 추정이 된다.
  */
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -68,6 +68,28 @@ export function MarketPricePicker({ onPick, depositManwon }: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const rentRequest = useRef(0)
+  const tradeRequest = useRef(0)
+
+  useEffect(() => () => {
+    rentRequest.current += 1
+    tradeRequest.current += 1
+  }, [])
+
+  function clearRent() {
+    rentRequest.current += 1
+    setRent(null)
+    setRentLoading(false)
+  }
+
+  function clearSearch() {
+    tradeRequest.current += 1
+    setTrades(null)
+    setLoading(false)
+    setError(null)
+    clearRent()
+  }
+
   /**
    * 다음 우편번호에서 법정동코드(bcode)를 받는다. 앞 5자리가 실거래가 조회 코드다.
    * 별도 코드표를 들고 다닐 필요가 없다.
@@ -88,7 +110,7 @@ export function MarketPricePicker({ onPick, depositManwon }: Props) {
             return
           }
           setRegion({ lawdCd: code, label: `${data.sido ?? ''} ${data.sigungu ?? ''}`.trim() })
-          setTrades(null)
+          clearSearch()
         },
       }).open()
     }
@@ -114,6 +136,7 @@ export function MarketPricePicker({ onPick, depositManwon }: Props) {
     onPick(t.priceManwon)
     if (!region) return
 
+    const requestId = ++rentRequest.current
     setRentLoading(true)
     setRent(null)
     try {
@@ -127,16 +150,18 @@ export function MarketPricePicker({ onPick, depositManwon }: Props) {
       if (!res.ok) return
       const json = await res.json()
       const summary = summarizeRents(json.jeonse ?? [])
-      if (summary) setRent({ summary, label: `${t.name} ${t.areaM2}㎡` })
+      if (requestId === rentRequest.current && summary) setRent({ summary, label: `${t.name} ${t.areaM2}㎡` })
     } catch {
       // 전세 참고 정보가 없어도 시세 입력은 이미 끝났다. 조용히 넘어간다.
     } finally {
-      setRentLoading(false)
+      if (requestId === rentRequest.current) setRentLoading(false)
     }
   }
 
   async function search() {
     if (!region) return
+    clearSearch()
+    const requestId = ++tradeRequest.current
     setLoading(true)
     setError(null)
     try {
@@ -144,14 +169,16 @@ export function MarketPricePicker({ onPick, depositManwon }: Props) {
       if (keyword.trim()) params.set('keyword', keyword.trim())
       const res = await fetch(`/api/market-price?${params}`)
       const json = await res.json()
+      if (requestId !== tradeRequest.current) return
       if (!res.ok) throw new Error(json.error ?? '조회에 실패했습니다')
       setTrades(json.trades ?? [])
       setRent(null)
     } catch (e) {
+      if (requestId !== tradeRequest.current) return
       setError(e instanceof Error ? e.message : '조회에 실패했습니다')
       setTrades(null)
     } finally {
-      setLoading(false)
+      if (requestId === tradeRequest.current) setLoading(false)
     }
   }
 
@@ -179,7 +206,10 @@ export function MarketPricePicker({ onPick, depositManwon }: Props) {
               <Input
                 id="apt-keyword"
                 value={keyword}
-                onChange={(e) => setKeyword(e.target.value)}
+                onChange={(e) => {
+                  setKeyword(e.target.value)
+                  clearSearch()
+                }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') search()
                 }}
