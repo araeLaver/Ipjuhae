@@ -57,3 +57,18 @@ scripts/qa/build-qa-apk.sh
 - 운영 계정 11건 중 `broker`는 여전히 **0건**입니다. 검증용 broker 계정은 가입 흐름을
   직접 통과해서 만들어야 합니다 — 그 가입 자체가 검증 대상이기 때문에 API로 우회 생성하면
   검증이 아닙니다.
+
+## 메시지 역할 조합 회귀
+
+로컬 QA 계정 4개(`tenant`, `landlord`, `broker`, `admin`)를 준비한 뒤 계정 정보를
+저장소 밖의 권한 `0600` JSON 파일로 전달합니다. 각 역할 키에는 `id`, `email`,
+`password`가 필요합니다. 실제 운영 계정은 사용하지 않습니다.
+
+```bash
+QA_ACCOUNTS_FILE=/tmp/qa-accounts.json node scripts/qa/check-conversation-role-matrix.mjs
+```
+
+이 검사는 역할이 다른 6개 조합으로 대화를 생성하고, 반대 방향 요청이 같은 대화를
+반환하는지 확인합니다. 양쪽 참가자의 목록·상세 API에서 상대 UUID와 실제 역할을
+검증합니다. 기존 대화는 재사용하며 새 대화가 필요한 경우 로컬 DB에 생성합니다.
+계정 생성과 Android 화면 검증은 이 스크립트 범위에 포함되지 않습니다.
