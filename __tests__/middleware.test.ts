@@ -74,3 +74,19 @@ describe('middleware 보호 경로 로그인 리다이렉트', () => {
     expect(location.searchParams.get('redirect')).toBe('/profile?error=oauth_denied')
   })
 })
+
+describe('워처 핑 CSRF 예외 범위', () => {
+  afterEach(() => vi.unstubAllEnvs())
+  it('Origin 없는 POST 핑은 라우트의 별도 Bearer 인증으로 전달한다', async () => {
+    vi.stubEnv('NODE_ENV', 'production')
+    const response = await middleware(new NextRequest('https://www.ipjuhae.com/api/ops/heartbeat', { method: 'POST' }))
+    expect(response.headers.get('x-middleware-next')).toBe('1')
+  })
+  it('다른 메서드와 인접 경로는 예외로 열지 않는다', async () => {
+    vi.stubEnv('NODE_ENV', 'production')
+    for (const [path, method] of [['/api/ops/heartbeat', 'DELETE'], ['/api/ops/heartbeat/other', 'POST'], ['/api/profile', 'POST']]) {
+      const response = await middleware(new NextRequest(`https://www.ipjuhae.com${path}`, { method }))
+      expect(response.status).toBe(403)
+    }
+  })
+})

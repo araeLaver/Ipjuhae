@@ -157,6 +157,9 @@ function checkCsrf(request: NextRequest): boolean {
   const isMutation = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)
   if (!isMutation) return true
 
+  // 서버 간 핑은 별도 Bearer secret만 인증한다. 쿠키 인증을 사용하지 않는다.
+  if (method === 'POST' && request.nextUrl.pathname === '/api/ops/heartbeat') return true
+
   // 모바일 앱(커스텀 헤더 사용) API 요청은 CSRF 검증 우회
   if (request.headers.get('x-mobile-client') === 'true') {
     return true
