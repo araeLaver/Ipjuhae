@@ -65,9 +65,11 @@ export async function GET(request: Request) {
   const offset = (page - 1) * limit
 
   try {
+    // 저장된 작성 누계 대신 현재 공개 댓글만 집계한다(신고 숨김·삭제·복원 반영).
     const rows = await query<PostRow>(
       `SELECT p.id, p.audience, p.category, p.title, p.body,
-              p.view_count, p.comment_count, p.created_at,
+              p.view_count, (SELECT COUNT(*)::int FROM community_comments c
+                WHERE c.post_id = p.id AND c.deleted_at IS NULL AND c.hidden_at IS NULL) AS comment_count, p.created_at,
               CASE WHEN u.user_type = 'admin' THEN 'admin' ELSE 'member' END AS author_role
          FROM community_posts p
          LEFT JOIN users u ON u.id = p.author_id

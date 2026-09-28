@@ -91,8 +91,10 @@ async function fetchPublicPosts(): Promise<HomePost[]> {
       // 전부 member 로 접는다 — 커뮤니티 3개 라우트와 같은 식이다. 여기는 화면으로
       // 넘기는 소비처가 아직 없어 유출은 아니었지만, 하나 생기는 순간 유출이 된다.
       // (DOW-1262 의 결정, DOW-1275 에서 이 마지막 조회에 적용)
+      // 댓글 수는 목록·상세와 같이 현재 공개 댓글만 센다.
       `SELECT p.id, p.title, LEFT(p.body, 300) AS body,
-              p.comment_count, p.view_count, p.created_at,
+              (SELECT COUNT(*)::int FROM community_comments c
+                WHERE c.post_id = p.id AND c.deleted_at IS NULL AND c.hidden_at IS NULL) AS comment_count, p.view_count, p.created_at,
               CASE WHEN u.user_type = 'admin' THEN 'admin' ELSE 'member' END AS author_role
          FROM community_posts p
          LEFT JOIN users u ON u.id = p.author_id

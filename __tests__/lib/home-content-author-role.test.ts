@@ -36,7 +36,7 @@ const adminRow = { ...baseRow, id: 'p2', title: '임대인 노트 1화. 공실�
 function simulateDb() {
   vi.mocked(query).mockImplementation((async (sql: string) => {
     const text = String(sql)
-    const selectList = text.split('FROM')[0] ?? ''
+    const selectList = text.slice(0, text.lastIndexOf('FROM'))
     const collapsed =
       /CASE WHEN u\.user_type = 'admin' THEN 'admin' ELSE 'member' END AS author_role/.test(selectList)
 

@@ -85,11 +85,11 @@ function forbiddenKeys(value: unknown, found: string[] = []): string[] {
  */
 function simulateDb() {
   const rowFor = (sql: string) => {
-    const base = /FROM community_comments/.test(sql) ? commentRow : detailRow
+    const base = /^\s*SELECT c\.id/.test(sql) ? commentRow : detailRow
     const row: Record<string, unknown> = { ...base }
     delete row.author_name
     delete row.author_id
-    const selectList = sql.split('FROM')[0] ?? ''
+    const selectList = sql.slice(0, sql.lastIndexOf('FROM'))
     if (/AS author_name/.test(selectList)) row.author_name = '김철수'
     if (/author_id/.test(selectList)) row.author_id = AUTHOR_ID
     // author_role도 SELECT 식을 따라간다(DOW-1262). 고정 값을 돌려주면 SQL을
