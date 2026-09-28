@@ -289,9 +289,9 @@ export function CommunityPostView({ id }: { id: string }) {
             </Card>
 
             {/*
-              개수는 서버가 집계한 공개 댓글 수를 쓴다. 서버의 `post.comment_count`는 작성 때만 +1 되고
-              삭제·숨김에서 줄지 않아, 바로 아래 실제로 그려진 목록과 어긋난다.
-              조회에 실패했을 때는 아예 숫자를 내지 않는다 — 실패를 "댓글 0"으로 보여주던 게 이번 결함이다.
+              목록·상세 모두 숨김·삭제를 제외한 공개 댓글 수를 쓴다.
+              여기서는 댓글 API의 total로 페이지에 표시되지 않은 댓글까지 포함한다.
+              조회 실패는 "댓글 0"과 구분하기 위해 숫자 없이 표시한다.
             */}
             <h2 className="mb-3 text-sm font-semibold">
               {commentsFailed ? '댓글' : `댓글 ${commentsTotal}`}
