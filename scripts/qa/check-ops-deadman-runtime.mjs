@@ -75,9 +75,17 @@ try {
   for (let i = 0; i < 65 && Number((await state()).evaluation_count) === count; i++) await delay(1000)
   const after = await state()
   assert.equal(Number(after.evaluation_count), count + 1)
-  assert.ok(after.last_evaluation_gap_ms >= 59_000 && after.last_evaluation_gap_ms < 65_000)
+  // 타이머는 즉시 판정의 DB 초기화가 끝나기 전에 설정된다. 첫 간격에는
+  // 초기화 시간이 빠지므로 정상 주기 하한은 다음 정기 판정 사이에서 검증한다.
+  assert.ok(after.last_evaluation_gap_ms > 0 && after.last_evaluation_gap_ms < 65_000,
+    `재시작 후 첫 판정 간격: ${after.last_evaluation_gap_ms}ms`)
+  for (let i = 0; i < 65 && Number((await state()).evaluation_count) === count + 1; i++) await delay(1000)
+  const steady = await state()
+  assert.equal(Number(steady.evaluation_count), count + 2)
+  assert.ok(steady.last_evaluation_gap_ms >= 59_000 && steady.last_evaluation_gap_ms < 65_000,
+    `정기 판정 간격 범위 이탈: ${steady.last_evaluation_gap_ms}ms`)
   assert.ok(!logs.includes('tick_failed') && !logs.includes('scheduler_start_failed'))
-  console.log(JSON.stringify({ result: 'PASS', unauthorized: 401, accepted: 200, persistedAcrossProcessRestart: true, measuredTickGapMs: after.last_evaluation_gap_ms, externalEmailSent: false }))
+  console.log(JSON.stringify({ result: 'PASS', unauthorized: 401, accepted: 200, persistedAcrossProcessRestart: true, firstTickGapMs: after.last_evaluation_gap_ms, measuredTickGapMs: steady.last_evaluation_gap_ms, externalEmailSent: false }))
 } finally {
   await stop()
   await db.end()

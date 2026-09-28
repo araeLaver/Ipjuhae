@@ -133,10 +133,50 @@ describe.skipIf(!testDb)('임시 PostgreSQL 통합 검증', () => {
   })
   it('모호한 발송 결과는 23시간 이후 자동 재발송을 중지해 키 만료 중복을 막는다', async () => {
     await stale()
-    await db.pool!.query("UPDATE ops_deadman_events SET first_attempt_at=clock_timestamp()-interval '24 hours'")
+    await db.pool!.query("UPDATE ops_deadman_events SET first_attempt_at=clock_timestamp()-interval '23 hours 1 second'")
     await dispatchDeadman()
     expect((await events())[0].delivery_status).toBe('uncertain')
     expect(fetch).not.toHaveBeenCalled()
+  })
+  it('실패한 경보가 회복 이벤트보다 먼저 재시도되고 60초 lease를 지킨다', async () => {
+    await stale()
+    const fetchMock = vi.fn().mockRejectedValueOnce(new Error('timeout'))
+      .mockImplementation(async () => new Response(JSON.stringify({ id: 'accepted' }), { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+    await dispatchDeadman()
+    await receiveHeartbeat()
+    await evaluateDeadman()
+    await dispatchDeadman()
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect((await events()).map(e => [e.kind, e.delivery_status])).toEqual([
+      ['stale', 'pending'], ['recovered', 'pending'],
+    ])
+    await db.pool!.query("UPDATE ops_deadman_events SET last_attempt_at=clock_timestamp()-interval '61 seconds' WHERE kind='stale'")
+    await dispatchDeadman()
+    await dispatchDeadman()
+    expect(fetchMock).toHaveBeenCalledTimes(3)
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body).subject).toContain('핑 누락')
+    expect(JSON.parse(fetchMock.mock.calls[2][1].body).subject).toContain('회복')
+    expect((await events()).every(e => e.delivery_status === 'sent')).toBe(true)
+  })
+  it('Resend 수락 후 DB 기록 실패에도 동일 키와 본문으로 재시도한다', async () => {
+    await stale()
+    const fetchMock = vi.fn().mockImplementation(async () => new Response(JSON.stringify({ id: 'accepted' }), { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+    await db.pool!.query("ALTER TABLE ops_deadman_events ADD CONSTRAINT qa_reject_sent CHECK (delivery_status <> 'sent')")
+    try {
+      await expect(dispatchDeadman()).rejects.toThrow()
+      expect((await events())[0].attempts).toBe(1)
+      expect((await events())[0].delivery_status).toBe('pending')
+    } finally {
+      await db.pool!.query('ALTER TABLE ops_deadman_events DROP CONSTRAINT qa_reject_sent')
+    }
+    await db.pool!.query("UPDATE ops_deadman_events SET last_attempt_at=clock_timestamp()-interval '61 seconds'")
+    await dispatchDeadman()
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(fetchMock.mock.calls[0][1].body).toBe(fetchMock.mock.calls[1][1].body)
+    expect(fetchMock.mock.calls[0][1].headers['Idempotency-Key']).toBe(fetchMock.mock.calls[1][1].headers['Idempotency-Key'])
+    expect((await events())[0].delivery_status).toBe('sent')
   })
   it('메일 500 응답은 id가 있어도 성공 처리하지 않는다', async () => {
     await stale()
