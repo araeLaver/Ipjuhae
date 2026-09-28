@@ -19,6 +19,7 @@ let MatchesScreen: React.ComponentType<any>
 let ChatRoomScreen: React.ComponentType<any>
 let HomeScreen: React.ComponentType<any>
 let ProfileScreen: React.ComponentType<any>
+let SettingsScreen: React.ComponentType<any>
 let VerificationScreen: React.ComponentType<any>
 
 const api = {
@@ -37,6 +38,7 @@ const api = {
   fetchLandlordStats: vi.fn(),
   fetchVerificationStatus: vi.fn(),
   submitVerificationDocument: vi.fn(),
+  deleteAccount: vi.fn(),
 }
 // useAuth가 돌려줄 사용자. 화면마다 tenant/landlord를 갈아끼운다.
 const authUser = { current: { userType: 'tenant', name: 'QA', id: 'qa-user' } as Record<string, unknown> | null }
@@ -63,10 +65,12 @@ export const ScrollView=element('div');
 export const TextInput=({value, onChangeText, placeholder})=>React.createElement('input',{value:value||'', placeholder, onChange:e=>onChangeText?.(e.target.value)});
 export const KeyboardAvoidingView=element('div');
 export const Platform={OS:'ios', select:o=>o.ios};
-export const StyleSheet={create:s=>s}; export const Alert={alert:()=>{}};
+export const StyleSheet={create:s=>s}; export const Alert={alert:()=>{}}; export const Linking={openURL:()=>{}};
 `)
   const navigation = join(dir, 'navigation.js')
   writeFileSync(navigation, `import React from 'react'; export const useFocusEffect = fn => React.useEffect(() => fn(), [fn]);`)
+  const constants = join(dir, 'constants.js')
+  writeFileSync(constants, `export default { expoConfig: { version: '1.0.0' } };`)
   const apiClient = join(dir, 'api.js')
   writeFileSync(apiClient, `export const fetchListings=(...a)=>globalThis.__mobileListQA.fetchListings(...a);
 export const fetchLandlordProperties=(...a)=>globalThis.__mobileListQA.fetchLandlordProperties(...a);
@@ -82,6 +86,7 @@ export const fetchTenantProfile=(...a)=>globalThis.__mobileListQA.fetchTenantPro
 export const fetchLandlordStats=(...a)=>globalThis.__mobileListQA.fetchLandlordStats(...a);
 export const fetchVerificationStatus=(...a)=>globalThis.__mobileListQA.fetchVerificationStatus(...a);
 export const submitVerificationDocument=(...a)=>globalThis.__mobileListQA.submitVerificationDocument(...a);
+export const deleteAccount=(...a)=>globalThis.__mobileListQA.deleteAccount(...a);
 `)
 
   const auth = join(dir, 'auth.js')
@@ -95,6 +100,7 @@ export default { pickImage, takePhoto };`)
     setup(b: any) {
       b.onResolve({ filter: /^react-native$/ }, () => ({ path: native }))
       b.onResolve({ filter: /^@react-navigation\/native$/ }, () => ({ path: navigation }))
+      b.onResolve({ filter: /^expo-constants$/ }, () => ({ path: constants }))
       b.onResolve({ filter: /^\.\.\/services\/api$/ }, () => ({ path: apiClient }))
       b.onResolve({ filter: /^\.\.\/contexts\/AuthContext$/ }, () => ({ path: auth }))
       b.onResolve({ filter: /^\.\.\/services\/imageService$/ }, () => ({ path: imageService }))
@@ -112,6 +118,7 @@ export default { pickImage, takePhoto };`)
       'mobile/src/screens/ChatRoomScreen.tsx',
       'mobile/src/screens/HomeScreen.tsx',
       'mobile/src/screens/ProfileScreen.tsx',
+      'mobile/src/screens/SettingsScreen.tsx',
       'mobile/src/screens/VerificationScreen.tsx',
     ],
     bundle: true,
@@ -131,6 +138,7 @@ export default { pickImage, takePhoto };`)
   ChatRoomScreen = (await import(/* @vite-ignore */ pathToFileURL(join(dir, 'ChatRoomScreen.js')).href)).default
   HomeScreen = (await import(/* @vite-ignore */ pathToFileURL(join(dir, 'HomeScreen.js')).href)).default
   ProfileScreen = (await import(/* @vite-ignore */ pathToFileURL(join(dir, 'ProfileScreen.js')).href)).default
+  SettingsScreen = (await import(/* @vite-ignore */ pathToFileURL(join(dir, 'SettingsScreen.js')).href)).default
   VerificationScreen = (await import(/* @vite-ignore */ pathToFileURL(join(dir, 'VerificationScreen.js')).href)).default
 })
 
@@ -370,5 +378,22 @@ describe('공인중개사 가입과 역할별 화면', () => {
       expect(api.fetchTenantProfile).not.toHaveBeenCalled()
       expect(api.fetchVerificationStatus).not.toHaveBeenCalled()
     }
+  })
+
+  it('프로필·설정 화면은 미구현 준비 중(ProfileEdit·References) 진입 버튼을 노출하지 않는다', async () => {
+    authUser.current = { userType: 'tenant', name: 'QA', email: 'tenant@example.test' }
+    api.fetchTenantProfile.mockResolvedValue(null)
+    api.fetchVerificationStatus.mockResolvedValue(null)
+    const navigate = vi.fn()
+
+    render(<ProfileScreen navigation={{ navigate }} />)
+    await screen.findByText('알림 설정')
+    expect(screen.queryByText('프로필 편집')).toBeNull()
+    expect(screen.queryByText('레퍼런스 관리')).toBeNull()
+
+    cleanup()
+    render(<SettingsScreen navigation={{ navigate }} />)
+    expect(screen.getByText('푸시 알림 설정')).toBeVisible()
+    expect(screen.queryByText('프로필 편집')).toBeNull()
   })
 })

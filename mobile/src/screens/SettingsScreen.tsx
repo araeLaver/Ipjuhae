@@ -85,7 +85,6 @@ const SettingsScreen: React.FC<Props> = ({ navigation }) => {
     {
       title: '계정',
       items: [
-        { icon: '✏️', label: '프로필 편집', type: 'link', onPress: () => navigation.navigate('ProfileEdit') },
         { icon: '🔒', label: '비밀번호 변경', type: 'link', onPress: () => Alert.alert('안내', '비밀번호 변경은 웹에서 가능합니다.') },
       ],
     },

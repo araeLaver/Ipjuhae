@@ -39,8 +39,6 @@ export type RootStackParamList = {
   Properties: undefined;
   TenantBrowse: undefined;
   ChatRoom: { conversationId: string; otherUserName: string };
-  ProfileEdit: undefined;
-  References: undefined;
   NotificationSettings: undefined;
   Settings: undefined;
   CommunityPost: { postId: string };
@@ -114,13 +112,6 @@ const MainTabNavigator = () => (
     <Tab.Screen name="Messages" component={MessagesScreen} options={{ tabBarLabel: '메시지' }} />
     <Tab.Screen name="Profile" component={ProfileScreen} options={{ tabBarLabel: '프로필' }} />
   </Tab.Navigator>
-);
-
-// Placeholder screen for routes not yet implemented
-const PlaceholderScreen = () => (
-  <View style={styles.placeholder}>
-    <Text style={styles.placeholderText}>준비 중입니다</Text>
-  </View>
 );
 
 /**
@@ -228,16 +219,6 @@ const AppNavigator = () => {
               })}
             />
             <Stack.Screen
-              name="ProfileEdit"
-              component={PlaceholderScreen}
-              options={{ headerShown: true, headerTitle: '프로필 편집', headerTintColor: '#C2451F' }}
-            />
-            <Stack.Screen
-              name="References"
-              component={PlaceholderScreen}
-              options={{ headerShown: true, headerTitle: '레퍼런스 관리', headerTintColor: '#C2451F' }}
-            />
-            <Stack.Screen
               name="NotificationSettings"
               component={NotificationSettingsScreen}
               options={{ headerShown: true, headerTitle: '알림 설정', headerTintColor: '#C2451F' }}
@@ -282,8 +263,6 @@ const styles = StyleSheet.create({
   loadingText: { fontSize: 32, fontWeight: 'bold', color: '#fff' },
   tabIcon: { fontSize: 22, opacity: 0.6 },
   tabIconFocused: { opacity: 1 },
-  placeholder: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FBF6EF' },
-  placeholderText: { fontSize: 16, color: '#9A8F87' },
 });
 
 export default AppNavigator;

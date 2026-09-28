@@ -174,10 +174,6 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
       {/* Menu */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>설정</Text>
-        <MenuItem icon="✏️" label="프로필 편집" onPress={() => navigation.navigate('ProfileEdit')} />
-        {isTenant && (
-          <MenuItem icon="📄" label="레퍼런스 관리" onPress={() => navigation.navigate('References')} />
-        )}
         <MenuItem icon="🔔" label="알림 설정" onPress={() => navigation.navigate('NotificationSettings')} />
         <MenuItem icon="⚙️" label="앱 설정" onPress={() => navigation.navigate('Settings')} />
       </View>
