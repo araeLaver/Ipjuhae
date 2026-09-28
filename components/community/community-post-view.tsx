@@ -181,7 +181,7 @@ export function CommunityPostView({ id }: { id: string }) {
     <div className="min-h-screen bg-muted/40">
       <Header />
       <main className="container mx-auto max-w-3xl px-4 py-8">
-        <Link href="/" className="mb-4 inline-block text-sm text-muted-foreground hover:text-foreground">← 커뮤니티</Link>
+        <Link href="/community" className="mb-4 inline-block text-sm text-muted-foreground hover:text-foreground">← 커뮤니티</Link>
 
         {hiddenByReport ? (
           <Card className="p-6">
@@ -189,7 +189,7 @@ export function CommunityPostView({ id }: { id: string }) {
               icon={<ShieldAlert className="h-10 w-10" />}
               title="신고가 접수돼 이 글은 보이지 않게 됐습니다"
               description="운영자가 확인합니다. 결과는 따로 안내되지 않습니다."
-              action={{ label: '커뮤니티로 돌아가기', onClick: () => router.push('/') }}
+              action={{ label: '커뮤니티로 돌아가기', onClick: () => router.push('/community') }}
             />
           </Card>
         ) : loading || (error?.forbidden && !viewerKnown) ? (
@@ -217,7 +217,7 @@ export function CommunityPostView({ id }: { id: string }) {
                   <p className="mt-2 text-sm text-muted-foreground">
                     {roleLabel(viewerType) ?? '지금 계정'}으로는 볼 수 없는 게시판입니다.
                   </p>
-                  <Link href="/" className={cn(buttonVariants({ variant: 'outline' }), 'mt-4')}>
+                  <Link href="/community" className={cn(buttonVariants({ variant: 'outline' }), 'mt-4')}>
                     커뮤니티로 돌아가기
                   </Link>
                 </>

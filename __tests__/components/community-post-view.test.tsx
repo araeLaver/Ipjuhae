@@ -343,7 +343,7 @@ describe('U2 — 신고 UI', () => {
     expect(routerPush).not.toHaveBeenCalled()
 
     fireEvent.click(screen.getByRole('button', { name: '커뮤니티로 돌아가기' }))
-    expect(routerPush).toHaveBeenCalledWith('/')
+    expect(routerPush).toHaveBeenCalledWith('/community')
   })
 
   it('접수 실패는 toast로 알린다', async () => {
