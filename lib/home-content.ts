@@ -65,20 +65,20 @@ function parseTitle(title: string, prefix: string) {
  */
 const QUERY_TIMEOUT_MS = 2500
 
-function withTimeout<T>(p: Promise<T>, fallback: T): Promise<T> {
-  return new Promise((resolve) => {
-    const timer = setTimeout(() => resolve(fallback), QUERY_TIMEOUT_MS)
+function withTimeout<T>(p: Promise<T>): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('첫 화면 글 조회 시간 초과')), QUERY_TIMEOUT_MS)
     p.then((v) => {
       clearTimeout(timer)
       resolve(v)
-    }).catch(() => {
+    }).catch((error) => {
       clearTimeout(timer)
-      resolve(fallback)
+      reject(error)
     })
   })
 }
 
-async function fetchPublicPosts(): Promise<HomePost[]> {
+async function fetchPublicPosts(): Promise<HomePost[] | null> {
   try {
     return await withTimeout(
       query<HomePost>(
@@ -103,18 +103,18 @@ async function fetchPublicPosts(): Promise<HomePost[]> {
           AND p.audience = 'all'
         ORDER BY p.created_at DESC
         LIMIT 200`
-      ),
-      []
+      )
     )
   } catch (error) {
     // 글을 못 읽어도 첫 화면은 뜬다. 다만 조용히 넘어가지는 않는다.
     // 모호한 컬럼 참조 하나로 홈이 며칠 빈 채로 떠 있었다.
     logger.error('첫 화면 글 조회 실패', { error })
-    return []
+    return null
   }
 }
 
 export interface HomeContent {
+  status: 'success' | 'error'
   series: GuideSeries[]
   /** 운영자 글이 아닌, 사람들이 올린 질문. 최근 것부터. */
   questions: HomePost[]
@@ -122,7 +122,8 @@ export interface HomeContent {
 }
 
 export async function getHomeContent(): Promise<HomeContent> {
-  const posts = await fetchPublicPosts()
+  const result = await fetchPublicPosts()
+  const posts = result ?? []
 
   const series: GuideSeries[] = SERIES.map((s) => {
     const matched = posts
@@ -136,6 +137,7 @@ export async function getHomeContent(): Promise<HomeContent> {
   const questions = posts.filter((p) => !guideIds.has(p.id)).slice(0, 6)
 
   return {
+    status: result === null ? 'error' : 'success',
     series,
     questions,
     guideCount: guideIds.size,

@@ -45,7 +45,7 @@ export const metadata: Metadata = {
 }
 
 export default async function HomePage() {
-  const { series, questions, guideCount } = await getHomeContent()
+  const { status, series, questions, guideCount } = await getHomeContent()
 
   return (
     <>
@@ -193,7 +193,19 @@ export default async function HomePage() {
               </div>
             </header>
 
-            {questions.length === 0 ? (
+            {status === 'error' ? (
+              <div className="rounded-xl border bg-background p-8 text-center">
+                <p className="text-sm text-muted-foreground">
+                  질문을 불러오지 못했습니다. 잠시 후 다시 열어주세요.
+                </p>
+                <Link
+                  href="/community"
+                  className="mt-4 inline-flex items-center justify-center rounded-lg border px-5 py-2.5 text-sm font-semibold transition-colors hover:bg-muted/50"
+                >
+                  게시판으로 이동
+                </Link>
+              </div>
+            ) : questions.length === 0 ? (
               <div className="rounded-xl border bg-background p-8 text-center">
                 <p className="text-sm text-muted-foreground">
                   아직 올라온 질문이 없습니다. 처음 물어보시는 분이 되어주세요.
