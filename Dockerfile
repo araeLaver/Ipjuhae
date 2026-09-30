@@ -64,6 +64,7 @@ COPY --from=prod-deps --chown=nextjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nextjs:nodejs /app/server.js ./server.js
 COPY --from=builder --chown=nextjs:nodejs /app/socket-auth.js ./socket-auth.js
 COPY --from=builder --chown=nextjs:nodejs /app/build/ops-deadman.cjs ./build/ops-deadman.cjs
+COPY --from=builder --chown=nextjs:nodejs /app/build/saved-search-alerts.cjs ./build/saved-search-alerts.cjs
 
 USER nextjs
 

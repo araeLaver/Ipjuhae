@@ -12,6 +12,8 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { PageContainer } from '@/components/layout/page-container'
 import { AlertCircle, Building, MapPin, Home, Search, SlidersHorizontal, X } from 'lucide-react'
 import { toast } from 'sonner'
+import { SavedSearches } from '@/components/properties/saved-searches'
+import { searchFiltersSchema } from '@/lib/saved-search'
 
 interface Property {
   id: string
@@ -67,6 +69,14 @@ export default function PropertiesPage() {
   const [region, setRegion] = useState('')
   const [propertyType, setPropertyType] = useState('')
   const [sort, setSort] = useState('created_at')
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const parsed = searchFiltersSchema.safeParse({ q: params.get('q') ?? '', region: params.get('region') ?? '', propertyType: params.get('type') ?? '', sort: params.get('sort') ?? 'created_at' })
+    if (parsed.success) {
+      setQ(parsed.data.q); setRegion(parsed.data.region); setPropertyType(parsed.data.propertyType); setSort(parsed.data.sort)
+    }
+  }, [])
 
   const observerRef = useRef<IntersectionObserver | null>(null)
   const loadMoreRef = useRef<HTMLDivElement>(null)
@@ -165,6 +175,7 @@ export default function PropertiesPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               className="pl-9"
+              aria-label="지역명, 건물명으로 검색"
               placeholder="지역명, 건물명으로 검색"
               value={q}
               onChange={e => setQ(e.target.value)}
@@ -173,11 +184,18 @@ export default function PropertiesPage() {
           <Button
             variant={showFilters ? 'default' : 'outline'}
             size="icon"
+            aria-label="검색 필터"
+            aria-expanded={showFilters}
             onClick={() => setShowFilters(v => !v)}
           >
             <SlidersHorizontal className="h-4 w-4" />
           </Button>
         </div>
+
+        <SavedSearches
+          filters={{ q, region, propertyType: propertyType as '' | 'apartment' | 'villa' | 'officetel' | 'oneroom' | 'house' | 'other', sort: sort as 'created_at' | 'deposit' | 'monthly_rent' | 'view_count' }}
+          onApply={filters => { setQ(filters.q); setRegion(filters.region); setPropertyType(filters.propertyType); setSort(filters.sort) }}
+        />
 
         {/* Filters */}
         {showFilters && (
@@ -186,12 +204,12 @@ export default function PropertiesPage() {
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 <div>
                   <label className="text-xs font-medium text-muted-foreground mb-1 block">지역</label>
-                  <Select value={region} onValueChange={setRegion}>
+                  <Select value={region || "all"} onValueChange={value => setRegion(value === "all" ? "" : value)}>
                     <SelectTrigger className="h-9">
                       <SelectValue placeholder="전체" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">전체</SelectItem>
+                      <SelectItem value="all">전체</SelectItem>
                       {REGIONS.map(r => (
                         <SelectItem key={r} value={r}>{r}</SelectItem>
                       ))}
@@ -200,12 +218,12 @@ export default function PropertiesPage() {
                 </div>
                 <div>
                   <label className="text-xs font-medium text-muted-foreground mb-1 block">유형</label>
-                  <Select value={propertyType} onValueChange={setPropertyType}>
+                  <Select value={propertyType || "all"} onValueChange={value => setPropertyType(value === "all" ? "" : value)}>
                     <SelectTrigger className="h-9">
                       <SelectValue placeholder="전체" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">전체</SelectItem>
+                      <SelectItem value="all">전체</SelectItem>
                       {Object.entries(PROPERTY_TYPE_LABELS).map(([v, l]) => (
                         <SelectItem key={v} value={v}>{l}</SelectItem>
                       ))}
@@ -302,6 +320,10 @@ export default function PropertiesPage() {
                           {property.maintenanceFee > 0 && ` + 관리비 ${formatPrice(property.maintenanceFee)}`}
                         </p>
                       </div>
+                      <p className="text-sm font-medium">
+                        월 고정비 {formatPrice(property.monthlyRent + property.maintenanceFee)}원
+                        <span className="ml-1 text-xs text-muted-foreground">(월세 + 관리비 · 공과금 별도)</span>
+                      </p>
                       <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
                         <span>
                           {property.areaSqm && `${property.areaSqm}㎡`}

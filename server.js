@@ -121,6 +121,14 @@ async function start() {
     console.log(`> Ready on http://${hostname}:${port}`)
     // Fly 앱 프로세스 내부 타이머: GitHub schedule/외부 cron 호출에 의존하지 않는다.
     // 감시기 오류가 제품 HTTP 서버 기동을 차단하지 않게 한다.
+    if (process.env.SAVED_SEARCH_ALERTS_ENABLED === 'true') {
+      try {
+        const { startSavedSearchScheduler } = require('./build/saved-search-alerts.cjs')
+        httpServer.once('close', startSavedSearchScheduler())
+      } catch {
+        console.error('[saved-searches] scheduler_start_failed')
+      }
+    }
     if (process.env.OPS_DEADMAN_ENABLED === 'true') {
       try {
         const { startDeadmanScheduler } = require('./build/ops-deadman.cjs')

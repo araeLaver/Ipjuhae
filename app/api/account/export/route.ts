@@ -25,13 +25,14 @@ export async function GET(request: Request) {
       delete account.password_hash
     }
 
-    const [profile, tenantProfile, verifications, references, properties, favorites] = await Promise.all([
+    const [profile, tenantProfile, verifications, references, properties, favorites, savedSearches] = await Promise.all([
       queryOne<Row>('SELECT * FROM profiles WHERE user_id = $1', [uid]).catch(() => null),
       queryOne<Row>('SELECT * FROM tenant_profiles WHERE user_id = $1', [uid]).catch(() => null),
       query<Row>('SELECT * FROM verifications WHERE user_id = $1', [uid]).catch(() => []),
       query<Row>('SELECT * FROM landlord_references WHERE user_id = $1', [uid]).catch(() => []),
       query<Row>('SELECT * FROM properties WHERE landlord_id = $1', [uid]).catch(() => []),
       query<Row>('SELECT * FROM favorites WHERE user_id = $1', [uid]).catch(() => []),
+      query<Row>('SELECT * FROM saved_searches WHERE user_id = $1', [uid]),
     ])
 
     const payload = {
@@ -43,6 +44,7 @@ export async function GET(request: Request) {
       landlord_references: references,
       properties,
       favorites,
+      saved_searches: savedSearches,
     }
 
     const response = NextResponse.json(payload)

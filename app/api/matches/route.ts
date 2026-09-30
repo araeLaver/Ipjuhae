@@ -33,7 +33,7 @@ export async function GET() {
 
     if (!profile) {
       return NextResponse.json(
-        { error: '임차인 프로필을 먼저 작성해주세요', matches: [] },
+        { error: '임차인 프로필을 먼저 작성해주세요', matches: [], total: 0, requiresProfile: true },
         { status: 200 }
       )
     }

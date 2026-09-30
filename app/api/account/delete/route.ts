@@ -54,6 +54,7 @@ export async function DELETE() {
         [userId]
       )
 
+      await client.query('DELETE FROM saved_searches WHERE user_id = $1', [userId])
       await client.query('DELETE FROM notifications WHERE user_id = $1', [userId])
       await client.query(
         'DELETE FROM tenant_favorites WHERE landlord_id = $1 OR tenant_id = $1',

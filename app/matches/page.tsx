@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback, Suspense } from 'react'
+import Link from 'next/link'
 import { PageContainer } from '@/components/layout/page-container'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -31,6 +32,7 @@ type ViewMode = 'card' | 'list'
 interface MatchesResponse {
   matches: MatchItem[]
   total: number
+  requiresProfile?: boolean
 }
 
 // ──────────────────────────────────────────────
@@ -185,10 +187,12 @@ function MatchesContent() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [page, setPage] = useState(1)
+  const [requiresLogin, setRequiresLogin] = useState(false)
 
   // Hydrate viewMode from localStorage after mount
   useEffect(() => {
-    const saved = localStorage.getItem(VIEW_MODE_KEY)
+    let saved: string | null = null
+    try { saved = localStorage.getItem(VIEW_MODE_KEY) } catch { /* Storage may be disabled. */ }
     if (saved === 'card' || saved === 'list') {
       setViewMode(saved)
     }
@@ -196,7 +200,7 @@ function MatchesContent() {
 
   const handleViewMode = useCallback((mode: ViewMode) => {
     setViewMode(mode)
-    localStorage.setItem(VIEW_MODE_KEY, mode)
+    try { localStorage.setItem(VIEW_MODE_KEY, mode) } catch { /* Keep the current view usable. */ }
     trackEvent('match_view_toggle', { mode })
   }, [])
 
@@ -204,12 +208,21 @@ function MatchesContent() {
     try {
       setIsLoading(true)
       setError(null)
+      setRequiresLogin(false)
       const res = await fetch('/api/matches')
+      if (res.status === 401) {
+        setRequiresLogin(true)
+        setData(null)
+        return
+      }
       if (!res.ok) {
         const json = await res.json().catch(() => ({}))
         throw new Error(json.error ?? `오류가 발생했습니다 (${res.status})`)
       }
       const json: MatchesResponse = await res.json()
+      if (!Array.isArray(json.matches) || !Number.isFinite(json.total)) {
+        throw new Error('매칭 결과를 불러오지 못했습니다. 다시 시도해 주세요.')
+      }
       setData(json)
       setPage(1)
       trackEvent('match_viewed', { total: json.total })
@@ -252,6 +265,13 @@ function MatchesContent() {
       {/* Loading state */}
       {isLoading && <SkeletonList mode={viewMode} />}
 
+      {!isLoading && requiresLogin && (
+        <div className="space-y-4 text-center">
+          <p>맞춤 매칭을 보려면 로그인해 주세요.</p>
+          <Link className="inline-flex rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground" href="/login?redirect=%2Fmatches">로그인하고 매칭 보기</Link>
+        </div>
+      )}
+
       {/* Error state */}
       {!isLoading && error && (
         <div className="space-y-4">
@@ -283,12 +303,17 @@ function MatchesContent() {
             )}
           </div>
 
+          <div className="mb-4 flex gap-3 text-sm">
+            <Link href="/profile/tenant" className="text-primary underline">매칭 조건 수정</Link>
+            <Link href="/properties" className="text-primary underline">전체 매물 보기</Link>
+          </div>
+
           {/* Empty state */}
           {data.matches.length === 0 ? (
             <EmptyState
               icon={<Home className="h-12 w-12" />}
-              title="조건에 맞는 매물이 없습니다"
-              description="선호 지역, 예산, 입주 예정일을 조정하면 더 많은 매물을 찾을 수 있어요."
+              title={data.requiresProfile ? "매칭을 위한 프로필을 작성해 주세요" : "조건에 맞는 매물이 없습니다"}
+              description={data.requiresProfile ? "예산, 선호 지역과 입주일을 입력하면 맞춤 매물을 찾아드려요." : "선호 지역, 예산, 입주 예정일을 조정하면 더 많은 매물을 찾을 수 있어요."}
             />
           ) : viewMode === 'card' ? (
             /* Card view */
