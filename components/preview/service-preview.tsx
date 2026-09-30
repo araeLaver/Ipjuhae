@@ -352,7 +352,7 @@ export function ServicePreview() {
           </p>
           <div className="flex shrink-0 gap-2">
             <Link
-              href="/#waitlist-form"
+              href="/about#waitlist-form"
               className="rounded-lg px-4 py-1.5 text-xs font-bold text-[#0C2247]"
               style={{ backgroundColor: '#E9A23B' }}
             >
@@ -417,7 +417,7 @@ export function ServicePreview() {
           <p className="text-lg font-bold">마음에 드셨나요?</p>
           <p className="mt-1 text-sm text-white/70">사전 신청하면 오픈 시 가장 먼저 초대해드립니다.</p>
           <Link
-            href="/#waitlist-form"
+            href="/about#waitlist-form"
             className="mt-4 inline-block rounded-lg px-6 py-2.5 text-sm font-bold text-[#0C2247]"
             style={{ backgroundColor: '#E9A23B' }}
           >

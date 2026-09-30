@@ -84,6 +84,21 @@ export default async function HomePage() {
               시세를 저희가 추정하지 않습니다. 직접 확인하신 숫자로만 계산하고, 그 숫자는
               저장하지 않습니다.
             </p>
+
+            <div className="mt-8 rounded-xl border bg-background p-5">
+              <h2 className="text-lg font-bold">서로 확인하는 임대차, 파일럿 참여</h2>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                임차인·임대인·공인중개사를 대상으로 Trust Card 파일럿 신청을 받습니다.
+                DataScore와 계약 전 확인 리포트는 준비 중이며, 점수의 최종 정의와 구현 범위는
+                아직 확정되지 않았습니다.
+              </p>
+              <Link
+                href="/about#waitlist-form"
+                className="mt-4 inline-flex items-center justify-center rounded-lg border px-5 py-2.5 text-sm font-semibold transition-colors hover:bg-muted/50"
+              >
+                파일럿 신청하기
+              </Link>
+            </div>
           </div>
         </section>
 
