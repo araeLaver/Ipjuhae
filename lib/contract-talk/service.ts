@@ -1,20 +1,32 @@
 import { z } from 'zod'
-import { Action, Actor, Talk, TalkError, active, actionSchema, applyAction, createSchema, createTalk, view } from './model'
+import { Action, Actor, Talk, TalkError, active, actionSchema, applyAction, createSchema, createTalk, emailHash, roleFor, view } from './model'
 
 export interface TalkStore {
-  create(talk: Talk): Promise<Talk>
+  create(talk: Talk, surface?: 'web'|'app'): Promise<Talk>
+  list(actor: Actor): Promise<Talk[]>
   find(key: string, shared: boolean): Promise<Talk | null>
-  update(key: string, shared: boolean, fn: (talk: Talk) => Talk): Promise<Talk>
+  update(key: string, shared: boolean, fn: (talk: Talk) => Talk, surface?: 'web'|'app'): Promise<Talk>
 }
 export function createService(store: TalkStore, clock = Date.now) {
   return {
-    async create(actor: Actor | null, input: unknown) {
+    async create(actor: Actor | null, input: unknown, surface: 'web'|'app' = 'web') {
       if (!actor) throw new TalkError(401, '로그인이 필요합니다.')
       const parsed = createSchema.safeParse(input)
       if (!parsed.success) throw new TalkError(400, '가능한 시간 1~3개를 확인해주세요.')
-      const stored = await store.create(createTalk(actor, parsed.data, clock()))
+      const stored = await store.create(createTalk(actor, parsed.data, clock()), surface)
       active(stored, clock())
       return view(stored, actor, false, clock())
+    },
+    async list(actor: Actor | null) {
+      if (!actor) throw new TalkError(401, '로그인이 필요합니다.')
+      if (!['tenant','landlord'].includes(actor.user_type)) throw new TalkError(403, '임차인·임대인 계정으로 확인해주세요.')
+      const records = await store.list(actor)
+      return records.map(t => {
+        const role=roleFor(t,actor,true)
+        return {id:t.id, shared:role==='landlord'&&!t.respondentId, key:role==='landlord'&&!t.respondentId?t.shareId:t.id,
+          direction:role==='tenant'?'sent':'received', progress: t.cancelled?'cancelled':Date.parse(t.expiresAt)<=clock()?'expired':t.confirmed.tenant&&t.confirmed.landlord?'confirmed':t.conversationDone.tenant&&t.conversationDone.landlord?'conversation_completed':t.respondentId?'responded':'requested',
+          expiresAt:t.expiresAt, proposedTime:t.proposedTime,timeAccepted:t.timeAccepted}
+      })
     },
     async get(actor: Actor | null, key: string, shared: boolean) {
       if (!actor) throw new TalkError(401, '로그인이 필요합니다.')
@@ -23,13 +35,13 @@ export function createService(store: TalkStore, clock = Date.now) {
       if (!talk) throw new TalkError(404, '요청을 찾을 수 없습니다.')
       return view(talk, actor, shared, clock())
     },
-    async mutate(actor: Actor | null, key: string, shared: boolean, input: unknown) {
+    async mutate(actor: Actor | null, key: string, shared: boolean, input: unknown, surface: 'web'|'app' = 'web') {
       if (!actor) throw new TalkError(401, '로그인이 필요합니다.')
       const parsed = z.object({ version: z.number().int().positive(), change: actionSchema }).strict().safeParse(input)
       if (!parsed.success) throw new TalkError(400, '변경 내용을 확인해주세요.')
       // get으로 링크 형식/권한을 먼저 확인하고 실제 변경에서도 같은 검사를 반복한다.
       await this.get(actor, key, shared)
-      const talk = await store.update(key, shared, t => applyAction(t, actor, shared, parsed.data.version, parsed.data.change, clock()))
+      const talk = await store.update(key, shared, t => applyAction(t, actor, shared, parsed.data.version, parsed.data.change, clock()), surface)
       return view(talk, actor, false, clock())
     },
   }
@@ -47,6 +59,11 @@ export class MemoryTalkStore implements TalkStore {
     this.records.set(t.id, structuredClone(t))
     return structuredClone(t)
   }
+  async list(actor: Actor) {
+    return [...this.records.values()].filter(t => actor.user_type==='tenant'?t.ownerId===actor.id:
+      t.respondentId===actor.id || (!t.respondentId&&actor.email&&t.recipientHash===emailHash(actor.email)))
+      .slice(-100).reverse().map(t=>structuredClone(t))
+  }
   async find(key: string, shared: boolean) {
     const t = shared ? [...this.records.values()].find(r => r.shareId === key) : this.records.get(key)
     return t ? structuredClone(t) : null
@@ -62,3 +79,5 @@ export class MemoryTalkStore implements TalkStore {
 }
 export type TalkView = ReturnType<typeof view>
 export type { Action, Actor }
+
+export type TalkSummary = Awaited<ReturnType<ReturnType<typeof createService>['list']>>[number]

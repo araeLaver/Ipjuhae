@@ -118,6 +118,8 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
         </View>
       )}
 
+      <TouchableOpacity accessibilityRole="button" accessibilityLabel="계약 전 대화 · 보낸/받은 요청" style={styles.retryButton} onPress={()=>navigation.navigate('ContractTalk')}><Text style={styles.retryText}>계약 전 대화 · 보낸/받은 요청</Text></TouchableOpacity>
+
       {/* Welcome */}
       <View style={styles.welcomeSection}>
         <Text style={styles.welcomeText}>

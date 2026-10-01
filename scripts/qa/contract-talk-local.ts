@@ -28,7 +28,7 @@ function actorFrom(cookie = '') {
 }
 // Use the same HTTP adapter and domain rules. Only storage/auth/clock are fixtures.
 const fixtureStore = {
-  create: store.create.bind(store), find: store.find.bind(store), update: store.update.bind(store),
+  list:store.list.bind(store), create: store.create.bind(store), find: store.find.bind(store), update: store.update.bind(store),
 }
 const server = http.createServer(async (req, res) => {
   try {

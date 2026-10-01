@@ -1,5 +1,6 @@
 'use client'
 import Link from 'next/link'
+import { FeatureRequestForm } from '@/components/feedback/feature-request-form'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { QUESTIONS } from '@/lib/contract-talk/prompts'
@@ -53,7 +54,7 @@ export function CreateTalk() {
     } catch (e) { setError((e as Error).message) }
     finally { sending.current = false; setBusy(false) }
   }
-  return <main className="mx-auto max-w-2xl space-y-6 px-5 py-10"><Intro /><form onSubmit={submit} className="space-y-6" aria-label="대화 요청 만들기"><ol className="space-y-3">{QUESTIONS.map(q => <li key={q} className="rounded-lg border p-4">{q}</li>)}</ol><label className="block text-sm font-semibold">상대 임대인의 입주해 계정 이메일<input type="email" required maxLength={254} autoComplete="off" className={field} value={recipientEmail} onChange={e=>{if(e.target.value!==recipientEmail)key.current=crypto.randomUUID();setRecipientEmail(e.target.value);sessionStorage.setItem('contract-talk-draft',JSON.stringify({slots,key:key.current,email:e.target.value}))}} /><span className="mt-2 block text-xs font-normal text-muted-foreground">상대가 아직 가입하지 않았다면 가입할 이메일을 확인하세요. 해당 이메일의 임대인 계정으로만 링크를 열 수 있습니다. 메일은 자동 발송하지 않습니다.</span></label><fieldset><legend className="font-semibold">가능한 시간 (최대 3개)</legend><p className="mt-1 text-xs text-muted-foreground">이 브라우저의 시간대 기준입니다. 30일 이내로 선택하세요.</p>{slots.map((s,i) => <label key={i} className="mt-3 block text-sm">가능한 시간 {i+1}<input className={field} type="datetime-local" required={i===0} value={s} onChange={e => changeSlot(i,e.target.value)} /></label>)}</fieldset>{error && <p role="alert">{error}</p>}<div className="flex gap-3"><button className={button} disabled={busy} type="submit">{busy ? '만드는 중…' : '요청 만들기'}</button><button type="button" className={button} disabled={busy} onClick={() => { key.current=crypto.randomUUID();setSlots(['','','']);sessionStorage.removeItem('contract-talk-draft');setError('') }}>새 요청 시작</button></div></form><Link className="underline" href="/login?redirect=%2Fcontract-talk">기존 계정 로그인</Link></main>
+  return <main className="mx-auto max-w-2xl space-y-6 px-5 py-10"><Intro /><Link className="block underline" href="/contract-talk/requests">보낸·받은 요청 보기</Link><form onSubmit={submit} className="space-y-6" aria-label="대화 요청 만들기"><ol className="space-y-3">{QUESTIONS.map(q => <li key={q} className="rounded-lg border p-4">{q}</li>)}</ol><label className="block text-sm font-semibold">상대 임대인의 입주해 계정 이메일<input type="email" required maxLength={254} autoComplete="off" className={field} value={recipientEmail} onChange={e=>{if(e.target.value!==recipientEmail)key.current=crypto.randomUUID();setRecipientEmail(e.target.value);sessionStorage.setItem('contract-talk-draft',JSON.stringify({slots,key:key.current,email:e.target.value}))}} /><span className="mt-2 block text-xs font-normal text-muted-foreground">상대가 아직 가입하지 않았다면 가입할 이메일을 확인하세요. 해당 이메일의 임대인 계정으로만 링크를 열 수 있습니다. 메일은 자동 발송하지 않습니다.</span></label><fieldset><legend className="font-semibold">가능한 시간 (최대 3개)</legend><p className="mt-1 text-xs text-muted-foreground">이 브라우저의 시간대 기준입니다. 30일 이내로 선택하세요.</p>{slots.map((s,i) => <label key={i} className="mt-3 block text-sm">가능한 시간 {i+1}<input className={field} type="datetime-local" required={i===0} value={s} onChange={e => changeSlot(i,e.target.value)} /></label>)}</fieldset>{error && <p role="alert">{error}</p>}<div className="flex gap-3"><button className={button} disabled={busy} type="submit">{busy ? '만드는 중…' : '요청 만들기'}</button><button type="button" className={button} disabled={busy} onClick={() => { key.current=crypto.randomUUID();setSlots(['','','']);sessionStorage.removeItem('contract-talk-draft');setError('') }}>새 요청 시작</button></div></form><Link className="underline" href="/login?redirect=%2Fcontract-talk">기존 계정 로그인</Link><FeatureRequestForm source="contract-talk" /></main>
 }
 export function TalkDetail({ id, shared = false }: {id:string; shared?:boolean}) {
   const endpoint = `/api/contract-talk/${shared ? 'shared/' : ''}${id}`
@@ -88,6 +89,24 @@ export function TalkDetail({ id, shared = false }: {id:string; shared?:boolean})
     {!talk.inactive && talk.progress!=='requested' && <section className="rounded-xl border p-4 space-y-3"><h2 className="font-semibold">완료 상태 구분</h2><p className="text-sm">대화 완료: 임차인 {talk.conversationDone.tenant?'완료':'대기'} · 임대인 {talk.conversationDone.landlord?'완료':'대기'}</p><button className={button} disabled={disabled||talk.conversationDone[role!]} onClick={()=>change({action:'conversation_done'})}>내 대화 완료</button><p className="text-sm">확인 완료: 임차인 {talk.confirmed.tenant?'완료':'대기'} · 임대인 {talk.confirmed.landlord?'완료':'대기'}</p><p className="text-xs text-muted-foreground">세 답변을 양측이 합의하고 추가 확인을 해소한 뒤, 각자 확인 완료를 표시합니다. 당사자의 기록이며 사실 진위나 계약의 법적 안전을 보장하지 않습니다.</p><button className={button} disabled={disabled||!talk.canConfirm||talk.confirmed[role!]} onClick={()=>change({action:'confirm'})}>내 확인 완료</button></section>}
     {!talk.inactive && (talk.conversationDone.tenant || talk.conversationDone.landlord) && <button className={button} disabled={busy} onClick={()=>change({action:'reopen'})}>정정 위해 대화 다시 열기</button>}
     {role==='tenant' && !talk.inactive && <button className={button} disabled={busy} onClick={()=>{if(window.confirm('요청을 취소하면 상대 링크로 더 이상 응답할 수 없습니다. 취소할까요?'))change({action:'cancel'})}}>요청 취소</button>}
-    <Link className="block underline" href="/contract-talk">요청 만들기로 돌아가기</Link>
+    <Link className="block underline" href="/contract-talk/requests">보낸·받은 요청 보기</Link><Link className="block underline" href="/contract-talk">요청 만들기로 돌아가기</Link><FeatureRequestForm source="contract-talk" />
   </>}</main>
+}
+
+export function TalkInbox() {
+ const [items,setItems]=useState<import('@/lib/contract-talk/service').TalkSummary[]>([])
+ const [error,setError]=useState(''),[loading,setLoading]=useState(true)
+ const load=useCallback(async()=>{setLoading(true);setError('');try{
+  const r=await fetch('/api/contract-talk',{cache:'no-store'});const data=await r.json()
+  if(!r.ok)throw new Error(data.error??'목록을 불러오지 못했습니다.')
+  setItems(data.requests)
+ }catch(e){setItems([]);setError((e as Error).message)}finally{setLoading(false)}},[])
+ useEffect(()=>{void load()},[load])
+ const labels:Record<string,string>={...stageLabel,cancelled:'요청 취소됨',expired:'요청 만료됨'}
+ return <main className="mx-auto max-w-2xl space-y-5 px-5 py-10"><h1 className="text-2xl font-bold">보낸·받은 대화 요청</h1><p className="text-sm">본인이 보내거나 지정된 임대인으로 받은 최근 요청 100개입니다.</p>
+ <button className={button} disabled={loading} onClick={()=>void load()}>목록 새로고침</button>{error&&<p role="alert">{error}</p>}
+ {error&&<Link className="block underline" href="/login?redirect=%2Fcontract-talk%2Frequests">로그인하고 목록으로 돌아오기</Link>}
+ {!loading&&!error&&!items.length&&<p>아직 보낸·받은 요청이 없습니다.</p>}
+ <ul className="space-y-3">{items.map(t=><li key={t.id} className="rounded-xl border p-4"><Link className="block font-semibold underline" href={`/contract-talk/${t.shared?'shared/':''}${t.key}`}>{t.direction==='sent'?'보낸 요청':'받은 요청'} · {labels[t.progress]}</Link><p className="mt-2 text-sm">만료 {timeLabel(t.expiresAt)}</p>{t.proposedTime&&<p className="mt-1 text-sm">제안 {timeLabel(t.proposedTime)} · {t.timeAccepted?'일정 합의':'확인 대기'}</p>}</li>)}</ul>
+ <Link className="block underline" href="/contract-talk">새 대화 요청 만들기</Link><FeatureRequestForm source="contract-talk" /></main>
 }

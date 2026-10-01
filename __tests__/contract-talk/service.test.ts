@@ -100,3 +100,15 @@ describe('계약 전 대화 상태와 최소 권한',()=>{
   expect((await service.get(tenant,fresh.id,false)).inactive).toBe(true)
  })
 })
+
+describe('요청 목록 접근 권한',()=>{
+ it('보낸 목록은 본인만, 받은 목록은 지정 이메일/응답자만 조회한다',async()=>{
+  expect((await service.list(tenant)).map(t=>t.id)).toEqual([owner.id]);expect(await service.list({...tenant,id:'other'})).toEqual([])
+  const received=await service.list(landlord);expect(received).toHaveLength(1);expect(received[0].shared).toBe(true);expect(received[0]).not.toHaveProperty('answers');expect(received[0]).not.toHaveProperty('recipientHash')
+  expect(await service.list(stranger)).toEqual([]);await respond();expect((await service.list(landlord))[0].shared).toBe(false)
+ })
+ it('비로그인과 다른 역할의 목록을 거부하고 만료/취소 목록은 상태만 보여준다',async()=>{
+  await expect(service.list(null)).rejects.toMatchObject({status:401});await expect(service.list({...tenant,user_type:'admin'})).rejects.toMatchObject({status:403})
+  now+=8*86400000;expect((await service.list(landlord))[0].progress).toBe('expired')
+ })
+})

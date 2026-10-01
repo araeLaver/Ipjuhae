@@ -48,8 +48,32 @@ suite('격리 PostgreSQL 계약 전 대화 통합',()=>{
   await service.create(tenant(),make())
   expect((await db.query('SELECT id FROM contract_talk_test.contract_talk_requests WHERE id=$1',[t.id])).rowCount).toBe(0)
  })
+ it('생성 중복은 한 번만 익명 집계하며 받은 목록은 지정 계정으로 제한한다',async()=>{
+  const before=await db.query("SELECT count(*)::int AS n FROM contract_talk_test.analytics_events WHERE event_name='contract_talk_created'")
+  const input=make(),t=await service.create(tenant(),input,'app');await service.create(tenant(),input,'app')
+  const after=await db.query("SELECT count(*)::int AS n FROM contract_talk_test.analytics_events WHERE event_name='contract_talk_created'")
+  expect(after.rows[0].n-before.rows[0].n).toBe(1)
+  const [row]=(await db.query("SELECT user_id,session_id,properties FROM contract_talk_test.analytics_events WHERE event_name='contract_talk_created' ORDER BY id DESC LIMIT 1")).rows
+  expect(row).toMatchObject({user_id:null,session_id:null,properties:{surface:'app'}});expect(Object.keys(row.properties)).toEqual(['surface'])
+  expect((await service.list(landlord())).some(r=>r.id===t.id)).toBe(true)
+  expect(await service.list({...landlord(),id:randomUUID(),email:'outsider@example.test'})).toEqual([])
+  const counts=async()=>Object.fromEntries((await db.query("SELECT event_name,count(*)::int AS n FROM contract_talk_test.analytics_events WHERE event_name LIKE 'contract_talk_%' GROUP BY event_name")).rows.map(r=>[r.event_name,r.n]))
+  const prior=await counts();let current=t
+  const change=async(actor:ReturnType<typeof tenant>,action:unknown)=>{current=await service.mutate(actor,current.id,false,{version:current.version,change:action},'app')}
+  current=await service.mutate(landlord(),t.shareId!,true,{version:1,change:{action:'respond',answers:['a','b','c'],proposedTime:new Date(now+2*86400000).toISOString()}},'app')
+  await change(landlord(),{action:'respond',answers:['a','b','c'],proposedTime:current.proposedTime})
+  await change(tenant(),{action:'accept_time',value:true});await change(tenant(),{action:'accept_time',value:true})
+  for(const actor of [tenant(),landlord()]){for(let index=0;index<3;index++)await change(actor,{action:'accept',index,value:true});await change(actor,{action:'conversation_done'})}
+  for(const actor of [tenant(),landlord()])await change(actor,{action:'confirm'})
+  await change(tenant(),{action:'cancel'})
+  const afterActions=await counts()
+  for(const event of ['responded','schedule_agreed','completed','cancelled'])expect(afterActions['contract_talk_'+event]-(prior['contract_talk_'+event]??0)).toBe(1)
+  const rows=(await db.query("SELECT user_id,session_id,properties FROM contract_talk_test.analytics_events WHERE event_name LIKE 'contract_talk_%'")).rows
+  for(const row of rows){expect(row.user_id).toBeNull();expect(row.session_id).toBeNull();expect(Object.keys(row.properties)).toEqual(['surface'])}
+
+ })
  it('DB 일일 생성 한도를 강제한다',async()=>{
-  for(let i=0;i<7;i++)await service.create(tenant(),make())
+  for(let i=0;i<6;i++)await service.create(tenant(),make())
   await expect(service.create(tenant(),make())).rejects.toMatchObject({status:429})
  })
 })
