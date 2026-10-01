@@ -85,6 +85,8 @@ export default async function HomePage() {
               저장하지 않습니다.
             </p>
 
+            <div className="mt-6 rounded-xl border bg-background p-5"><h2 className="text-lg font-bold">계약 전, 서로 물어볼 내용을 정리하세요</h2><p className="mt-2 text-sm text-muted-foreground">수리 연락 방법·입주 일정·추가 확인 사항을 묻고, 임대인과 답변과 시간을 확인하세요. 링크는 직접 전달하며 양측 계정이 필요합니다.</p><Link href="/contract-talk" className="mt-4 inline-flex rounded-lg border px-5 py-2.5 text-sm font-semibold">계약 전 대화 요청하기</Link></div>
+
             <div className="mt-8 rounded-xl border bg-background p-5">
               <h2 className="text-lg font-bold">서로 확인하는 임대차, 파일럿 참여</h2>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
