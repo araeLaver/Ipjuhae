@@ -118,8 +118,6 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
         </View>
       )}
 
-      <TouchableOpacity accessibilityRole="button" accessibilityLabel="계약 전 대화 · 보낸/받은 요청" style={styles.retryButton} onPress={()=>navigation.navigate('ContractTalk')}><Text style={styles.retryText}>계약 전 대화 · 보낸/받은 요청</Text></TouchableOpacity>
-
       {/* Welcome */}
       <View style={styles.welcomeSection}>
         <Text style={styles.welcomeText}>
@@ -132,6 +130,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
               ? '매물을 관리하고 세입자를 만나보세요'
               : '커뮤니티와 프로필을 이용해 보세요'}
         </Text>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="계약 전 대화 · 보낸/받은 요청" style={[styles.retryButton,{marginTop:16,borderWidth:1,borderColor:'#fff'}]} onPress={()=>navigation.navigate('ContractTalk')}><Text style={styles.retryText}>계약 전 대화 · 보낸/받은 요청</Text></TouchableOpacity>
       </View>
 
       {/* Tenant: Trust Score */}
