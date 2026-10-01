@@ -18,12 +18,16 @@ export function talkHandler(store: TalkStore, authenticate: () => Promise<Actor 
     try {
       if (!['GET', 'POST', 'PATCH'].includes(request.method)) throw new TalkError(405, '지원하지 않는 요청입니다.')
       if (request.method !== 'GET') {
-        if (request.headers.get('origin') !== new URL(process.env.NEXT_PUBLIC_APP_URL || request.url).origin) throw new TalkError(403, '같은 사이트에서만 변경할 수 있습니다.')
+        const origin=request.headers.get('origin')
+        const bearer=request.headers.get('authorization')?.match(/^Bearer \S+$/)
+        if (origin ? origin !== new URL(process.env.NEXT_PUBLIC_APP_URL || request.url).origin : !bearer) throw new TalkError(403, '같은 사이트에서만 변경할 수 있습니다.')
         if (!request.headers.get('content-type')?.startsWith('application/json')) throw new TalkError(415, 'JSON 요청이 필요합니다.')
       }
       const actor = await authenticate()
       if (!actor) throw new TalkError(401, '로그인이 필요합니다.')
       if (!allowed(actor.id,clock())) throw new TalkError(429, '요청이 많습니다. 1분 후 다시 시도해주세요.')
+      const surface = !request.headers.get('origin') && request.headers.has('authorization') ? 'app' : 'web'
+      if(request.method==='GET'&&!key) return respond({requests:await service.list(actor)})
       let data: unknown
       if (request.method === 'GET' && key) data = await service.get(actor, key, shared)
       else {
@@ -40,8 +44,8 @@ export function talkHandler(store: TalkStore, authenticate: () => Promise<Actor 
         }
         body += decoder.decode()
         const parsed: unknown = JSON.parse(body)
-        if (request.method === 'POST' && !key) data = await service.create(actor, parsed)
-        else if (request.method === 'PATCH' && key) data = await service.mutate(actor, key, shared, parsed)
+        if (request.method === 'POST' && !key) data = await service.create(actor, parsed, surface)
+        else if (request.method === 'PATCH' && key) data = await service.mutate(actor, key, shared, parsed, surface)
         else throw new TalkError(405, '지원하지 않는 요청입니다.')
       }
       return respond({ talk: data }, request.method === 'POST' ? 201 : 200)

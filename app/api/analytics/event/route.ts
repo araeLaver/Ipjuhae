@@ -31,6 +31,7 @@ export async function POST(request: Request) {
     // 익명 판정은 lib/analytics-events.ts 한 곳에서 한다.
     // 깔때기 3종과 `/check` 경로의 page_view가 여기로 떨어진다 —
     // 아래 getCurrentUser 호출 자체에 도달하지 않는다.
+    if(eventName.startsWith('contract_talk_')) return NextResponse.json({error:'Server events only'},{status:400})
     const anonymousProperties = resolveAnonymousProperties(eventName, properties)
     if (anonymousProperties) {
       await trackServer(eventName, { properties: anonymousProperties })

@@ -54,6 +54,7 @@ describe('익명 전용 이벤트 판정', () => {
     }
     expect([...ANONYMOUS_ONLY_EVENTS].sort()).toEqual(
       [
+        'contract_talk_cancelled','contract_talk_completed','contract_talk_created','contract_talk_responded','contract_talk_schedule_agreed',
         'check_result_viewed',
         'install_guide_clicked',
         'tester_invite_clicked',
@@ -143,6 +144,11 @@ describe('sanitizeAnonymousProperties', () => {
 })
 
 describe('anonymousPathOf — 익명 경로 판정', () => {
+  it('대화 링크·계정 ID·쿼리는 집계 경로에 남기지 않는다',()=>{
+    expect(anonymousPathOf('/contract-talk/shared/abc?token=secret')).toBe('/contract-talk')
+    expect(anonymousPathOf('/contract-talk/requests')).toBe('/contract-talk')
+    expect(anonymousPathOf('/contract-talking')).toBeNull()
+  })
   it('/check와 그 하위 경로를 익명으로 본다', () => {
     expect(anonymousPathOf('/check')).toBe('/check')
     expect(anonymousPathOf('/check/result')).toBe('/check')

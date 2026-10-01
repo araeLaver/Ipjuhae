@@ -63,12 +63,14 @@ async function getEventStats(): Promise<EventRow[]> {
 }
 
 export default async function AdminAnalyticsPage() {
+  const talkCounts = await query<{day:string;event_name:string;surface:string;count:string}>(`SELECT DATE(created_at AT TIME ZONE 'Asia/Seoul')::text AS day,event_name,properties->>'surface' AS surface,COUNT(*)::text AS count FROM analytics_events WHERE event_name IN ('contract_talk_created','contract_talk_responded','contract_talk_schedule_agreed','contract_talk_completed','contract_talk_cancelled') AND created_at > NOW()-interval '30 days' GROUP BY 1,2,3 ORDER BY 1 DESC`).catch(()=>[])
   const [events, funnel] = await Promise.all([getEventStats(), getTesterFunnel()])
 
   return (
     <div>
       <h1 className="text-2xl font-bold text-gray-900 mb-6">이벤트 분석</h1>
 
+      <section className="mb-8"><h2 className="text-lg font-bold">계약 전 대화 · 최근 30일 익명 동작 집계</h2><p className="text-sm text-gray-500">성공한 저장·변경 횟수입니다. 고유 사용자 수나 전환율이 아니며 이메일·계정·요청 ID·본문을 기록하지 않습니다.</p>{!talkCounts.length?<p>아직 집계가 없습니다.</p>:<ul>{talkCounts.map((r,i)=><li key={i}>{r.day} · {r.surface} · {r.event_name} · {r.count}건</li>)}</ul>}</section>
       <section className="mb-8">
         <h2 className="text-lg font-bold text-gray-900 mb-1">
           보증금 점검 &rarr; 테스터 전환 (최근 30일)

@@ -91,6 +91,7 @@ const SettingsScreen: React.FC<Props> = ({ navigation }) => {
     {
       title: '정보',
       items: [
+        { icon: '🗓️', label: '계약 전 대화 · 보낸/받은 요청', type:'link',onPress:()=>navigation.navigate('ContractTalk') },
         { icon: '📋', label: '이용약관', type: 'link', onPress: () => Linking.openURL('https://www.ipjuhae.com/terms') },
         { icon: '🔐', label: '개인정보처리방침', type: 'link', onPress: () => Linking.openURL('https://www.ipjuhae.com/privacy') },
         { icon: '📧', label: '고객센터', type: 'link', onPress: () => Linking.openURL('mailto:support@ipjuhae.com') },

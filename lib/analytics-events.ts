@@ -10,6 +10,7 @@
  */
 
 export const EVENT_NAMES = [
+  'contract_talk_created', 'contract_talk_responded', 'contract_talk_schedule_agreed', 'contract_talk_completed', 'contract_talk_cancelled',
   'page_view',
   'user_signup',
   'profile_complete',
@@ -43,6 +44,7 @@ export function isEventName(value: unknown): value is EventName {
  * 화면마다 조심하게 만들지 않는다. 서버 한 곳에서 못박는다.
  */
 export const ANONYMOUS_ONLY_EVENTS = [
+  'contract_talk_created', 'contract_talk_responded', 'contract_talk_schedule_agreed', 'contract_talk_completed', 'contract_talk_cancelled',
   'check_result_viewed',
   'tester_invite_shown',
   'tester_invite_clicked',
@@ -62,7 +64,7 @@ export function isAnonymousOnlyEvent(event: string): boolean {
  *
  * 경로 자체를 여기 등록해 두고 서버가 판정한다. 하위 경로(`/check/xxx`)도 포함한다.
  */
-export const ANONYMOUS_PATHS = ['/check'] as const
+export const ANONYMOUS_PATHS = ['/check','/contract-talk'] as const
 
 /**
  * 주어진 경로가 익명 경로면 그 **정규화된 경로**를 돌려준다. 아니면 null.

@@ -28,3 +28,9 @@ describe('계약 전 대화 HTTP 보안 경계',()=>{
   expect((await handler(new Request('http://localhost/api/contract-talk',{method:'POST',headers:{Origin:'http://localhost'},body:'x'}))).status).toBe(415)
  })
 })
+
+describe('제한된 native Bearer 인증 경계',()=>{
+ const native=(authorization?:string,origin?:string,cookie?:string)=>new Request('http://localhost/api/contract-talk',{method:'POST',headers:{'content-type':'application/json',...(authorization?{authorization}:{}),...(origin?{origin}:{}),...(cookie?{cookie}: {})},body:JSON.stringify(body())})
+ it('검증된 Bearer만 Origin 없는 변경을 허용한다',async()=>{expect((await talkHandler(new MemoryTalkStore(),async()=>actor)(native('Bearer test-token'))).status).toBe(201);expect((await talkHandler(new MemoryTalkStore(),async()=>null)(native('Bearer invalid-token'))).status).toBe(401)})
+ it('cookie만 있거나 Bearer가 있어도 다른 Origin이면 차단한다',async()=>{const auth=vi.fn(async()=>actor),handler=talkHandler(new MemoryTalkStore(),auth);expect((await handler(native(undefined,undefined,'auth_token=test'))).status).toBe(403);expect((await handler(native('Bearer test','https://other.example'))).status).toBe(403);expect(auth).not.toHaveBeenCalled()})
+})
