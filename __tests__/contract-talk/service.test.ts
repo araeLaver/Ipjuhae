@@ -2,28 +2,41 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { randomUUID } from 'node:crypto'
 import { createService, MemoryTalkStore, type Actor, type TalkView } from '@/lib/contract-talk/service'
 
-const tenant:Actor={id:'tenant-a',user_type:'tenant'}, landlord:Actor={id:'landlord-a',user_type:'landlord'}, stranger:Actor={id:'landlord-b',user_type:'landlord'}
+const tenant:Actor={id:'tenant-a',user_type:'tenant'}, landlord:Actor={id:'landlord-a',user_type:'landlord',email:'landlord@example.test'}, stranger:Actor={id:'landlord-b',user_type:'landlord',email:'stranger@example.test'}
 let now:number, service:ReturnType<typeof createService>, owner:TalkView
 const change = (actor:Actor, talk:TalkView, action:unknown, shared=actor!==tenant) => service.mutate(actor,shared?owner.shareId!:owner.id,shared,{version:talk.version,change:action})
 beforeEach(async()=>{
  now=Date.now();service=createService(new MemoryTalkStore(),()=>now)
- owner=await service.create(tenant,{clientKey:randomUUID(),slots:[new Date(now+86400000).toISOString()]})
+ owner=await service.create(tenant,{recipientEmail:'landlord@example.test',clientKey:randomUUID(),slots:[new Date(now+86400000).toISOString()]})
 })
 const respond=()=>change(landlord,owner,{action:'respond',answers:['앱으로 수리 요청을 남깁니다.','다음 주 입주 가능합니다.','시설 상태를 함께 확인합니다.'],proposedTime:null})
 
 describe('계약 전 대화 상태와 최소 권한',()=>{
  it('요청 생성만으로 전달/응답 완료가 되지 않는다',()=>{expect(owner.progress).toBe('requested');expect(owner.answers).toEqual(['','','']);expect(owner.shareId).toMatch(/^[a-f0-9]{64}$/);expect(owner).not.toHaveProperty('ownerId');expect(owner).not.toHaveProperty('respondentId')})
+ it('응답 전부터 지정 이메일 계정만 공유 링크에 접근한다',async()=>{
+  await expect(service.get(stranger,owner.shareId!,true)).rejects.toMatchObject({status:404})
+  await expect(service.get({...landlord,email:undefined},owner.shareId!,true)).rejects.toMatchObject({status:404})
+  expect((await service.get({...landlord,email:' Landlord@Example.Test '},owner.shareId!,true)).viewerRole).toBe('landlord')
+  expect(owner).not.toHaveProperty('recipientHash')
+ })
+ it('대화 완료 후 당사자가 정정 위해 재개하면 완료와 합의를 초기화한다',async()=>{
+  let t=await respond();t=await change(tenant,t,{action:'conversation_done'},false)
+  t=await change(landlord,t,{action:'reopen'})
+  expect(t.conversationDone).toEqual({tenant:false,landlord:false})
+  t=await change(landlord,t,{action:'respond',answers:['정정','입주','확인'],proposedTime:null})
+  expect(t.answers[0]).toBe('정정')
+ })
  it('임차인 외 생성과 비로그인 접근을 거부한다',async()=>{
-  await expect(service.create(landlord,{clientKey:randomUUID(),slots:owner.slots})).rejects.toMatchObject({status:403})
+  await expect(service.create(landlord,{recipientEmail:'landlord@example.test',clientKey:randomUUID(),slots:owner.slots})).rejects.toMatchObject({status:403})
   await expect(service.get(null,owner.shareId!,true)).rejects.toMatchObject({status:401})
  })
  it('동일 생성 키의 반복/동시 요청은 같은 요청 하나를 반환한다',async()=>{
-  const input={clientKey:randomUUID(),slots:owner.slots};const results=await Promise.all([service.create(tenant,input),service.create(tenant,input)])
+  const input={recipientEmail:'landlord@example.test',clientKey:randomUUID(),slots:owner.slots};const results=await Promise.all([service.create(tenant,input),service.create(tenant,input)])
   expect(results[0].id).toBe(results[1].id);expect(results[0].shareId).toBe(results[1].shareId)
   await expect(service.create(tenant,{...input,slots:[new Date(now+2*86400000).toISOString()]})).rejects.toMatchObject({status:409})
  })
  it('과거/중복/30일 초과 일정을 거부한다',async()=>{
-  for(const slots of [[new Date(now-1).toISOString()],[...owner.slots,...owner.slots],[new Date(now+31*86400000).toISOString()]]) await expect(service.create(tenant,{clientKey:randomUUID(),slots})).rejects.toMatchObject({status:400})
+  for(const slots of [[new Date(now-1).toISOString()],[...owner.slots,...owner.slots],[new Date(now+31*86400000).toISOString()]]) await expect(service.create(tenant,{recipientEmail:'landlord@example.test',clientKey:randomUUID(),slots})).rejects.toMatchObject({status:400})
  })
  it('틀린 링크와 다른 임차인의 private ID 접근을 거부한다',async()=>{
   await expect(service.get(landlord,'nope',true)).rejects.toMatchObject({status:404})
@@ -81,7 +94,7 @@ describe('계약 전 대화 상태와 최소 권한',()=>{
   await expect(service.get(landlord,owner.shareId!,true)).rejects.toMatchObject({status:410})
   expect((await service.get(tenant,owner.id,false)).cancelled).toBe(true)
   await expect(change(tenant,t,{action:'edit',slots:owner.slots},false)).rejects.toMatchObject({status:410})
-  const fresh=await service.create(tenant,{clientKey:randomUUID(),slots:owner.slots})
+  const fresh=await service.create(tenant,{recipientEmail:'landlord@example.test',clientKey:randomUUID(),slots:owner.slots})
   now+=8*86400000
   await expect(service.get(landlord,fresh.shareId!,true)).rejects.toMatchObject({status:410})
   expect((await service.get(tenant,fresh.id,false)).inactive).toBe(true)

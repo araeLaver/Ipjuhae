@@ -3,12 +3,12 @@ import { talkHandler } from '@/lib/contract-talk/http'
 import { MemoryTalkStore } from '@/lib/contract-talk/service'
 import { randomUUID } from 'node:crypto'
 const actor={id:'owner',user_type:'tenant'}
-const body=()=>({clientKey:randomUUID(),slots:[new Date(Date.now()+86400000).toISOString()]})
+const body=()=>({recipientEmail:'landlord@example.test',clientKey:randomUUID(),slots:[new Date(Date.now()+86400000).toISOString()]})
 const request=(payload:unknown,origin='http://localhost')=>new Request('http://localhost/api/contract-talk',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:JSON.stringify(payload)})
 afterEach(()=>vi.unstubAllEnvs())
 describe('계약 전 대화 HTTP 보안 경계',()=>{
- it('운영에서는 플래그가 있어도 404이며 인증/DB를 호출하지 않는다',async()=>{
-  vi.stubEnv('NODE_ENV','production');vi.stubEnv('CONTRACT_TALK_TEST_ENABLED','1')
+ it('긴급 비활성 설정은 인증/DB 호출 전 404를 반환한다',async()=>{
+  vi.stubEnv('NODE_ENV','production');vi.stubEnv('CONTRACT_TALK_DISABLED','1')
   const auth=vi.fn(async()=>actor),store=new MemoryTalkStore();const create=vi.spyOn(store,'create')
   expect((await talkHandler(store,auth)(request(body()))).status).toBe(404);expect(auth).not.toHaveBeenCalled();expect(create).not.toHaveBeenCalled()
  })

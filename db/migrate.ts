@@ -60,6 +60,7 @@ const migrations = [
   'migration-042-broker-user-type.sql',
   'migration-043-anonymous-community.sql',
   'migration-044-community-reports.sql',
+  'migration-045-contract-talk.sql',
 ] as const
 
 const args = process.argv.slice(2)

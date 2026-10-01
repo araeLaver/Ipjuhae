@@ -1,19 +1,20 @@
-import { randomBytes, randomUUID } from 'node:crypto'
+import { createHash, randomBytes, randomUUID } from 'node:crypto'
 import { z } from 'zod'
 
 import { QUESTIONS } from './prompts'
 export { QUESTIONS } from './prompts'
 export type Role = 'tenant' | 'landlord'
-export type Actor = { id: string; user_type: string }
+export type Actor = { id: string; user_type: string; email?: string }
 export type Talk = {
   id: string; shareId: string; ownerId: string; respondentId: string | null
-  clientKey: string; slots: string[]; answers: string[]; proposedTime: string | null; timeAccepted: boolean
+  recipientHash: string; clientKey: string; slots: string[]; answers: string[]; proposedTime: string | null; timeAccepted: boolean
   accepted: Record<Role, boolean[]>; needsCheck: Record<Role, boolean[]>
   conversationDone: Record<Role, boolean>; confirmed: Record<Role, boolean>
   version: number; expiresAt: string; cancelled: boolean
 }
 export class TalkError extends Error { constructor(public status: number, message: string) { super(message) } }
-export const createSchema = z.object({ clientKey: z.string().uuid(), slots: z.array(z.string().datetime()).min(1).max(3) }).strict()
+export const emailHash = (email: string) => createHash('sha256').update(email.trim().toLowerCase()).digest('hex')
+export const createSchema = z.object({ recipientEmail: z.string().trim().toLowerCase().email().max(254), clientKey: z.string().uuid(), slots: z.array(z.string().datetime()).min(1).max(3) }).strict()
 export const actionSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('respond'), answers: z.array(z.string().trim().max(500)).length(3), proposedTime: z.string().datetime().nullable() }).strict(),
   z.object({ action: z.literal('edit'), slots: z.array(z.string().datetime()).min(1).max(3) }).strict(),
@@ -21,6 +22,7 @@ export const actionSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('check'), index: z.number().int().min(0).max(2), value: z.boolean() }).strict(),
   z.object({ action: z.literal('accept_time'), value: z.boolean() }).strict(),
   z.object({ action: z.literal('conversation_done') }).strict(),
+  z.object({ action: z.literal('reopen') }).strict(),
   z.object({ action: z.literal('confirm') }).strict(),
   z.object({ action: z.literal('cancel') }).strict(),
 ])
@@ -32,11 +34,13 @@ export function validateTimes(slots: string[], now: number) {
 export function createTalk(actor: Actor, input: z.infer<typeof createSchema>, now = Date.now()): Talk {
   if (actor.user_type !== 'tenant') throw new TalkError(403, '임차인만 요청을 만들 수 있습니다.')
   validateTimes(input.slots, now)
-  return { id: randomUUID(), shareId: randomBytes(32).toString('hex'), ownerId: actor.id, respondentId: null, ...input, answers: ['', '', ''], proposedTime: null, timeAccepted: false, accepted: blank(), needsCheck: blank(), conversationDone: { tenant: false, landlord: false }, confirmed: { tenant: false, landlord: false }, version: 1, expiresAt: new Date(now + 7 * 86400000).toISOString(), cancelled: false }
+  if (actor.email && emailHash(actor.email) === emailHash(input.recipientEmail)) throw new TalkError(400, '상대 임대인의 계정 이메일을 입력해주세요.')
+  const {recipientEmail, ...data} = input
+  return { id: randomUUID(), shareId: randomBytes(32).toString('hex'), ownerId: actor.id, respondentId: null, ...data, recipientHash: emailHash(recipientEmail), answers: ['', '', ''], proposedTime: null, timeAccepted: false, accepted: blank(), needsCheck: blank(), conversationDone: { tenant: false, landlord: false }, confirmed: { tenant: false, landlord: false }, version: 1, expiresAt: new Date(now + 7 * 86400000).toISOString(), cancelled: false }
 }
 export function roleFor(talk: Talk, actor: Actor, shared: boolean): Role {
   if (actor.id === talk.ownerId && actor.user_type === 'tenant') return 'tenant'
-  if (actor.user_type === 'landlord' && (actor.id === talk.respondentId || (shared && talk.respondentId === null))) return 'landlord'
+  if (actor.user_type === 'landlord' && (actor.id === talk.respondentId || (shared && talk.respondentId === null && Boolean(actor.email) && emailHash(actor.email!) === talk.recipientHash))) return 'landlord'
   throw new TalkError(404, '요청을 찾을 수 없거나 접근할 수 없습니다.')
 }
 export function active(talk: Talk, now: number) {
@@ -58,9 +62,13 @@ export function applyAction(original: Talk, actor: Actor, shared: boolean, versi
   if (action.action === 'cancel') {
     if (role !== 'tenant') throw new TalkError(403, '요청자만 취소할 수 있습니다.')
     t.cancelled = true
+    t.answers = ['', '', '']; t.proposedTime = null; t.accepted = blank(); t.needsCheck = blank(); t.confirmed = {tenant:false,landlord:false}
   } else {
-    if (progress(t) === 'confirmed') throw new TalkError(409, '확인 완료된 기록은 수정할 수 없습니다.')
-    if (action.action === 'respond') {
+    if (progress(t) === 'confirmed' && action.action !== 'reopen') throw new TalkError(409, '확인 완료된 기록은 수정할 수 없습니다.')
+    if (action.action === 'reopen') {
+      if (!t.respondentId) throw new TalkError(409, '상대 응답 후에 진행할 수 있습니다.')
+      t.conversationDone = {tenant:false,landlord:false}; t.confirmed = {tenant:false,landlord:false}; t.accepted = blank()
+    } else if (action.action === 'respond') {
       if (role !== 'landlord') throw new TalkError(403, '임대인만 답변할 수 있습니다.')
       if (t.conversationDone.tenant || t.conversationDone.landlord) throw new TalkError(409, '대화 완료 표시 후에는 답변을 수정할 수 없습니다.')
       if (!action.answers.some(Boolean) && !action.proposedTime) throw new TalkError(400, '답변이나 시간 제안을 하나 이상 남겨주세요.')
@@ -101,6 +109,6 @@ export function applyAction(original: Talk, actor: Actor, shared: boolean, versi
 export function view(t: Talk, actor: Actor, shared: boolean, now = Date.now()) {
   const role = roleFor(t, actor, shared)
   if (role === 'landlord') active(t, now)
-  const { ownerId: _owner, respondentId: _respondent, clientKey: _key, shareId, ...data } = t
+  const { ownerId: _owner, respondentId: _respondent, clientKey: _key, recipientHash: _recipient, shareId, ...data } = t
   return { ...data, shareId: role === 'tenant' ? shareId : undefined, questions: QUESTIONS, viewerRole: role, progress: progress(t), canConfirm: canConfirm(t), inactive: t.cancelled || Date.parse(t.expiresAt) <= now }
 }

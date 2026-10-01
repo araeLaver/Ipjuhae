@@ -12,8 +12,8 @@ const port = 3104
 const origin = `http://127.0.0.1:${port}`
 const actors: Record<string, Actor> = {
   tenant: { id:'00000000-0000-4000-8000-000000000001',user_type:'tenant' },
-  landlord: { id:'00000000-0000-4000-8000-000000000002',user_type:'landlord' },
-  stranger: { id:'00000000-0000-4000-8000-000000000003',user_type:'landlord' },
+  landlord: { id:'00000000-0000-4000-8000-000000000002',user_type:'landlord',email:'landlord@example.test' },
+  stranger: { id:'00000000-0000-4000-8000-000000000003',user_type:'landlord',email:'stranger@example.test' },
 }
 const store = new MemoryTalkStore()
 let clockOffset = 0

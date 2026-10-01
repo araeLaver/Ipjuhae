@@ -9,6 +9,7 @@ async function actor(browser:Browser,role:string) {
  return {context,page}
 }
 async function create(page:Page) {
+ await page.getByLabel('상대 임대인의 입주해 계정 이메일').fill('landlord@example.test')
  await page.getByLabel('가능한 시간 1', {exact:true}).fill(new Date(Date.now()+2*86400000).toISOString().slice(0,16))
  await page.getByRole('button',{name:'요청 만들기',exact:true}).click()
  await expect(page.getByTestId('talk-stage')).toHaveText('요청 생성 · 상대 응답 대기')

@@ -39,7 +39,7 @@ export class MemoryTalkStore implements TalkStore {
   async create(t: Talk) {
     const existing = [...this.records.values()].find(r => r.ownerId === t.ownerId && r.clientKey === t.clientKey)
     if (existing) {
-      if (JSON.stringify(existing.slots) !== JSON.stringify(t.slots)) throw new TalkError(409, '같은 생성 요청의 내용이 다릅니다.')
+      if (JSON.stringify(existing.slots) !== JSON.stringify(t.slots) || existing.recipientHash !== t.recipientHash) throw new TalkError(409, '같은 생성 요청의 내용이 다릅니다.')
       return structuredClone(existing)
     }
     // 로컬 서버 메모리가 무한히 커지지 않도록 상한을 둔다.
