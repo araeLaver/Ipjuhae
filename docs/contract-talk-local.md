@@ -23,3 +23,11 @@
 Mac의 임시 PostgreSQL: loopback 55437, DB_SCHEMA=contract_talk_test. 실제 운영 환경 파일을 복사하지 않는다. 기존 migration 전량을 적용한 이 테스트 스키마에만 테스트 계정을 만든다. 기존 /api/auth/login을 사용하는 브라우저 시나리오는 `CONTRACT_TALK_REAL_E2E=1 ...playwright test --config=playwright.contract-talk.real.config.ts`로 실행한다. PostgreSQL 통합 테스트는 `CONTRACT_TALK_PG_TEST=1 ...vitest run __tests__/contract-talk`이며 local host와 테스트 스키마를 강제한다.
 
 scripts/qa/contract-talk-local.ts와 playwright.contract-talk.local.config.ts는 별도 합성/메모리 테스트 fixture이다. NODE_ENV=production에서 실행할 수 없고 Next 경로에 연결되지 않는다. 실제 DB/인증 통합 검증과 구분한다. 합성 fixture의 임대인 이메일은 landlord@example.test, 무관 계정은 stranger@example.test이다.
+
+## 첫 방문 웹 흐름 (2026-10-02)
+
+홈 상단에서 임차인 대상·계약 전 질문/답변·일정 합의 흐름과 대화 요청 CTA를 설명한다. 질문/답변 예시는 합성이며 실제 성과가 아니다. 보증금 점검·기존 가입 기본 온보딩·테스터 진입은 유지한다.
+
+로그인 → 가입 링크와 소셜 신규 가입에도 원래 대화 경로를 전달한다. 가입 후 직접 복귀는 `contractTalkReturnPath`의 계약 대화 경로 허용 목록만 사용한다. 외부 주소·인코딩/경로 순회·인증 페이지는 허용하지 않는다. 이메일 가입은 기존 API를 사용한다. 공유 요청 가입 안내는 임대인 역할 선택을 안내하며, 권한 검증은 기존 서버가 담당한다. 실패한 공유 링크 화면에도 요청 목록·기존 피드백 접근을 제공한다.
+
+격리 체크아웃에서 typecheck, lint (기존 경고), production build, 단위 954 통과/13 skip. 기존 loopback 합성 fixture의 Chrome 모바일·데스크톱 시나리오에서 생성/응답/합의/완료, 뒤로가기 중복, 만료/권한/버전 충돌, 가입 복귀·실패 화면을 검증했다. 가입/로그인 복귀의 성공 API 응답은 브라우저에서 합성 응답으로 대체하므로 운영 인증/메일 전달 성공을 입증하지 않는다. 실제 사용자 요청·응답·합의 전환은 별도 검증이 필요하다. 새로운 추적·마이그레이션·운영 가입/요청 제출은 없다.

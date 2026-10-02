@@ -64,7 +64,7 @@ const server = http.createServer(async (req, res) => {
     const upstream=http.request({hostname:'127.0.0.1',port:3103,path:req.url,method:req.method,headers:req.headers},response=>{
       res.writeHead(response.statusCode??502,response.headers);response.pipe(res)
     })
-    upstream.on('error',()=>{res.writeHead(502);res.end('먼저 Next 로컬 서버를 3103 포트에서 시작해주세요.')})
+    upstream.on('error',()=>{if(res.headersSent){res.destroy();return}res.writeHead(502);res.end('먼저 Next 로컬 서버를 3103 포트에서 시작해주세요.')})
     req.pipe(upstream)
   } catch { res.writeHead(500);res.end('로컬 테스트 요청 오류') }
 })
