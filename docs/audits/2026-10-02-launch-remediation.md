@@ -73,7 +73,7 @@ DB 트랜잭션과 외부 객체 삭제는 하나의 원자적 트랜잭션이 �
 ## 독립 리뷰 보완 (2026-10-02, 후속 커밋)
 
 - **URL 별칭 P1 재현:** 합성 URL의 percent-encoded 별칭이 기존 raw 공유 검사와 다른 문자열이면서 같은 삭제 key로 변환돼 타인 key가 큐에 들어가는 것을 확인했다. 재현 트랜잭션은 롤백했고 객체 삭제를 호출하지 않았다.
-- **삭제 권한:** migration-048은 서버 업로드가 만든 object key/owner_user_id/저장소 scope 기록을 추가한다. 업로드는 인증 사용자 UUID의 서버 관리 namespace만 허용하며 S3 metadata에도 owner/scope를 기록한다. URL·참조 행·정규화만으로 소유권을 추정하지 않는다. 탈퇴 및 worker 모두 서버 소유권 기록과 현재 저장소 scope를 요구한다. 기존 URL로 자동 backfill하지 않는다. 증명 없는 기존 객체/큐, 다른 목적지의 객체는 자동 삭제하지 않고 검토 대상으로 중단/격리한다. 기존 객체의 신뢰할 수 있는 소유권 복원 또는 개별 검토는 운영 결정·추가 승인 대상이다.
+- **삭제 권한:** migration-048은 서버 업로드가 만든 object key/owner_user_id/저장소 scope 기록을 추가한다. `lib/storage.ts`를 거치는 업로드는 인증 사용자 UUID의 서버 관리 namespace만 허용하며 S3 metadata에도 owner/scope를 기록한다. URL·참조 행·정규화만으로 소유권을 추정하지 않는다. 탈퇴 및 worker 모두 서버 소유권 기록과 현재 저장소 scope를 요구한다. 기존 URL로 자동 backfill하지 않는다. 증명 없는 객체/큐(과거 객체뿐 아니라 미연결 현재 업로드 경로의 새 객체 포함), 다른 목적지의 객체는 자동 삭제하지 않고 검토 대상으로 중단/격리한다. 기존 객체의 신뢰할 수 있는 소유권 복원 또는 개별 검토는 운영 결정·추가 승인 대상이다.
 - **기존 세션 P1:** verifyTokenAllowed에 실제 users.deleted_at IS NULL 확인을 추가했다. 폐기 목록에 없더라도 탈퇴한 사용자의 모든 기존 토큰은 거부한다. 정상 사용자는 유지하고 기존 cookie-only route에 Bearer-only 접근을 새로 허용하지 않았다. 합성 두 세션과 listings mutation으로 검증한다.
 - **외부 삭제 공정성:** 실패 시 지수형 재시도 간격을 적용하고 due-time/attempt 기준으로 선택한다. 5회 실패 또는 소유권 증명 불가 항목은 review 상태로 격리한다. 기존 인증 cleanup 응답에 삭제/재시도/검토 건수를 포함해 영구실패를 확인할 수 있다. 외부 모니터·알림을 생성/발송하지 않았다. 20건 영구실패 뒤의 추가 5건이 처리되는 것을 합성 검증한다.
 - **상대 알림 사본:** 삭제된 conversation ID와 일치하는 new_message 알림(발신자 이름·앞부분 preview 포함)을 동일 탈퇴 트랜잭션에서 삭제한다. 무관한 상대 알림은 남긴다. 일반 대화 전체 삭제라는 현재 구현 선택과 함께 검토할 항목이며 운영 데이터에 적용하지 않았다.
@@ -81,3 +81,24 @@ DB 트랜잭션과 외부 객체 삭제는 하나의 원자적 트랜잭션이 �
 - **범위 유지:** 차단은 계정 쌍의 양방향 커뮤니티 노출이다. 익명 작성자·DM·contract-talk·차단 해제 관리까지 완료했다고 보지 않는다. 게시 전 동의는 native UI 확인이며 서버의 약관 버전/영구 동의 이력을 강제하는 정책은 별도 결정 사항이다. 기존 법정 보존기간/공유 자료 결정은 미확정이다.
 
 후속 커밋 최종 로컬 검증: 전체 957개 통과/26개 조건부 생략, 별도 합성 DB·실제 댓글 SQL 14개 통과, Android 설정을 포함한 네이티브 댓글/커뮤니티 화면 31개 통과. 웹·모바일 typecheck, lint(기존 경고), production build 통과. 새 migration-048은 합성 DB에만 적용했으며 운영 적용·기존 객체 backfill은 하지 않았다.
+
+## 저장 경로 범위 정정 및 연결 제안 — 구현하지 않음
+
+현재 owner registry가 연결된 경로는 프로필 사진, 인증서류, `lib/storage.ts`를 쓰는 properties 이미지 업로드이다. 다음 두 경로는 현재 지원 누락이며 **새 사진도 자동 탈퇴 전체 중단 대상**이다. “과거 객체만 수동 검토”라고 설명하면 부정확하다.
+
+| 현재 경로 | 저장 성격 | 현재 탈퇴 동작 | 안전한 추가 변경 제안 |
+| --- | --- | --- | --- |
+| `/api/listings/upload` → `lib/upload.ts` | `listings/*` key, AWS_BUCKET_NAME/AWS_* 또는 S3_* 설정, 개발 local fallback `/public/uploads/listings`; owner registry 없음 | namespace/소유권/저장소 증명 불가로 409. 새 업로드도 동일 | 인증 payload의 userId를 서버에서 전달하고 공통 owner-recording 업로드를 사용해 새로운 객체 생성 시에만 소유권 등록. 기존 namespace를 단순 허용하거나 URL에서 owner를 역추정하지 않음 |
+| `/listings/new` → `/api/listings`의 `photo_urls` | 외부 객체가 아니라 DB에 담긴 data URL 이미지 bytes | 현재 공통 URL→storage 처리에서 거부해 409 | 작은 삭제 보완은 검증된 image data URI를 DB 인라인 자료로 구분하고 본인 listings 사진 배열을 트랜잭션에서 제거하는 것. 외부 객체 큐에는 절대로 넣지 않음 |
+
+API 전진 경로를 공통 업로드로 연결하는 코드는 비교적 작을 수 있지만, legacy AWS bucket/credentials/local fallback과 공통 STORAGE_PROVIDER/S3_BUCKET/mock의 목적지·동작이 같다고 확인되지 않았다. 운영 설정을 조회하거나 바꾸지 않았다. 동일 목적지/기존 권한을 확인한 경우에만 기존 허용 namespace의 서버 생성 경로와 registry를 재사용하는 전진 변경을 검토할 수 있다. 목적지 통합 또는 local 파일 삭제 adapter가 필요하면 저장 전략/설정 변경을 별도로 검토해야 한다. 기존 파일을 URL만 보고 소유권 backfill하는 방식은 제안하지 않는다.
+
+data URL을 유지해 DB 인라인 삭제만 보완하는 선택은 현재 UI를 유지하는 작은 코드·합성 테스트 범위이다. 모든 새 사진을 서버 업로드로 통합하는 선택은 폼의 multipart/실패 처리·저장 방식까지 바꾸므로 별도 범위 선택이 필요하다. 두 제안은 요청대로 아직 구현하지 않았다.
+
+## 교체·과거 registry 객체의 공유 보호 보완
+
+현재 URL 검사 뒤 registry 전체를 큐에 넣던 누락을 수정했다. 현재/교체/미참조를 포함한 **모든 registry 삭제 후보**에 대해 다른 계정의 users/verification_documents/property_images/listings 참조를 canonical key로 비교하고, 공유 후보가 있으면 전체 탈퇴를 중단한다. query·fragment·percent encoding·host casing은 보호 검사에서 같은 key로 인식할 수 있으나 이것을 소유권/삭제 권한 근거로 쓰지 않는다. worker도 대기 중 추가된 공유 참조를 재확인해 `SHARED_REFERENCE` review 상태로 격리한다.
+
+합성 회귀: A의 업로드 P를 B의 listing이 참조 → A가 P를 Q로 교체 → A 탈퇴를 요청하면 P/Q 모두 큐에 넣지 않고 전체 롤백한다. 인코딩·쿼리·host casing 별칭에서도 동일하며, 직접 대기열에 들어온 공유 P도 worker가 삭제하지 않는다. 참조 검사는 현재 다른 계정 URL 목록을 스캔하므로 운영 규모에서 성능 검증이 필요하다. 외부 객체 삭제와 참조 추가의 완전한 원자성은 보장하지 않으며, 동시 참조 쓰기의 직렬화/정규화 관계 관리는 추가 검토 사항이다. 운영 데이터는 조회/삭제하지 않았다.
+
+교체 공유 객체 보완 후 검증: 전체 957개 통과/27개 조건부 생략, 별도 합성 DB·실제 SQL 15개 통과, typecheck·lint(기존 경고)·production build 통과. listings 업로드/data URL 지원 연결은 제안만 문서화했으며 코드에는 적용하지 않았다.

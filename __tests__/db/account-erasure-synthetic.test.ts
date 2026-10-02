@@ -188,6 +188,25 @@ describe.skipIf(!enabled)('synthetic PostgreSQL + synthetic storage erasure', ()
       await expect(actual.uploadFile({ownerUserId:id,folder:`profiles/${other}`,file:Buffer.from('synthetic'),fileName:'synthetic.webp',contentType:'image/webp'})).rejects.toThrow('Untrusted upload namespace')
     }finally{c.release()}
   })
+  it('holds every replaced registry object referenced by another account through canonical aliases',async()=>{
+    const {id,other,key:p}=await seed();const c=await connection();const q=`profiles/${id}/replacement.webp`
+    try {
+      storage.keys.add(q);await c.query('INSERT INTO account_storage_objects(object_key,owner_user_id,storage_scope) VALUES($1,$2,$3)',[q,id,storageObjectScope()])
+      await c.query('UPDATE users SET profile_image=$2 WHERE id=$1',[id,`http://localhost:3000/mock-storage/${q}`])
+      await c.query('UPDATE verification_documents SET file_url=$2 WHERE user_id=$1',[id,`http://localhost:3000/mock-storage/${q}`])
+      const listing=await c.query("INSERT INTO listings(landlord_id,monthly_rent,address) VALUES($1,1,'synthetic') RETURNING id",[other])
+      for(const alias of [`http://localhost:3000/mock-storage/${p}`,`http://LOCALHOST:3000/mock-storage/%70rofiles/${id}/synthetic.webp?version=1#photo`]){
+        await c.query('UPDATE listings SET photo_urls=ARRAY[$2] WHERE id=$1',[listing.rows[0].id,alias])
+        await c.query('BEGIN');await expect(eraseAccountData(c,id,`${id}@example.invalid`)).rejects.toBeInstanceOf(DeletionReviewRequired);await c.query('ROLLBACK')
+        expect((await c.query('SELECT 1 FROM account_storage_deletes WHERE owner_user_id=$1',[id])).rows).toHaveLength(0)
+        expect(storage.keys.has(p)).toBe(true);expect(storage.keys.has(q)).toBe(true)
+      }
+      await c.query('INSERT INTO account_storage_deletes(object_key,owner_user_id,storage_scope) VALUES($1,$2,$3)',[p,id,storageObjectScope()])
+      await drainAccountStorageDeletes()
+      expect((await c.query('SELECT last_error_code FROM account_storage_deletes WHERE object_key=$1',[p])).rows[0].last_error_code).toBe('SHARED_REFERENCE')
+      expect(storage.keys.has(p)).toBe(true)
+    }finally{await c.query('ROLLBACK');c.release()}
+  })
   it('refuses shared storage objects without deleting another user data',async()=>{
     const {id,unrelated,key}=await seed();const client=await connection()
     try {

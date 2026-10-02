@@ -1,4 +1,5 @@
 import { transaction } from '@/lib/db'
+import { otherAccountStorageReferences } from '@/lib/storage-sharing'
 import { storageObjectScope } from '@/lib/storage-ownership'
 import { deleteFile } from '@/lib/storage'
 
@@ -12,11 +13,18 @@ export async function drainAccountStorageDeletes(): Promise<{ deleted: number; r
       WHERE status IN ('pending','retry') AND (storage_scope IS DISTINCT FROM $1 OR NOT EXISTS
         (SELECT 1 FROM account_storage_objects o WHERE o.object_key=q.object_key
           AND o.owner_user_id=q.owner_user_id AND o.storage_scope=q.storage_scope))`, [storageObjectScope()])
-    const { rows } = await client.query<{ object_key: string }>(
-      `SELECT object_key FROM account_storage_deletes WHERE status IN ('pending','retry') AND next_attempt_at<=NOW()
+    const { rows } = await client.query<{ object_key: string; owner_user_id: string }>(
+      `SELECT object_key,owner_user_id FROM account_storage_deletes WHERE status IN ('pending','retry') AND next_attempt_at<=NOW()
        ORDER BY next_attempt_at,attempts,created_at LIMIT 20 FOR UPDATE SKIP LOCKED`
     )
+    const references=new Map<string,Set<string>>()
     for (const row of rows) {
+      let shared=references.get(row.owner_user_id)
+      if (!shared) { shared=await otherAccountStorageReferences(client,row.owner_user_id);references.set(row.owner_user_id,shared) }
+      if(shared.has(row.object_key)) {
+        await client.query("UPDATE account_storage_deletes SET status='review',last_error_code='SHARED_REFERENCE' WHERE object_key=$1",[row.object_key])
+        continue
+      }
       let success=false
       try { success=(await deleteFile(row.object_key)).success } catch {}
       if (success) {

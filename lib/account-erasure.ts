@@ -1,5 +1,6 @@
 import type { PoolClient } from 'pg'
 import { emailHash } from '@/lib/contract-talk/model'
+import { otherAccountStorageReferences } from '@/lib/storage-sharing'
 import { storageObjectScope, assertServerUploadNamespace } from '@/lib/storage-ownership'
 import { ownedStorageKey } from '@/lib/account-storage-delete'
 
@@ -60,23 +61,26 @@ export async function eraseAccountData(client: PoolClient, userId: string, email
     UNION SELECT thumbnail_url FROM property_images WHERE property_id IN (SELECT id FROM properties WHERE landlord_id=$1) AND thumbnail_url IS NOT NULL
     UNION SELECT unnest(photo_urls) FROM listings WHERE landlord_id=$1`, [userId])
   for (const { url } of objects.rows) {
-    const shared = await client.query<{ shared: boolean }>(`SELECT
-      EXISTS(SELECT 1 FROM users WHERE id<>$1 AND profile_image=$2) OR
-      EXISTS(SELECT 1 FROM verification_documents WHERE user_id<>$1 AND file_url=$2) OR
-      EXISTS(SELECT 1 FROM property_images i JOIN properties p ON p.id=i.property_id
-        WHERE p.landlord_id<>$1 AND (i.image_url=$2 OR i.thumbnail_url=$2)) OR
-      EXISTS(SELECT 1 FROM listings WHERE landlord_id<>$1 AND $2=ANY(photo_urls)) AS shared`, [userId, url])
-    if (shared.rows[0]?.shared) throw new DeletionReviewRequired()
     let key: string
     try { key = ownedStorageKey(url) } catch { throw new DeletionReviewRequired() }
-    // A URL/reference and raw-string sharing check are never ownership proof.
+    // URL canonicalization never substitutes for server ownership proof.
     try { assertServerUploadNamespace(key,userId) } catch { throw new DeletionReviewRequired() }
     const proof = await client.query('SELECT 1 FROM account_storage_objects WHERE object_key=$1 AND owner_user_id=$2 AND storage_scope=$3', [key,userId,storageObjectScope()])
     if (!proof.rows.length) throw new DeletionReviewRequired()
   }
-  await client.query(`INSERT INTO account_storage_deletes(object_key,owner_user_id,storage_scope)
-    SELECT object_key,owner_user_id,storage_scope FROM account_storage_objects
-    WHERE owner_user_id=$1 AND storage_scope=$2 ON CONFLICT DO NOTHING`, [userId,storageObjectScope()])
+  const candidates=await client.query<{object_key:string}>(`SELECT object_key FROM account_storage_objects
+    WHERE owner_user_id=$1 AND storage_scope=$2 FOR UPDATE`,[userId,storageObjectScope()])
+  const sharedKeys=await otherAccountStorageReferences(client,userId)
+  for(const candidate of candidates.rows) {
+    try {assertServerUploadNamespace(candidate.object_key,userId)} catch {throw new DeletionReviewRequired()}
+    if(sharedKeys.has(candidate.object_key)) throw new DeletionReviewRequired()
+  }
+  // Includes replaced/orphaned uploads, after checking EVERY candidate, not only
+  // the URLs still present in the deleting account's current profile/listings.
+  for(const candidate of candidates.rows) {
+    await client.query(`INSERT INTO account_storage_deletes(object_key,owner_user_id,storage_scope)
+      VALUES($1,$2,$3) ON CONFLICT DO NOTHING`,[candidate.object_key,userId,storageObjectScope()])
+  }
   // Both participants lose the shared conversation; no third-party conversation
   // is touched. This follows the existing UI's promise to erase conversation data.
   const conversations = await client.query<{ id: string }>('DELETE FROM conversations WHERE landlord_id=$1 OR tenant_id=$1 RETURNING id', [userId])
