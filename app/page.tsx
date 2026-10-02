@@ -56,36 +56,42 @@ export default async function HomePage() {
         <section className="border-b bg-gradient-to-b from-primary/5 to-transparent">
           <div className="mx-auto max-w-3xl px-4 py-14 sm:py-20">
             <h1 className="text-balance text-3xl font-bold leading-tight sm:text-4xl">
-              계약서에 도장 찍기 전에,
+              집을 구하는 임차인이라면,
               <br />
-              보증금부터 확인하세요
+              계약 전 질문부터 나누세요
             </h1>
             <p className="mt-5 max-w-xl text-base leading-relaxed text-muted-foreground">
-              등기부와 시세에서 읽은 숫자를 넣으면 보증금이 안전한지 계산해 드립니다. 집이
-              경매로 넘어갔을 때 얼마가 남는지까지 보여드립니다. 가입하지 않으셔도 됩니다.
+              임대인과 수리 연락 방법·입주 일정·추가 확인 사항을 정리하세요. 질문 세 가지와 가능한 시간, 상대 임대인의 계정 이메일로 요청을 만들고, 직접 전달한 링크에서 답변과 일정을 확인할 수 있습니다. 양측 계정이 필요합니다.
             </p>
 
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
               <Link
-                href="/check"
+                href="/contract-talk"
                 className="inline-flex items-center justify-center rounded-lg bg-primary px-6 py-3.5 text-sm font-bold text-primary-foreground transition-opacity hover:opacity-90"
               >
-                보증금 점검하기
+                계약 전 대화 요청하기
               </Link>
               <Link
-                href="#guides"
+                href="/check"
                 className="inline-flex items-center justify-center rounded-lg border bg-background px-6 py-3.5 text-sm font-semibold transition-colors hover:bg-muted/50"
               >
-                등기부 읽는 법 보기
+                보증금 점검하기 (가입 없이)
               </Link>
             </div>
 
             <p className="mt-5 text-xs leading-relaxed text-muted-foreground">
-              시세를 저희가 추정하지 않습니다. 직접 확인하신 숫자로만 계산하고, 그 숫자는
+              보증금 점검에서는 시세를 저희가 추정하지 않습니다. 직접 확인하신 숫자로만 계산하고, 그 숫자는
               저장하지 않습니다.
             </p>
 
-            <div className="mt-6 rounded-xl border bg-background p-5"><h2 className="text-lg font-bold">계약 전, 서로 물어볼 내용을 정리하세요</h2><p className="mt-2 text-sm text-muted-foreground">수리 연락 방법·입주 일정·추가 확인 사항을 묻고, 임대인과 답변과 시간을 확인하세요. 링크는 직접 전달하며 양측 계정이 필요합니다.</p><Link href="/contract-talk" className="mt-4 inline-flex rounded-lg border px-5 py-2.5 text-sm font-semibold">계약 전 대화 요청하기</Link></div>
+            <div className="mt-6 rounded-xl border bg-background p-5">
+              <h2 className="text-lg font-bold">이렇게 대화를 시작합니다</h2>
+              <p className="mt-2 text-xs text-muted-foreground">합성 사용 예시 · 실제 이용자의 대화가 아닙니다.</p>
+              <p className="mt-3 text-sm">질문: “수리 요청은 어떤 연락 방법으로 이야기하면 좋을까요?”</p>
+              <p className="mt-2 text-sm">답변 예시: “입주 때 안내한 연락 방법으로 알려주세요.”</p>
+              <p className="mt-3 text-sm text-muted-foreground">임차인이 가능한 시간을 올리고 → 임대인이 답변하거나 시간을 제안하고 → 임차인이 제안 시간에 합의합니다. 메일은 자동 발송되지 않습니다.</p>
+              <Link href="/contract-talk/requests" className="mt-4 inline-flex underline text-sm">이미 만든·받은 요청 확인하기</Link>
+            </div>
 
             <div className="mt-8 rounded-xl border bg-background p-5">
               <h2 className="text-lg font-bold">서로 확인하는 임대차, 파일럿 참여</h2>

@@ -98,3 +98,50 @@ test('모바일 양측 화면에서 요청 생성과 응답을 확인한다',asy
   expect(await tp.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true)
  }finally{await t.close();await l.close()}
 })
+
+test('첫 방문 모바일 가입·로그인 복귀와 실패 안내', async ({browser}) => {
+ const context=await browser.newContext({viewport:{width:393,height:851}})
+ const page=await context.newPage()
+ try {
+  await page.goto('/contract-talk')
+  await page.getByRole('link',{name:'로그인',exact:true}).click()
+  await page.getByRole('link',{name:'회원가입',exact:true}).first().click()
+  await expect(page).toHaveURL(/signup\?redirect=%2Fcontract-talk$/)
+  await expect(page.getByText('가입 후 원래 대화 요청 화면으로 돌아갑니다.',{exact:false})).toBeVisible()
+  await page.route('**/api/auth/signup',route=>route.fulfill({status:200,contentType:'application/json',body:'{}'}))
+  await page.getByLabel('이메일',{exact:true}).fill('synthetic@example.test')
+  await page.getByLabel('비밀번호',{exact:true}).fill('synthetic-password')
+  await page.getByLabel('비밀번호 확인',{exact:true}).fill('synthetic-password')
+  await page.getByRole('checkbox').nth(1).check()
+  await page.getByRole('checkbox').nth(2).check()
+  await page.getByRole('button',{name:'가입하기',exact:true}).click()
+  await expect(page).toHaveURL(/\/contract-talk$/)
+  await page.goto('/contract-talk/shared/synthetic-missing-token')
+  await expect(page.locator('p[role="alert"]')).toBeVisible()
+  await expect(page.getByRole('textbox',{name:'원하는 기능'})).toBeVisible()
+  await page.getByRole('link',{name:'임대인 계정 가입 후 이 요청으로 돌아오기'}).click()
+  await expect(page).toHaveURL(/redirect=%2Fcontract-talk%2Fshared%2Fsynthetic-missing-token/)
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true)
+ } finally {await context.close()}
+})
+
+test('로그인 복귀·허용하지 않는 가입 복귀 URL·이미 로그인한 복귀',async({browser})=>{
+ const context=await browser.newContext(),page=await context.newPage()
+ try {
+  await page.goto('/login?redirect=%2Fcontract-talk%2Frequests')
+  await page.route('**/api/auth/login',route=>route.fulfill({status:200,contentType:'application/json',body:'{"user":{"user_type":"tenant"}}'}))
+  await page.getByLabel('이메일',{exact:true}).fill('synthetic@example.test')
+  await page.getByLabel('비밀번호',{exact:true}).fill('synthetic-password')
+  await page.getByRole('button',{name:'로그인',exact:true}).click()
+  await expect(page).toHaveURL(/\/contract-talk\/requests$/)
+  await expect(page.getByRole('link',{name:'로그인하고 목록으로 돌아오기'})).toBeVisible()
+  for(const redirect of ['//evil.test','/contract-talk/../login','/contract-talk/%2f%2fevil.test']) {
+   await page.goto(`/signup?redirect=${encodeURIComponent(redirect)}`)
+   await expect(page.getByText('입주해에 가입하고 프로필을 만들어보세요')).toBeVisible()
+   await expect(page.getByRole('link',{name:'로그인',exact:true}).last()).toHaveAttribute('href','/login')
+  }
+  await page.goto('/__local/login/tenant')
+  await page.goto('/login?redirect=%2Fcontract-talk%2Frequests')
+  await expect(page).toHaveURL(/\/contract-talk\/requests$/)
+ } finally {await context.close()}
+})

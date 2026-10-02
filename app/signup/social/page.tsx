@@ -11,10 +11,13 @@ import { TermsConsent } from '@/components/auth/terms-consent'
 import { User, Building } from 'lucide-react'
 import { toast } from 'sonner'
 
+import { contractTalkReturnPath } from '@/lib/safe-redirect'
+
 function SocialSignupForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
+  const redirectTo = contractTalkReturnPath(searchParams?.get('redirect'))
   const provider = searchParams?.get('provider') || ''
   const providerId = searchParams?.get('providerId') || ''
   const email = searchParams?.get('email') || ''
@@ -68,7 +71,9 @@ function SocialSignupForm() {
 
       toast.success('회원가입이 완료되었습니다!')
 
-      if (userType === 'landlord') {
+      if (redirectTo) {
+        router.push(redirectTo)
+      } else if (userType === 'landlord') {
         router.push('/landlord/onboarding')
       } else {
         router.push('/onboarding/basic')
