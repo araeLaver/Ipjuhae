@@ -1,25 +1,38 @@
 import { transaction } from '@/lib/db'
+import { storageObjectScope } from '@/lib/storage-ownership'
 import { deleteFile } from '@/lib/storage'
 
 // Lock each batch to permit overlapping authenticated cleanup jobs. Failed objects
 // remain queued; DeleteObject is idempotent, including crash after remote success.
-export async function drainAccountStorageDeletes(): Promise<void> {
-  await transaction(async client => {
+export async function drainAccountStorageDeletes(): Promise<{ deleted: number; retrying: number; review: number }> {
+  return transaction(async client => {
+    let deleted=0
+    // Missing or changed ownership/destination proof quarantines a queue entry.
+    await client.query(`UPDATE account_storage_deletes q SET status='review',last_error_code='OWNERSHIP_UNVERIFIED'
+      WHERE status IN ('pending','retry') AND (storage_scope IS DISTINCT FROM $1 OR NOT EXISTS
+        (SELECT 1 FROM account_storage_objects o WHERE o.object_key=q.object_key
+          AND o.owner_user_id=q.owner_user_id AND o.storage_scope=q.storage_scope))`, [storageObjectScope()])
     const { rows } = await client.query<{ object_key: string }>(
-      'SELECT object_key FROM account_storage_deletes ORDER BY created_at LIMIT 20 FOR UPDATE SKIP LOCKED'
+      `SELECT object_key FROM account_storage_deletes WHERE status IN ('pending','retry') AND next_attempt_at<=NOW()
+       ORDER BY next_attempt_at,attempts,created_at LIMIT 20 FOR UPDATE SKIP LOCKED`
     )
     for (const row of rows) {
-      try {
-        const result = await deleteFile(row.object_key)
-        if (result.success) {
-          await client.query('DELETE FROM account_storage_deletes WHERE object_key=$1', [row.object_key])
-        } else {
-          await client.query('UPDATE account_storage_deletes SET attempts=attempts+1 WHERE object_key=$1', [row.object_key])
-        }
-      } catch {
-        await client.query('UPDATE account_storage_deletes SET attempts=attempts+1 WHERE object_key=$1', [row.object_key])
+      let success=false
+      try { success=(await deleteFile(row.object_key)).success } catch {}
+      if (success) {
+        await client.query('DELETE FROM account_storage_deletes WHERE object_key=$1', [row.object_key])
+        await client.query('DELETE FROM account_storage_objects WHERE object_key=$1', [row.object_key]);deleted++
+      } else {
+        await client.query(`UPDATE account_storage_deletes SET attempts=attempts+1,
+          status=CASE WHEN attempts+1>=5 THEN 'review' ELSE 'retry' END,
+          next_attempt_at=NOW()+interval '1 minute'*power(2,least(attempts,6)),
+          last_error_code='OBJECT_DELETE_FAILED' WHERE object_key=$1`, [row.object_key])
       }
     }
+    const counts=await client.query<{retrying:number;review:number}>(`SELECT
+      count(*) FILTER(WHERE status='retry')::int AS retrying,count(*) FILTER(WHERE status='review')::int AS review
+      FROM account_storage_deletes`)
+    return {deleted,retrying:counts.rows[0]?.retrying??0,review:counts.rows[0]?.review??0}
   })
 }
 
@@ -31,7 +44,7 @@ export function ownedStorageKey(url: string): string {
     : `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/mock-storage`
   const prefix = new URL(base.endsWith('/') ? base : `${base}/`)
   const target = new URL(url)
-  if (target.origin !== prefix.origin || !target.pathname.startsWith(prefix.pathname) || target.search || target.hash) {
+  if (target.username || target.password || target.origin !== prefix.origin || !target.pathname.startsWith(prefix.pathname) || target.search || target.hash) {
     throw new Error('Unrecognized account storage reference')
   }
   const key = decodeURIComponent(target.pathname.slice(prefix.pathname.length))

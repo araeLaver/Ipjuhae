@@ -29,6 +29,7 @@ export const KeyboardAvoidingView=element('div');
 export const ActivityIndicator=()=>React.createElement('progress');
 export const StyleSheet={create:s=>s}; export const Alert={alert:()=>{}};
 export const Linking={openURL:()=>Promise.resolve()};
+export const Modal=({visible,children})=>visible?React.createElement('div',null,children):null;
 export const Platform={OS:'ios', select:o=>o.ios};
 export const TextInput=({value,onChangeText,placeholder,style,multiline})=>React.createElement(multiline?'textarea':'input',{value:value??'',placeholder,style:flatten(style),onChange:e=>onChangeText&&onChangeText(e.target.value)});
 `)

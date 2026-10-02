@@ -111,20 +111,22 @@ export async function POST(
     const timestamp = Date.now()
 
     const imageUploadResult = await uploadFile({
+      ownerUserId: payload.userId,
       file: optimizedResult.buffer,
       fileName: `${timestamp}.webp`,
       contentType: 'image/webp',
-      folder: `properties/${propertyId}`,
+      folder: `properties/${payload.userId}/${propertyId}`,
     })
 
     let thumbnailUrl = imageUploadResult.url
 
     if (thumbnailResult.success && thumbnailResult.buffer) {
       const thumbnailUploadResult = await uploadFile({
+      ownerUserId: payload.userId,
         file: thumbnailResult.buffer,
         fileName: `${timestamp}_thumb.webp`,
         contentType: 'image/webp',
-        folder: `properties/${propertyId}`,
+        folder: `properties/${payload.userId}/${propertyId}`,
       })
       if (thumbnailUploadResult.success && thumbnailUploadResult.url) {
         thumbnailUrl = thumbnailUploadResult.url

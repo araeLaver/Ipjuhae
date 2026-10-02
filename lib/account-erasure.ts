@@ -1,5 +1,6 @@
 import type { PoolClient } from 'pg'
 import { emailHash } from '@/lib/contract-talk/model'
+import { storageObjectScope, assertServerUploadNamespace } from '@/lib/storage-ownership'
 import { ownedStorageKey } from '@/lib/account-storage-delete'
 
 export class DeletionReviewRequired extends Error {}
@@ -24,10 +25,12 @@ export async function eraseAccountData(client: PoolClient, userId: string, email
     EXISTS(SELECT 1 FROM trust_reference_submissions WHERE subject_id=$1 OR responder_id=$1)
     AS required`, [userId])
   if (review.rows[0]?.required) throw new DeletionReviewRequired()
+  const oldDestination=await client.query('SELECT 1 FROM account_storage_objects WHERE owner_user_id=$1 AND storage_scope<>$2 LIMIT 1',[userId,storageObjectScope()])
+  if (oldDestination.rows.length) throw new DeletionReviewRequired()
 
   // Discover every additional FK to users in the active schema. New tables fail
   // closed until a deletion policy is added; no silent omission after migration.
-  const handled = new Set(['users', 'profiles', 'tenant_profiles', 'landlord_profiles', 'conversations', 'messages', 'properties', 'property_images', 'listings', 'verification_documents', 'verifications', 'landlord_references', 'tenant_favorites', 'profile_views', 'notifications', 'notification_preferences', 'push_tokens', 'data_consents', 'consent_events', 'reviews', 'community_posts', 'community_comments', 'community_reports', 'analytics_events', 'api_idempotency_requests', 'contract_talk_requests', 'revoked_tokens', 'community_blocks'])
+  const handled = new Set(['users', 'profiles', 'tenant_profiles', 'landlord_profiles', 'conversations', 'messages', 'properties', 'property_images', 'listings', 'verification_documents', 'verifications', 'landlord_references', 'tenant_favorites', 'profile_views', 'notifications', 'notification_preferences', 'push_tokens', 'data_consents', 'consent_events', 'reviews', 'community_posts', 'community_comments', 'community_reports', 'analytics_events', 'api_idempotency_requests', 'contract_talk_requests', 'revoked_tokens', 'community_blocks', 'account_storage_objects', 'account_storage_deletes'])
   const references = await client.query<{ table_name: string; column_name: string }>(`SELECT DISTINCT tc.table_name, kcu.column_name
     FROM information_schema.table_constraints tc
     JOIN information_schema.key_column_usage kcu USING(constraint_catalog, constraint_schema, constraint_name)
@@ -66,11 +69,18 @@ export async function eraseAccountData(client: PoolClient, userId: string, email
     if (shared.rows[0]?.shared) throw new DeletionReviewRequired()
     let key: string
     try { key = ownedStorageKey(url) } catch { throw new DeletionReviewRequired() }
-    await client.query('INSERT INTO account_storage_deletes(object_key) VALUES($1) ON CONFLICT DO NOTHING', [key])
+    // A URL/reference and raw-string sharing check are never ownership proof.
+    try { assertServerUploadNamespace(key,userId) } catch { throw new DeletionReviewRequired() }
+    const proof = await client.query('SELECT 1 FROM account_storage_objects WHERE object_key=$1 AND owner_user_id=$2 AND storage_scope=$3', [key,userId,storageObjectScope()])
+    if (!proof.rows.length) throw new DeletionReviewRequired()
   }
+  await client.query(`INSERT INTO account_storage_deletes(object_key,owner_user_id,storage_scope)
+    SELECT object_key,owner_user_id,storage_scope FROM account_storage_objects
+    WHERE owner_user_id=$1 AND storage_scope=$2 ON CONFLICT DO NOTHING`, [userId,storageObjectScope()])
   // Both participants lose the shared conversation; no third-party conversation
   // is touched. This follows the existing UI's promise to erase conversation data.
   const conversations = await client.query<{ id: string }>('DELETE FROM conversations WHERE landlord_id=$1 OR tenant_id=$1 RETURNING id', [userId])
+  await client.query("DELETE FROM notifications WHERE type='new_message' AND metadata->>'conversationId'=ANY($1::text[])", [conversations.rows.map(row=>row.id)])
   await client.query("DELETE FROM contract_talk_requests WHERE owner_id=$1::uuid OR payload->>'respondentId'=$1::text OR recipient_hash=$2", [userId, emailHash(email)])
   await client.query('DELETE FROM verification_documents WHERE user_id=$1', [userId])
   await client.query('DELETE FROM verifications WHERE user_id=$1', [userId])

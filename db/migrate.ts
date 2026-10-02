@@ -63,6 +63,7 @@ const migrations = [
   'migration-045-contract-talk.sql',
   'migration-046-account-storage-deletes.sql',
   'migration-047-community-blocks.sql',
+  'migration-048-storage-ownership.sql',
 ] as const
 
 const args = process.argv.slice(2)

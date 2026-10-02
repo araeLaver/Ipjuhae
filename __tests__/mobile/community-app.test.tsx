@@ -95,7 +95,7 @@ export const ActivityIndicator = () => React.createElement('span', null, '불러
 export const RefreshControl = () => null;
 export const StyleSheet = { create: s => s };
 export const Linking = { openURL: () => Promise.resolve() };
-export const Platform = { OS: 'ios', select: o => o.ios };
+export const Platform = { OS: 'android', select: o => o.ios };
 export const Alert = {
   alert: (title, message, buttons) => { globalThis.__communityQA.alerts.push({ title, message, buttons }) },
 };
@@ -258,11 +258,22 @@ describe('D1 — 앱에서 댓글을 쓸 수 있다', () => {
     await mountPost()
     await screen.findByText(commentRow().body)
     fireEvent.click(screen.getByText('댓글 신고 · 작성자 신고'))
-    await act(async () => { await alerts.at(-1)?.buttons?.find(b => b.text === '광고·스팸')?.onPress?.() })
+    fireEvent.click(screen.getByText('광고·스팸'))
+    await waitFor(()=>expect(callsTo('/community/reports','POST')).toHaveLength(1))
     expect(JSON.parse(String(callsTo('/community/reports','POST')[0][1]?.body))).toEqual({ commentId: 'c1', reason: '광고·스팸' })
     fireEvent.click(screen.getAllByText('작성자 차단')[1])
     await act(async () => { await alerts.at(-1)?.buttons?.find(b => b.text === '차단')?.onPress?.() })
     expect(JSON.parse(String(callsTo('/community/blocks','POST')[0][1]?.body))).toEqual({ commentId: 'c1' })
+  })
+
+  it('Android에서도 신고 사유 네 가지와 취소를 모두 Modal에서 선택할 수 있다', async () => {
+    await mountPost()
+    for (const reason of ['개인정보 노출','광고·스팸','욕설·혐오','허위 정보']) {
+      fireEvent.click(screen.getByText('댓글 신고 · 작성자 신고'))
+      for(const option of ['개인정보 노출','광고·스팸','욕설·혐오','허위 정보','취소']) expect(screen.getByText(option)).toBeVisible()
+      fireEvent.click(screen.getByText(reason))
+      await waitFor(()=>expect(JSON.parse(String(callsTo('/community/reports','POST').at(-1)?.[1]?.body))).toEqual({commentId:'c1',reason}))
+    }
   })
 
   it('입력창에 적고 누르면 댓글이 서버로 나간다', async () => {

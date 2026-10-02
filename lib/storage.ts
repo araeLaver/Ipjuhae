@@ -13,6 +13,8 @@ import { logger } from './logger'
 import crypto from 'node:crypto'
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
 import { optimizeProfileImage, optimizeDocumentImage, validateImage } from './image'
+import { transaction } from '@/lib/db'
+import { assertServerUploadNamespace, storageObjectScope } from '@/lib/storage-ownership'
 import { buildUrl } from '@/lib/base-url'
 
 interface UploadResult {
@@ -23,6 +25,7 @@ interface UploadResult {
 }
 
 interface UploadOptions {
+  ownerUserId: string
   file: Buffer | Blob
   fileName: string
   contentType: string
@@ -125,6 +128,7 @@ async function uploadS3(options: UploadOptions): Promise<UploadResult> {
       Key: key,
       Body: fileBuffer,
       ContentType: options.contentType,
+      Metadata: { owner_user_id: options.ownerUserId, storage_scope: storageObjectScope() },
     }))
 
     const url = getPublicUrl(key)
@@ -150,11 +154,23 @@ async function uploadS3(options: UploadOptions): Promise<UploadResult> {
 export async function uploadFile(options: UploadOptions): Promise<UploadResult> {
   assertProductionReady(STORAGE_PROVIDER)
 
-  switch (STORAGE_PROVIDER) {
-    case 's3':
-      return uploadS3(options)
-    default:
-      return uploadMock(options)
+  assertServerUploadNamespace(`${options.folder || 'uploads'}/upload`, options.ownerUserId)
+  const result = STORAGE_PROVIDER === 's3' ? await uploadS3(options) : await uploadMock(options)
+  if (!result.success || !result.key) return result
+  try {
+    await transaction(async client => {
+      const active = await client.query('SELECT id FROM users WHERE id=$1 AND deleted_at IS NULL FOR UPDATE', [options.ownerUserId])
+      if (!active.rows.length) throw new Error('Account is not active')
+      assertServerUploadNamespace(result.key!, options.ownerUserId)
+      await client.query('INSERT INTO account_storage_objects(object_key,owner_user_id,storage_scope) VALUES($1,$2,$3)',
+        [result.key,options.ownerUserId,storageObjectScope()])
+    })
+    return result
+  } catch {
+    // Only the just-created key from this server upload is cleaned, never a URL
+    // supplied by the user. Failure leaves an orphan for operator review.
+    await deleteFile(result.key).catch(() => undefined)
+    return { success: false, error: '업로드 소유권을 기록하지 못했습니다.' }
   }
 }
 
@@ -197,6 +213,7 @@ export async function uploadVerificationDocument(
     const optimizedFileName = fileName.replace(/\.[^.]+$/, '.jpg')
 
     return uploadFile({
+      ownerUserId: userId,
       file: optimized.buffer,
       fileName: optimizedFileName,
       contentType: 'image/jpeg',
@@ -206,6 +223,7 @@ export async function uploadVerificationDocument(
 
   // PDF 등 다른 파일 형식은 그대로 업로드
   return uploadFile({
+      ownerUserId: userId,
     file,
     fileName,
     contentType,
@@ -259,6 +277,7 @@ export async function uploadProfileImage(
   const optimizedFileName = fileName.replace(/\.[^.]+$/, '.webp')
 
   return uploadFile({
+      ownerUserId: userId,
     file: optimized.buffer,
     fileName: optimizedFileName,
     contentType: 'image/webp',

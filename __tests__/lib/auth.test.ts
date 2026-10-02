@@ -100,12 +100,18 @@ describe('세션 무효화 (revokeToken / verifyTokenAllowed)', () => {
   })
 
   it('무효화되지 않은 토큰은 payload 반환', async () => {
-    vi.mocked(queryOne).mockResolvedValue(null)
+    vi.mocked(queryOne).mockResolvedValueOnce(null).mockResolvedValueOnce({ id: 'user-1' } as never)
     const token = generateToken('user-1', 'tenant')
 
     const payload = await verifyTokenAllowed(token)
     expect(payload?.userId).toBe('user-1')
     expect(payload?.jti).toBeTruthy()
+  })
+
+  it('폐기되지 않은 기존 토큰도 탈퇴 계정이면 거부한다', async () => {
+    vi.mocked(queryOne).mockResolvedValue(null)
+    expect(await verifyTokenAllowed(generateToken('deleted-user', 'landlord'))).toBeNull()
+    expect(vi.mocked(queryOne).mock.calls.at(-1)?.[0]).toContain('deleted_at IS NULL')
   })
 
   it('무효화된 jti는 거부', async () => {
