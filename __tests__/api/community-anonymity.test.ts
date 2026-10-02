@@ -11,6 +11,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@/lib/db', () => ({ query: vi.fn(), queryOne: vi.fn(), transaction: vi.fn() }))
+vi.mock('@/lib/community-blocks', () => ({ communityPairBlocked: vi.fn(async () => false) }))
 vi.mock('@/lib/auth', () => ({ getCurrentUser: vi.fn() }))
 
 import { GET as listPosts } from '@/app/api/community/posts/route'
@@ -89,9 +90,9 @@ function simulateDb() {
     const row: Record<string, unknown> = { ...base }
     delete row.author_name
     delete row.author_id
-    const selectList = sql.slice(0, sql.lastIndexOf('FROM'))
+    const selectList = sql.slice(0, sql.search(/\n\s+FROM community_(?:posts|comments)/))
     if (/AS author_name/.test(selectList)) row.author_name = '김철수'
-    if (/author_id/.test(selectList)) row.author_id = AUTHOR_ID
+    if (/\b[pc]\.author_id\s*(?:,|AS\s+author_id)/.test(selectList)) row.author_id = AUTHOR_ID
     // author_role도 SELECT 식을 따라간다(DOW-1262). 고정 값을 돌려주면 SQL을
     // `COALESCE(u.user_type, 'guest')`로 되돌려도 payload 판정이 통과해 버린다.
     // 계정 역할은 `ACCOUNT_ROLE`이고, 접는 식이 들어 있을 때만 admin/member로 좁혀 준다.

@@ -43,7 +43,7 @@ export async function POST(request: Request) {
 
     // DB 업데이트
     await query(
-      'UPDATE users SET profile_image = $1 WHERE id = $2',
+      'UPDATE users SET profile_image = $1 WHERE id = $2 AND deleted_at IS NULL',
       [result.url, user.id]
     )
 

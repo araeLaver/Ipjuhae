@@ -21,6 +21,7 @@ beforeAll(async () => {
   await client.connect()
   await client.query('BEGIN')
   await client.query('SET LOCAL search_path = pg_temp')
+  await client.query('CREATE TEMP TABLE community_blocks (blocker_id uuid, blocked_id uuid) ON COMMIT DROP')
   await client.query('CREATE TEMP TABLE users (id uuid, user_type text) ON COMMIT DROP')
   await client.query(`CREATE TEMP TABLE community_posts (
     id uuid, author_id uuid, audience text, category text, title text, body text,

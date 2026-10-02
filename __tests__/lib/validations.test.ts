@@ -100,6 +100,7 @@ describe('loginSchema', () => {
 describe('signupSchema', () => {
   it('유효한 회원가입 데이터 통과', () => {
     const result = signupSchema.safeParse({
+      termsAgreed: true, privacyAgreed: true,
       email: 'test@example.com',
       password: 'password123',
     })
@@ -111,6 +112,7 @@ describe('signupSchema', () => {
 
   it('userType 지정시 유지', () => {
     const result = signupSchema.safeParse({
+      termsAgreed: true, privacyAgreed: true,
       email: 'test@example.com',
       password: 'password123',
       userType: 'landlord',
@@ -123,6 +125,7 @@ describe('signupSchema', () => {
 
   it('유효하지 않은 userType 거부', () => {
     const result = signupSchema.safeParse({
+      termsAgreed: true, privacyAgreed: true,
       email: 'test@example.com',
       password: 'password123',
       userType: 'admin',
@@ -132,6 +135,7 @@ describe('signupSchema', () => {
 
   it('약한 비밀번호 거부', () => {
     const result = signupSchema.safeParse({
+      termsAgreed: true, privacyAgreed: true,
       email: 'test@example.com',
       password: 'weak',
     })

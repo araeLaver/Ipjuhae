@@ -16,7 +16,7 @@ const schema = z
     commentId: z.string().uuid().optional(),
     reason: z.string().min(1, '신고 사유를 골라주세요').max(200),
   })
-  .refine((v) => v.postId || v.commentId, { message: '신고 대상이 없습니다' })
+  .refine((v) => Boolean(v.postId) !== Boolean(v.commentId), { message: '신고 대상이 없습니다' })
 
 function reporterHash(request: Request): string {
   return crypto

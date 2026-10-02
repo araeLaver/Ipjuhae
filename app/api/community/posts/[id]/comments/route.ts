@@ -5,6 +5,7 @@ import { getClientIp, rateLimit } from '@/lib/rate-limit'
 import crypto from 'node:crypto'
 import { query, queryOne, transaction } from '@/lib/db'
 import { sanitizeUserInput } from '@/lib/sanitize'
+import { communityPairBlocked } from '@/lib/community-blocks'
 import { logger } from '@/lib/logger'
 import { readableAudiences, type CommunityAudience } from '@/lib/community'
 
@@ -37,6 +38,7 @@ async function loadReadablePost(postId: string, userType: string | null, userId:
     [postId]
   )
   if (!post) return { post: null, allowed: false }
+  if (await communityPairBlocked(userId, post.author_id)) return { post: null, allowed: false }
   const allowed = post.author_id === userId || readableAudiences(userType).includes(post.audience)
   return { post, allowed }
 }
@@ -68,14 +70,18 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
          FROM community_comments c
          LEFT JOIN users u ON u.id = c.author_id
         WHERE c.post_id = $1 AND c.deleted_at IS NULL AND c.hidden_at IS NULL
+          AND NOT EXISTS (SELECT 1 FROM community_blocks b WHERE
+            (b.blocker_id=$4::uuid AND b.blocked_id=c.author_id) OR (b.blocker_id=c.author_id AND b.blocked_id=$4::uuid))
           AND ($2::timestamptz IS NULL OR (c.created_at, c.id) > ($2::timestamptz, $3::uuid))
         ORDER BY c.created_at ASC, c.id ASC
         LIMIT 201`,
-      [id, cursor?.time ?? null, cursor?.id ?? null]
+      [id, cursor?.time ?? null, cursor?.id ?? null, user?.id ?? null]
     )
     const count = await queryOne<{ total: string }>(
       `SELECT COUNT(*) AS total FROM community_comments
-        WHERE post_id = $1 AND deleted_at IS NULL AND hidden_at IS NULL`, [id]
+        WHERE post_id = $1 AND deleted_at IS NULL AND hidden_at IS NULL
+          AND NOT EXISTS (SELECT 1 FROM community_blocks b WHERE
+            (b.blocker_id=$2::uuid AND b.blocked_id=community_comments.author_id) OR (b.blocker_id=community_comments.author_id AND b.blocked_id=$2::uuid))`, [id, user?.id ?? null]
     )
     const page = rows.slice(0, 200)
     const last = page.at(-1)

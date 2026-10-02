@@ -21,6 +21,8 @@ export const loginSchema = z.object({
 })
 
 export const signupSchema = z.object({
+  termsAgreed: z.literal(true, { error: '이용약관에 동의해주세요' }),
+  privacyAgreed: z.literal(true, { error: '개인정보처리방침에 동의해주세요' }),
   email: emailSchema,
   password: passwordSchema,
   userType: z.enum(['tenant', 'landlord', 'broker']).optional().default('tenant'),

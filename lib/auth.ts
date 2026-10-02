@@ -77,6 +77,8 @@ export async function verifyTokenAllowed(
   const payload = verifyToken(token)
   if (!payload) return null
   if (await isTokenRevoked(payload.jti)) return null
+  const active = await queryOne<{ id: string }>('SELECT id FROM users WHERE id=$1 AND deleted_at IS NULL', [payload.userId])
+  if (!active) return null
   return payload
 }
 

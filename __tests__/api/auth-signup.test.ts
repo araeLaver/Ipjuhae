@@ -32,7 +32,7 @@ function makeRequest(body: Record<string, unknown>): Request {
   return new Request('http://localhost:3000/api/auth/signup', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+    body: JSON.stringify({ termsAgreed: true, privacyAgreed: true, ...body }),
   })
 }
 
@@ -44,6 +44,14 @@ describe('POST /api/auth/signup', () => {
       remaining: 9,
       resetAt: Date.now() + 60000,
     })
+  })
+
+  it('필수 동의가 없거나 거절되면 계정을 만들지 않는다', async () => {
+    for (const consent of [undefined, false]) {
+      const res = await POST(makeRequest({ email: 'synthetic@example.invalid', password: 'synthetic123', termsAgreed: consent }))
+      expect(res.status).toBe(400)
+      expect(query).not.toHaveBeenCalled()
+    }
   })
 
   it('회원가입 성공 — tenant', async () => {
@@ -66,7 +74,7 @@ describe('POST /api/auth/signup', () => {
     expect(hashPassword).toHaveBeenCalledWith('password123')
     expect(query).toHaveBeenCalledWith(
       expect.stringContaining('INSERT INTO users'),
-      ['new@example.com', 'hashed-pw', 'tenant']
+      ['new@example.com', 'hashed-pw', 'tenant', true, true]
     )
   })
 
@@ -90,7 +98,7 @@ describe('POST /api/auth/signup', () => {
     expect(hashPassword).toHaveBeenCalledWith('password123')
     expect(query).toHaveBeenCalledWith(
       expect.stringContaining('INSERT INTO users'),
-      ['new@example.com', 'hashed-pw', 'broker']
+      ['new@example.com', 'hashed-pw', 'broker', true, true]
     )
   })
 

@@ -81,6 +81,7 @@ describe('POST /api/auth/signup', () => {
     ])
 
     const res = await signup(jsonRequest('http://localhost/api/auth/signup', 'POST', {
+      termsAgreed: true, privacyAgreed: true,
       email: 'new@example.com',
       password: 'Password1',
       userType: 'tenant',
@@ -101,6 +102,7 @@ describe('POST /api/auth/signup', () => {
     ])
 
     const res = await signup(jsonRequest('http://localhost/api/auth/signup', 'POST', {
+      termsAgreed: true, privacyAgreed: true,
       email: 'landlord@example.com',
       password: 'Password1',
       userType: 'landlord',
@@ -115,6 +117,7 @@ describe('POST /api/auth/signup', () => {
     vi.mocked(queryOne).mockResolvedValueOnce({ id: 'existing-user' })
 
     const res = await signup(jsonRequest('http://localhost/api/auth/signup', 'POST', {
+      termsAgreed: true, privacyAgreed: true,
       email: 'existing@example.com',
       password: 'Password1',
     }))
@@ -126,6 +129,7 @@ describe('POST /api/auth/signup', () => {
 
   it('returns 400 for weak password (no digit)', async () => {
     const res = await signup(jsonRequest('http://localhost/api/auth/signup', 'POST', {
+      termsAgreed: true, privacyAgreed: true,
       email: 'test@example.com',
       password: 'onlyletters',
     }))
@@ -134,6 +138,7 @@ describe('POST /api/auth/signup', () => {
 
   it('returns 400 for invalid email', async () => {
     const res = await signup(jsonRequest('http://localhost/api/auth/signup', 'POST', {
+      termsAgreed: true, privacyAgreed: true,
       email: 'not-an-email',
       password: 'Password1',
     }))
@@ -144,6 +149,7 @@ describe('POST /api/auth/signup', () => {
     vi.mocked(authRateLimit).mockReturnValueOnce({ success: false, remaining: 0, resetAt: Date.now() + 30_000 })
 
     const res = await signup(jsonRequest('http://localhost/api/auth/signup', 'POST', {
+      termsAgreed: true, privacyAgreed: true,
       email: 'test@example.com',
       password: 'Password1',
     }))

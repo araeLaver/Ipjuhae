@@ -88,9 +88,10 @@ describe('DELETE /api/account/delete — 실패 경로와 개인정보 처리', 
     const clearAuthCookie = vi.fn()
 
     vi.doMock('@/lib/auth', () => ({
-      getCurrentUser: vi.fn(async () => ({ id: userId })),
+      getCurrentUser: vi.fn(async () => ({ id: userId, email: 'synthetic@example.invalid' })),
       clearAuthCookie,
     }))
+    vi.doMock('@/lib/account-storage-delete', () => ({ drainAccountStorageDeletes: vi.fn(async () => undefined), ownedStorageKey: vi.fn() }))
     vi.doMock('@/lib/logger', () => ({
       logger: { info: vi.fn(), error: vi.fn() },
     }))
@@ -139,9 +140,9 @@ describe('DELETE /api/account/delete — 실패 경로와 개인정보 처리', 
 
     const usersUpdate = queries.find((q) => /UPDATE users/.test(q.text))
     expect(usersUpdate).toBeDefined()
-    expect(usersUpdate!.text).toMatch(/password_hash = 'deleted'/)
-    expect(usersUpdate!.text).toMatch(/deleted_at = NOW\(\)/)
-    expect(usersUpdate!.text).toMatch(/phone_number = NULL/)
+    expect(usersUpdate!.text).toMatch(/password_hash='deleted'/)
+    expect(usersUpdate!.text).toMatch(/deleted_at=NOW\(\)/)
+    expect(usersUpdate!.text).toMatch(/phone_number=NULL/)
     expect(usersUpdate!.params?.[0]).toBe(`deleted_${userId}@deleted.invalid`)
   })
 

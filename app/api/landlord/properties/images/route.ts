@@ -97,6 +97,7 @@ export async function POST(request: Request) {
       : `properties/${payload.userId}/temp`
 
     const uploadResult = await uploadFile({
+      ownerUserId: payload.userId,
       file: buffer,
       fileName,
       contentType: file.type,

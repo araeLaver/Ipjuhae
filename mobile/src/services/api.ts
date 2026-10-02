@@ -44,6 +44,7 @@ export async function signup(
   userType: string
 ): Promise<string> {
   const res = await apiClient.post<{ token: string }>('/auth/signup', {
+    termsAgreed: true, privacyAgreed: true,
     email,
     password,
     userType,
@@ -648,4 +649,12 @@ export async function createCommunityPost(input: {
  */
 export async function reportCommunityPost(postId: string, reason: string): Promise<{ hidden: boolean }> {
   return apiClient.post<{ ok: boolean; hidden: boolean }>('/community/reports', { postId, reason })
+}
+
+export async function reportCommunityComment(commentId: string, reason: string): Promise<{ hidden: boolean }> {
+  return apiClient.post<{ hidden: boolean }>('/community/reports', { commentId, reason });
+}
+
+export async function blockCommunityAuthor(target: { postId?: string; commentId?: string }): Promise<void> {
+  await apiClient.post('/community/blocks', target);
 }

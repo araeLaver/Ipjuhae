@@ -1,3 +1,4 @@
+import { drainAccountStorageDeletes } from '@/lib/account-storage-delete'
 import { logger } from '@/lib/logger'
 import { runTrustMaintenance } from '@/lib/trust-engine'
 import { getRequestContext } from '@/lib/request-context'
@@ -10,6 +11,7 @@ export async function GET(request: Request) {
     return jsonError(request, 401, 'Invalid cron authorization', 'CRON_AUTH_INVALID')
   }
   try {
+    await drainAccountStorageDeletes()
     return jsonSuccess(request, await runTrustMaintenance(getRequestContext(request)))
   } catch (error) {
     logger.error('Trust maintenance failed', { error })

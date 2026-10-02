@@ -75,7 +75,16 @@ function verifySocketToken(token) {
   }
 }
 
+
+async function socketMembershipAllowed(db, claims) {
+  const result = await db.query(`SELECT 1 FROM conversations c JOIN users u ON u.id=$2
+    WHERE c.id=$1 AND (c.landlord_id=$2 OR c.tenant_id=$2) AND u.deleted_at IS NULL`,
+    [claims.conversationId, claims.userId])
+  return result.rows.length > 0
+}
+
 module.exports = {
+  socketMembershipAllowed,
   SOCKET_TOKEN_AUDIENCE,
   SOCKET_TOKEN_ISSUER,
   SOCKET_TOKEN_TTL_SECONDS,

@@ -10,6 +10,7 @@
  */
 import { NextResponse } from 'next/server'
 import { query } from '@/lib/db'
+import { drainAccountStorageDeletes } from '@/lib/account-storage-delete'
 import { logger } from '@/lib/logger'
 
 export async function GET(request: Request) {
@@ -20,6 +21,7 @@ export async function GET(request: Request) {
   }
 
   try {
+    const accountStorage = await drainAccountStorageDeletes()
     const [notifResult, otpResult, revokedResult] = await Promise.all([
       // 30일 이상 된 읽은 알림 삭제
       query<{ count: string }>(
@@ -60,7 +62,7 @@ export async function GET(request: Request) {
 
     logger.info('Cron cleanup 완료', { deletedNotifs, deletedOtps, deletedRevoked })
 
-    return NextResponse.json({ ok: true, deletedNotifs, deletedOtps, deletedRevoked })
+    return NextResponse.json({ ok: true, deletedNotifs, deletedOtps, deletedRevoked, accountStorage })
   } catch (error) {
     logger.error('Cron cleanup 오류', { error })
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

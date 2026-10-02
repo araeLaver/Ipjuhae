@@ -1,7 +1,7 @@
 const { createServer } = require('http')
 const path = require('path')
 const { Server: SocketIOServer } = require('socket.io')
-const { verifySocketToken } = require('./socket-auth')
+const { verifySocketToken, socketMembershipAllowed } = require('./socket-auth')
 
 const hostname = process.env.HOSTNAME || '0.0.0.0'
 const port = parseInt(process.env.PORT || '8000', 10)
@@ -64,14 +64,25 @@ async function start() {
   // API routes에서 접근 가능하도록 global에 저장
   globalThis.io = io
 
+  const { Pool } = require('pg')
+  const { resolveDbSsl } = await import('./lib/db-ssl.mjs')
+  const dbSchema = process.env.DB_SCHEMA || 'ipjuhae'
+  if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(dbSchema)) throw new Error('Invalid DB_SCHEMA')
+  const socketDb = new Pool({ connectionString: process.env.DATABASE_URL,
+    ssl: resolveDbSsl(process.env.DATABASE_URL, { rejectUnauthorized: !dev }),
+    options: `-c search_path=${dbSchema},public`, max: 5, connectionTimeoutMillis: 5000 })
+
   // 짧은 수명의 대화방 범위 토큰만 허용한다.
-  io.use((socket, next) => {
+  io.use(async (socket, next) => {
     const token = socket.handshake.auth?.token
     const claims = verifySocketToken(token)
     if (!claims) {
       return next(new Error('Invalid socket token'))
     }
 
+    try {
+      if (!await socketMembershipAllowed(socketDb, claims)) return next(new Error('Conversation not available'))
+    } catch { return next(new Error('Conversation not available')) }
     socket.data.userId = claims.userId
     socket.data.conversationId = claims.conversationId
     socket.data.expiresAt = claims.expiresAt

@@ -14,12 +14,14 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  Modal,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import * as api from '../services/api';
 import { ROLE_LABELS, authorDisplayName } from '../lib/community';
+import PostingConsent from '../components/PostingConsent';
 import { colors } from '../theme';
 
 const roleLabels = ROLE_LABELS as Record<string, string>;
@@ -49,7 +51,10 @@ const CommunityPostScreen: React.FC<Props> = ({ route }) => {
   const [commentsError, setCommentsError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [postingAgreed, setPostingAgreed] = useState(false);
   const [draft, setDraft] = useState('');
+  const [reportTarget, setReportTarget] = useState<{ commentId?: string } | null>(null);
+  const [reporting, setReporting] = useState(false);
   const [posting, setPosting] = useState(false);
 
   const loadComments = useCallback(async (cursor?: string) => {
@@ -98,6 +103,7 @@ const CommunityPostScreen: React.FC<Props> = ({ route }) => {
    * 거른 글(도배 한도·정화)이 내 화면에만 남아 있는 상태가 된다.
    */
   async function submitComment() {
+    if (!postingAgreed) { Alert.alert('필수 동의', '게시 전 약관과 개인정보 안내에 동의해주세요.'); return; }
     const body = draft.trim();
     if (!body || posting) return;
     setPosting(true);
@@ -115,25 +121,30 @@ const CommunityPostScreen: React.FC<Props> = ({ route }) => {
     }
   }
 
-  function report() {
-    Alert.alert('이 글을 신고할까요?', '사유를 골라주세요.', [
+  function report(commentId?: string) {
+    if (!reporting) setReportTarget(commentId ? { commentId } : {});
+  }
+  async function submitReport(reason: string) {
+    if (!reportTarget || reporting) return;
+    const target = reportTarget;
+    setReportTarget(null); setReporting(true);
+    try {
+      const r = target.commentId
+        ? await api.reportCommunityComment(target.commentId, reason)
+        : await api.reportCommunityPost(postId, reason);
+      Alert.alert('신고 접수', r.hidden ? '신고가 쌓여 해당 글 또는 댓글은 보이지 않게 처리됐습니다.' : '운영자가 확인합니다.');
+      if (r.hidden) { if (target.commentId) await loadComments(); else await load(); }
+    } catch { Alert.alert('접수하지 못했어요', '잠시 후 다시 시도해주세요.'); }
+    finally { setReporting(false); }
+  }
+
+  function block(commentId?: string) {
+    Alert.alert('작성자를 차단할까요?', '서로의 커뮤니티 글과 댓글을 숨깁니다. 비로그인 작성자는 계정 차단 대신 신고해주세요.', [
       { text: '취소', style: 'cancel' },
-      ...['개인정보 노출', '광고·스팸', '욕설·혐오', '허위 정보'].map((reason) => ({
-        text: reason,
-        onPress: async () => {
-          try {
-            const r = await api.reportCommunityPost(postId, reason);
-            Alert.alert(
-              '신고 접수',
-              r.hidden
-                ? '신고가 쌓여 이 글은 보이지 않게 처리됐습니다.'
-                : '운영자가 확인합니다.'
-            );
-          } catch {
-            Alert.alert('접수하지 못했어요', '잠시 후 다시 시도해주세요.');
-          }
-        },
-      })),
+      { text: '차단', style: 'destructive', onPress: async () => {
+        try { await api.blockCommunityAuthor(commentId ? { commentId } : { postId }); await load(); await loadComments(); }
+        catch (e) { Alert.alert('차단하지 못했습니다', e instanceof Error ? e.message : '다시 시도해주세요.'); }
+      } },
     ]);
   }
 
@@ -154,6 +165,17 @@ const CommunityPostScreen: React.FC<Props> = ({ route }) => {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
+    <Modal visible={reportTarget !== null} transparent animationType="slide" onRequestClose={() => setReportTarget(null)}>
+      <View style={styles.reportModalBackdrop}>
+        <View style={styles.reportModalCard}>
+          <Text style={styles.commentsTitle}>신고 사유 선택</Text>
+          {['개인정보 노출', '광고·스팸', '욕설·혐오', '허위 정보'].map(reason => (
+            <TouchableOpacity key={reason} accessibilityRole="button" disabled={reporting} style={styles.retryBtn} onPress={() => submitReport(reason)}><Text>{reason}</Text></TouchableOpacity>
+          ))}
+          <TouchableOpacity accessibilityRole="button" style={styles.retryBtn} onPress={() => setReportTarget(null)}><Text>취소</Text></TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.metaRow}>
         <Text style={styles.author}>{authorDisplayName(post.authorRole)}</Text>
@@ -172,7 +194,8 @@ const CommunityPostScreen: React.FC<Props> = ({ route }) => {
           두 번 두면 어느 쪽이 진짜인지 읽는 사람이 판단해야 한다. */}
       <View style={styles.statRow}>
         <Text style={styles.stat}>조회 {post.viewCount}</Text>
-        <TouchableOpacity onPress={report} style={styles.reportBtn}>
+        <TouchableOpacity onPress={() => block()}><Text style={styles.reportText}>작성자 차단</Text></TouchableOpacity>
+        <TouchableOpacity onPress={() => report()} style={styles.reportBtn}>
           <Text style={styles.reportText}>신고</Text>
         </TouchableOpacity>
       </View>
@@ -183,6 +206,7 @@ const CommunityPostScreen: React.FC<Props> = ({ route }) => {
         {/* 앱에는 입력창 자체가 없어서 읽기 전용이었다. 커뮤니티가 성립하려면
             물어본 곳에서 답이 와야 한다. 가입 없이 바로 쓴다. */}
         <View style={styles.composer}>
+          <PostingConsent agreed={postingAgreed} onChange={setPostingAgreed} />
           <TextInput
             style={styles.composerInput}
             placeholder="답을 남겨주세요. 주소와 건물명은 적지 말아주세요."
@@ -235,6 +259,8 @@ const CommunityPostScreen: React.FC<Props> = ({ route }) => {
                 ) : null}
               </View>
               <Text style={styles.commentBody}>{comment.body}</Text>
+              <TouchableOpacity onPress={() => report(comment.id)}><Text style={styles.reportText}>댓글 신고 · 작성자 신고</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => block(comment.id)}><Text style={styles.reportText}>작성자 차단</Text></TouchableOpacity>
             </View>
           ))
         )}
@@ -250,6 +276,8 @@ const CommunityPostScreen: React.FC<Props> = ({ route }) => {
 };
 
 const styles = StyleSheet.create({
+  reportModalBackdrop: { flex: 1, justifyContent: 'center', padding: 24, backgroundColor: '#0008' },
+  reportModalCard: { backgroundColor: colors.surface, borderRadius: 12, padding: 20 },
   container: { flex: 1, backgroundColor: colors.background },
   content: { padding: 20, paddingBottom: 40 },
   loader: { marginTop: 60 },
