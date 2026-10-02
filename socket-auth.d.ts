@@ -13,3 +13,5 @@ export const SOCKET_TOKEN_TTL_SECONDS: number
 
 export function createSocketToken(input: SocketTokenInput): string
 export function verifySocketToken(token: string): SocketTokenClaims | null
+
+export function socketMembershipAllowed(db: { query: (sql: string, params: string[]) => Promise<{ rows: unknown[] }> }, claims: { userId: string; conversationId: string }): Promise<boolean>

@@ -39,6 +39,7 @@ import {
   readableAudiences,
   type CommunityAudience,
 } from '../lib/community';
+import PostingConsent from '../components/PostingConsent';
 import { colors } from '../theme';
 
 type Nav = CompositeNavigationProp<
@@ -85,6 +86,7 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
   /** 권한 때문에 막힌 것인가. 그렇다면 "다시 시도"를 권하지 않는다. */
   const [forbidden, setForbidden] = useState(false);
   const [writing, setWriting] = useState(false);
+  const [postingAgreed, setPostingAgreed] = useState(false);
   const [draftTitle, setDraftTitle] = useState('');
   const [draftBody, setDraftBody] = useState('');
   const [audience, setAudience] = useState<CommunityAudience>('all');
@@ -181,6 +183,7 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
   );
 
   async function submitPost() {
+    if (!postingAgreed) { Alert.alert('필수 동의', '게시 전 약관과 개인정보 안내에 동의해주세요.'); return; }
     if (!draftTitle.trim() || !draftBody.trim() || submitting) return;
     setSubmitting(true);
     try {
@@ -337,7 +340,8 @@ const CommunityScreen: React.FC<Props> = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
-        <TextInput
+        <PostingConsent agreed={postingAgreed} onChange={setPostingAgreed} />
+          <TextInput
           style={styles.modalTitleInput}
           placeholder="제목"
           placeholderTextColor={colors.faint}

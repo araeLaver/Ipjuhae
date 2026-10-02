@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
 import { query, queryOne } from '@/lib/db'
+import { communityPairBlocked } from '@/lib/community-blocks'
 import { logger } from '@/lib/logger'
 import { readableAudiences, type CommunityAudience } from '@/lib/community'
 
@@ -37,14 +38,18 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     const post = await queryOne<PostRow>(
       `SELECT p.id, p.author_id, p.audience, p.category, p.title, p.body,
               p.view_count, (SELECT COUNT(*)::int FROM community_comments c
-                WHERE c.post_id = p.id AND c.deleted_at IS NULL AND c.hidden_at IS NULL) AS comment_count, p.created_at,
+                WHERE c.post_id = p.id AND c.deleted_at IS NULL AND c.hidden_at IS NULL
+                  AND NOT EXISTS(SELECT 1 FROM community_blocks b WHERE
+                    (b.blocker_id=$2::uuid AND b.blocked_id=c.author_id) OR (b.blocker_id=c.author_id AND b.blocked_id=$2::uuid))) AS comment_count, p.created_at,
               CASE WHEN u.user_type = 'admin' THEN 'admin' ELSE 'member' END AS author_role
          FROM community_posts p
          LEFT JOIN users u ON u.id = p.author_id
         WHERE p.id = $1 AND p.deleted_at IS NULL AND p.hidden_at IS NULL`,
-      [id]
+      [id, user?.id ?? null]
     )
     if (!post) return NextResponse.json({ error: '게시글을 찾을 수 없습니다' }, { status: 404 })
+
+    if (await communityPairBlocked(user?.id ?? null, post.author_id)) return NextResponse.json({ error: '게시글을 찾을 수 없습니다' }, { status: 404 })
 
     const isAuthor = !!user && post.author_id === user.id
     if (!isAuthor && !readableAudiences(user?.user_type ?? null).includes(post.audience)) {

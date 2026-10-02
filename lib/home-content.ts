@@ -78,7 +78,7 @@ function withTimeout<T>(p: Promise<T>): Promise<T> {
   })
 }
 
-async function fetchPublicPosts(): Promise<HomePost[] | null> {
+async function fetchPublicPosts(viewerId: string | null): Promise<HomePost[] | null> {
   try {
     return await withTimeout(
       query<HomePost>(
@@ -94,15 +94,18 @@ async function fetchPublicPosts(): Promise<HomePost[] | null> {
       // 댓글 수는 목록·상세와 같이 현재 공개 댓글만 센다.
       `SELECT p.id, p.title, LEFT(p.body, 300) AS body,
               (SELECT COUNT(*)::int FROM community_comments c
-                WHERE c.post_id = p.id AND c.deleted_at IS NULL AND c.hidden_at IS NULL) AS comment_count, p.view_count, p.created_at,
+                WHERE c.post_id = p.id AND c.deleted_at IS NULL AND c.hidden_at IS NULL
+                  AND NOT EXISTS(SELECT 1 FROM community_blocks b WHERE
+                    (b.blocker_id=$1::uuid AND b.blocked_id=c.author_id) OR (b.blocker_id=c.author_id AND b.blocked_id=$1::uuid))) AS comment_count, p.view_count, p.created_at,
               CASE WHEN u.user_type = 'admin' THEN 'admin' ELSE 'member' END AS author_role
          FROM community_posts p
          LEFT JOIN users u ON u.id = p.author_id
         WHERE p.deleted_at IS NULL
           AND p.hidden_at IS NULL
           AND p.audience = 'all'
+          AND NOT EXISTS(SELECT 1 FROM community_blocks b WHERE (b.blocker_id=$1::uuid AND b.blocked_id=p.author_id) OR (b.blocker_id=p.author_id AND b.blocked_id=$1::uuid))
         ORDER BY p.created_at DESC
-        LIMIT 200`
+        LIMIT 200`, [viewerId]
       )
     )
   } catch (error) {
@@ -121,8 +124,8 @@ export interface HomeContent {
   guideCount: number
 }
 
-export async function getHomeContent(): Promise<HomeContent> {
-  const result = await fetchPublicPosts()
+export async function getHomeContent(viewerId: string | null = null): Promise<HomeContent> {
+  const result = await fetchPublicPosts(viewerId)
   const posts = result ?? []
 
   const series: GuideSeries[] = SERIES.map((s) => {

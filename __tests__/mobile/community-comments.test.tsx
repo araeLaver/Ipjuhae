@@ -28,6 +28,7 @@ export const View=element('div'), Text=element('span'), ScrollView=element('sect
 export const KeyboardAvoidingView=element('div');
 export const ActivityIndicator=()=>React.createElement('progress');
 export const StyleSheet={create:s=>s}; export const Alert={alert:()=>{}};
+export const Linking={openURL:()=>Promise.resolve()};
 export const Platform={OS:'ios', select:o=>o.ios};
 export const TextInput=({value,onChangeText,placeholder,style,multiline})=>React.createElement(multiline?'textarea':'input',{value:value??'',placeholder,style:flatten(style),onChange:e=>onChangeText&&onChangeText(e.target.value)});
 `)

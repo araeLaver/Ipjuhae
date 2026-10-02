@@ -340,6 +340,7 @@ describe('공인중개사 가입과 역할별 화면', () => {
     fireEvent.change(screen.getByPlaceholderText('email@example.com'), { target: { value: 'broker@example.com' } })
     fireEvent.change(screen.getByPlaceholderText('8자 이상'), { target: { value: 'password123' } })
     fireEvent.change(screen.getByPlaceholderText('비밀번호 확인'), { target: { value: 'password123' } })
+    fireEvent.click(screen.getByText(/\[필수\] 이용약관/))
     fireEvent.click(screen.getByRole('button', { name: '회원가입' }))
     await waitFor(() => expect(api.register).toHaveBeenCalledWith('broker@example.com', 'password123', '중개사', 'broker'))
   })

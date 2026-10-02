@@ -10,6 +10,7 @@ import {
   TextInput,
   TouchableOpacity,
   Alert,
+  Linking,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -33,6 +34,7 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
   const [userType, setUserType] = useState<SignupRole>('tenant');
+  const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleRegister = async () => {
@@ -49,6 +51,7 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
       return;
     }
 
+    if (!agreed) { Alert.alert('필수 동의', '이용약관과 개인정보처리방침을 확인하고 동의해주세요.'); return; }
     setLoading(true);
     try {
       await register(email.trim(), password, name.trim(), userType);
@@ -124,10 +127,15 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
           secureTextEntry
         />
 
+        <Text onPress={() => Linking.openURL('https://www.ipjuhae.com/terms')}>이용약관 보기</Text>
+        <Text onPress={() => Linking.openURL('https://www.ipjuhae.com/privacy')}>개인정보처리방침 보기</Text>
+        <TouchableOpacity accessibilityRole="checkbox" accessibilityState={{ checked: agreed }} onPress={() => setAgreed(!agreed)}>
+          <Text>{agreed ? '☑' : '☐'} [필수] 이용약관 및 개인정보처리방침에 동의합니다.</Text>
+        </TouchableOpacity>
         <TouchableOpacity
           style={[styles.registerButton, loading && styles.registerButtonDisabled]}
           onPress={handleRegister}
-          disabled={loading}
+          disabled={loading || !agreed}
         >
           <Text style={styles.registerButtonText}>
             {loading ? '가입 중...' : '회원가입'}

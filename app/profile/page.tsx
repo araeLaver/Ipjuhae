@@ -194,7 +194,7 @@ function AccountDeleteSection() {
         <AlertDialogHeader>
           <AlertDialogTitle>계정을 삭제하시겠습니까?</AlertDialogTitle>
           <AlertDialogDescription>
-            계정을 삭제하면 프로필 정보, 대화 내역, 관련 자료가 모두 삭제됩니다. 삭제 후에는 복구할 수 없습니다.
+            계정을 삭제하면 프로필·인증자료·참여한 대화·작성 글을 삭제하고 매물은 비공개로 전환합니다. 외부 파일 정리는 실패 시 재시도합니다. 공유 계약·신뢰 자료가 있으면 자동 처리를 중단하고 개별 검토를 안내합니다. 삭제 후 복구할 수 없습니다.
           </AlertDialogDescription>
         </AlertDialogHeader>
         {error && <p className="text-sm text-destructive px-1">{error}</p>}

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
 
+vi.mock('@/lib/auth', () => ({ getCurrentUser: async () => null }))
 vi.mock('@/lib/db', () => ({ query: vi.fn() }))
 vi.mock('@/lib/logger', () => ({ logger: { error: vi.fn() } }))
 vi.mock('@/components/layout/header', () => ({ Header: () => null }))

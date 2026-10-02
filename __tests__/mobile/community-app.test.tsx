@@ -31,7 +31,7 @@ let dir: string
 let mod: Bundle
 const fetchMock = vi.fn()
 const storage = new Map<string, string>()
-const alerts: { title: string; message?: string }[] = []
+const alerts: { title: string; message?: string; buttons?: { text: string; onPress?: () => Promise<void> }[] }[] = []
 const qa = globalThis as typeof globalThis & {
   __communityQA: { storage: Map<string, string>; alerts: typeof alerts }
 }
@@ -94,9 +94,10 @@ export const ScrollView = box('div'), SafeAreaView = box('div'), KeyboardAvoidin
 export const ActivityIndicator = () => React.createElement('span', null, '불러오는 중');
 export const RefreshControl = () => null;
 export const StyleSheet = { create: s => s };
+export const Linking = { openURL: () => Promise.resolve() };
 export const Platform = { OS: 'ios', select: o => o.ios };
 export const Alert = {
-  alert: (title, message) => { globalThis.__communityQA.alerts.push({ title, message }) },
+  alert: (title, message, buttons) => { globalThis.__communityQA.alerts.push({ title, message, buttons }) },
 };
 export const TextInput = ({ value, onChangeText, placeholder, style, multiline }) =>
   React.createElement(multiline ? 'textarea' : 'input', {
@@ -245,11 +246,31 @@ describe('D1 — 앱에서 댓글을 쓸 수 있다', () => {
     await screen.findByText(postRow().title)
   }
 
+  it('동의하지 않은 댓글은 전송하지 않는다', async () => {
+    await mountPost()
+    fireEvent.change(screen.getByPlaceholderText(/답을 남겨주세요/), { target: { value: 'synthetic comment' } })
+    fireEvent.click(screen.getByText('댓글 남기기'))
+    expect(callsTo(`/community/posts/${POST_ID}/comments`, 'POST')).toHaveLength(0)
+    expect(alerts.at(-1)?.title).toBe('필수 동의')
+  })
+
+  it('댓글 신고와 작성자 차단은 기존 인증 API 클라이언트를 통해 대상 댓글만 전달한다', async () => {
+    await mountPost()
+    await screen.findByText(commentRow().body)
+    fireEvent.click(screen.getByText('댓글 신고 · 작성자 신고'))
+    await act(async () => { await alerts.at(-1)?.buttons?.find(b => b.text === '광고·스팸')?.onPress?.() })
+    expect(JSON.parse(String(callsTo('/community/reports','POST')[0][1]?.body))).toEqual({ commentId: 'c1', reason: '광고·스팸' })
+    fireEvent.click(screen.getAllByText('작성자 차단')[1])
+    await act(async () => { await alerts.at(-1)?.buttons?.find(b => b.text === '차단')?.onPress?.() })
+    expect(JSON.parse(String(callsTo('/community/blocks','POST')[0][1]?.body))).toEqual({ commentId: 'c1' })
+  })
+
   it('입력창에 적고 누르면 댓글이 서버로 나간다', async () => {
     await mountPost()
 
     const input = screen.getByPlaceholderText(/답을 남겨주세요/)
     fireEvent.change(input, { target: { value: '등기부 을구도 같이 보세요.' } })
+    fireEvent.click(screen.getByText(/약관·개인정보 안내를 확인/))
     await act(async () => {
       fireEvent.click(screen.getByText('댓글 남기기'))
     })
@@ -265,6 +286,7 @@ describe('D1 — 앱에서 댓글을 쓸 수 있다', () => {
     fireEvent.change(screen.getByPlaceholderText(/답을 남겨주세요/), {
       target: { value: '확인해보겠습니다.' },
     })
+    fireEvent.click(screen.getByText(/약관·개인정보 안내를 확인/))
     await act(async () => {
       fireEvent.click(screen.getByText('댓글 남기기'))
     })
@@ -281,6 +303,7 @@ describe('D1 — 앱에서 댓글을 쓸 수 있다', () => {
     fireEvent.change(screen.getByPlaceholderText(/답을 남겨주세요/), {
       target: { value: '감사합니다.' },
     })
+    fireEvent.click(screen.getByText(/약관·개인정보 안내를 확인/))
     await act(async () => {
       fireEvent.click(screen.getByText('댓글 남기기'))
     })
@@ -301,6 +324,7 @@ describe('D1 — 앱에서 댓글을 쓸 수 있다', () => {
     })
 
     fireEvent.change(screen.getByPlaceholderText(/답을 남겨주세요/), { target: { value: '도배' } })
+    fireEvent.click(screen.getByText(/약관·개인정보 안내를 확인/))
     await act(async () => {
       fireEvent.click(screen.getByText('댓글 남기기'))
     })
@@ -311,6 +335,7 @@ describe('D1 — 앱에서 댓글을 쓸 수 있다', () => {
 
   it('빈 댓글은 보내지 않는다', async () => {
     await mountPost()
+    fireEvent.click(screen.getByText(/약관·개인정보 안내를 확인/))
     await act(async () => {
       fireEvent.click(screen.getByText('댓글 남기기'))
     })
@@ -353,6 +378,7 @@ describe('D2 — 작성 대상 규칙이 앱에도 있다', () => {
 
     fireEvent.change(screen.getByPlaceholderText('제목'), { target: { value: '세입자 확인' } })
     fireEvent.change(screen.getByPlaceholderText(/어떤 상황인지/), { target: { value: '본문' } })
+    fireEvent.click(screen.getByText(/약관·개인정보 안내를 확인/))
     await act(async () => {
       fireEvent.click(screen.getByText('올리기'))
     })
@@ -374,6 +400,7 @@ describe('D2 — 작성 대상 규칙이 앱에도 있다', () => {
 
     fireEvent.change(screen.getByPlaceholderText('제목'), { target: { value: '질문' } })
     fireEvent.change(screen.getByPlaceholderText(/어떤 상황인지/), { target: { value: '본문' } })
+    fireEvent.click(screen.getByText(/약관·개인정보 안내를 확인/))
     await act(async () => {
       fireEvent.click(screen.getByText('올리기'))
     })
@@ -389,6 +416,7 @@ describe('D2 — 작성 대상 규칙이 앱에도 있다', () => {
     fireEvent.click(screen.getByText('지금 막히는 게 무엇인가요'))
     fireEvent.change(screen.getByPlaceholderText('제목'), { target: { value: '질문' } })
     fireEvent.change(screen.getByPlaceholderText(/어떤 상황인지/), { target: { value: '본문' } })
+    fireEvent.click(screen.getByText(/약관·개인정보 안내를 확인/))
     await act(async () => {
       fireEvent.click(screen.getByText('올리기'))
     })
@@ -404,6 +432,7 @@ describe('D2 — 작성 대상 규칙이 앱에도 있다', () => {
     fireEvent.click(screen.getByText('전체 게시판'))
     fireEvent.change(screen.getByPlaceholderText('제목'), { target: { value: '질문' } })
     fireEvent.change(screen.getByPlaceholderText(/어떤 상황인지/), { target: { value: '본문' } })
+    fireEvent.click(screen.getByText(/약관·개인정보 안내를 확인/))
     await act(async () => {
       fireEvent.click(screen.getByText('올리기'))
     })

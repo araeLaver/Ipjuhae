@@ -64,7 +64,7 @@ const SettingsScreen: React.FC<Props> = ({ navigation }) => {
             } catch (e) {
               Alert.alert(
                 '삭제하지 못했습니다',
-                '잠시 후 다시 시도해 주세요. 계속 안 되면 support@ipjuhae.com 으로 알려주세요.'
+                e instanceof Error ? e.message : 'support@ipjuhae.com으로 삭제 요청을 보내주세요.'
               );
             } finally {
               setDeleting(false);

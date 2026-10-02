@@ -1,3 +1,4 @@
+import { getCurrentUser } from '@/lib/auth'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Header } from '@/components/layout/header'
@@ -45,7 +46,7 @@ export const metadata: Metadata = {
 }
 
 export default async function HomePage() {
-  const { status, series, questions, guideCount } = await getHomeContent()
+  const { status, series, questions, guideCount } = await getHomeContent((await getCurrentUser())?.id ?? null)
 
   return (
     <>

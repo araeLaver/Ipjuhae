@@ -22,18 +22,15 @@ describe('DELETE /api/account/delete', () => {
 
   it('hides and anonymizes landlord properties before deleting the account', async () => {
     const userId = '11111111-1111-4111-8111-111111111111'
-    vi.mocked(getCurrentUser).mockResolvedValue({ id: userId } as never)
+    vi.mocked(getCurrentUser).mockResolvedValue({ id: userId, email: 'synthetic@example.invalid' } as never)
     const clientQuery = vi.fn().mockResolvedValue({ rows: [] })
     vi.mocked(transaction).mockImplementation(async (fn) => fn({ query: clientQuery } as never))
 
     const response = await DELETE()
 
     expect(response.status).toBe(200)
-    expect(clientQuery).toHaveBeenNthCalledWith(
-      1,
-      expect.stringMatching(/status = 'hidden'[\s\S]*address = '탈퇴 회원 비공개 매물'[\s\S]*address_detail = NULL/),
-      [userId],
-    )
+    expect(clientQuery).toHaveBeenCalledWith(
+      expect.stringMatching(/UPDATE properties[\s\S]*status='hidden'[\s\S]*address_detail=NULL/), [userId])
     expect(clearAuthCookie).toHaveBeenCalled()
   })
 

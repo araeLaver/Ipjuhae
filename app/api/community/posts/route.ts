@@ -69,15 +69,19 @@ export async function GET(request: Request) {
     const rows = await query<PostRow>(
       `SELECT p.id, p.audience, p.category, p.title, p.body,
               p.view_count, (SELECT COUNT(*)::int FROM community_comments c
-                WHERE c.post_id = p.id AND c.deleted_at IS NULL AND c.hidden_at IS NULL) AS comment_count, p.created_at,
+                WHERE c.post_id = p.id AND c.deleted_at IS NULL AND c.hidden_at IS NULL
+                  AND NOT EXISTS(SELECT 1 FROM community_blocks b WHERE
+                    (b.blocker_id=$4::uuid AND b.blocked_id=c.author_id) OR (b.blocker_id=c.author_id AND b.blocked_id=$4::uuid))) AS comment_count, p.created_at,
               CASE WHEN u.user_type = 'admin' THEN 'admin' ELSE 'member' END AS author_role
          FROM community_posts p
          LEFT JOIN users u ON u.id = p.author_id
         WHERE p.deleted_at IS NULL AND p.hidden_at IS NULL
           AND p.audience = ANY($1::text[])
+          AND NOT EXISTS (SELECT 1 FROM community_blocks b WHERE
+            (b.blocker_id=$4::uuid AND b.blocked_id=p.author_id) OR (b.blocker_id=p.author_id AND b.blocked_id=$4::uuid))
         ORDER BY p.created_at DESC
         LIMIT $2 OFFSET $3`,
-      [audiences, limit, offset]
+      [audiences, limit, offset, user?.id ?? null]
     )
     return NextResponse.json({ posts: rows, page, limit, hasMore: rows.length === limit })
   } catch (error) {

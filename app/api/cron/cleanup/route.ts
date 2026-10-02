@@ -10,6 +10,7 @@
  */
 import { NextResponse } from 'next/server'
 import { query } from '@/lib/db'
+import { drainAccountStorageDeletes } from '@/lib/account-storage-delete'
 import { logger } from '@/lib/logger'
 
 export async function GET(request: Request) {
@@ -20,6 +21,7 @@ export async function GET(request: Request) {
   }
 
   try {
+    await drainAccountStorageDeletes()
     const [notifResult, otpResult, revokedResult] = await Promise.all([
       // 30일 이상 된 읽은 알림 삭제
       query<{ count: string }>(
