@@ -129,7 +129,7 @@ describe.skipIf(!enabled)('synthetic PostgreSQL + synthetic storage erasure', ()
       `http://localhost:3000/mock-storage/${foreign}`,`http://localhost:3000/mock-storage/%70rofiles/${other}/synthetic.webp`,
       `http://localhost:3000/mock-storage/profiles%2f${other}%2fsynthetic.webp`,
       `http://localhost:3000/mock-storage/${foreign}?ignored=1`, `http://localhost:3000/mock-storage/${foreign}#fragment`,
-      `http://unrelated.invalid/mock-storage/${foreign}`,`http://localhost:3000@unrelated.invalid/mock-storage/${foreign}`,
+      `http://unrelated.invalid/mock-storage/${foreign}`,`http://localhost@unrelated.invalid/mock-storage/${foreign}`,
       `http://localhost:3000/mock-storage/%252e%252e/foreign`, `http://localhost:3000/mock-storage/%2e%2e%2fforeign`,
       `http://localhost:3000/mock-storage/profiles/${id}/unproven.webp`,
     ]
