@@ -21,6 +21,7 @@ export const loginSchema = z.object({
 })
 
 export const signupSchema = z.object({
+  name: z.string().trim().min(1, '이름을 입력해주세요').max(50, '이름은 50자 이하여야 합니다').optional(),
   email: emailSchema,
   password: passwordSchema,
   userType: z.enum(['tenant', 'landlord', 'broker']).optional().default('tenant'),
