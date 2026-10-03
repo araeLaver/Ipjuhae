@@ -35,18 +35,19 @@ export async function login(email: string, password: string): Promise<string> {
 
 /**
  * POST /api/auth/signup → { success, userId, token, userType }.
- * The server only accepts email/password/userType; there is no `name` field at
- * signup, and no invite token (베타 초대 게이트는 DOW-1224에서 제거됨).
+ * Name is optional for older clients; no invite token is required.
  */
 export async function signup(
   email: string,
   password: string,
-  userType: string
+  userType: string,
+  name?: string
 ): Promise<string> {
   const res = await apiClient.post<{ token: string }>('/auth/signup', {
     email,
     password,
     userType,
+    name,
   });
   return res.token;
 }

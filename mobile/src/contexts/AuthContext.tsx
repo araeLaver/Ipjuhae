@@ -78,10 +78,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setSessionExpiredMessage(null);
   };
 
-  const register = async (email: string, password: string, _name: string, userType: string) => {
-    // /api/auth/signup only accepts email/password/userType (name is set later
-    // via the profile flow) and returns { success, userId, token, userType }.
-    const token = await api.signup(email, password, userType);
+  const register = async (email: string, password: string, name: string, userType: string) => {
+    // Signup stores the name; /auth/me returns it for the profile header.
+    const token = await api.signup(email, password, userType, name);
     await apiClient.setTokens(token);
     setUser(await api.fetchMe());
     setSessionExpiredMessage(null);

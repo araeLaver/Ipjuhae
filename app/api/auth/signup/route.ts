@@ -28,7 +28,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const { email, password, userType } = parsed.data
+    const { email, password, userType, name } = parsed.data
 
     // 가입은 누구나 가능합니다. 베타 초대 게이트(beta_config.beta_enabled +
     // waitlist 초대 토큰)는 DOW-1223 결정에 따라 제거되었습니다.
@@ -49,8 +49,8 @@ export async function POST(request: Request) {
     const passwordHash = await hashPassword(password)
 
     const [user] = await query<User>(
-      'INSERT INTO users (email, password_hash, user_type) VALUES ($1, $2, $3) RETURNING *',
-      [email, passwordHash, userType]
+      'INSERT INTO users (email, password_hash, user_type, name) VALUES ($1, $2, $3, $4) RETURNING *',
+      [email, passwordHash, userType, name ?? null]
     )
 
     const token = generateToken(user.id, userType)

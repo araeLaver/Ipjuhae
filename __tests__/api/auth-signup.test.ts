@@ -23,6 +23,8 @@ vi.mock('@/lib/analytics', () => ({
   track: vi.fn(),
 }))
 
+vi.mock('@/lib/notifications', () => ({ notifyWelcome: vi.fn(async () => {}) }))
+
 import { POST } from '@/app/api/auth/signup/route'
 import { query, queryOne } from '@/lib/db'
 import { hashPassword, generateToken, setAuthCookie } from '@/lib/auth'
@@ -46,6 +48,25 @@ describe('POST /api/auth/signup', () => {
     })
   })
 
+  it.each(['tenant', 'landlord', 'broker'])('가입 이름을 users에 저장한다 — %s', async (userType) => {
+    vi.mocked(queryOne).mockResolvedValue(null)
+    vi.mocked(hashPassword).mockResolvedValue('hashed-pw')
+    vi.mocked(query).mockResolvedValue([{ id: 'new-user', user_type: userType }])
+    vi.mocked(generateToken).mockReturnValue('jwt-token')
+    const res = await POST(makeRequest({ email: 'new@example.com', password: 'password123', userType, name: '  QA 이름  ' }))
+    expect(res.status).toBe(200)
+    expect(query).toHaveBeenCalledWith(
+      expect.stringMatching(/INSERT INTO users.*name/),
+      ['new@example.com', 'hashed-pw', userType, 'QA 이름']
+    )
+  })
+
+  it.each(['   ', '가'.repeat(51), 123])('유효하지 않은 이름은 저장 전에 거절한다', async (name) => {
+    const res = await POST(makeRequest({ email: 'new@example.com', password: 'password123', name }))
+    expect(res.status).toBe(400)
+    expect(query).not.toHaveBeenCalled()
+  })
+
   it('회원가입 성공 — tenant', async () => {
     vi.mocked(queryOne).mockResolvedValue(null) // no existing user
     vi.mocked(hashPassword).mockResolvedValue('hashed-pw')
@@ -66,7 +87,7 @@ describe('POST /api/auth/signup', () => {
     expect(hashPassword).toHaveBeenCalledWith('password123')
     expect(query).toHaveBeenCalledWith(
       expect.stringContaining('INSERT INTO users'),
-      ['new@example.com', 'hashed-pw', 'tenant']
+      ['new@example.com', 'hashed-pw', 'tenant', null]
     )
   })
 
@@ -90,7 +111,7 @@ describe('POST /api/auth/signup', () => {
     expect(hashPassword).toHaveBeenCalledWith('password123')
     expect(query).toHaveBeenCalledWith(
       expect.stringContaining('INSERT INTO users'),
-      ['new@example.com', 'hashed-pw', 'broker']
+      ['new@example.com', 'hashed-pw', 'broker', null]
     )
   })
 
