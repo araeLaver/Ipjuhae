@@ -1,4 +1,4 @@
-import { logger } from '@/lib/logger'
+
 
 /**
  * 대한민국 정책브리핑 정책뉴스.
@@ -18,7 +18,7 @@ import { logger } from '@/lib/logger'
  *
  * 1. 키가 없으면 아무것도 내보내지 않는다. 빈 칸을 두지 않는다
  * 2. 출처를 표시한다. 공공누리 제1유형이라 이용 조건이다
- * 3. 캐시한다. 개발계정은 하루 1,000회다
+ * 3. 서버 scheduler가 매시간 수집하고 DB에 보관한다. 개발계정은 하루 1,000회다
  */
 
 const ENDPOINT = 'https://apis.data.go.kr/1371000/policyNewsService2/policyNewsList2'
@@ -26,16 +26,9 @@ const ENDPOINT = 'https://apis.data.go.kr/1371000/policyNewsService2/policyNewsL
 /** 한 번에 조회 가능한 최대 기간. API 제약이다. */
 const MAX_DAYS_PER_CALL = 3
 
-/**
- * 며칠치를 훑을지. 3일 단위로 나눠 호출하므로 호출 수 = ceil(이 값 / 3).
- *
- * 21일로 했더니 임대차 기사가 2건뿐이었다. 정책 발표는 매일 나오는 게 아니다.
- * 45일이면 15회 호출인데, 30분 캐시가 있어 하루 1,000회 제한에 한참 못 미친다.
- */
+/** 최근 45일, 매시간 기본 15회 조회: 하루 360회. */
 const LOOKBACK_DAYS = 45
-
-/** 30분. 하루 1,000회 제한 안에서 넉넉하다. */
-const CACHE_SECONDS = 1800
+const MAX_PAGES = 5
 
 /**
  * 무엇을 임대차 기사로 볼 것인가.
@@ -120,8 +113,8 @@ export function isPolicyNewsEnabled(): boolean {
  * URLSearchParams에 넣으면 퍼센트가 한 번 더 인코딩돼 인증이 깨진다.
  * 그래서 쿼리 문자열을 직접 이어 붙인다.
  */
-function buildUrl(key: string, startDate: string, endDate: string): string {
-  const params = `numOfRows=100&pageNo=1&startDate=${startDate}&endDate=${endDate}`
+function buildUrl(key: string, startDate: string, endDate: string, page: number): string {
+  const params = `numOfRows=100&pageNo=${page}&startDate=${startDate}&endDate=${endDate}`
   return `${ENDPOINT}?serviceKey=${key}&${params}`
 }
 
@@ -144,7 +137,7 @@ function normalizeDate(raw: string): string {
 
 /** YYYYMMDD */
 function ymd(d: Date): string {
-  return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`
+  return `${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, '0')}${String(d.getUTCDate()).padStart(2, '0')}`
 }
 
 /**
@@ -168,14 +161,10 @@ function clean(html: string): string {
     .trim()
 }
 
-async function fetchWindow(key: string, start: Date, end: Date): Promise<PolicyNewsItem[]> {
-  const res = await fetch(buildUrl(key, ymd(start), ymd(end)), {
-    next: { revalidate: CACHE_SECONDS },
-    signal: AbortSignal.timeout(6000),
-  })
-  if (!res.ok) throw new Error(`HTTP ${res.status}`)
-
-  const xml = await res.text()
+export function parsePolicyNews(xml: string): PolicyNewsItem[] {
+  const resultCode = tag(xml, 'resultCode')
+  if (!['0', '00', 'NORMAL_SERVICE'].includes(resultCode)) throw new Error('POLICY_API_ERROR')
+  if (!xml.includes('<body>') || !/<totalCount>\d+<\/totalCount>/.test(xml)) throw new Error('POLICY_API_INVALID_RESPONSE')
   const blocks = xml.match(/<NewsItem>[\s\S]*?<\/NewsItem>/g) ?? []
 
   const out: PolicyNewsItem[] = []
@@ -203,47 +192,49 @@ async function fetchWindow(key: string, start: Date, end: Date): Promise<PolicyN
   return out
 }
 
-/**
- * 임대차 관련 정책뉴스를 최신순으로 가져온다.
- *
- * 한 번에 3일까지만 조회되므로 구간을 나눠 부른다. 한 구간이 실패해도
- * 나머지는 살린다. 정책 소식이 안 떠도 사이트의 나머지는 멀쩡해야 한다.
- */
-export async function fetchPolicyNews(limit = 5): Promise<PolicyNewsItem[]> {
-  const key = process.env.PUBLIC_DATA_API_KEY
-  if (!key) return []
+export interface PolicyCollection {
+  items: PolicyNewsItem[]
+  failedWindows: number
+  checkedWindows: number
+}
 
-  const windows: Array<[Date, Date]> = []
-  const today = new Date()
+/** KST 날짜 기준으로 45일 전체를 검사한다. HTTP 200인 API 오류도 실패로 처리한다. */
+export async function collectPolicyNews(key: string, now = new Date(), request = fetch): Promise<PolicyCollection> {
+  const koreanDate = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul' }).format(now)
+  const today = new Date(`${koreanDate}T00:00:00Z`)
+  const seen = new Map<string, PolicyNewsItem>()
+  let failedWindows = 0
+  let checkedWindows = 0
   for (let offset = 0; offset < LOOKBACK_DAYS; offset += MAX_DAYS_PER_CALL) {
     const end = new Date(today)
-    end.setDate(end.getDate() - offset)
+    end.setUTCDate(end.getUTCDate() - offset)
     const start = new Date(end)
-    start.setDate(start.getDate() - (MAX_DAYS_PER_CALL - 1))
-    windows.push([start, end])
-  }
-
-  // 순차로 부른다.
-  //
-  // 15개 구간을 한꺼번에 던졌더니 5개가 실패했다. 포털이 동시 요청을 끊는다.
-  // 어차피 30분 캐시라 첫 한 번만 느리면 된다. 목표 건수를 채우면 멈춘다.
-  const seen = new Set<string>()
-  const items: PolicyNewsItem[] = []
-  let failed = 0
-
-  for (const [start, end] of windows) {
-    if (items.length >= limit) break
+    start.setUTCDate(start.getUTCDate() - MAX_DAYS_PER_CALL + 1)
     try {
-      for (const item of await fetchWindow(key, start, end)) {
-        if (seen.has(item.id)) continue
-        seen.add(item.id)
-        items.push(item)
+      for (let page = 1; page <= MAX_PAGES; page++) {
+        const res = await request(buildUrl(key, ymd(start), ymd(end), page), {
+          cache: 'no-store', signal: AbortSignal.timeout(6000),
+        })
+        if (!res.ok) throw new Error('POLICY_HTTP_ERROR')
+        const xml = await res.text()
+        for (const item of parsePolicyNews(xml)) seen.set(item.id, item)
+        const total = Number(tag(xml, 'totalCount'))
+        if (page * 100 >= total) break
+        if (page === MAX_PAGES) throw new Error('POLICY_PAGE_LIMIT')
       }
+      checkedWindows++
     } catch {
-      failed += 1
+      failedWindows++
     }
   }
+  return {
+    items: [...seen.values()].sort((a, b) => b.approvedAt.localeCompare(a.approvedAt)),
+    failedWindows, checkedWindows,
+  }
+}
 
-  items.sort((a, b) => b.approvedAt.localeCompare(a.approvedAt))
-  return items.slice(0, limit)
+/** 웹은 저장된 결과를 읽는다. 외부 API 지연이 홈 응답을 지연시키지 않는다. */
+export async function fetchPolicyNews(limit = 5): Promise<PolicyNewsItem[]> {
+  const { readPolicyNews } = await import('./policy-news-store')
+  return readPolicyNews(limit)
 }

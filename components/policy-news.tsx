@@ -1,4 +1,5 @@
 import { fetchPolicyNews } from '@/lib/policy-news'
+import { getPolicyNewsStatus } from '@/lib/policy-news-store'
 
 /**
  * 정책 소식.
@@ -9,7 +10,7 @@ import { fetchPolicyNews } from '@/lib/policy-news'
  * 출처표시는 지워도 되는 장식이 아니다. 공공저작물 제1유형의 이용 조건이다.
  */
 export async function PolicyNews() {
-  const items = await fetchPolicyNews(5)
+  const [items, health] = await Promise.all([fetchPolicyNews(5), getPolicyNewsStatus()])
   if (items.length === 0) return null
 
   return (
@@ -22,6 +23,14 @@ export async function PolicyNews() {
           </p>
         </header>
 
+        {health.status !== 'ok' ? (
+          <p className="mb-4 text-sm text-muted-foreground">새 소식을 확인하는 중입니다. 마지막으로 확인한 소식을 보여드립니다.</p>
+        ) : null}
+        {'lastSuccessAt' in health && health.lastSuccessAt ? (
+          <p className="mb-4 text-xs text-muted-foreground">
+            최근 확인: {new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', dateStyle: 'medium', timeStyle: 'short' }).format(new Date(health.lastSuccessAt))}
+          </p>
+        ) : null}
         <ul className="divide-y rounded-xl border">
           {items.map((n) => (
             <li key={n.url}>
