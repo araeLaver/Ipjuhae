@@ -119,6 +119,13 @@ async function start() {
 
   httpServer.listen(port, hostname, () => {
     console.log(`> Ready on http://${hostname}:${port}`)
+    // Collect policy news even when nobody visits the web; PostgreSQL persists results across deploys.
+    try {
+      const { startPolicyNewsScheduler } = require('./build/policy-news.cjs')
+      httpServer.once('close', startPolicyNewsScheduler())
+    } catch {
+      console.error('[policy-news] scheduler_start_failed')
+    }
   })
 }
 
