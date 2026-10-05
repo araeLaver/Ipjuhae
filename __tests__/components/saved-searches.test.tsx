@@ -2,6 +2,7 @@
 import { afterEach, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { SavedSearches } from '@/components/properties/saved-searches'
+import { searchLabel, searchUrl, type SearchFilters } from '@/lib/saved-search'
 const filters = { q: '합정', region: '서울', propertyType: 'oneroom' as const, sort: 'created_at' as const }
 const search = { ...filters, id: 's1', alerts_enabled: false, created_at: '2026-09-30' }
 afterEach(() => { cleanup(); vi.unstubAllGlobals() })
@@ -35,12 +36,43 @@ it('저장한 조건 적용, 알림 변경, 삭제는 성공 응답 후 반영�
     .mockResolvedValueOnce(Response.json({ ok: true })))
   render(<SavedSearches filters={filters} onApply={onApply} />)
   fireEvent.click(screen.getByRole('button', { name: '저장한 검색' }))
-  fireEvent.click(await screen.findByRole('button', { name: '이 조건으로 검색' }))
+  fireEvent.click(await screen.findByRole('button', { name: /이 조건으로 검색/ }))
   expect(onApply).toHaveBeenCalledWith(search)
   fireEvent.click(screen.getByRole('button', { name: /알림 켜기/ }))
   fireEvent.click(await screen.findByRole('button', { name: /검색 삭제/ }))
   await screen.findByText('검색 조건을 삭제했습니다')
-  await waitFor(() => expect(screen.queryByRole('button', { name: '이 조건으로 검색' })).toBeNull())
+  await waitFor(() => expect(screen.queryByRole('button', { name: /이 조건으로 검색/ })).toBeNull())
+})
+it.each([
+  ['created_at', '최신순'], ['deposit', '보증금순'], ['monthly_rent', '월세순'], ['view_count', '조회순'],
+] as const)('빈 검색 조건에서도 %s 정렬 이름을 표시한다', (sort, label) => {
+  expect(searchLabel({ q: '', region: '', propertyType: '', sort })).toBe(`전체 매물 · ${label}`)
+})
+it('정렬만 다른 조건의 표시·적용·알림·삭제 대상을 구분한다', async () => {
+  const rentSearch = { ...search, id: 's2', sort: 'monthly_rent' as const }
+  const onApply = vi.fn<(filters: SearchFilters) => void>()
+  const fetchMock = vi.fn().mockResolvedValueOnce(Response.json({ searches: [search, rentSearch], alertsAvailable: true }))
+    .mockResolvedValueOnce(Response.json({ search: { ...rentSearch, alerts_enabled: true } }))
+    .mockResolvedValueOnce(Response.json({ ok: true }))
+  vi.stubGlobal('fetch', fetchMock)
+  render(<SavedSearches filters={filters} onApply={onApply} />)
+  fireEvent.click(screen.getByRole('button', { name: '저장한 검색' }))
+  await screen.findByText('현재 조건: 합정 · 서울 · 원룸 · 최신순')
+  expect(screen.getByText('합정 · 서울 · 원룸 · 최신순')).toBeTruthy()
+  expect(screen.getByText('합정 · 서울 · 원룸 · 월세순')).toBeTruthy()
+  for (const [saved, label] of [[search, '최신순'], [rentSearch, '월세순']] as const) {
+    fireEvent.click(screen.getByRole('button', { name: `합정 · 서울 · 원룸 · ${label} 이 조건으로 검색` }))
+    expect(onApply).toHaveBeenLastCalledWith(saved)
+    expect(new URL(searchUrl(onApply.mock.lastCall![0]), 'http://localhost').searchParams.get('sort')).toBe(saved.sort)
+  }
+  fireEvent.click(screen.getByRole('button', { name: '합정 · 서울 · 원룸 · 월세순 알림 켜기' }))
+  await screen.findByRole('button', { name: '합정 · 서울 · 원룸 · 월세순 알림 끄기' })
+  expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual({ id: 's2', alertsEnabled: true })
+  fireEvent.click(screen.getByRole('button', { name: '합정 · 서울 · 원룸 · 최신순 검색 삭제' }))
+  await screen.findByText('검색 조건을 삭제했습니다')
+  expect(JSON.parse(fetchMock.mock.calls[2][1].body)).toEqual({ id: 's1' })
+  expect(screen.queryByRole('button', { name: '합정 · 서울 · 원룸 · 최신순 이 조건으로 검색' })).toBeNull()
+  expect(screen.getByRole('button', { name: '합정 · 서울 · 원룸 · 월세순 이 조건으로 검색' })).toBeTruthy()
 })
 it('알림 서비스가 꺼져 있으면 알림 신청을 막고 조건 저장만 제공한다', async () => {
   vi.stubGlobal('fetch', vi.fn(async () => Response.json({ searches: [], alertsAvailable: false })))

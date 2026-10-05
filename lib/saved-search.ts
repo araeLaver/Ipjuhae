@@ -25,5 +25,7 @@ export function searchUrl(filters: SearchFilters): string {
 
 export function searchLabel(filters: SearchFilters): string {
   const types: Record<string, string> = { apartment: '아파트', villa: '빌라', officetel: '오피스텔', oneroom: '원룸', house: '주택', other: '기타' }
-  return [filters.q, filters.region, types[filters.propertyType]].filter(Boolean).join(' · ') || '전체 매물'
+  const sorts: Record<SearchFilters['sort'], string> = { created_at: '최신순', deposit: '보증금순', monthly_rent: '월세순', view_count: '조회순' }
+  const conditions = [filters.q, filters.region, types[filters.propertyType]].filter(Boolean).join(' · ') || '전체 매물'
+  return `${conditions} · ${sorts[filters.sort]}`
 }

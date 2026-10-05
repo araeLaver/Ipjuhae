@@ -88,7 +88,7 @@ export function SavedSearches({ filters, onApply }: Props) {
                     <li key={search.id} className="border-t pt-3 space-y-2">
                       <p className="text-sm font-medium">{searchLabel(search)}</p>
                       <div className="flex flex-wrap gap-2">
-                        <Button variant="outline" size="sm" disabled={busy} onClick={() => onApply(search)}>이 조건으로 검색</Button>
+                        <Button variant="outline" size="sm" disabled={busy} onClick={() => onApply(search)} aria-label={`${searchLabel(search)} 이 조건으로 검색`}>이 조건으로 검색</Button>
                         <Button variant="outline" size="sm" disabled={busy || (!alertsAvailable && !search.alerts_enabled)} onClick={() => void mutate('PATCH', { id: search.id, alertsEnabled: !search.alerts_enabled })} aria-label={`${searchLabel(search)} 알림 ${search.alerts_enabled ? '끄기' : '켜기'}`}>알림 {search.alerts_enabled ? '끄기' : '켜기'}</Button>
                         <Button variant="ghost" size="sm" disabled={busy} onClick={() => void mutate('DELETE', { id: search.id })} aria-label={`${searchLabel(search)} 검색 삭제`}>삭제</Button>
                       </div>

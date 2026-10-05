@@ -39,7 +39,7 @@ try {
   assert.equal(searches[0].alerts_enabled, false)
   await page.getByRole('button', { name: '검색 필터', exact: true }).click()
   await page.getByRole('button', { name: '필터 초기화', exact: true }).first().click()
-  await page.getByRole('button', { name: '이 조건으로 검색', exact: true }).click()
+  await page.getByRole('button', { name: '합정 · 서울 · 원룸 · 보증금순 이 조건으로 검색', exact: true }).click()
   assert.equal(await page.getByRole('textbox', { name: '지역명, 건물명으로 검색' }).inputValue(), '합정')
   await page.getByRole('button', { name: /검색 삭제/ }).click()
   await page.getByText('검색 조건을 삭제했습니다', { exact: true }).waitFor()
