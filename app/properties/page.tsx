@@ -13,7 +13,7 @@ import { PageContainer } from '@/components/layout/page-container'
 import { AlertCircle, Building, MapPin, Home, Search, SlidersHorizontal, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { SavedSearches } from '@/components/properties/saved-searches'
-import { searchFiltersSchema } from '@/lib/saved-search'
+import { searchFiltersSchema, searchUrl, type SearchFilters } from '@/lib/saved-search'
 
 interface Property {
   id: string
@@ -158,6 +158,15 @@ export default function PropertiesPage() {
     setSort('created_at')
   }
 
+  const applySavedSearch = (filters: SearchFilters) => {
+    // Keep Next.js history metadata and the current anchor while replacing stale filters.
+    window.history.replaceState(window.history.state, '', searchUrl(filters) + window.location.hash)
+    setQ(filters.q)
+    setRegion(filters.region)
+    setPropertyType(filters.propertyType)
+    setSort(filters.sort)
+  }
+
   const hasActiveFilters = q || region || propertyType
 
   return (
@@ -194,7 +203,7 @@ export default function PropertiesPage() {
 
         <SavedSearches
           filters={{ q, region, propertyType: propertyType as '' | 'apartment' | 'villa' | 'officetel' | 'oneroom' | 'house' | 'other', sort: sort as 'created_at' | 'deposit' | 'monthly_rent' | 'view_count' }}
-          onApply={filters => { setQ(filters.q); setRegion(filters.region); setPropertyType(filters.propertyType); setSort(filters.sort) }}
+          onApply={applySavedSearch}
         />
 
         {/* Filters */}
