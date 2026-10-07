@@ -6,6 +6,7 @@ export const metadata = { title: '관리자 | 입주해' }
 
 const adminNav = [
   { href: '/admin', label: '대시보드' },
+  { href: '/admin/analytics', label: '사용자 활성화' },
   { href: '/admin/users', label: '사용자' },
   { href: '/admin/documents', label: '문서' },
   { href: '/admin/patents', label: '특허 문서' },

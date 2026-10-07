@@ -7,7 +7,7 @@
  * 숫자는 전부 사용자가 등기부와 시세에서 직접 읽어 넣는다. 우리가 채워 넣지 않는다.
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -16,6 +16,7 @@ import { Label } from '@/components/ui/label'
 import { TesterInvite } from '@/components/tester-invite'
 import { MarketPricePicker } from '@/components/market-price-picker'
 import { track } from '@/lib/analytics-client'
+import { depositGuidePath } from '@/lib/check-activation'
 import { getAttribution } from '@/lib/attribution'
 import {
   calculateDepositRisk,
@@ -72,6 +73,21 @@ export function DepositRiskCheck() {
   const [prior, setPrior] = useState('')
   const [result, setResult] = useState<DepositRiskResult | null>(null)
 
+  const started = useRef(false)
+  function update(setter: (value: string) => void, value: string) {
+    setter(value)
+    setResult(null)
+    if (value && !started.current) {
+      started.current = true
+      track('check_started', { properties: { surface: 'web', ...getAttribution() } })
+    }
+  }
+  function nextAction(action: 'ask' | 'contract_talk' | 'guide') {
+    track('check_next_action_clicked', {
+      properties: { surface: 'web', level: result?.level, action, ...getAttribution() },
+    })
+  }
+
   const ready = price.length > 0 && deposit.length > 0 && Number(price) > 0
 
   /**
@@ -123,18 +139,18 @@ export function DepositRiskCheck() {
           label="매매 시세"
           hint="네이버 부동산이나 실거래가에서 본 값"
           value={price}
-          onChange={setPrice}
+          onChange={(value) => update(setPrice, value)}
           placeholder="40000"
         />
         {/* 시세 칸 바로 아래에 둔다. 막히는 지점에서 손이 닿아야 쓴다. */}
-        <MarketPricePicker onPick={(p) => setPrice(String(p))} depositManwon={Number(deposit) || undefined} />
+        <MarketPricePicker onPick={(p) => update(setPrice, String(p))} depositManwon={Number(deposit) || undefined} />
 
         <Field
           id="deposit"
           label="내 보증금"
           hint="계약하려는 전세금 또는 보증금"
           value={deposit}
-          onChange={setDeposit}
+          onChange={(value) => update(setDeposit, value)}
           placeholder="30000"
         />
         <Field
@@ -142,7 +158,7 @@ export function DepositRiskCheck() {
           label="근저당 채권최고액"
           hint="등기부 을구에 적힌 금액의 합계. 없으면 비워두세요"
           value={mortgage}
-          onChange={setMortgage}
+          onChange={(value) => update(setMortgage, value)}
           placeholder="0"
         />
         <Field
@@ -150,7 +166,7 @@ export function DepositRiskCheck() {
           label="선순위 보증금"
           hint="다가구라면 나보다 먼저 들어온 세입자들의 보증금 합계"
           value={prior}
-          onChange={setPrior}
+          onChange={(value) => update(setPrior, value)}
           placeholder="0"
         />
 
@@ -212,13 +228,25 @@ export function DepositRiskCheck() {
             </ol>
           </section>
 
+          <section className="space-y-3">
+            <h3 className="text-sm font-bold">다음으로 확인하기</h3>
+            <Link href="/community#ask" onClick={() => nextAction('ask')} className="block rounded-md bg-primary px-4 py-3 text-center text-sm font-semibold text-primary-foreground">
+              등기부 내용을 질문하기
+            </Link>
+            <Link href="/contract-talk" onClick={() => nextAction('contract_talk')} className="block rounded-md border px-4 py-3 text-center text-sm font-semibold text-primary">
+              집주인과 계약 전 확인하기
+            </Link>
+            <p className="text-xs text-muted-foreground">질문에 주소·건물명·개인정보를 적지 마세요. 입력한 금액은 전달되지 않습니다.</p>
+          </section>
+
           <section className="space-y-2">
             <h3 className="text-sm font-bold">함께 보면 좋은 글</h3>
             <ul className="space-y-2">
               {result.relatedGuides.map((g) => (
                 <li key={g}>
                   <Link
-                    href={`/?q=${encodeURIComponent(g)}`}
+                    href={depositGuidePath(g)}
+                    onClick={() => nextAction('guide')}
                     className="block rounded-md border px-3 py-2.5 text-sm text-primary transition-colors hover:bg-muted/50"
                   >
                     {g}
@@ -243,7 +271,7 @@ export function DepositRiskCheck() {
       <p className="text-xs leading-relaxed text-muted-foreground">
         이 계산은 넣으신 숫자만 가지고 하는 것입니다. 등기부에 적히지 않는 위험도 있으니 계약 전에는
         등기부를 직접 떼어 확인하세요. 판단이 서지 않으면{' '}
-        <Link href="/" className="text-primary underline underline-offset-4">
+        <Link href="/community#ask" className="text-primary underline underline-offset-4">
           커뮤니티에 물어보셔도
         </Link>{' '}
         됩니다.

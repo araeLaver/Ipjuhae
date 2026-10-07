@@ -64,12 +64,30 @@ async function getEventStats(): Promise<EventRow[]> {
 
 export default async function AdminAnalyticsPage() {
   const talkCounts = await query<{day:string;event_name:string;surface:string;count:string}>(`SELECT DATE(created_at AT TIME ZONE 'Asia/Seoul')::text AS day,event_name,properties->>'surface' AS surface,COUNT(*)::text AS count FROM analytics_events WHERE event_name IN ('contract_talk_created','contract_talk_responded','contract_talk_schedule_agreed','contract_talk_completed','contract_talk_cancelled') AND created_at > NOW()-interval '30 days' GROUP BY 1,2,3 ORDER BY 1 DESC`).catch(()=>[])
+  const activation = await query<{ day: string; started: string; results: string; ask: string; talk: string; guide: string }>(`
+    SELECT TO_CHAR(created_at AT TIME ZONE 'Asia/Seoul', 'YYYY-MM-DD') AS day,
+      COUNT(*) FILTER (WHERE event_name = 'check_started')::text AS started,
+      COUNT(*) FILTER (WHERE event_name = 'check_result_viewed')::text AS results,
+      COUNT(*) FILTER (WHERE event_name = 'check_next_action_clicked' AND properties->>'action' = 'ask')::text AS ask,
+      COUNT(*) FILTER (WHERE event_name = 'check_next_action_clicked' AND properties->>'action' = 'contract_talk')::text AS talk,
+      COUNT(*) FILTER (WHERE event_name = 'check_next_action_clicked' AND properties->>'action' = 'guide')::text AS guide
+    FROM analytics_events
+    WHERE event_name IN ('check_started', 'check_result_viewed', 'check_next_action_clicked')
+      AND properties->>'surface' = 'web' AND created_at >= NOW() - INTERVAL '30 days'
+    GROUP BY 1 ORDER BY 1 DESC
+  `).catch((error) => { logger.error('Activation metrics unavailable', { error }); return null })
   const [events, funnel] = await Promise.all([getEventStats(), getTesterFunnel()])
 
   return (
     <div>
       <h1 className="text-2xl font-bold text-gray-900 mb-6">이벤트 분석</h1>
 
+      <section className="mb-8 space-y-3">
+        <h2 className="text-lg font-bold">보증금 점검 → 다음 행동 · 최근 30일</h2>
+        <p className="text-sm text-gray-500">익명 동작 횟수입니다. 고유 사용자 수·전환율·재방문율이 아닙니다. 입력 시작과 다음 행동은 이번 기능 적용일부터 집계됩니다.</p>
+        {activation === null ? <p role="alert">활성화 집계를 불러오지 못했습니다. 잠시 후 다시 확인하세요.</p> : activation.length === 0 ? <p>아직 집계가 없습니다.</p> :
+          <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr>{['날짜', '입력 시작', '결과 조회', '질문 클릭', '계약 대화 클릭', '관련 글 클릭'].map(label => <th className="p-2 text-left" key={label}>{label}</th>)}</tr></thead><tbody>{activation.map(row => <tr key={row.day}>{[row.day, row.started, row.results, row.ask, row.talk, row.guide].map((value, i) => <td className="p-2" key={i}>{value}</td>)}</tr>)}</tbody></table></div>}
+      </section>
       <section className="mb-8"><h2 className="text-lg font-bold">계약 전 대화 · 최근 30일 익명 동작 집계</h2><p className="text-sm text-gray-500">성공한 저장·변경 횟수입니다. 고유 사용자 수나 전환율이 아니며 이메일·계정·요청 ID·본문을 기록하지 않습니다.</p>{!talkCounts.length?<p>아직 집계가 없습니다.</p>:<ul>{talkCounts.map((r,i)=><li key={i}>{r.day} · {r.surface} · {r.event_name} · {r.count}건</li>)}</ul>}</section>
       <section className="mb-8">
         <h2 className="text-lg font-bold text-gray-900 mb-1">
