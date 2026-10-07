@@ -56,28 +56,27 @@ export default async function HomePage() {
         <section className="border-b bg-gradient-to-b from-primary/5 to-transparent">
           <div className="mx-auto max-w-3xl px-4 py-14 sm:py-20">
             <h1 className="text-balance text-3xl font-bold leading-tight sm:text-4xl">
-              집을 구하는 임차인이라면,
+              전세 계약 전,
               <br />
-              계약 전 질문부터 나누세요
+              내 보증금부터 점검하세요
             </h1>
             <p className="mt-5 max-w-xl text-base leading-relaxed text-muted-foreground">
-              임대인과 수리 연락 방법·입주 일정·추가 확인 사항을 정리하세요. 질문 세 가지와 가능한 시간, 상대 임대인의 계정 이메일로 요청을 만들고, 직접 전달한 링크에서 답변과 일정을 확인할 수 있습니다. 양측 계정이 필요합니다.
+              등기부와 직접 확인한 시세 숫자를 넣으면, 보증금 계산 결과와 계약 전에 확인할 일을 알려드립니다. 가입 없이 바로 시작하세요.
             </p>
 
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-              <Link
-                href="/contract-talk"
-                className="inline-flex items-center justify-center rounded-lg bg-primary px-6 py-3.5 text-sm font-bold text-primary-foreground transition-opacity hover:opacity-90"
-              >
-                계약 전 대화 요청하기
-              </Link>
-              <Link
-                href="/check"
-                className="inline-flex items-center justify-center rounded-lg border bg-background px-6 py-3.5 text-sm font-semibold transition-colors hover:bg-muted/50"
-              >
+              <Link href="/check?from=home" className="inline-flex items-center justify-center rounded-lg bg-primary px-6 py-3.5 text-sm font-bold text-primary-foreground transition-opacity hover:opacity-90">
                 보증금 점검하기 (가입 없이)
               </Link>
+              <Link href="/community#ask" className="inline-flex items-center justify-center rounded-lg border bg-background px-6 py-3.5 text-sm font-semibold transition-colors hover:bg-muted/50">
+                계약 전 궁금한 점 질문하기
+              </Link>
             </div>
+            <ol className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground" aria-label="보증금 점검 순서">
+              <li>1. 시세와 보증금 입력</li>
+              <li>2. 계산 결과 확인</li>
+              <li>3. 확인할 일과 관련 글 보기</li>
+            </ol>
 
             <p className="mt-5 text-xs leading-relaxed text-muted-foreground">
               보증금 점검에서는 시세를 저희가 추정하지 않습니다. 직접 확인하신 숫자로만 계산하고, 그 숫자는
@@ -85,7 +84,9 @@ export default async function HomePage() {
             </p>
 
             <div className="mt-6 rounded-xl border bg-background p-5">
-              <h2 className="text-lg font-bold">이렇게 대화를 시작합니다</h2>
+              <h2 className="text-lg font-bold">집주인과 확인할 내용을 정리하고 싶다면</h2>
+              <p className="mt-2 text-sm text-muted-foreground">계약 전 대화에서는 질문 세 가지와 가능한 시간을 정리해 상대에게 링크를 전달할 수 있습니다. 양측 계정이 필요합니다.</p>
+              <Link href="/contract-talk" className="mt-3 inline-block text-sm font-semibold text-primary underline">계약 전 대화 요청하기</Link>
               <p className="mt-2 text-xs text-muted-foreground">합성 사용 예시 · 실제 이용자의 대화가 아닙니다.</p>
               <p className="mt-3 text-sm">질문: “수리 요청은 어떤 연락 방법으로 이야기하면 좋을까요?”</p>
               <p className="mt-2 text-sm">답변 예시: “입주 때 안내한 연락 방법으로 알려주세요.”</p>
