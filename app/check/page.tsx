@@ -35,7 +35,7 @@ export default function CheckPage() {
           6편.
         </p>
         <Link
-          href="/"
+          href="/community"
           className="mt-3 inline-block text-sm font-semibold text-primary underline underline-offset-4"
         >
           입주해 커뮤니티로 가기
