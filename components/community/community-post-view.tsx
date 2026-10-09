@@ -235,6 +235,13 @@ export function CommunityPostView({ id }: { id: string }) {
               </div>
               <h1 className="text-xl font-bold">{post.title}</h1>
               <p className="mt-3 whitespace-pre-wrap text-sm leading-7">{post.body}</p>
+              {post.author_role === 'admin' && post.audience === 'all' && /^(등기부 뜯어보기|임대인 노트)/.test(post.title) && (
+                <section className="mt-5 space-y-3 rounded-lg border border-primary/20 bg-primary/5 p-4" aria-label="읽은 내용으로 보증금 점검하기">
+                  <h2 className="text-base font-bold">읽은 내용으로 내 보증금도 점검해 보세요</h2>
+                  <p className="text-sm text-muted-foreground">등기부와 직접 확인한 시세 숫자로 계산하고, 계약 전에 확인할 일을 살펴보세요. 가입 없이 쓸 수 있으며 입력 금액은 서버로 보내지 않습니다.</p>
+                  <Link href="/check?from=guide" className={cn(buttonVariants(), 'inline-flex')}>보증금 점검하기 (가입 없이)</Link>
+                </section>
+              )}
               {!post.is_author && (
                 <div className="mt-5 border-t border-border pt-3">
                   {reporting ? (

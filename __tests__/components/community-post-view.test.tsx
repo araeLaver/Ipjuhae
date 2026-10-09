@@ -383,3 +383,18 @@ it('서버 전체 개수와 다음 페이지를 표시하고 실패 후 기존 �
   await screen.findByText('마지막 댓글')
   expect(screen.queryByText('댓글 더 보기')).toBeNull()
 })
+
+describe('안내 글에서 첫 점검으로 연결', () => {
+  it('공개 운영자 안내 글은 가입 없는 점검으로 연결한다', async () => {
+    mockApi({ user: null, postStatus: 200, post: basePost({ author_role: 'admin', title: '등기부 뜯어보기 3화. 근저당과 순위' }), commentsStatus: 200 })
+    render(<CommunityPostView id={POST_ID} />)
+    const link = await screen.findByRole('link', { name: '보증금 점검하기 (가입 없이)' })
+    expect(link.getAttribute('href')).toBe('/check?from=guide')
+  })
+  it('일반 사용자 글에는 안내 글용 권유를 표시하지 않는다', async () => {
+    mockApi({ user: null, postStatus: 200, post: basePost({ author_role: 'member', title: '등기부 뜯어보기 질문' }), commentsStatus: 200 })
+    render(<CommunityPostView id={POST_ID} />)
+    await screen.findByRole('heading', { name: '등기부 뜯어보기 질문' })
+    expect(screen.queryByRole('link', { name: '보증금 점검하기 (가입 없이)' })).toBeNull()
+  })
+})
