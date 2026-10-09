@@ -27,6 +27,7 @@ export const metadata: Metadata = {
 export default function CheckPage() {
   return (
     <main className="min-h-screen bg-background px-4 py-10 sm:py-14">
+      <div className="mx-auto mb-4 max-w-xl"><a href="#candidates" className="text-sm font-semibold text-primary underline">저장한 후보 집 보기</a></div>
       <DepositRiskCheck />
 
       <div className="mx-auto mt-10 w-full max-w-xl border-t pt-6">

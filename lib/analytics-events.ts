@@ -22,6 +22,9 @@ export const EVENT_NAMES = [
   'match_view_toggle',
   'listing_viewed',
   // /check 결과 화면 → 테스터 전환 깔때기. 아래 ANONYMOUS_ONLY_EVENTS 참고.
+  'check_candidate_saved',
+  'check_comparison_viewed',
+  'check_checklist_updated',
   'check_started',
   'check_next_action_clicked',
   'check_result_viewed',
@@ -47,6 +50,9 @@ export function isEventName(value: unknown): value is EventName {
  */
 export const ANONYMOUS_ONLY_EVENTS = [
   'contract_talk_created', 'contract_talk_responded', 'contract_talk_schedule_agreed', 'contract_talk_completed', 'contract_talk_cancelled',
+  'check_candidate_saved',
+  'check_comparison_viewed',
+  'check_checklist_updated',
   'check_started',
   'check_next_action_clicked',
   'check_result_viewed',

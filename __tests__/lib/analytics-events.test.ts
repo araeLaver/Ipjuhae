@@ -55,6 +55,9 @@ describe('익명 전용 이벤트 판정', () => {
     expect([...ANONYMOUS_ONLY_EVENTS].sort()).toEqual(
       [
         'contract_talk_cancelled','contract_talk_completed','contract_talk_created','contract_talk_responded','contract_talk_schedule_agreed',
+        'check_candidate_saved',
+        'check_comparison_viewed',
+        'check_checklist_updated',
         'check_started',
         'check_next_action_clicked',
         'check_result_viewed',

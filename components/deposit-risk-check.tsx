@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { TesterInvite } from '@/components/tester-invite'
+import { CheckCandidates } from '@/components/check-candidates'
 import { MarketPricePicker } from '@/components/market-price-picker'
 import { track } from '@/lib/analytics-client'
 import { depositGuidePath } from '@/lib/check-activation'
@@ -264,6 +265,16 @@ export function DepositRiskCheck() {
           </button>
         </Card>
       ) : null}
+
+      <CheckCandidates input={result ? {
+        marketPriceManwon: Number(price), depositManwon: Number(deposit),
+        mortgageMaxManwon: Number(mortgage || 0), priorDepositsManwon: Number(prior || 0),
+      } : null} onLoad={(input) => {
+        setPrice(String(input.marketPriceManwon)); setDeposit(String(input.depositManwon))
+        setMortgage(String(input.mortgageMaxManwon)); setPrior(String(input.priorDepositsManwon))
+        setResult(calculateDepositRisk(input))
+        document.getElementById('price')?.focus()
+      }} />
 
       {/* 결과를 본 뒤에만 보여준다. 들어오자마자 권하면 아무도 안 누른다. */}
       {result ? <TesterInvite /> : null}
