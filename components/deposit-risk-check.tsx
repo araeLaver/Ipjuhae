@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { TesterInvite } from '@/components/tester-invite'
+import { ShareCheck } from '@/components/share-check'
 import { CheckCandidates } from '@/components/check-candidates'
 import { MarketPricePicker } from '@/components/market-price-picker'
 import { track } from '@/lib/analytics-client'
@@ -275,6 +276,8 @@ export function DepositRiskCheck() {
         setResult(calculateDepositRisk(input))
         document.getElementById('price')?.focus()
       }} />
+
+      <ShareCheck />
 
       {/* 결과를 본 뒤에만 보여준다. 들어오자마자 권하면 아무도 안 누른다. */}
       {result ? <TesterInvite /> : null}

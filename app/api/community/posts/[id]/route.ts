@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
 import { query, queryOne } from '@/lib/db'
+import { OPERATOR_REPLY_SQL } from '@/lib/community-answers'
 import { logger } from '@/lib/logger'
 import { readableAudiences, type CommunityAudience } from '@/lib/community'
 
@@ -12,6 +13,7 @@ import { readableAudiences, type CommunityAudience } from '@/lib/community'
  * 커뮤니티는 익명 게시판이다. 표시 이름은 클라이언트가 `author_role`에서 만든다. (DOW-1236)
  */
 interface PostRow {
+  has_operator_reply: boolean
   id: string
   author_id: string
   audience: CommunityAudience
@@ -38,7 +40,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       `SELECT p.id, p.author_id, p.audience, p.category, p.title, p.body,
               p.view_count, (SELECT COUNT(*)::int FROM community_comments c
                 WHERE c.post_id = p.id AND c.deleted_at IS NULL AND c.hidden_at IS NULL) AS comment_count, p.created_at,
-              CASE WHEN u.user_type = 'admin' THEN 'admin' ELSE 'member' END AS author_role
+              CASE WHEN u.user_type = 'admin' THEN 'admin' ELSE 'member' END AS author_role, ${OPERATOR_REPLY_SQL} AS has_operator_reply
          FROM community_posts p
          LEFT JOIN users u ON u.id = p.author_id
         WHERE p.id = $1 AND p.deleted_at IS NULL AND p.hidden_at IS NULL`,

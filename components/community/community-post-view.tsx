@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Header } from '@/components/layout/header'
+import { AnswerStatus } from '@/components/community/answer-status'
 import { AuthorRoleBadge } from '@/components/community/author-role-badge'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -16,6 +17,7 @@ import { cn } from '@/lib/utils'
 import { AUDIENCE_LABELS, authorDisplayName, roleLabel, type CommunityAudience } from '@/lib/community'
 
 interface Post {
+  has_operator_reply?: boolean
   id: string
   audience: CommunityAudience
   title: string
@@ -234,6 +236,7 @@ export function CommunityPostView({ id }: { id: string }) {
                 {post.is_author && <span className="rounded border border-border px-1.5 py-0.5">내 글</span>}
               </div>
               <h1 className="text-xl font-bold">{post.title}</h1>
+              {post.author_role !== 'admin' && <div className="mt-3"><AnswerStatus answered={post.has_operator_reply} /></div>}
               <p className="mt-3 whitespace-pre-wrap text-sm leading-7">{post.body}</p>
               {post.author_role === 'admin' && post.audience === 'all' && /^(등기부 뜯어보기|임대인 노트)/.test(post.title) && (
                 <section className="mt-5 space-y-3 rounded-lg border border-primary/20 bg-primary/5 p-4" aria-label="읽은 내용으로 보증금 점검하기">
@@ -339,7 +342,7 @@ export function CommunityPostView({ id }: { id: string }) {
                 {moreLoading ? '불러오는 중…' : moreFailed ? '댓글 더 보기 다시 시도' : '댓글 더 보기'}
               </Button>
             )}
-            <div className="space-y-2">
+            <div id="reply" className="space-y-2">
               <Textarea placeholder="댓글을 입력하세요" value={body} onChange={(e) => setBody(e.target.value)} rows={3} maxLength={2000} />
               <div className="flex justify-end">
                 <Button onClick={submitComment} disabled={submitting || !body.trim()}>
