@@ -35,7 +35,7 @@ export default function manifest(): MetadataRoute.Manifest {
         name: '커뮤니티',
         short_name: '커뮤니티',
         description: '계약 전에 물어보는 곳',
-        url: '/',
+        url: '/community',
       },
     ],
     icons: [

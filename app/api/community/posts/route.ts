@@ -5,6 +5,7 @@ import { getClientIp, rateLimit } from '@/lib/rate-limit'
 import crypto from 'node:crypto'
 import { query, queryOne } from '@/lib/db'
 import { sanitizeUserInput } from '@/lib/sanitize'
+import { OPERATOR_REPLY_SQL } from '@/lib/community-answers'
 import { logger } from '@/lib/logger'
 import {
   canPostTo,
@@ -22,6 +23,7 @@ import {
  * 표시 이름은 클라이언트가 `author_role`에서 만든다(`authorDisplayName`). (DOW-1236)
  */
 interface PostRow {
+  has_operator_reply: boolean
   id: string
   audience: string
   category: string | null
@@ -63,6 +65,13 @@ export async function GET(request: Request) {
   const page = Math.max(1, parseInt(searchParams.get('page') || '1') || 1)
   const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') || '20') || 20))
   const offset = (page - 1) * limit
+  let ids: string[] | null = null
+  if (searchParams.has('ids')) {
+    ids = searchParams.get('ids')!.split(',')
+    if (!ids.length || ids.length > 20 || ids.some(id => !z.string().uuid().safeParse(id).success)) {
+      return NextResponse.json({ error: '잘못된 질문 목록입니다' }, { status: 400 })
+    }
+  }
 
   try {
     // 저장된 작성 누계 대신 현재 공개 댓글만 집계한다(신고 숨김·삭제·복원 반영).
@@ -70,16 +79,21 @@ export async function GET(request: Request) {
       `SELECT p.id, p.audience, p.category, p.title, p.body,
               p.view_count, (SELECT COUNT(*)::int FROM community_comments c
                 WHERE c.post_id = p.id AND c.deleted_at IS NULL AND c.hidden_at IS NULL) AS comment_count, p.created_at,
-              CASE WHEN u.user_type = 'admin' THEN 'admin' ELSE 'member' END AS author_role
+              CASE WHEN u.user_type = 'admin' THEN 'admin' ELSE 'member' END AS author_role, ${OPERATOR_REPLY_SQL} AS has_operator_reply
          FROM community_posts p
          LEFT JOIN users u ON u.id = p.author_id
         WHERE p.deleted_at IS NULL AND p.hidden_at IS NULL
           AND p.audience = ANY($1::text[])
+          AND ($4::uuid[] IS NULL OR p.id = ANY($4::uuid[]))
         ORDER BY p.created_at DESC
         LIMIT $2 OFFSET $3`,
-      [audiences, limit, offset]
+      [audiences, limit, offset, ids]
     )
-    return NextResponse.json({ posts: rows, page, limit, hasMore: rows.length === limit })
+    // Explicit public fields keep account and anonymous author identifiers private.
+    const posts = rows.map(p => ({ id: p.id, audience: p.audience, category: p.category,
+      title: p.title, body: p.body, view_count: p.view_count, comment_count: p.comment_count,
+      created_at: p.created_at, author_role: p.author_role, has_operator_reply: p.has_operator_reply }))
+    return NextResponse.json({ posts, page, limit, hasMore: rows.length === limit })
   } catch (error) {
     logger.error('커뮤니티 목록 조회 오류', { error })
     return NextResponse.json({ error: '게시글을 불러오지 못했습니다' }, { status: 500 })
@@ -145,7 +159,8 @@ export async function POST(request: Request) {
         sanitizeUserInput(data.body),
       ]
     )
-    return NextResponse.json({ id: post?.id }, { status: 201 })
+    if (!post?.id) throw new Error('POST_INSERT_MISSING')
+    return NextResponse.json({ id: post.id }, { status: 201 })
   } catch (error) {
     logger.error('커뮤니티 작성 오류', { error })
     return NextResponse.json({ error: '게시글 작성에 실패했습니다' }, { status: 500 })

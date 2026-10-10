@@ -10,6 +10,9 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Spinner } from '@/components/ui/spinner'
 import { ArrowRight, MessageSquare, PenLine } from 'lucide-react'
+import { FollowUpQuestions } from '@/components/community/follow-up-questions'
+import { rememberQuestion } from '@/lib/community-follow-up'
+import { AnswerStatus } from '@/components/community/answer-status'
 import { AuthorRoleBadge } from '@/components/community/author-role-badge'
 import {
   AUDIENCE_LABELS,
@@ -21,6 +24,7 @@ import {
 } from '@/lib/community'
 
 interface Post {
+  has_operator_reply?: boolean
   id: string
   audience: CommunityAudience
   category: string | null
@@ -55,6 +59,7 @@ export function CommunityBoard() {
   const [audience, setAudience] = useState<CommunityAudience>('all')
   /** 사용자가 대상 게시판을 직접 골랐는가. 골랐다면 탭을 바꿔도 그 선택을 덮어쓰지 않는다. */
   const [audiencePicked, setAudiencePicked] = useState(false)
+  const [created, setCreated] = useState<{ id: string; saved: boolean } | null>(null)
   const [submitting, setSubmitting] = useState(false)
   /** 연재별 펼침 여부. 18편을 한 번에 세우면 게시판이 화면 밖으로 밀린다. */
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
@@ -156,6 +161,8 @@ export function CommunityBoard() {
         body: JSON.stringify({ audience, title, body }),
       })
       if (res.ok) {
+        const data = await res.json().catch(() => null)
+        if (typeof data?.id === 'string') setCreated({ id: data.id, saved: rememberQuestion(data.id) })
         setTitle('')
         setBody('')
         setWriting(false)
@@ -165,7 +172,7 @@ export function CommunityBoard() {
         // 익명 작성을 전면에 내세운 화면에서 실패만 브라우저 기본 대화상자인 건 맞지 않는다.
         toast.error(d?.error ?? '작성에 실패했습니다')
       }
-    } finally {
+    } catch { toast.error('연결이 끊겼습니다. 입력한 내용은 남아 있습니다. 다시 시도하세요.') } finally {
       setSubmitting(false)
     }
   }
@@ -212,6 +219,8 @@ export function CommunityBoard() {
       </section>
 
       <main className="container mx-auto max-w-3xl px-4 py-8">
+        <FollowUpQuestions />
+        {created && <Card className="mb-6 space-y-2 p-4" role="status"><p className="font-semibold">질문을 등록했습니다.</p><p className="text-sm">{created.saved ? '이 기기에 질문 링크를 보관했습니다. 위 목록에서 답변을 다시 확인할 수 있습니다.' : '이 기기에 링크를 보관하지 못했습니다. 아래 질문 링크를 따로 보관해주세요.'}</p><Link className="text-primary underline" href={`/community/${created.id}`}>등록한 질문 확인하기</Link></Card>}
         {/* 질문을 남기게 하는 자리. 작은 버튼 하나로는 아무도 쓰지 않는다. */}
         <Card id="ask" className="mb-8 border-primary/25 bg-card p-5">
           <p className="text-base font-extrabold">이 집, 계약해도 될까요?</p>
@@ -418,6 +427,7 @@ export function CommunityBoard() {
                   </div>
                   <p className="font-semibold leading-snug">{p.title}</p>
                   <div className="mt-1.5 flex gap-3 text-xs text-muted-foreground">
+                    <AnswerStatus answered={p.has_operator_reply} />
                     <span>댓글 {p.comment_count}</span>
                     <span>조회 {p.view_count}</span>
                   </div>
