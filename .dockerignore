@@ -33,7 +33,9 @@ playwright.config.*
 .github
 docs
 marketing
-scripts
+scripts/*
+!scripts/build-policy-news.mjs
+!scripts/migrate-policy-news.cjs
 migrations
 mobile
 

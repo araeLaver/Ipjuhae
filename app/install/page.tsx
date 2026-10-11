@@ -13,7 +13,7 @@ import { InstallGuide } from '@/components/install-guide'
 export const metadata: Metadata = {
   title: '앱으로 쓰기',
   description:
-    '입주해를 폰에 설치하는 방법입니다. 안드로이드는 설치 파일로, 아이폰은 홈 화면 추가로 바로 쓰실 수 있습니다.',
+    '입주해를 폰에 설치하는 방법입니다. 안드로이드와 아이폰 모두 웹에서 바로 사용하고 홈 화면에 추가할 수 있습니다.',
   openGraph: {
     title: '입주해 앱으로 쓰기',
     description: '폰에 설치해서 계약 전에 바로 확인하세요.',

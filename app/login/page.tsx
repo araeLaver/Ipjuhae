@@ -285,7 +285,7 @@ function LoginContent() {
 
                   <p className="text-center text-sm text-muted-foreground">
                     계정이 없으신가요?{' '}
-                    <Link href="/signup" className="text-primary hover:underline">
+                    <Link href={redirectTo ? `/signup?redirect=${encodeURIComponent(redirectTo)}` : "/signup"} className="text-primary hover:underline">
                       회원가입
                     </Link>
                   </p>
@@ -347,7 +347,7 @@ function LoginContent() {
 
                   <p className="text-center text-sm text-muted-foreground">
                     계정이 없으신가요?{' '}
-                    <Link href="/signup" className="text-primary hover:underline">
+                    <Link href={redirectTo ? `/signup?redirect=${encodeURIComponent(redirectTo)}` : "/signup"} className="text-primary hover:underline">
                       회원가입
                     </Link>
                   </p>

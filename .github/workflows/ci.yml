@@ -99,3 +99,18 @@ jobs:
 
       - name: Build Next.js application
         run: npm run build
+
+      - name: Build production container
+        run: docker build --tag ipjuhae-ci .
+
+      - name: Verify policy runtime files in production container
+        run: |
+          docker run --rm --entrypoint node ipjuhae-ci -e '
+            const fs = require("node:fs");
+            for (const file of ["build/policy-news.cjs", "scripts/migrate-policy-news.cjs", "db/migration-047-policy-news.sql", ".next/required-server-files.json"]) {
+              if (!fs.existsSync(file)) throw new Error("Missing runtime file: " + file);
+            }
+            const collector = require("./build/policy-news.cjs");
+            if (typeof collector.startPolicyNewsScheduler !== "function") throw new Error("Scheduler missing");
+            if (typeof require("./scripts/migrate-policy-news.cjs").migratePolicyNews !== "function") throw new Error("Release migration missing");
+          '

@@ -26,3 +26,9 @@ export function safeRedirectPath(value: string | null | undefined): string | nul
   if (hasControlChar(value)) return null
   return value
 }
+
+/** 가입 기본 온보딩을 유지하면서 계약 전 대화만 바로 이어간다. */
+export function contractTalkReturnPath(value: string | null | undefined): string | null {
+  const safe = safeRedirectPath(value)
+  return safe && /^\/contract-talk(?:\/(?:requests|[a-zA-Z0-9_-]+|shared\/[a-zA-Z0-9_-]+))?$/.test(safe) ? safe : null
+}

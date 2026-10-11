@@ -1,7 +1,7 @@
 'use client'
 
 import { SIGNUP_ROLES, SignupRole } from '@/lib/roles'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -16,8 +16,12 @@ import { toast } from 'sonner'
 import { SocialLoginButtons } from '@/components/auth/social-login-buttons'
 import { TermsConsent } from '@/components/auth/terms-consent'
 
+import { contractTalkReturnPath } from '@/lib/safe-redirect'
+
 export default function SignupPage() {
   const router = useRouter()
+  const [redirectTo, setRedirectTo] = useState<string | null>(null)
+  useEffect(() => { setRedirectTo(contractTalkReturnPath(new URLSearchParams(window.location.search).get('redirect'))) }, [])
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
     email: '',
@@ -76,7 +80,9 @@ export default function SignupPage() {
 
       toast.success('회원가입이 완료되었습니다!')
 
-      if (formData.userType === 'landlord') {
+      if (redirectTo) {
+        router.push(redirectTo)
+      } else if (formData.userType === 'landlord') {
         router.push('/landlord/onboarding')
       } else if (formData.userType === 'broker') {
         router.push('/community')
@@ -102,7 +108,7 @@ export default function SignupPage() {
             <CardHeader className="text-center">
               <CardTitle className="text-2xl">회원가입</CardTitle>
               <CardDescription>
-                입주해에 가입하고 프로필을 만들어보세요
+                {redirectTo ? '가입 후 원래 대화 요청 화면으로 돌아갑니다. 공유 링크를 받은 분은 임대인을 선택하세요.' : '입주해에 가입하고 프로필을 만들어보세요'}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -191,11 +197,11 @@ export default function SignupPage() {
                   가입하기
                 </Button>
 
-                <SocialLoginButtons mode="signup" />
+                <SocialLoginButtons mode="signup" redirectTo={redirectTo} />
 
                 <p className="text-center text-sm text-muted-foreground">
                   이미 계정이 있으신가요?{' '}
-                  <Link href="/login" className="text-primary hover:underline">
+                  <Link href={redirectTo ? `/login?redirect=${encodeURIComponent(redirectTo)}` : "/login"} className="text-primary hover:underline">
                     로그인
                   </Link>
                 </p>

@@ -38,6 +38,9 @@ describe('POST /api/analytics/event — 익명 보장', () => {
   })
 
   const anonymousEvents = [
+    'check_candidate_saved',
+    'check_comparison_viewed',
+    'check_checklist_updated',
     'check_result_viewed',
     'tester_invite_shown',
     'tester_invite_clicked',

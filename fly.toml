@@ -5,6 +5,9 @@
 app = "ipjuhae-production"
 primary_region = "nrt"
 
+[deploy]
+  release_command = "node scripts/migrate-policy-news.cjs"
+
 [build]
   dockerfile = "Dockerfile"
 

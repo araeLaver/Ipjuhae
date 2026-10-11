@@ -31,6 +31,17 @@ function expectFailure(html: string) {
 }
 
 describe('홈 질문 조회 상태', () => {
+  it('첫 행동은 가입 없는 점검이며 후보와 질문으로 돌아올 수 있다', async () => {
+    vi.mocked(query).mockResolvedValue([])
+    const html = renderToStaticMarkup(await HomePage())
+    expect(html).toContain('내 보증금부터 점검하세요')
+    expect(html).toContain('href="/check?from=home"')
+    expect(html).not.toContain('href="/contract-talk"')
+    expect(html).toContain('href="/community#follow-up"')
+    expect(html).toContain('href="/check#candidates"')
+    expect(html).not.toContain('Trust Card 파일럿')
+    expect(html).toContain('시세와 보증금 입력')
+  })
   it('정상 0건일 때만 첫 질문을 권한다', async () => {
     vi.mocked(query).mockResolvedValue([])
     expect((await getHomeContent()).status).toBe('success')

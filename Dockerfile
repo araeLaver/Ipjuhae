@@ -64,6 +64,12 @@ COPY --from=prod-deps --chown=nextjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nextjs:nodejs /app/server.js ./server.js
 COPY --from=builder --chown=nextjs:nodejs /app/socket-auth.js ./socket-auth.js
 
+COPY --from=builder --chown=nextjs:nodejs /app/build/policy-news.cjs ./build/policy-news.cjs
+
+COPY --from=builder --chown=nextjs:nodejs /app/scripts/migrate-policy-news.cjs ./scripts/migrate-policy-news.cjs
+COPY --from=builder --chown=nextjs:nodejs /app/db/migration-047-policy-news.sql ./db/migration-047-policy-news.sql
+COPY --from=builder --chown=nextjs:nodejs /app/lib/db-ssl.mjs ./lib/db-ssl.mjs
+
 USER nextjs
 
 EXPOSE 8000

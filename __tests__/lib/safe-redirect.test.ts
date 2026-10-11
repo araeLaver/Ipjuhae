@@ -44,3 +44,15 @@ describe('safeRedirectPath', () => {
     expect(safeRedirectPath('/ok' + String.fromCharCode(127))).toBeNull()
   })
 })
+
+// Signup only bypasses its existing onboarding for a known contract-talk route.
+describe('contractTalkReturnPath', () => {
+  it('preserves creation, inbox and account-bound shared requests', async () => {
+    const { contractTalkReturnPath } = await import('@/lib/safe-redirect')
+    for (const path of ['/contract-talk', '/contract-talk/requests', '/contract-talk/abc-123', '/contract-talk/shared/token_123']) expect(contractTalkReturnPath(path)).toBe(path)
+  })
+  it('rejects external, encoded, traversal and auth-loop destinations', async () => {
+    const { contractTalkReturnPath } = await import('@/lib/safe-redirect')
+    for (const path of ['//evil.test', '/\\evil.test', '/contract-talk/../login', '/contract-talk/%2f%2fevil.test', '/contract-talk?redirect=//evil.test', '/signup', '/profile', '/contract-talk/shared/x/extra']) expect(contractTalkReturnPath(path)).toBeNull()
+  })
+})

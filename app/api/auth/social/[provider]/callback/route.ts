@@ -88,6 +88,7 @@ export async function GET(
       ...(profile.profileImage && { profileImage: profile.profileImage }),
     })
 
+    if (redirectTo) signupParams.set('redirect', redirectTo)
     return clearState(NextResponse.redirect(`${base}/signup/social?${signupParams.toString()}`))
   } catch (err) {
     logger.error('OAuth callback error', { error: err })

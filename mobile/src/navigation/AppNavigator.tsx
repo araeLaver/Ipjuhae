@@ -11,6 +11,7 @@ import { useAuth } from '../contexts/AuthContext';
 import SessionExpiredBanner from '../components/SessionExpiredBanner';
 
 // Screens
+import ContractTalkScreen from '../screens/ContractTalkScreen';
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import HomeScreen from '../screens/HomeScreen';
@@ -31,6 +32,7 @@ import NotificationSettingsScreen from '../screens/NotificationSettingsScreen';
 
 // Types
 export type RootStackParamList = {
+  ContractTalk: undefined;
   Auth: undefined;
   Main: undefined;
   ListingDetail: { listingId: string };
@@ -65,6 +67,7 @@ const GuestTab = createBottomTabNavigator<{ DepositCheck: undefined; Community: 
 
 const TabIcon = ({ name, focused }: { name: string; focused: boolean }) => {
   const icons: Record<string, string> = {
+    ContractTalk: '🗓️',
     Home: '🏠',
     Listings: '🔍',
     DepositCheck: '🧮',
@@ -167,7 +170,7 @@ const AppNavigator = () => {
         <Stack.Navigator screenOptions={{ headerShown: false }}>
         {isAuthenticated ? (
           <>
-            <Stack.Screen name="Main" component={MainTabNavigator} />
+            <Stack.Screen name="Main" component={MainTabNavigator} /><Stack.Screen name="ContractTalk" component={ContractTalkScreen} options={{headerShown:true,headerTitle:'계약 전 대화'}} />
             <Stack.Screen
               name="ListingDetail"
               component={ListingDetailScreen}

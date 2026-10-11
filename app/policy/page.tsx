@@ -47,6 +47,8 @@ export default function PolicyPage() {
             </p>
           </header>
 
+          <Link href="/policy/news" className="mt-6 inline-flex min-h-11 items-center rounded-lg border px-4 text-sm font-semibold text-primary">최근 주거 정책소식 보기 →</Link>
+
           <nav className="mt-8 flex flex-wrap gap-2">
             {POLICIES.map((p) => (
               <a

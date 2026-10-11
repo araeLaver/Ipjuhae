@@ -1,0 +1,32 @@
+name: Policy news freshness
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 10
+    concurrency:
+      group: policy-news-refresh
+      cancel-in-progress: false
+    steps:
+      - name: Refresh policy news and verify freshness
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          if [ -z "$CRON_SECRET" ]; then
+            echo "::error::CRON_SECRET is missing."
+            exit 1
+          fi
+          curl --fail-with-body --silent --show-error \
+            --connect-timeout 10 --max-time 480 \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            https://www.ipjuhae.com/api/cron/policy-news
+          curl --fail-with-body --silent --show-error \
+            --connect-timeout 10 --max-time 30 \
+            https://www.ipjuhae.com/api/policy-news/status

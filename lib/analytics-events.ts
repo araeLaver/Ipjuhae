@@ -10,6 +10,7 @@
  */
 
 export const EVENT_NAMES = [
+  'contract_talk_created', 'contract_talk_responded', 'contract_talk_schedule_agreed', 'contract_talk_completed', 'contract_talk_cancelled',
   'page_view',
   'user_signup',
   'profile_complete',
@@ -21,6 +22,11 @@ export const EVENT_NAMES = [
   'match_view_toggle',
   'listing_viewed',
   // /check 결과 화면 → 테스터 전환 깔때기. 아래 ANONYMOUS_ONLY_EVENTS 참고.
+  'check_candidate_saved',
+  'check_comparison_viewed',
+  'check_checklist_updated',
+  'check_started',
+  'check_next_action_clicked',
   'check_result_viewed',
   'tester_invite_shown',
   'tester_invite_clicked',
@@ -43,6 +49,12 @@ export function isEventName(value: unknown): value is EventName {
  * 화면마다 조심하게 만들지 않는다. 서버 한 곳에서 못박는다.
  */
 export const ANONYMOUS_ONLY_EVENTS = [
+  'contract_talk_created', 'contract_talk_responded', 'contract_talk_schedule_agreed', 'contract_talk_completed', 'contract_talk_cancelled',
+  'check_candidate_saved',
+  'check_comparison_viewed',
+  'check_checklist_updated',
+  'check_started',
+  'check_next_action_clicked',
   'check_result_viewed',
   'tester_invite_shown',
   'tester_invite_clicked',
@@ -62,7 +74,7 @@ export function isAnonymousOnlyEvent(event: string): boolean {
  *
  * 경로 자체를 여기 등록해 두고 서버가 판정한다. 하위 경로(`/check/xxx`)도 포함한다.
  */
-export const ANONYMOUS_PATHS = ['/check'] as const
+export const ANONYMOUS_PATHS = ['/check','/contract-talk'] as const
 
 /**
  * 주어진 경로가 익명 경로면 그 **정규화된 경로**를 돌려준다. 아니면 null.
@@ -94,7 +106,12 @@ export function resolveAnonymousProperties(
   properties: unknown
 ): Record<string, string> | null {
   if (isAnonymousOnlyEvent(event)) {
-    return sanitizeAnonymousProperties(properties)
+    const clean: Record<string, string> = sanitizeAnonymousProperties(properties)
+    if (event === 'check_next_action_clicked' && properties && typeof properties === 'object') {
+      const action = (properties as Record<string, unknown>).action
+      if (action === 'ask' || action === 'contract_talk' || action === 'guide') clean.action = action
+    }
+    return clean
   }
 
   // 익명 경로의 page_view. 경로만 정규화해서 남기고 식별자는 붙이지 않는다.

@@ -1,0 +1,1 @@
+-- 초기 로컬 초안은 정식 db/migration-045-contract-talk.sql로 대체됨. 이 파일을 실행하지 않는다.

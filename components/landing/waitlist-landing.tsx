@@ -18,8 +18,8 @@ const COUNT_DISPLAY_THRESHOLD = 30
 
 type Role = 'tenant' | 'landlord' | 'broker'
 
-/** 파일럿 신청에서 받는 역할. 임대인은 카드를 발급받는 쪽이 아니라 확인하는 쪽이라 제외한다. */
-const PILOT_ROLES: Role[] = ['tenant', 'broker']
+/** 카드 발급·열람과 상호 확인에 참여하는 세 역할의 파일럿 신청을 받는다. */
+const PILOT_ROLES: Role[] = ['tenant', 'landlord', 'broker']
 
 const ROLE_LABEL: Record<Role, string> = {
   tenant: '임차인',
@@ -548,7 +548,7 @@ function SignupForm({ onSuccess }: { onSuccess: (count: number) => void }) {
         <legend className="mb-1.5 block text-sm font-medium text-white/90">
           어떤 입장이신가요? <span className="text-[#E9A23B]">*</span>
         </legend>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
           {PILOT_ROLES.map((r) => (
             <button
               key={r}

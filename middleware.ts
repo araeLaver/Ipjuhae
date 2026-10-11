@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { Ratelimit } from '@upstash/ratelimit'
 import { Redis } from '@upstash/redis/cloudflare'
+import { contractTalkReturnPath } from '@/lib/safe-redirect'
 import { getRequestContext } from '@/lib/request-context'
 
 /**
@@ -358,7 +359,8 @@ export async function middleware(request: NextRequest) {
   if (isAuthPage && isAuthenticated) {
     // user_type에 맞는 홈으로 리다이렉트
     const destination =
-      userType === 'landlord' ? '/landlord' : userType === 'admin' ? '/admin' : '/profile'
+      contractTalkReturnPath(request.nextUrl.searchParams.get('redirect')) ??
+      (userType === 'landlord' ? '/landlord' : userType === 'admin' ? '/admin' : '/profile')
     const response = NextResponse.redirect(new URL(destination, request.url))
     response.headers.set('x-request-id', requestId)
     response.headers.set('x-trace-id', traceId)

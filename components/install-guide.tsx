@@ -8,7 +8,7 @@
  *
  * 설치 파일(APK)을 직접 내려주는 길도 만들어 봤다가 접었다. 85MB인 데다
  * 안드로이드가 "출처를 알 수 없는 앱" 경고를 띄우고, 대부분 거기서 그만둔다.
- * 지금은 플레이스토어의 테스트 참여 경로가 유일하게 깔끔한 길이다.
+ * 웹에서 바로 사용하고 홈 화면에 추가한다. 플레이스토어 테스트는 선택 사항이다.
  */
 
 import { useEffect, useState } from 'react'
@@ -39,43 +39,18 @@ function Step({ n, children }: { n: number; children: React.ReactNode }) {
 }
 
 function AndroidGuide() {
-  return (
-    <Card className="space-y-4 p-5 sm:p-6">
-      <div className="space-y-1.5">
-        <h2 className="text-base font-bold">안드로이드</h2>
-        <p className="text-xs text-muted-foreground">
-          플레이스토어에서 받습니다. 지금은 테스트 참여로 열립니다
-        </p>
-      </div>
-
-      <a
-        href={TESTING_URL}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-flex w-full items-center justify-center rounded-lg bg-primary px-4 py-3 text-sm font-bold text-primary-foreground transition-opacity hover:opacity-90"
-      >
-        테스터로 참여하고 설치하기
-      </a>
-
-      <ol className="space-y-2.5">
-        <Step n={1}>위 버튼을 누르면 구글 페이지가 열립니다</Step>
-        <Step n={2}>
-          <strong className="font-semibold">테스터 되기</strong> 를 누릅니다. 폰에 로그인된 구글
-          계정으로 참여됩니다
-        </Step>
-        <Step n={3}>
-          같은 화면의 <strong className="font-semibold">Google Play에서 다운로드</strong> 로
-          설치합니다
-        </Step>
-      </ol>
-
-      <p className="text-xs leading-relaxed text-muted-foreground">
-        정식 출시 전이라 이 경로로만 설치됩니다. 구글은 새 개인 개발자 계정에 대해 테스터
-        12명이 14일 동안 참여할 것을 요구하는데, 그 조건을 채우는 중입니다. 설치해 두시는 것만으로
-        도움이 됩니다.
-      </p>
-    </Card>
-  )
+  return <Card className="space-y-4 p-5 sm:p-6">
+    <h2 className="text-base font-bold">안드로이드</h2>
+    <p className="text-sm text-muted-foreground">테스트 참여 없이 웹에서 바로 쓰고 홈 화면에 추가할 수 있습니다.</p>
+    <a href="/check?from=install" className="inline-flex w-full items-center justify-center rounded-lg bg-primary px-4 py-3 text-sm font-bold text-primary-foreground">웹에서 바로 사용하기</a>
+    <ol className="space-y-2.5">
+      <Step n={1}>Chrome에서 www.ipjuhae.com/check를 엽니다.</Step>
+      <Step n={2}>브라우저 메뉴에서 홈 화면에 추가를 누르고, 앱 설치 또는 바로가기 만들기를 선택합니다.</Step>
+      <Step n={3}>홈 화면의 입주해 아이콘으로 다시 열어 후보와 질문을 확인하세요.</Step>
+    </ol>
+    <p className="text-xs text-muted-foreground">기기와 브라우저에 따라 메뉴 이름이 다를 수 있습니다. 보관한 후보와 질문 링크는 사용한 브라우저에 저장됩니다.</p>
+    <details className="border-t pt-3"><summary className="text-sm font-semibold">Google Play 테스트 버전 이용</summary><p className="mt-2 text-xs text-muted-foreground">테스트 참여 권한이 있는 Google 계정에서 이용할 수 있습니다. 참여가 안 되면 위의 웹 이용 경로를 사용하세요.</p><a href={TESTING_URL} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-sm text-primary underline">테스터로 참여하고 설치하기</a></details>
+  </Card>
 }
 
 function IosGuide() {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 
 // 신청자·방문자가 원하는 기능을 남기는 소통창구.
 // dark: 랜딩(네이비 배경)용, 기본: 미리보기(밝은 배경)용.
@@ -8,16 +8,18 @@ export function FeatureRequestForm({
   source,
   dark = false,
 }: {
-  source: 'preview' | 'landing'
+  source: 'preview' | 'landing' | 'contract-talk' | 'app'
   dark?: boolean
 }) {
+  const sending=useRef(false)
   const [message, setMessage] = useState('')
   const [contact, setContact] = useState('')
   const [status, setStatus] = useState<'idle' | 'sending' | 'done' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
 
   const submit = async () => {
-    if (!message.trim() || status === 'sending') return
+    if (!message.trim() || sending.current) return
+    sending.current=true
     setStatus('sending')
     setErrorMsg('')
     try {
@@ -36,7 +38,7 @@ export function FeatureRequestForm({
     } catch {
       setErrorMsg('전송에 실패했습니다. 잠시 후 다시 시도해주세요.')
       setStatus('error')
-    }
+    } finally {sending.current=false}
   }
 
   const inputBase = dark
@@ -48,7 +50,7 @@ export function FeatureRequestForm({
       <div className={`rounded-2xl border p-6 text-center ${dark ? 'border-white/15 bg-white/5 text-white' : 'bg-background'}`}>
         <p className="text-lg font-bold">의견이 접수됐어요</p>
         <p className={`mt-1 text-sm ${dark ? 'text-white/70' : 'text-muted-foreground'}`}>
-          보내주신 요구사항은 개발 우선순위에 바로 반영됩니다. 감사합니다!
+          보내주신 의견은 기능 개선을 검토할 때 참고합니다. 감사합니다!
         </p>
       </div>
     )
@@ -58,7 +60,7 @@ export function FeatureRequestForm({
     <div className={`rounded-2xl border p-6 ${dark ? 'border-white/15 bg-white/5 text-white' : 'bg-background'}`}>
       <p className="text-lg font-bold">이런 기능이 필요해요</p>
       <p className={`mt-1 text-sm ${dark ? 'text-white/70' : 'text-muted-foreground'}`}>
-        원하는 기능이나 아쉬운 점을 알려주세요. 보내주신 의견이 개발 순서를 정합니다.
+        대화 원문·소득·세금·연락처 등 개인정보를 적지 말고, 불편한 동작을 자발적으로 설명해주세요. 보내주신 의견은 기능 개선 검토에 참고합니다.
       </p>
       <textarea
         value={message}
@@ -70,14 +72,14 @@ export function FeatureRequestForm({
         aria-label="원하는 기능"
       />
       <div className="mt-2 flex flex-col gap-2 sm:flex-row">
-        <input
+        {(source==='preview'||source==='landing')&&<input
           value={contact}
           onChange={(e) => setContact(e.target.value)}
           maxLength={100}
           placeholder="연락처 (선택 — 답변받고 싶을 때만)"
           className={inputBase}
           aria-label="연락처 (선택)"
-        />
+        />}
         <button
           type="button"
           onClick={submit}

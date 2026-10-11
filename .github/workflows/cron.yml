@@ -19,6 +19,7 @@ on:
           - trust-outbox
           - trust-maintenance
           - references
+          - contract-talk
 
 permissions:
   contents: read
@@ -119,3 +120,34 @@ jobs:
             --connect-timeout 10 --max-time 240 \
             -H "Authorization: Bearer $CRON_SECRET" \
             "$APP_URL/api/cron/references"
+
+  contract-talk:
+    name: Purge expired contract conversation records
+    if: >-
+      github.event.schedule == '0 18 * * *' ||
+      (github.event_name == 'workflow_dispatch' && inputs.target == 'contract-talk')
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 4
+    concurrency:
+      group: cron-contract-talk
+      cancel-in-progress: false
+    steps:
+      - name: Remove only expired conversation records
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          if [ -z "$APP_URL" ] || [ -z "$CRON_SECRET" ]; then
+            echo "::error::Existing APP_URL and CRON_SECRET are required."
+            exit 1
+          fi
+          case "$APP_URL" in
+            https://*) ;;
+            *) exit 1 ;;
+          esac
+          curl --fail-with-body --silent --show-error \
+            --connect-timeout 10 --max-time 180 \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            "${APP_URL%/}/api/cron/contract-talk"

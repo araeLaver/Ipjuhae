@@ -238,6 +238,8 @@ class ApiClient {
     });
   }
 
+  async patch<T>(url:string,body?:unknown):Promise<T>{return this.request<T>(url,{method:'PATCH',body:body?JSON.stringify(body):undefined})}
+
   async put<T>(url: string, body?: unknown): Promise<T> {
     return this.request<T>(url, {
       method: 'PUT',
