@@ -7,6 +7,7 @@ import { getAttribution } from '@/lib/attribution'
 import { track } from '@/lib/analytics-client'
 import { CANDIDATES_KEY, CHECKLIST, MAX_CANDIDATES, decodeCandidates, encodeCandidates, type CheckCandidate } from '@/lib/check-candidates'
 import { calculateDepositRisk, cushionLabel, manwon, type DepositRiskInput } from '@/lib/deposit-risk'
+import { CandidateNextSteps } from '@/components/candidate-next-steps'
 
 export function CheckCandidates({ input, onLoad }: { input: DepositRiskInput | null; onLoad: (input: DepositRiskInput) => void }) {
   const [items, setItems] = useState<CheckCandidate[]>([])
@@ -65,6 +66,7 @@ export function CheckCandidates({ input, onLoad }: { input: DepositRiskInput | n
       {(['marketPriceManwon', 'depositManwon', 'mortgageMaxManwon', 'priorDepositsManwon'] as const).map((key, i) => <tr key={key}><th className="p-2 text-left">{['매매 시세', '보증금', '근저당 채권최고액', '선순위 보증금'][i]}</th>{items.map(item => <td className="p-2" key={item.id}>{manwon(item.input[key])}</td>)}</tr>)}
       <tr><th className="p-2 text-left">시세 대비 부담</th>{items.map(item => <td className="p-2" key={item.id}>{Math.round(calculateDepositRisk(item.input).burdenRatio * 100)}%</td>)}</tr>
       <tr><th className="p-2 text-left">시세대로 팔릴 때</th>{items.map(item => <td className="p-2" key={item.id}>{cushionLabel(calculateDepositRisk(item.input).cushionManwon)}</td>)}</tr>
+      <tr><th className="p-2 text-left">남은 확인</th>{items.map(item => <td className="p-2" key={item.id}>{item.checked.filter(value => !value).length}개</td>)}</tr>
     </tbody></table></div>}
     {items.map(item => <article key={item.id} className="space-y-3 rounded-lg border p-4">
       <h3 className="font-semibold">{item.label}</h3>
@@ -72,6 +74,7 @@ export function CheckCandidates({ input, onLoad }: { input: DepositRiskInput | n
       <p className="text-sm">{calculateDepositRisk(item.input).headline}</p>
       <div className="flex gap-2"><Button type="button" variant="outline" onClick={() => { onLoad(item.input); setNotice('저장한 숫자를 점검에 불러왔습니다. 변경 후 다시 확인할 수 있습니다.') }}>이 후보 다시 점검</Button><Button type="button" variant="outline" aria-label={`${item.label} 삭제`} onClick={() => change(current => current.filter(value => value.id !== item.id), '후보를 삭제했습니다.')}>삭제</Button></div>
       <fieldset className="space-y-2"><legend className="mb-2 text-sm font-semibold">계약 전 확인 기록 ({item.checked.filter(Boolean).length}/{CHECKLIST.length})</legend>{CHECKLIST.map((text, index) => <label key={text} className="flex items-start gap-2 text-sm"><input type="checkbox" checked={item.checked[index]} onChange={event => change(current => current.map(value => value.id === item.id ? { ...value, checked: value.checked.map((checked, i) => i === index ? event.target.checked : checked) } : value), '확인 기록을 저장했습니다.', 'check_checklist_updated')} />{text}</label>)}</fieldset>
+      <CandidateNextSteps checked={item.checked} onAsk={() => track('check_next_action_clicked', { properties: { surface: 'web', action: 'ask', level: calculateDepositRisk(item.input).level, ...getAttribution() } })} />
     </article>)}
     {clearing && <div role="alert" className="space-y-2 rounded-lg border p-3"><p className="text-sm">저장한 후보와 확인 기록을 모두 지울까요?</p><Button type="button" onClick={() => { try { localStorage.removeItem(CANDIDATES_KEY); setItems([]); setError(''); setNotice('저장 데이터를 초기화했습니다.'); setClearing(false) } catch { setError('저장 데이터를 지우지 못했습니다. 브라우저 권한을 확인하세요.') } }}>모두 지우기</Button><Button type="button" variant="outline" onClick={() => setClearing(false)}>취소</Button></div>}
     <p className="text-xs text-muted-foreground">확인 표시는 본인이 남기는 기록입니다. 계산 결과와 체크리스트는 계약의 안전을 보장하지 않습니다. 저장 이후 숫자나 등기부가 달라졌다면 다시 확인하세요.</p>
