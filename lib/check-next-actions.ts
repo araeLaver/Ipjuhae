@@ -23,7 +23,23 @@ export function checkNextActions(level: RiskLevel): CheckAction[] {
 }
 const labels: Record<RiskLevel, string> = { safe: '여유 있음', caution: '주의', danger: '위험', critical: '매우 위험' }
 export function checkQuestionHref(level: RiskLevel): string { return `/community#ask=check-${level}` }
+// Order matches the existing four checklist entries; saved records need no migration.
+export const CANDIDATE_TASKS = [
+  { id: 'register', action: { ...registration, title: '최신 등기부 확인', question: '최신 등기부의 갑구·을구에서 어떤 권리 제한과 근저당을 확인해야 하나요?' } },
+  { id: 'owner', action: { title: '계약 상대와 소유자 확인', documents: '등기부 갑구·계약서 초안과 계약 상대 확인 자료', contact: '공인중개사·임대인', question: '계약 상대와 등기부 소유자가 같은지 어떻게 확인하나요? 대리 계약이면 어떤 자료를 확인해야 하나요?' } },
+  { id: 'senior', action: senior },
+  { id: 'guarantee', action: guarantee },
+] as const
+export function remainingCandidateTasks(checked: readonly boolean[]) {
+  return CANDIDATE_TASKS.filter((_, index) => checked[index] !== true)
+}
+export function candidateQuestionHref(id: typeof CANDIDATE_TASKS[number]['id']) { return `/community#ask=task-${id}` }
 export function checkQuestionDraft(hash: string): { title: string; body: string } | null {
+  const task = CANDIDATE_TASKS.find(item => hash === `#ask=task-${item.id}`)
+  if (task) return {
+    title: `${task.action.title} 방법을 질문합니다`,
+    body: `저장한 후보의 계약 전 확인 항목 중 '${task.action.title}'을 아직 확인하지 못했습니다.\n\n${task.action.question}\n\n확인할 자료: ${task.action.documents}\n제가 확인한 내용: [직접 적어주세요]\n막힌 부분: [직접 적어주세요]\n\n주소·건물명·연락처·계약서 원본 등 개인정보는 적지 않겠습니다.`,
+  }
   const level = hash.replace(/^#ask=check-/, '')
   if (!hash.startsWith('#ask=check-') || !Object.prototype.hasOwnProperty.call(labels, level)) return null
   const grade = level as RiskLevel
