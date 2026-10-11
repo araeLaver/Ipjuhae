@@ -67,7 +67,7 @@ export function mergePolicyNews(previous: PolicyNewsItem[], fresh: PolicyNewsIte
 }
 
 /** Session advisory lock prevents scheduler/manual/backup cron from collecting concurrently. */
-export async function refreshPolicyNews() {
+export async function refreshPolicyNews(options: { force?: boolean } = {}) {
   const key = process.env.PUBLIC_DATA_API_KEY
   if (!key) throw new Error('POLICY_API_KEY_MISSING')
   const client = await pool.connect()
@@ -79,7 +79,7 @@ export async function refreshPolicyNews() {
     const state = (await client.query<State>('SELECT * FROM policy_news_state WHERE id = 1')).rows[0]
     if (!state) throw new Error('POLICY_STORE_NOT_READY')
     const interval = state.last_error ? 15 * 60 * 1000 : HOUR
-    if (state.last_attempt_at && Date.now() - new Date(state.last_attempt_at).getTime() < interval) {
+    if (!options.force && state.last_attempt_at && Date.now() - new Date(state.last_attempt_at).getTime() < interval) {
       return { skipped: true, reason: 'not_due' }
     }
     await client.query('UPDATE policy_news_state SET last_attempt_at = now() WHERE id = 1')
