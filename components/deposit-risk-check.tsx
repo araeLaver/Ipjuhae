@@ -15,6 +15,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { TesterInvite } from '@/components/tester-invite'
 import { ShareCheck } from '@/components/share-check'
+import { CheckNextActions } from '@/components/check-next-actions'
+import { checkQuestionHref } from '@/lib/check-next-actions'
 import { CheckCandidates } from '@/components/check-candidates'
 import { MarketPricePicker } from '@/components/market-price-picker'
 import { track } from '@/lib/analytics-client'
@@ -218,23 +220,14 @@ export function DepositRiskCheck() {
             </div>
           </dl>
 
-          <section className="space-y-3">
-            <h3 className="text-sm font-bold">지금 하실 일</h3>
-            <ol className="space-y-2.5">
-              {result.actions.map((a, i) => (
-                <li key={i} className="flex gap-3 text-sm leading-relaxed">
-                  <span className="shrink-0 font-bold text-primary">{i + 1}</span>
-                  <span>{a}</span>
-                </li>
-              ))}
-            </ol>
-          </section>
+          <CheckNextActions level={result.level} />
 
           <section className="space-y-3">
             <h3 className="text-sm font-bold">다음으로 확인하기</h3>
-            <Link href="/community#ask" onClick={() => nextAction('ask')} className="block rounded-md bg-primary px-4 py-3 text-center text-sm font-semibold text-primary-foreground">
+            <Link href={checkQuestionHref(result.level)} onClick={() => nextAction('ask')} className="block rounded-md bg-primary px-4 py-3 text-center text-sm font-semibold text-primary-foreground">
               등기부 내용을 질문하기
             </Link>
+            <p className="text-xs text-muted-foreground">확인할 내용으로 질문 초안을 채웁니다. 금액은 자동으로 넣지 않으며 검토 후 직접 등록합니다.</p>
             <Link href="/contract-talk" onClick={() => nextAction('contract_talk')} className="block rounded-md border px-4 py-3 text-center text-sm font-semibold text-primary">
               집주인과 계약 전 확인하기
             </Link>
