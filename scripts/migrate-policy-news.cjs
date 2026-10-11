@@ -41,9 +41,12 @@ if (require.main === module) {
   }
   migratePolicyNews().then(async () => {
     const { refreshPolicyNews, getPolicyNewsStatus } = require('../build/policy-news.cjs')
-    const result = await refreshPolicyNews()
+    // A release may change selection rules; the old snapshot cannot validate the new collector.
+    // Force only the due-time check. Advisory locking and the shared API budget still apply.
+    const result = await refreshPolicyNews({ force: true })
     const health = await getPolicyNewsStatus()
-    if (health.status !== 'ok' || (result && 'complete' in result && !result.complete)) {
+    if (health.status !== 'ok' || (result && 'complete' in result && !result.complete)
+      || (result && 'skipped' in result && result.skipped)) {
       throw new Error('INITIAL_REFRESH_FAILED')
     }
     console.log('[policy-news] release freshness verified')

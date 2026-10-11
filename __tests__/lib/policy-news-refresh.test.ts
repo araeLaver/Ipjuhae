@@ -49,6 +49,26 @@ describe('policy collection', () => {
 })
 
 describe('durable refresh', () => {
+  it('refreshes a recent snapshot for a release but preserves normal scheduling and locks', async () => {
+    vi.stubEnv('PUBLIC_DATA_API_KEY', 'secret')
+    const request = vi.fn(async () => new Response(xml()))
+    vi.stubGlobal('fetch', request)
+    mocks.query.mockImplementation(async (sql: string) => {
+      if (sql.includes('pg_try_advisory_lock')) return { rows: [{ locked: true }] }
+      if (sql.startsWith('SELECT *')) return { rows: [{ items: [], last_attempt_at: new Date(), last_error: null }] }
+      if (sql.includes('RETURNING api_calls')) return { rows: [{ api_calls: 1 }], rowCount: 1 }
+      return { rows: [], rowCount: 1 }
+    })
+    expect(await refreshPolicyNews()).toEqual({ skipped: true, reason: 'not_due' })
+    expect(request).not.toHaveBeenCalled()
+    expect(await refreshPolicyNews({ force: true })).toMatchObject({ complete: true, count: 1, checkedWindows: 15 })
+    expect(request).toHaveBeenCalledTimes(15)
+    expect(mocks.query.mock.calls.filter(([sql]) => sql.includes('RETURNING api_calls'))).toHaveLength(15)
+    expect(mocks.release).toHaveBeenCalledTimes(2)
+    mocks.query.mockResolvedValue({ rows: [{ locked: false }] })
+    expect(await refreshPolicyNews({ force: true })).toEqual({ skipped: true, reason: 'running' })
+    expect(request).toHaveBeenCalledTimes(15)
+  })
   it('exposes the latest partial failure even if the previous full collection is recent', () => {
     const now = new Date('2026-10-11T02:00:00Z')
     expect(policyStatus({ items: [item], last_attempt_at: now, last_success_at: now, failed_windows: 1, last_error: 'UPSTREAM_PARTIAL_FAILURE' }, now).status).toBe('degraded')
