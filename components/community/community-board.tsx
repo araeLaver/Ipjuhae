@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState, useRef } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { Header } from '@/components/layout/header'
@@ -13,6 +13,7 @@ import { ArrowRight, MessageSquare, PenLine } from 'lucide-react'
 import { FollowUpQuestions } from '@/components/community/follow-up-questions'
 import { rememberQuestion } from '@/lib/community-follow-up'
 import { AnswerStatus } from '@/components/community/answer-status'
+import { checkQuestionDraft } from '@/lib/check-next-actions'
 import { AuthorRoleBadge } from '@/components/community/author-role-badge'
 import {
   AUDIENCE_LABELS,
@@ -61,6 +62,20 @@ export function CommunityBoard() {
   const [audiencePicked, setAudiencePicked] = useState(false)
   const [created, setCreated] = useState<{ id: string; saved: boolean } | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [draftNotice, setDraftNotice] = useState(false)
+  const editing = useRef(false)
+  editing.current = Boolean(title || body)
+  useEffect(() => {
+    const apply = () => {
+      const draft = checkQuestionDraft(window.location.hash)
+      if (!draft || editing.current) return
+      setTitle(draft.title); setBody(draft.body); setWriting(true); setDraftNotice(true)
+      setAudience('all'); setAudiencePicked(true)
+      requestAnimationFrame(() => document.getElementById('ask')?.scrollIntoView({ block: 'center' }))
+    }
+    apply(); window.addEventListener('hashchange', apply)
+    return () => window.removeEventListener('hashchange', apply)
+  }, [])
   /** 연재별 펼침 여부. 18편을 한 번에 세우면 게시판이 화면 밖으로 밀린다. */
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
 
@@ -137,6 +152,7 @@ export function CommunityBoard() {
    * 토글도 없앤다 — 여는 것만 하고 닫기는 `취소` 버튼이 맡는다.
    */
   const openWriting = useCallback(() => {
+    setDraftNotice(false)
     // 계정을 만들라고 하지 않는다. 익명으로 바로 쓴다.
     setAudience(defaultAudienceFor(tab))
     setAudiencePicked(false)
@@ -166,6 +182,7 @@ export function CommunityBoard() {
         setTitle('')
         setBody('')
         setWriting(false)
+        setDraftNotice(false)
         load(tab)
       } else {
         const d = await res.json().catch(() => null)
@@ -230,6 +247,7 @@ export function CommunityBoard() {
           </p>
           {writing ? (
             <div className="mt-4 space-y-3">
+              {draftNotice && <p role="status" className="text-sm text-primary">점검 질문 초안을 넣었습니다. 금액과 주소는 가져오지 않았습니다. 내용을 확인·수정한 뒤 직접 올려주세요.</p>}
               <Input
                 autoFocus
                 placeholder="제목"

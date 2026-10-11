@@ -15,7 +15,7 @@ it('counts first input once, connects results to real next actions, and invalida
   expect(track.mock.calls.filter(call => call[0] === 'check_started')).toHaveLength(1)
   fireEvent.click(screen.getByRole('button', { name: '확인하기' }))
   const ask = screen.getByRole('link', { name: '등기부 내용을 질문하기' })
-  expect(ask.getAttribute('href')).toBe('/community#ask')
+  expect(ask.getAttribute('href')).toBe('/community#ask=check-caution')
   expect(screen.getByRole('link', { name: '집주인과 계약 전 확인하기' }).getAttribute('href')).toBe('/contract-talk')
   expect(screen.getByRole('link', { name: /10화/ }).getAttribute('href')).toBe('/guides/deungi/10')
   fireEvent.click(ask)
