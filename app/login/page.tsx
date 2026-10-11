@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, Suspense } from 'react'
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -37,6 +37,8 @@ export default function LoginPage() {
 }
 
 function LoginContent() {
+  const emailRef = useRef<HTMLInputElement>(null)
+  const [focusEmail, setFocusEmail] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
@@ -56,6 +58,13 @@ function LoginContent() {
   // 로그인 수단 세 가지(비밀번호·매직 링크·소셜)가 전부 이 값을 들고 가야
   // 사용자가 어느 버튼을 눌러도 같은 자리로 돌아온다.
   const redirectTo = safeRedirectPath(searchParams?.get('redirect'))
+
+  useEffect(() => {
+    if (focusEmail && mode === 'password') {
+      emailRef.current?.focus()
+      setFocusEmail(false)
+    }
+  }, [focusEmail, mode])
 
   // Resend cooldown timer
   useEffect(() => {
@@ -242,11 +251,23 @@ function LoginContent() {
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {searchParams?.get('error') === 'oauth_unavailable' && (
+                <div role="status" aria-live="polite" className="mb-4 space-y-2 rounded-md border p-3 text-sm">
+                  <p className="font-semibold">소셜 로그인을 사용할 수 없습니다</p>
+                  <p>현재 이 로그인 방식으로 진행할 수 없습니다. 이메일과 비밀번호로 로그인해 주세요.</p>
+                  <Button type="button" variant="outline" className="w-full" onClick={() => {
+                    setMode('password')
+                    setFocusEmail(true)
+                  }}>이메일로 로그인</Button>
+                  <p className="text-muted-foreground">이메일과 비밀번호로 가입한 계정이 없다면, 나중에 소셜 로그인을 다시 시도해 주세요.</p>
+                </div>
+              )}
               {mode === 'magic' ? (
                 <form onSubmit={handleMagicLink} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="email">이메일</Label>
                     <Input
+                      ref={emailRef}
                       id="email"
                       type="email"
                       value={formData.email}
@@ -295,6 +316,7 @@ function LoginContent() {
                   <div className="space-y-2">
                     <Label htmlFor="email">이메일</Label>
                     <Input
+                      ref={emailRef}
                       id="email"
                       type="email"
                       value={formData.email}

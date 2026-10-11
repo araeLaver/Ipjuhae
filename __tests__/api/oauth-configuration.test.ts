@@ -61,3 +61,35 @@ it('지원하지 않는 provider는 400으로 거절한다', async () => {
   })
   expect(response.status).toBe(400)
 })
+
+describe('브라우저 시작 차단 복구', () => {
+  it.each(names)('%s HTML 진입은 지속 안내로 복귀하고 state를 생성하지 않는다', async (provider) => {
+    vi.stubEnv('NEXT_PUBLIC_BASE_URL', 'http://localhost:3000')
+    const response = await start(new Request(`http://localhost/api/auth/social/${provider}?redirect=${encodeURIComponent('/community/abc?tab=latest')}`, {
+      headers: { Accept: 'text/html,application/xhtml+xml' },
+    }), { params: Promise.resolve({ provider }) })
+    expect(response.status).toBe(307)
+    const location = new URL(response.headers.get('location')!)
+    expect(location.pathname).toBe('/login')
+    expect(location.searchParams.get('error')).toBe('oauth_unavailable')
+    expect(location.searchParams.get('redirect')).toBe('/community/abc?tab=latest')
+    expect(response.headers.get('set-cookie')).toBeNull()
+    expect(response.headers.get('vary')).toBe('Accept')
+  })
+
+  it.each(['https://evil.example', '//evil.example', '/\\evil.example', '/bad\npath'])('차단 복구에서도 위험한 목적지를 제외한다: %s', async (redirect) => {
+    const response = await start(new Request(`http://localhost/api/auth/social/kakao?redirect=${encodeURIComponent(redirect)}`, {
+      headers: { Accept: 'text/html' },
+    }), { params: Promise.resolve({ provider: 'kakao' }) })
+    expect(new URL(response.headers.get('location')!).searchParams.has('redirect')).toBe(false)
+  })
+
+  it.each(['application/json', '*/*'])('API Accept %s는 503 계약을 유지한다', async (accept) => {
+    const response = await start(new Request('http://localhost/api/auth/social/kakao', {
+      headers: { Accept: accept },
+    }), { params: Promise.resolve({ provider: 'kakao' }) })
+    expect(response.status).toBe(503)
+    expect(response.headers.get('location')).toBeNull()
+    expect(response.headers.get('set-cookie')).toBeNull()
+  })
+})

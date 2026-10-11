@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { AuthProvider } from '@/types/database'
 import { generateState, getAuthorizeUrl, isProviderEnabled, getProviderConfiguration } from '@/lib/oauth'
+import { getBaseUrl } from '@/lib/base-url'
 import { safeRedirectPath } from '@/lib/safe-redirect'
 
 const VALID_PROVIDERS: AuthProvider[] = ['kakao', 'naver', 'google']
@@ -24,9 +25,20 @@ export async function GET(
       provider: authProvider,
       ...getProviderConfiguration(authProvider),
     })
+    // HTML navigation gets a recovery page; API clients retain the 503 contract.
+    if (request.headers.get('accept')?.split(',').some((type) => type.trim().split(';')[0] === 'text/html')) {
+      const login = new URL('/login', getBaseUrl())
+      login.searchParams.set('error', 'oauth_unavailable')
+      const redirectTo = safeRedirectPath(new URL(request.url).searchParams.get('redirect'))
+      if (redirectTo) login.searchParams.set('redirect', redirectTo)
+      const response = NextResponse.redirect(login)
+      response.headers.set('Vary', 'Accept')
+      response.headers.set('Cache-Control', 'no-store')
+      return response
+    }
     return NextResponse.json(
       { error: '현재 사용할 수 없는 로그인 방식입니다' },
-      { status: 503 }
+      { status: 503, headers: { Vary: 'Accept', 'Cache-Control': 'no-store' } }
     )
   }
 

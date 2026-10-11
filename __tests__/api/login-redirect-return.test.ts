@@ -195,3 +195,29 @@ describe('매직 링크 콜백 — 공개 주소로 돌려보낸다 (내부 바�
     expect(location.pathname).toBe('/community/abc')
   })
 })
+
+describe('소셜 오류 복구 — 목적지 보존과 쿠키 정리', () => {
+  it.each(['oauth_denied', 'state_mismatch', 'email_exists', 'oauth_failed'])('%s 오류에도 검증된 목적지를 이메일 로그인에 전달한다', async (error) => {
+    const { exchangeCode } = await import('@/lib/oauth')
+    const req = new NextRequest(`http://localhost:3000/api/auth/social/kakao/callback?${error === 'oauth_denied' ? 'error=access_denied' : 'code=c1&state=state-uuid'}`)
+    req.cookies.set('oauth_state', error === 'state_mismatch' ? 'wrong' : 'state-uuid')
+    req.cookies.set('oauth_redirect', '/community/abc?tab=latest')
+    if (error === 'email_exists') {
+      vi.mocked(queryOne).mockResolvedValueOnce(null).mockResolvedValueOnce({ id: 'email-user' })
+    }
+    if (error === 'oauth_failed') vi.mocked(exchangeCode).mockRejectedValueOnce(new Error('fixture'))
+    const response = await socialCallback(req, { params: kakaoParams })
+    expect(locationOf(response).searchParams.get('error')).toBe(error)
+    expect(locationOf(response).searchParams.get('redirect')).toBe('/community/abc?tab=latest')
+    expect(response.headers.get('set-cookie')).toContain('oauth_state=;')
+    expect(response.headers.get('set-cookie')).toContain('oauth_redirect=;')
+    if (error === 'oauth_denied' || error === 'state_mismatch') expect(exchangeCode).not.toHaveBeenCalled()
+  })
+
+  it.each(['https://evil.example', '//evil.example', '/bad\npath'])('오류 쿠키의 위험한 목적지를 제외한다: %s', async (redirect) => {
+    const req = new NextRequest('http://localhost:3000/api/auth/social/kakao/callback?error=access_denied')
+    req.cookies.set('oauth_redirect', redirect)
+    const response = await socialCallback(req, { params: kakaoParams })
+    expect(locationOf(response).searchParams.has('redirect')).toBe(false)
+  })
+})

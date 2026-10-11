@@ -18,35 +18,35 @@ export async function GET(
   const { provider } = await params
   const base = getBaseUrl()
 
+  const redirectTo = safeRedirectPath(request.cookies.get(REDIRECT_COOKIE)?.value)
+  const clearState = (res: NextResponse) => {
+    res.cookies.delete(STATE_COOKIE)
+    res.cookies.delete(REDIRECT_COOKIE)
+    return res
+  }
+  const loginError = (error: string, includeProvider = false) => {
+    const login = new URL('/login', base)
+    login.searchParams.set('error', error)
+    if (redirectTo) login.searchParams.set('redirect', redirectTo)
+    if (includeProvider) login.searchParams.set('provider', provider)
+    return clearState(NextResponse.redirect(login))
+  }
+
   if (!VALID_PROVIDERS.includes(provider as AuthProvider)) {
-    return NextResponse.redirect(`${base}/login?error=invalid_provider`)
+    return loginError('invalid_provider')
   }
 
   const url = new URL(request.url)
   const code = url.searchParams.get('code')
   const stateParam = url.searchParams.get('state')
   const error = url.searchParams.get('error')
+  if (error || !code) return loginError('oauth_denied')
 
-  if (error || !code) {
-    return NextResponse.redirect(`${base}/login?error=oauth_denied`)
-  }
-
-  // CSRF state 검증
+  // CSRF state 검증은 token 교환 전에 유지한다.
   const stateCookie = request.cookies.get(STATE_COOKIE)?.value
   if (!stateCookie || !stateParam || stateCookie !== stateParam) {
-    const res = NextResponse.redirect(`${base}/login?error=state_mismatch`)
-    res.cookies.delete(STATE_COOKIE)
-    return res
+    return loginError('state_mismatch')
   }
-
-  const clearState = (res: NextResponse) => {
-    res.cookies.delete(STATE_COOKIE)
-    res.cookies.delete(REDIRECT_COOKIE)
-    return res
-  }
-
-  // 로그인 시작 시점에 맡겨둔 복귀 자리. 쿠키 값도 그대로 믿지 않고 다시 검증한다.
-  const redirectTo = safeRedirectPath(request.cookies.get(REDIRECT_COOKIE)?.value)
 
   try {
     const accessToken = await exchangeCode(provider as AuthProvider, code)
@@ -73,9 +73,7 @@ export async function GET(
       )
 
       if (emailUser) {
-        return clearState(
-          NextResponse.redirect(`${base}/login?error=email_exists&provider=${provider}`)
-        )
+        return loginError('email_exists', true)
       }
     }
 
@@ -91,6 +89,6 @@ export async function GET(
     return clearState(NextResponse.redirect(`${base}/signup/social?${signupParams.toString()}`))
   } catch (err) {
     logger.error('OAuth callback error', { error: err })
-    return clearState(NextResponse.redirect(`${base}/login?error=oauth_failed`))
+    return loginError('oauth_failed')
   }
 }
