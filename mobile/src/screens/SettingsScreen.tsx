@@ -38,6 +38,14 @@ const SettingsScreen: React.FC<Props> = ({ navigation }) => {
   const { logout } = useAuth();
   const [deleting, setDeleting] = React.useState(false);
 
+  const handleSupport = async () => {
+    try {
+      await Linking.openURL('mailto:ipjuhae.official@gmail.com');
+    } catch {
+      Alert.alert('고객센터', '메일 앱을 열 수 없습니다. ipjuhae.official@gmail.com 으로 문의해주세요.');
+    }
+  };
+
   const handleLogout = () => {
     Alert.alert('로그아웃', '로그아웃 하시겠습니까?', [
       { text: '취소', style: 'cancel' },
@@ -64,7 +72,7 @@ const SettingsScreen: React.FC<Props> = ({ navigation }) => {
             } catch (e) {
               Alert.alert(
                 '삭제하지 못했습니다',
-                '잠시 후 다시 시도해 주세요. 계속 안 되면 support@ipjuhae.com 으로 알려주세요.'
+                '잠시 후 다시 시도해 주세요. 계속 안 되면 ipjuhae.official@gmail.com 으로 알려주세요.'
               );
             } finally {
               setDeleting(false);
@@ -94,7 +102,7 @@ const SettingsScreen: React.FC<Props> = ({ navigation }) => {
         { icon: '🗓️', label: '계약 전 대화 · 보낸/받은 요청', type:'link',onPress:()=>navigation.navigate('ContractTalk') },
         { icon: '📋', label: '이용약관', type: 'link', onPress: () => Linking.openURL('https://www.ipjuhae.com/terms') },
         { icon: '🔐', label: '개인정보처리방침', type: 'link', onPress: () => Linking.openURL('https://www.ipjuhae.com/privacy') },
-        { icon: '📧', label: '고객센터', type: 'link', onPress: () => Linking.openURL('mailto:support@ipjuhae.com') },
+        { icon: '📧', label: '고객센터', type: 'link', onPress: handleSupport },
       ],
     },
     {
