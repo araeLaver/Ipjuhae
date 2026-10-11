@@ -110,7 +110,13 @@ export function Header({ user: providedUser }: HeaderProps = {}) {
     router.refresh()
   }
 
-  const navLinks = user ? linksByRole[user.userType] ?? [] : []
+  const publicLinks = [
+    { href: '/check', label: '보증금 점검' },
+    { href: '/policy/news', label: '정책소식' },
+    { href: '/community', label: '질문 게시판' },
+    { href: '/policy', label: '전세 제도' },
+  ]
+  const navLinks = user ? linksByRole[user.userType] ?? [] : publicLinks
 
   return (
     <>
@@ -169,7 +175,10 @@ export function Header({ user: providedUser }: HeaderProps = {}) {
                 </button>
               </>
             ) : (
-              null
+              <>
+                <Link href="/login" className="hidden min-h-11 items-center px-3 text-sm text-muted-foreground hover:text-foreground md:inline-flex">로그인</Link>
+                <button aria-label="메뉴 열기" aria-expanded={mobileOpen} className="min-h-11 min-w-11 rounded-md p-2 hover:bg-muted md:hidden" onClick={() => setMobileOpen(true)}><Menu className="mx-auto h-5 w-5" /></button>
+              </>
             )}
           </div>
         </div>

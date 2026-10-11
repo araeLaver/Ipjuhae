@@ -37,7 +37,7 @@ export function MobileNav({ open, onClose, user, navLinks, onLogout }: MobileNav
           </div>
         )}
 
-        <nav className="flex flex-col gap-1">
+        <nav aria-label="모바일 메뉴" className="flex flex-col gap-1">
           {navLinks.map((link) => (
             <Link
               key={link.href}
@@ -54,6 +54,8 @@ export function MobileNav({ open, onClose, user, navLinks, onLogout }: MobileNav
           <ThemeToggle />
           <span className="text-sm text-muted-foreground">테마</span>
         </div>
+
+        {!user && <Link href="/login" onClick={onClose} className="min-h-11 rounded-md border px-3 py-3 text-sm">로그인</Link>}
 
         {user && (
           <button
