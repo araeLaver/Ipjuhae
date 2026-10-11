@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { AuthProvider } from '@/types/database'
-import { generateState, getAuthorizeUrl } from '@/lib/oauth'
+import { generateState, getAuthorizeUrl, isProviderEnabled, getProviderConfiguration } from '@/lib/oauth'
 import { safeRedirectPath } from '@/lib/safe-redirect'
 
 const VALID_PROVIDERS: AuthProvider[] = ['kakao', 'naver', 'google']
@@ -16,6 +16,18 @@ export async function GET(
 
   if (!VALID_PROVIDERS.includes(provider as AuthProvider)) {
     return NextResponse.json({ error: '지원하지 않는 로그인 방식입니다' }, { status: 400 })
+  }
+
+  const authProvider = provider as AuthProvider
+  if (!isProviderEnabled(authProvider)) {
+    console.warn('OAuth provider unavailable', {
+      provider: authProvider,
+      ...getProviderConfiguration(authProvider),
+    })
+    return NextResponse.json(
+      { error: '현재 사용할 수 없는 로그인 방식입니다' },
+      { status: 503 }
+    )
   }
 
   const state = generateState()

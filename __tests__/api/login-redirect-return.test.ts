@@ -20,6 +20,8 @@ vi.mock('@/lib/auth', () => ({
 }))
 
 vi.mock('@/lib/oauth', () => ({
+  isProviderEnabled: vi.fn(() => true),
+  getProviderConfiguration: vi.fn(() => ({ clientIdPresent: true, clientSecretPresent: true })),
   generateState: vi.fn(() => 'state-uuid'),
   getAuthorizeUrl: vi.fn(() => 'https://kauth.kakao.com/oauth/authorize?state=state-uuid'),
   exchangeCode: vi.fn(async () => 'access-token'),
