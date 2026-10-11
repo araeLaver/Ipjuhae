@@ -49,6 +49,10 @@ describe('policy collection', () => {
 })
 
 describe('durable refresh', () => {
+  it('exposes the latest partial failure even if the previous full collection is recent', () => {
+    const now = new Date('2026-10-11T02:00:00Z')
+    expect(policyStatus({ items: [item], last_attempt_at: now, last_success_at: now, failed_windows: 1, last_error: 'UPSTREAM_PARTIAL_FAILURE' }, now).status).toBe('degraded')
+  })
   it('reports stale even if older articles exist, and accepts successful empty feeds', () => {
     const now = new Date('2026-10-05T02:00:00Z')
     expect(policyStatus({ items: [item], last_attempt_at: now, last_success_at: new Date('2026-10-03T02:00:00Z'), failed_windows: 1, last_error: 'UPSTREAM_PARTIAL_FAILURE' }, now).status).toBe('stale')

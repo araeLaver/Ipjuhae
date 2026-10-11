@@ -1,6 +1,7 @@
 import pool, { queryOne } from './db'
 import { collectPolicyNews, type PolicyNewsItem } from './policy-news'
 import { logger } from './logger'
+import type { PolicyNewsSnapshot } from './policy-news-summary'
 
 const HOUR = 60 * 60 * 1000
 export const POLICY_NEWS_MAX_AGE = 24 * HOUR
@@ -17,7 +18,9 @@ interface State {
 export function policyStatus(state: State | null, now = new Date()) {
   const lastSuccess = state?.last_success_at ? new Date(state.last_success_at) : null
   return {
-    status: lastSuccess && now.getTime() - lastSuccess.getTime() < POLICY_NEWS_MAX_AGE ? 'ok' : 'stale',
+    status: !lastSuccess || now.getTime() - lastSuccess.getTime() >= POLICY_NEWS_MAX_AGE
+      ? 'stale'
+      : state?.last_error || state?.failed_windows ? 'degraded' : 'ok',
     lastSuccessAt: lastSuccess?.toISOString() ?? null,
     lastAttemptAt: state?.last_attempt_at ? new Date(state.last_attempt_at).toISOString() : null,
     failedWindows: state?.failed_windows ?? 0,
@@ -42,6 +45,18 @@ export async function readPolicyNews(limit = 5): Promise<PolicyNewsItem[]> {
   } catch {
     logger.error('policy_news_store_unavailable')
     return []
+  }
+}
+
+/** Articles and collection time must come from the same persisted snapshot. */
+export async function getPolicyNewsSnapshot(): Promise<PolicyNewsSnapshot> {
+  if (!process.env.PUBLIC_DATA_API_KEY) return { items: [], health: { status: 'unconfigured' } }
+  try {
+    const state = await queryOne<State>('SELECT * FROM policy_news_state WHERE id = 1')
+    return { items: state?.items ?? [], health: policyStatus(state) }
+  } catch {
+    logger.error('policy_news_snapshot_unavailable')
+    return { items: [], health: { status: 'unavailable' } }
   }
 }
 
