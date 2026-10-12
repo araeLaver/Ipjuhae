@@ -12,8 +12,8 @@ jobs:
       github.event.check_suite.conclusion == 'success' &&
       startsWith(github.event.check_suite.head_branch, 'auto/')
     permissions:
-      contents: write
-      pull-requests: write
+      contents: read
+      pull-requests: read
     steps:
       - name: Find PR for this branch
         id: find-pr
@@ -28,8 +28,8 @@ jobs:
           fi
           echo "pr_url=$PR_URL" >> "$GITHUB_OUTPUT"
 
-      - name: Squash merge PR
+      - name: Block merge until per-case approval gate exists
         if: steps.find-pr.outputs.pr_url
-        env:
-          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
-        run: gh pr merge --squash "${{ steps.find-pr.outputs.pr_url }}"
+        run: |
+          echo "Auto merge is disabled by default."
+          echo "PR requires explicit per-case approval before any merge command may run: ${{ steps.find-pr.outputs.pr_url }}"
