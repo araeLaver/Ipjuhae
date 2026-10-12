@@ -2,11 +2,12 @@ import { redirect } from 'next/navigation'
 import { getCurrentUser } from '@/lib/auth'
 import Link from 'next/link'
 
-export const metadata = { title: '관리자 | 입주해' }
+export const metadata = { title: '관리자 | 입주해', robots: { index: false, follow: false } }
 
 const adminNav = [
   { href: '/admin', label: '대시보드' },
   { href: '/admin/operations', label: '서비스 운영·수익' },
+  { href: '/admin/inquiries', label: '신청·고객 의견' },
   { href: '/admin/community', label: '질문 답변 운영' },
   { href: '/admin/analytics', label: '사용자 활성화' },
   { href: '/admin/users', label: '사용자' },

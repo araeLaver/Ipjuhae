@@ -158,6 +158,11 @@ export default async function OperationsPage() {
       </section>
       <section className="space-y-2">
         <h2 className="text-lg font-bold">첫 고객 운영</h2>
+        <p>
+          <Link className="underline" href="/admin/inquiries">
+            접수된 신청·고객 의견 확인
+          </Link>
+        </p>
         <p className="text-sm">
           집을 찾는 대상자에게 공유 링크를 안내하고 점검→후보 저장→질문→응대
           결과를 확인하세요. 이용자를 확보했다는 판단은 실제 이용 기록과 함께

@@ -76,13 +76,11 @@ const base = process.env.QA_BASE_URL || 'http://127.0.0.1:3142'
         ),
         original,
       )
-      await page
-        .getByLabel('후보 백업 파일 선택')
-        .setInputFiles({
-          name: 'bad.json',
-          mimeType: 'application/json',
-          buffer: Buffer.from('{bad'),
-        })
+      await page.getByLabel('후보 백업 파일 선택').setInputFiles({
+        name: 'bad.json',
+        mimeType: 'application/json',
+        buffer: Buffer.from('{bad'),
+      })
       await page
         .getByText(
           '복원할 수 없는 백업 파일입니다. 기존 후보는 변경하지 않았습니다.',
@@ -188,6 +186,27 @@ const base = process.env.QA_BASE_URL || 'http://127.0.0.1:3142'
           (await page.evaluate(() => document.documentElement.scrollWidth)) <=
             viewport.width,
         )
+        await page.goto(base + '/admin/inquiries')
+        await page.getByRole('heading', { name: '신청·고객 의견' }).waitFor()
+        await page
+          .getByRole('heading', { name: '세입자 · qa-subscriber@example.test' })
+          .waitFor()
+        await page.getByText('합성 이용 의견: 후보를 옮겨보고 싶어요').waitFor()
+        assert.equal(
+          await page.getByRole('link', { name: '안내 메일 작성' }).count(),
+          1,
+        )
+        assert(
+          (await page.evaluate(() => document.documentElement.scrollWidth)) <=
+            viewport.width,
+        )
+        await page.screenshot({
+          path:
+            '/private/tmp/ipjuhae-operating-inquiries-' +
+            viewport.width +
+            '.png',
+          fullPage: true,
+        })
         authenticatedQA = true
       }
       assert.equal(errors.length, 0, errors.join(' | '))
