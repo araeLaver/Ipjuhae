@@ -314,6 +314,7 @@ export default async function HomePage() {
             >
               {[
                 ['/about', '입주해 소개'],
+                ['/service', '서비스·요금·문의'],
                 ['/check', '보증금 점검'],
                 ['/policy/news', '정책소식'],
                 ['/policy', '전세 제도'],

@@ -1,32 +1,34 @@
 import { logger } from '@/lib/logger'
 import { NextResponse } from 'next/server'
 import { query } from '@/lib/db'
+import { getAdminUser } from '@/lib/admin'
 
 interface CountRow {
   count: string
 }
 
 export async function GET() {
-  try {
-    // KST(UTC+9) 기준 오늘 00:00:00
-    const todayKst = new Date(
-      new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' })
+  if (!(await getAdminUser()))
+    return NextResponse.json(
+      { error: '관리자 권한이 필요합니다' },
+      { status: 403 },
     )
-    todayKst.setHours(0, 0, 0, 0)
-    // KST 자정을 UTC로 역산: KST = UTC+9 이므로 UTC = KST - 9h
-    const todayUtc = new Date(todayKst.getTime() - 9 * 60 * 60 * 1000)
+  try {
+    // Compute KST date independently of the server's local timezone.
+    const dateStr = new Date(Date.now() + 9 * 60 * 60 * 1000)
+      .toISOString()
+      .slice(0, 10)
+    const todayUtc = new Date(`${dateStr}T00:00:00+09:00`)
 
     const [profileRow] = await query<CountRow>(
       `SELECT COUNT(*)::text AS count FROM profiles WHERE created_at >= $1`,
-      [todayUtc.toISOString()]
+      [todayUtc.toISOString()],
     )
 
     const [listingRow] = await query<CountRow>(
       `SELECT COUNT(*)::text AS count FROM listings WHERE created_at >= $1`,
-      [todayUtc.toISOString()]
+      [todayUtc.toISOString()],
     )
-
-    const dateStr = todayKst.toISOString().slice(0, 10)
 
     return NextResponse.json({
       newProfiles: parseInt(profileRow?.count ?? '0'),

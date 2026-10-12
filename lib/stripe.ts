@@ -9,7 +9,7 @@ if (!stripeSecretKey && process.env.NODE_ENV === 'production' && !process.env.SK
 }
 
 export const stripe = stripeSecretKey
-  ? new Stripe(stripeSecretKey)
+  ? new Stripe(stripeSecretKey, { timeout: 8000, maxNetworkRetries: 1 })
   : null
 
 // Stripe Price IDs (set in .env or hardcode after creating in Stripe Dashboard)

@@ -8,6 +8,7 @@ import { track } from '@/lib/analytics-client'
 import { CANDIDATES_KEY, CHECKLIST, MAX_CANDIDATES, decodeCandidates, encodeCandidates, type CheckCandidate } from '@/lib/check-candidates'
 import { calculateDepositRisk, cushionLabel, manwon, type DepositRiskInput } from '@/lib/deposit-risk'
 import { CandidateNextSteps } from '@/components/candidate-next-steps'
+import { CandidateBackup } from '@/components/candidate-backup'
 
 export function CheckCandidates({ input, onLoad }: { input: DepositRiskInput | null; onLoad: (input: DepositRiskInput) => void }) {
   const [items, setItems] = useState<CheckCandidate[]>([])
@@ -68,6 +69,7 @@ export function CheckCandidates({ input, onLoad }: { input: DepositRiskInput | n
       <tr><th className="p-2 text-left">시세대로 팔릴 때</th>{items.map(item => <td className="p-2" key={item.id}>{cushionLabel(calculateDepositRisk(item.input).cushionManwon)}</td>)}</tr>
       <tr><th className="p-2 text-left">남은 확인</th>{items.map(item => <td className="p-2" key={item.id}>{item.checked.filter(value => !value).length}개</td>)}</tr>
     </tbody></table></div>}
+    {ready && <CandidateBackup items={items} onRestored={() => { setItems(decodeCandidates(localStorage.getItem(CANDIDATES_KEY))); setError(''); setComparing(false) }} />}
     {items.map(item => <article key={item.id} className="space-y-3 rounded-lg border p-4">
       <h3 className="font-semibold">{item.label}</h3>
       <p className="text-xs text-muted-foreground">저장일 {new Date(item.savedAt).toLocaleDateString('ko-KR')} · 시세 {manwon(item.input.marketPriceManwon)} · 보증금 {manwon(item.input.depositManwon)}</p>
