@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     default: '입주해 | 계약 전에 물어보는 곳',
     template: '%s | 입주해',
   },
-  description: '전세 계약 전에 보증금이 안전한지 확인하세요. 등기부 읽는 법과 계약 전 확인할 것을 정리해 두었습니다.',
+  description: '가입 없이 보증금 부담을 점검하고 후보 집을 비교하세요. 계약 전 확인 기록과 공식 주거 정책소식을 이어볼 수 있습니다.',
   keywords: ['입주해', '전세 보증금', '보증금 안전', '깡통전세', '등기부 보는 법', '근저당', '전세사기 예방', '확정일자', '전입신고', '전세 계약 주의사항'],
   openGraph: {
     type: 'website',
@@ -19,20 +19,20 @@ export const metadata: Metadata = {
     url: APP_URL,
     siteName: '입주해',
     title: '입주해 | 계약 전에 물어보는 곳',
-    description: '전세 계약 전에 보증금이 안전한지 확인하세요. 숫자를 넣으면 바로 계산해 드립니다.',
+    description: '내 보증금을 점검하고 집 후보를 비교하세요. 아직 확인하지 못한 일을 정리하고 준비 기록을 가져갈 수 있습니다.',
     images: [
       {
         url: '/opengraph-image',
         width: 1200,
         height: 630,
-        alt: '입주해 - 계약 전에 보증금이 안전한지 확인하는 곳',
+        alt: '입주해 - 보증금 점검과 계약 준비',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
     title: '입주해 | 계약 전에 물어보는 곳',
-    description: '전세 계약 전에 보증금이 안전한지 확인하세요. 숫자를 넣으면 바로 계산해 드립니다.',
+    description: '내 보증금을 점검하고 집 후보를 비교하세요. 계약 전 확인 기록을 정리하고 이어볼 수 있습니다.',
     images: ['/opengraph-image'],
   },
   robots: {
@@ -58,7 +58,7 @@ const organizationJsonLd = {
   name: '입주해',
   url: APP_URL,
   logo: `${APP_URL}/icon.png`,
-  description: '신뢰할 수 있는 세입자 프로필로 집주인과 세입자를 매칭하는 서비스',
+  description: '보증금 점검, 집 후보 비교와 계약 전 확인 기록을 제공하는 서비스',
   sameAs: [],
 }
 

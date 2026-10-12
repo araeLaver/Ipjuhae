@@ -56,6 +56,9 @@ describe('익명 전용 이벤트 판정', () => {
       [
         'contract_talk_cancelled','contract_talk_completed','contract_talk_created','contract_talk_responded','contract_talk_schedule_agreed',
         'check_candidate_saved',
+      'check_summary_requested',
+      'check_backup_restored',
+      'check_link_copied',
         'check_comparison_viewed',
         'check_checklist_updated',
         'check_started',
