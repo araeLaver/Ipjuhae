@@ -1,0 +1,107 @@
+ M __tests__/api/community-anonymity.test.ts
+ M __tests__/api/community-comments-read.test.ts
+ M __tests__/components/demo-network-isolation.test.tsx
+ M __tests__/components/matches-recovery.test.tsx
+ M __tests__/components/saved-searches.test.tsx
+ M __tests__/mobile/list-empty-failure.test.tsx
+ M app/api/community/posts/[id]/comments/route.ts
+ M app/api/community/posts/[id]/route.ts
+ M components/community/community-post-view.tsx
+ M docs/business-development/20260924_gvalley_10th_startup_competition_application_package.md
+ M docs/business-development/20260926_gvalley_application_package_v5.md
+ M docs/business-development/20260926_gvalley_cmo_supplement.md
+ M docs/business-development/20260927_kisa_location_consulting_application_prep.md
+ M docs/outreach/INVENTORY.md
+ M mobile/src/screens/ChatRoomScreen.tsx
+ M mobile/src/screens/MatchesScreen.tsx
+ M mobile/src/screens/MessagesScreen.tsx
+?? __tests__/api/community-owner-concurrency-independent.test.ts
+?? __tests__/api/community-owner-db-independent.test.ts
+?? __tests__/api/community-owner-independent.test.ts
+?? __tests__/api/community-owner-mutations.test.ts
+?? __tests__/components/community-owner-controls.test.tsx
+?? __tests__/components/community-owner-independent.test.tsx
+?? app/api/community/posts/[id]/comments/[commentId]/
+?? data/
+?? docs/business-development/20260926_daily_opportunity_scan.md
+?? docs/business-development/20260927_gvalley_application_package_v9.md
+?? docs/business-development/20260927_gvalley_ingest_verification.md
+?? docs/business-development/20260927_kisa_location_consulting_internal_annex.md
+?? docs/business-development/20261009_operations_access_and_oct12_handoff.md
+?? docs/business-development/20261012_building_update_queue_internal_validation.md
+?? docs/business-development/gvalley-2026/pdf-audit/
+?? docs/business-development/gvalley-2026/table-audit/
+?? docs/business-development/listing-source-card-20261008/
+?? docs/launch/
+?? docs/marketing/
+?? docs/ops/20261011_dow1326_prior_approval_audit.md
+?? docs/ops/20261013_community_release_remote_readonly.md
+?? docs/outreach/20261009_lh_channel_resolution.md
+?? docs/outreach/archive/20261005_kstartup_duplicate_retirement.md
+?? docs/outreach/archive/20261012_gyeonggi_inquiry_retirement.md
+?? docs/patent-v2-redaction-review-20260925.md
+?? docs/product-quality-evidence-20261011.md
+?? docs/product-quality-evidence-20261012.md
+?? docs/project-reanalysis-20261003.md
+?? docs/qa-community-count-independent-20260928.md
+?? docs/qa-community-return-20260928.md
+?? docs/qa/auto-merge-approval-independent-20261012.md
+?? docs/qa/auto-merge-default-block-independent-20261012.md
+?? docs/qa/candidate-next-steps-production-20261011.md
+?? docs/qa/check-candidates-production-20261009.md
+?? docs/qa/check-question-draft-production-20261011.md
+?? docs/qa/community-operations-production-20261010.md
+?? docs/qa/community-owner-browser-20261013/
+?? docs/qa/community-owner-concurrency-20261013.json
+?? docs/qa/community-owner-concurrency-20261013.md
+?? docs/qa/community-owner-concurrency-independent-20261013.json
+?? docs/qa/community-owner-focus-independent-20261013.md
+?? docs/qa/community-owner-http-20261013/
+?? docs/qa/community-owner-http-independent-20261013/
+?? docs/qa/community-owner-independent-20261013.md
+?? docs/qa/demo-isolation-20261012/
+?? docs/qa/first-value-production-20261009.md
+?? docs/qa/home-policy-20261011/
+?? docs/qa/home-policy-activation-20261011.md
+?? docs/qa/home-policy-clarity-20261011.md
+?? docs/qa/home-policy-production-20261011.md
+?? docs/qa/home-policy-release-20261011.md
+?? docs/qa/matching-saved-roles-20261005.md
+?? docs/qa/mobile-populated-reload-independent-20261013.md
+?? docs/qa/oauth-rate-limit-independent-20261012.md
+?? docs/qa/policy-news-production-20261005.md
+?? docs/qa/product-quality-20261011/
+?? docs/qa/product-quality-20261012/
+?? docs/qa/product-quality-20261013/
+?? docs/qa/real-user-recruitment-kit-20261010.md
+?? docs/qa/regional-briefing-20261001/
+?? docs/qa/saved-search-schema-ready-20261005.md
+?? docs/qa/saved-search-sort-independent-20261005.md
+?? docs/qa/social-login-recovery-independent-20261012/
+?? docs/qa/user-activation-production-20261007.md
+?? docs/tmp/
+?? docs/ux/20261012_building_update_queue_ux_review.md
+?? docs/ux/20261012_social_login_unavailable_recovery_spec.md
+?? docs/ux/20261013_community_owner_controls_spec.md
+?? docs/ux/20261013_community_owner_keyboard_review.md
+?? docs/ux/community-owner-keyboard-20261013/
+?? docs/ux/regional-briefing-20261001/
+?? scripts/git-hooks/
+?? scripts/hwp/
+?? scripts/ops/paperclip-comments-tail.py
+?? scripts/ops/paperclip-inbox-summary.py
+?? scripts/qa/check-candidate-next-steps-browser.cjs
+?? scripts/qa/check-comment-pagination-db.mjs
+?? scripts/qa/check-community-count-browser.mjs
+?? scripts/qa/check-community-return-browser.mjs
+?? scripts/qa/check-login-recovery-controls.mjs
+?? scripts/qa/check-matching-saved-roles.mjs
+?? scripts/qa/check-saved-search-role-live.mjs
+?? scripts/qa/check-saved-search-sort-browser.mjs
+?? scripts/qa/community-owner-browser-independent.mjs
+?? scripts/qa/community-owner-http-local.mjs
+?? scripts/qa/community-owner-keyboard-ux.mjs
+?? scripts/qa/probe_403_recovery_chunk.py
+?? scripts/qa/probe_community_detail_ssr.py
+?? scripts/qa/probe_login_return_live.mjs
+?? scripts/stats/gvalley_merge_compensation.py
