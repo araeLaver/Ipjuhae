@@ -32,6 +32,8 @@ type Bundle = {
   SessionExpiredError: new (message?: string) => Error
   AuthProvider: React.ComponentType<{ children: React.ReactNode }>
   useAuth: () => {
+    user: { name: string } | null
+    register(email: string, password: string, name: string, userType: string): Promise<void>
     isAuthenticated: boolean
     isLoading: boolean
     sessionExpiredMessage: string | null
@@ -40,6 +42,7 @@ type Bundle = {
     refreshUser(): Promise<void>
   }
   SessionExpiredBanner: React.ComponentType
+  SettingsScreen: React.ComponentType<{ navigation: { navigate: (screen: string) => void } }>
 }
 
 let dir: string
@@ -74,7 +77,9 @@ beforeAll(async () => {
 const flatten = s => Array.isArray(s) ? Object.assign({}, ...s.filter(Boolean).map(flatten)) : s;
 const element = tag => ({children, style, onPress, accessibilityLabel, accessibilityRole}) =>
   React.createElement(tag, {style: flatten(style), onClick: onPress, 'aria-label': accessibilityLabel, role: accessibilityRole}, children);
-export const View=element('div'), Text=element('span'), TouchableOpacity=element('button');
+export const View=element('div'), ScrollView=element('div'), Text=element('span'), TouchableOpacity=element('button');
+export const Linking={openURL: (...args) => globalThis.__supportQA.openURL(...args)};
+export const Alert={alert: (...args) => globalThis.__supportQA.alert(...args)};
 export const StyleSheet={create:s=>s};
 `
   )
@@ -102,6 +107,7 @@ export default {
     `export { apiClient, SESSION_EXPIRED_MESSAGE, SessionExpiredError } from '${src}/services/apiClient';
 export { AuthProvider, useAuth } from '${src}/contexts/AuthContext';
 export { default as SessionExpiredBanner } from '${src}/components/SessionExpiredBanner';
+export { default as SettingsScreen } from '${src}/screens/SettingsScreen';
 `
   )
 
@@ -342,5 +348,50 @@ describe('A1 — 세션이 끊기면 비인증 화면으로 돌아가고 안내�
 
     await screen.findByText('비인증 스택')
     expect(screen.queryByText(mod.SESSION_EXPIRED_MESSAGE)).toBeNull()
+  })
+})
+
+// Real AuthContext → api → apiClient path; no production account is created.
+describe('가입 이름 전송', () => {
+  it('입력한 이름을 signup에 전달하고 auth/me에서 다시 읽는다', async () => {
+    let submittedName: string | undefined
+    fetchMock.mockImplementation(async (url: string, init: RequestInit) => {
+      if (url.endsWith('/auth/signup')) {
+        submittedName = JSON.parse(String(init.body)).name
+        return json(200, { token: 'synthetic-token' })
+      }
+      return json(200, { user: { id: 'qa', name: submittedName ?? null, userType: 'tenant' } })
+    })
+    function Harness() {
+      const { register, user, isLoading } = mod.useAuth()
+      if (isLoading) return <span>로딩</span>
+      return <><button onClick={() => void register('qa@example.com', 'password123', 'QA 이름', 'tenant')}>가입</button><span>{user?.name || '이름 없음'}</span></>
+    }
+    render(<mod.AuthProvider><Harness /></mod.AuthProvider>)
+    fireEvent.click(await screen.findByText('가입'))
+    await screen.findByText('QA 이름')
+    expect(submittedName).toBe('QA 이름')
+    expect(fetchMock.mock.calls.map(([url]) => url)).toEqual(['/api/auth/signup', '/api/auth/me'])
+  })
+})
+
+
+describe('고객센터 문의 경로', () => {
+  it('공식 메일을 열고 메일 앱이 없으면 주소를 안내한다', async () => {
+    const openURL = vi.fn().mockResolvedValue(undefined)
+    const alert = vi.fn()
+    const supportQA = globalThis as typeof globalThis & { __supportQA?: { openURL: typeof openURL; alert: typeof alert } }
+    supportQA.__supportQA = { openURL, alert }
+    try {
+      render(<mod.AuthProvider><mod.SettingsScreen navigation={{ navigate: vi.fn() }} /></mod.AuthProvider>)
+      fireEvent.click(screen.getByText('고객센터'))
+      await waitFor(() => expect(openURL).toHaveBeenCalledWith('mailto:ipjuhae.official@gmail.com'))
+      expect(alert).not.toHaveBeenCalled()
+      openURL.mockRejectedValueOnce(new Error('No email app'))
+      fireEvent.click(screen.getByText('고객센터'))
+      await waitFor(() => expect(alert).toHaveBeenCalledWith('고객센터', expect.stringContaining('ipjuhae.official@gmail.com')))
+    } finally {
+      delete supportQA.__supportQA
+    }
   })
 })
