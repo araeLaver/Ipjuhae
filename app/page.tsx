@@ -14,6 +14,7 @@ import { PolicyNews } from '@/components/policy-news'
 import { HOME_TITLE } from '@/lib/site-metadata'
 import { HomeReturnLinks } from '@/components/home-return-links'
 import { ShareCheck } from '@/components/share-check'
+import { TesterBanner } from '@/components/tester-banner'
 
 // Always read the current public content; a build-time DB failure must not freeze the home.
 export const dynamic = 'force-dynamic'
@@ -136,6 +137,10 @@ export default async function HomePage() {
             </nav>
             <HomeReturnLinks />
           </div>
+        </section>
+
+        <section className="mx-auto max-w-5xl px-4 pt-6">
+          <TesterBanner />
         </section>
 
         <PolicyNews compact />
@@ -313,7 +318,6 @@ export default async function HomePage() {
               className="flex flex-wrap gap-x-5 gap-y-3 text-xs text-muted-foreground"
             >
               {[
-                ['/about', '입주해 소개'],
                 ['/service', '서비스·요금·문의'],
                 ['/check', '보증금 점검'],
                 ['/policy/news', '정책소식'],

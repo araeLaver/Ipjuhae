@@ -26,45 +26,44 @@ export function TesterBanner() {
   return (
     <aside className="rounded-2xl border border-primary/25 bg-primary/5 p-6 sm:p-8">
       <h2 className="text-balance text-xl font-bold leading-snug">
-        폰에 두고 쓰실 수 있습니다
+        안드로이드 테스터 12명을 모집합니다
       </h2>
 
       <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">
-        집을 몇 군데 보실 거라면 홈 화면에 두고 그때그때 숫자를 넣어보시는 편이 편합니다.
-        안드로이드와 아이폰 모두 설치됩니다.
+        보증금을 점검하고 계약 전 확인 일을 정리하는 앱의 정식 출시를 준비하고 있습니다.
+        안드로이드와 구글 계정이 있다면 14일 테스트에 참여해 주세요. 계산은 가입 없이
+        웹에서도 바로 써볼 수 있습니다.
       </p>
 
       <div className="mt-5 flex flex-col gap-3 sm:flex-row">
         <Link
-          href="/install"
-          onClick={() =>
-            track('install_guide_clicked', {
-              properties: { surface: 'home', ...getAttribution() },
-            })
-          }
-          className="inline-flex items-center justify-center rounded-lg bg-primary px-5 py-3 text-sm font-bold text-primary-foreground transition-opacity hover:opacity-90"
-        >
-          설치 방법 보기
-        </Link>
-        <Link
-          href="/tester"
+          href="/tester?from=home_banner"
           onClick={() =>
             track('tester_invite_clicked', {
               properties: { surface: 'home', ...getAttribution() },
             })
           }
+          className="inline-flex items-center justify-center rounded-lg bg-primary px-5 py-3 text-sm font-bold text-primary-foreground transition-opacity hover:opacity-90"
+        >
+          테스터 참여 방법 보기
+        </Link>
+        <Link
+          href="/check?from=home_banner"
+          onClick={() =>
+            track('check_started', {
+              properties: { surface: 'home', ...getAttribution() },
+            })
+          }
           className="inline-flex items-center justify-center rounded-lg border bg-background px-5 py-3 text-sm font-semibold transition-colors hover:bg-muted/50"
         >
-          안드로이드 테스터로 참여
+          웹에서 먼저 써보기
         </Link>
       </div>
 
       <div className="mt-6 border-t border-primary/15 pt-5">
         <p className="text-xs leading-relaxed text-muted-foreground">
-          플레이스토어 정식 출시는 테스터 12명이 14일 동안 참여해야 신청할 수 있습니다.
-          구글 정책이라 사람 수가 차야 공개가 됩니다. 참여해 주시면 링크에서 테스터 되기를
-          누르고 설치하신 뒤, 2주 동안 그대로 두시면 됩니다. 안드로이드 폰과 구글 계정이
-          필요합니다.
+          테스터로 참여하지 않아도 보증금 점검, 후보 비교, 계약 전 확인 기록은 웹에서
+          무료로 이용할 수 있습니다.
         </p>
       </div>
     </aside>
