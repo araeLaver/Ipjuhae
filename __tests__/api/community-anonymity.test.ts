@@ -91,7 +91,8 @@ function simulateDb() {
     delete row.author_id
     const selectList = sql.slice(0, sql.lastIndexOf('FROM'))
     if (/AS author_name/.test(selectList)) row.author_name = '김철수'
-    if (/author_id/.test(selectList)) row.author_id = AUTHOR_ID
+    if (/(?:SELECT|,)\s*(?:p\.)?author_id\s*(?:,|FROM)/.test(selectList + ' FROM')) row.author_id = AUTHOR_ID
+    if (/AS is_author/.test(selectList)) row.is_author = false
     // author_role도 SELECT 식을 따라간다(DOW-1262). 고정 값을 돌려주면 SQL을
     // `COALESCE(u.user_type, 'guest')`로 되돌려도 payload 판정이 통과해 버린다.
     // 계정 역할은 `ACCOUNT_ROLE`이고, 접는 식이 들어 있을 때만 admin/member로 좁혀 준다.

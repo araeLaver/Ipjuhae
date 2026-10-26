@@ -14,7 +14,7 @@
  * 대조군이 통과하지 못하면 격리 단언은 의미가 없으므로 같이 깨진다.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, render } from '@testing-library/react'
+import { act, cleanup, render, waitFor } from '@testing-library/react'
 
 /**
  * 대조군 경로 — demo 격리 대상이 **아닌** 살아 있는 경로여야 한다.
@@ -205,4 +205,32 @@ describe('demo route 격리 — 실제 render에서 network 호출이 0건이어
       expect(observedRequests(), `${pathname}에서 network 호출 발생`).toEqual([])
     }
   })
+})
+
+
+it('로그인한 일반 경로에서 demo로 이동하면 계정 UI를 지우고 복귀 시 auth를 다시 조회한다', async () => {
+  fetchSpy.mockImplementation(async (url: string) => Response.json(
+    url === '/api/auth/me'
+      ? { user: { email: 'qa@example.invalid', userType: 'tenant' } }
+      : { notifications: [], unreadCount: 0 },
+  ))
+  const view = render(<PageContainer><div>전이 검증</div></PageContainer>)
+  // DOM 관측만으로는 로그인 후 마운트된 NotificationCenter의 passive effect가
+  // 끝났음을 보장하지 않는다. 일반 경로의 첫 알림 조회까지 act로 완료한 뒤
+  // 관측 구간을 나눈다. demo 전환 후 발생한 호출은 URL에 관계없이 모두 실패한다.
+  await act(async () => { await flush() })
+  expect(view.getByRole('button', { name: '메뉴 열기' })).toBeInTheDocument()
+  expect(observedRequests()).toEqual(['/api/auth/me', '/api/notifications?limit=1'])
+  fetchSpy.mockClear()
+  sendBeaconSpy.mockClear()
+  xhrOpenSpy.mockClear()
+  currentPathname = DEMO_PATH
+  view.rerender(<PageContainer><div>전이 검증</div></PageContainer>)
+  await waitFor(() => expect(view.queryByRole('button', { name: '메뉴 열기' })).toBeNull())
+  await flush()
+  expect(observedRequests()).toEqual([])
+  currentPathname = CONTROL_PATH
+  view.rerender(<PageContainer><div>전이 검증</div></PageContainer>)
+  await waitFor(() => expect(view.getByRole('button', { name: '메뉴 열기' })).toBeInTheDocument())
+  expect(fetchSpy.mock.calls.filter(call => call[0] === '/api/auth/me')).toHaveLength(1)
 })

@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server'
+import { z } from 'zod'
+import { sanitizeUserInput } from '@/lib/sanitize'
 import { getCurrentUser } from '@/lib/auth'
 import { query, queryOne } from '@/lib/db'
 import { logger } from '@/lib/logger'
@@ -62,4 +64,55 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     logger.error('커뮤니티 상세 조회 오류', { error })
     return NextResponse.json({ error: '게시글을 불러오지 못했습니다' }, { status: 500 })
   }
+}
+
+const updateSchema = z.object({
+  title: z.string().trim().min(1, '제목을 입력해주세요.').max(200, '제목은 200자 이내로 입력해주세요.').optional(),
+  body: z.string().trim().min(1, '내용을 입력해주세요.').max(10000, '내용은 10,000자 이내로 입력해주세요.').optional(),
+  category: z.string().trim().max(40).nullable().optional(),
+}).strict().refine(data => Object.keys(data).length > 0, '수정할 내용을 입력해주세요.')
+
+// 인증된 계정만 소유권을 인정한다. UPDATE에도 조건을 반복해 조회 이후 삭제/숨김을 방어한다.
+async function mutatePost(request: Request, params: Promise<{ id: string }>, deleting: boolean) {
+  const user = await getCurrentUser()
+  if (!user) return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 })
+  const { id } = await params
+  if (!z.string().uuid().safeParse(id).success) return NextResponse.json({ error: '게시글을 찾을 수 없습니다' }, { status: 404 })
+  try {
+    const post = await queryOne<{ author_id: string | null }>(
+      'SELECT author_id FROM community_posts WHERE id = $1 AND deleted_at IS NULL AND hidden_at IS NULL', [id])
+    if (!post) return NextResponse.json({ error: '게시글을 찾을 수 없습니다' }, { status: 404 })
+    if (post.author_id !== user.id) return NextResponse.json({ error: '본인 글만 변경할 수 있습니다' }, { status: 403 })
+    if (deleting) {
+      const deleted = await queryOne<{ id: string }>(
+        `UPDATE community_posts SET deleted_at = NOW(), updated_at = NOW()
+         WHERE id = $1 AND author_id = $2 AND deleted_at IS NULL AND hidden_at IS NULL RETURNING id`, [id, user.id])
+      return deleted ? NextResponse.json({ deleted: true, id: deleted.id })
+        : NextResponse.json({ error: '게시글을 찾을 수 없습니다' }, { status: 404 })
+    }
+    const parsed = updateSchema.safeParse(await request.json().catch(() => null))
+    if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0]?.message }, { status: 400 })
+    const data = parsed.data
+    const title = data.title === undefined ? null : sanitizeUserInput(data.title)
+    const body = data.body === undefined ? null : sanitizeUserInput(data.body)
+    if (title === '' || body === '') return NextResponse.json({ error: '제목과 내용을 입력해주세요.' }, { status: 400 })
+    const updated = await queryOne<{ id: string; title: string; body: string; category: string | null }>(
+      `UPDATE community_posts SET title = COALESCE($3, title), body = COALESCE($4, body),
+       category = CASE WHEN $5 THEN $6 ELSE category END, updated_at = NOW()
+       WHERE id = $1 AND author_id = $2 AND deleted_at IS NULL AND hidden_at IS NULL
+       RETURNING id, title, body, category`,
+      [id, user.id, title, body, data.category !== undefined, data.category == null ? null : sanitizeUserInput(data.category)])
+    return updated ? NextResponse.json({ post: updated })
+      : NextResponse.json({ error: '게시글을 찾을 수 없습니다' }, { status: 404 })
+  } catch (error) {
+    logger.error('커뮤니티 글 변경 오류', { error })
+    return NextResponse.json({ error: deleting ? '삭제하지 못했습니다. 다시 시도해주세요.' : '글을 저장하지 못했습니다.' }, { status: 500 })
+  }
+}
+
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  return mutatePost(request, params, false)
+}
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  return mutatePost(request, params, true)
 }

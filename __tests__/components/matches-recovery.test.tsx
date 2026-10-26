@@ -30,3 +30,13 @@ it('잘못된 성공 응답을 정상 빈 상태로 표시하지 않는다', asy
   await screen.findByRole('button', { name: /다시 시도/ })
   expect(screen.queryByText('조건에 맞는 매물이 없습니다')).toBeNull()
 })
+it('서버 실패를 빈 결과와 구분하고 재시도로 복구한다', async () => {
+  const { fireEvent } = await import('@testing-library/react')
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(Response.json({ error: '매칭 조회 중 오류가 발생했습니다' }, { status: 500 }))
+    .mockResolvedValueOnce(Response.json({ matches: [], total: 0 })))
+  render(<MatchesPage />)
+  const retry = await screen.findByRole('button', { name: /다시 시도/ })
+  expect(screen.queryByText('조건에 맞는 매물이 없습니다')).toBeNull()
+  fireEvent.click(retry)
+  await screen.findByText('조건에 맞는 매물이 없습니다')
+})

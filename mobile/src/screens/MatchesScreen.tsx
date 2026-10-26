@@ -9,6 +9,7 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
+  Pressable,
   Image,
   RefreshControl,
   ActivityIndicator,
@@ -101,28 +102,27 @@ const MatchesScreen: React.FC<Props> = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
+      {loadError && (
+        <View style={styles.errorContainer}>
+          <Text style={styles.emptyTitle}>매칭 결과를 불러오지 못했습니다</Text>
+          <Text style={styles.emptySubtext}>매칭 결과가 없는 상태가 아니라 조회에 실패했습니다.</Text>
+          <Pressable accessibilityRole="button" style={styles.retryButton} onPress={loadMatches}>
+            <Text style={styles.retryText}>다시 시도</Text>
+          </Pressable>
+        </View>
+      )}
       <FlatList
         data={matches}
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderMatch}
         contentContainerStyle={styles.listContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        ListEmptyComponent={
-          loadError ? (
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyTitle}>매칭 결과를 불러오지 못했습니다</Text>
-              <Text style={styles.emptySubtext}>매칭 결과가 없는 상태가 아니라 조회에 실패했습니다.</Text>
-              <TouchableOpacity style={styles.retryButton} onPress={loadMatches}>
-                <Text style={styles.retryText}>다시 시도</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyTitle}>매칭 결과가 없습니다</Text>
-              <Text style={styles.emptySubtext}>프로필의 선호 조건을 설정해주세요</Text>
-            </View>
-          )
-        }
+        ListEmptyComponent={loadError ? null : (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyTitle}>매칭 결과가 없습니다</Text>
+            <Text style={styles.emptySubtext}>프로필의 선호 조건을 설정해주세요</Text>
+          </View>
+        )}
       />
     </View>
   );
@@ -153,6 +153,7 @@ const styles = StyleSheet.create({
   reasons: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
   reasonTag: { backgroundColor: '#FFF3DC', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
   reasonText: { fontSize: 11, color: '#C2451F' },
+  errorContainer: { alignItems: 'center', paddingHorizontal: 24, paddingVertical: 16 },
   emptyContainer: { alignItems: 'center', marginTop: 60 },
   emptyTitle: { fontSize: 16, fontWeight: '600', color: '#4A423C' },
   emptySubtext: { fontSize: 14, color: '#9A8F87', marginTop: 4, textAlign: 'center' },
