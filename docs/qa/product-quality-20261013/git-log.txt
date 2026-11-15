@@ -1,0 +1,15 @@
+31113118 fix: recover rate-limited OAuth browser navigation
+bd9bc509 fix: 소셜 로그인 차단 후 이메일 복구 경로 제공
+f9a85caa fix(auth): fail fast for incomplete OAuth credentials
+47f9b15b test: 저장 검색 URL 유지 독립 브라우저 QA
+d3fb2bc6 fix: 저장 검색 적용 시 URL 조건 유지
+cb69efd8 fix: 저장한 검색에 정렬 기준과 접근성 이름 표시
+c566088d feat: improve matching UX and add saved search alerts
+adef965b test: 독립 핑 감시기 회귀 및 런타임 주기 검증 보강
+0730fd3b feat(ops): add persistent Fly dead-man heartbeat monitor
+2c297de8 test: 메시지 역할 조합 실연동 회귀 검증 추가
+a7f34afb fix(messages): return actual conversation participant roles
+3c845efb docs: 알림 권한 QA의 OS별 판정 기준 확정
+faec9963 Merge remote-tracking branch 'origin/main'
+e9dd086b fix(mobile): 미구현 준비 중(ProfileEdit·References) 진입 경로 제거
+ab5aba4c DOW-1269 PR 게이트 리허설

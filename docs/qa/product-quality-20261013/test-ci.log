@@ -1,0 +1,864 @@
+
+> rentme@1.0.0 test:ci
+> node scripts/check-test-suite-health.mjs
+
+
+ RUN  v4.1.2 /Volumes/WorkDrive/Develop/02_Ipjuhae
+
+stdout | __tests__/mobile/list-empty-failure.test.tsx > 모바일 목록 실패 상태 > 매물 둘러보기 실패를 빈 매물로 보여주지 않는다
+Failed to fetch listings: Error: 503
+    at /Volumes/WorkDrive/Develop/02_Ipjuhae/__tests__/mobile/list-empty-failure.test.tsx:161:45
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:1893:26
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2316:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2313:10)
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2295:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2262:10)
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2945:64
+
+stdout | __tests__/mobile/list-empty-failure.test.tsx > 모바일 목록 실패 상태 > 내 매물 실패를 등록 매물 0건으로 보여주지 않는다
+Failed to load properties: Error: 503
+    at /Volumes/WorkDrive/Develop/02_Ipjuhae/__tests__/mobile/list-empty-failure.test.tsx:170:55
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:1893:26
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2316:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2313:10)
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2295:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2262:10)
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2945:64
+
+stdout | __tests__/mobile/list-empty-failure.test.tsx > 모바일 목록 실패 상태 > 세입자 탐색 실패를 검색 결과 0건으로 보여주지 않는다
+Failed to load tenants: Error: 503
+    at /Volumes/WorkDrive/Develop/02_Ipjuhae/__tests__/mobile/list-empty-failure.test.tsx:179:44
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:1893:26
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2316:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2313:10)
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2295:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2262:10)
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2945:64
+
+stdout | __tests__/mobile/list-empty-failure.test.tsx > 모바일 목록 실패 상태 > 대화 목록 실패를 "아직 대화가 없습니다"로 감추지 않는다
+Failed to load conversations: Error: 503
+    at /Volumes/WorkDrive/Develop/02_Ipjuhae/__tests__/mobile/list-empty-failure.test.tsx:190:50
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:1893:26
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2316:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2313:10)
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2295:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2262:10)
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2945:64
+
+stdout | __tests__/mobile/list-empty-failure.test.tsx > 모바일 목록 실패 상태 > 매칭 실패를 "매칭 결과가 없습니다"로 감추지 않는다
+Failed to load matches: Error: 503
+    at /Volumes/WorkDrive/Develop/02_Ipjuhae/__tests__/mobile/list-empty-failure.test.tsx:199:44
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:1893:26
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2316:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2313:10)
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2295:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2262:10)
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2945:64
+
+stdout | __tests__/mobile/list-empty-failure.test.tsx > 모바일 목록 실패 상태 > 대화방 로드 실패를 빈 대화방으로 감추지 않는다
+Failed to load messages: Error: 503
+    at /Volumes/WorkDrive/Develop/02_Ipjuhae/__tests__/mobile/list-empty-failure.test.tsx:208:45
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:1893:26
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2316:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2313:10)
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2295:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2262:10)
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2945:64
+
+stderr | __tests__/mobile/list-empty-failure.test.tsx > 모바일 목록 실패 상태 > 대화방 로드 실패를 빈 대화방으로 감추지 않는다
+Warning: Function components cannot be given refs. Attempts to access this ref will fail. Did you mean to use React.forwardRef()?
+
+Check the render method of `ChatRoomScreen`.
+    at FlatList (/Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/.qa-mobile-lists-N4YYB6/ChatRoomScreen.js:15:19)
+    at div
+    at /Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/.qa-mobile-lists-N4YYB6/ChatRoomScreen.js:10:27
+    at ChatRoomScreen (/Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/.qa-mobile-lists-N4YYB6/ChatRoomScreen.js:27:25)
+
+stdout | __tests__/mobile/list-empty-failure.test.tsx > 모바일 목록 실패 상태 > 홈 로드 실패를 신뢰 점수 0으로 감추지 않는다
+Failed to load home data: Error: 503
+    at /Volumes/WorkDrive/Develop/02_Ipjuhae/__tests__/mobile/list-empty-failure.test.tsx:217:50
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:1893:26
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2316:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2313:10)
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2295:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2262:10)
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2945:64
+
+stdout | __tests__/mobile/list-empty-failure.test.tsx > 모바일 목록 실패 상태 > 프로필 로드 실패를 미완성 프로필로 감추지 않는다
+Failed to load profile: Error: 503
+    at /Volumes/WorkDrive/Develop/02_Ipjuhae/__tests__/mobile/list-empty-failure.test.tsx:234:50
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:1893:26
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2316:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2313:10)
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2295:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2262:10)
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2945:64
+
+stdout | __tests__/mobile/list-empty-failure.test.tsx > 모바일 목록 실패 상태 > 인증 로드 실패를 제출 서류 없음으로 감추지 않는다
+Failed to load verifications: Error: 503
+    at /Volumes/WorkDrive/Develop/02_Ipjuhae/__tests__/mobile/list-empty-failure.test.tsx:253:55
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:1893:26
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2316:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2313:10)
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2295:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2262:10)
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2945:64
+
+ ✓ __tests__/mobile/community-app.test.tsx (19 tests) 1064ms
+stdout | __tests__/mobile/list-empty-failure.test.tsx > 6화면 재시도 복구 > 대화 목록: 최초 대기 → 실패 → 재시도 → 성공을 구분한다
+Failed to load conversations: Error: 503
+    at /Volumes/WorkDrive/Develop/02_Ipjuhae/__tests__/mobile/list-empty-failure.test.tsx:321:17
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2015:60
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:1893:26
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2316:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2313:10)
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2295:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2262:10)
+
+stdout | __tests__/mobile/list-empty-failure.test.tsx > 6화면 재시도 복구 > 매칭: 최초 대기 → 실패 → 재시도 → 성공을 구분한다
+Failed to load matches: Error: 503
+    at /Volumes/WorkDrive/Develop/02_Ipjuhae/__tests__/mobile/list-empty-failure.test.tsx:321:17
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2015:60
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:1893:26
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2316:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2313:10)
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2295:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2262:10)
+
+stdout | __tests__/mobile/list-empty-failure.test.tsx > 6화면 재시도 복구 > 대화방: 최초 대기 → 실패 → 재시도 → 성공을 구분한다
+Failed to load messages: Error: 503
+    at /Volumes/WorkDrive/Develop/02_Ipjuhae/__tests__/mobile/list-empty-failure.test.tsx:321:17
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2015:60
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:1893:26
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2316:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2313:10)
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2295:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2262:10)
+
+stdout | __tests__/mobile/list-empty-failure.test.tsx > 6화면 재시도 복구 > 홈: 최초 대기 → 실패 → 재시도 → 성공을 구분한다
+Failed to load home data: Error: 503
+    at /Volumes/WorkDrive/Develop/02_Ipjuhae/__tests__/mobile/list-empty-failure.test.tsx:321:17
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2015:60
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:1893:26
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2316:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2313:10)
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2295:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2262:10)
+
+stdout | __tests__/mobile/list-empty-failure.test.tsx > 6화면 재시도 복구 > 프로필: 최초 대기 → 실패 → 재시도 → 성공을 구분한다
+Failed to load profile: Error: 503
+    at /Volumes/WorkDrive/Develop/02_Ipjuhae/__tests__/mobile/list-empty-failure.test.tsx:321:17
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2015:60
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:1893:26
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2316:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2313:10)
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2295:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2262:10)
+
+stdout | __tests__/mobile/list-empty-failure.test.tsx > 6화면 재시도 복구 > 인증: 최초 대기 → 실패 → 재시도 → 성공을 구분한다
+Failed to load verifications: Error: 503
+    at /Volumes/WorkDrive/Develop/02_Ipjuhae/__tests__/mobile/list-empty-failure.test.tsx:321:17
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2015:60
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:1893:26
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2316:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2313:10)
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2295:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2262:10)
+
+stderr | __tests__/components/community-board-write-entry.test.tsx > 대상 게시판 기본값 규칙 > 보고 있는 탭을 따른다 — 임대인 탭에서 열면 임대인 게시판
+Warning: An update to CommunityBoard inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at CommunityBoard (/Volumes/WorkDrive/Develop/02_Ipjuhae/components/community/community-board.tsx:39:68)
+Warning: An update to CommunityBoard inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at CommunityBoard (/Volumes/WorkDrive/Develop/02_Ipjuhae/components/community/community-board.tsx:39:68)
+Warning: An update to CommunityBoard inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at CommunityBoard (/Volumes/WorkDrive/Develop/02_Ipjuhae/components/community/community-board.tsx:39:68)
+
+ ✓ __tests__/components/properties-empty-failure.test.tsx (4 tests) 1049ms
+     ✓ API 실패를 "매물이 없습니다"로 보여주지 않고 재시도 경로를 준다  635ms
+     ✓ API가 성공해서 빈 배열을 줄 때만 정상 빈 상태를 보여준다  320ms
+stdout | __tests__/mobile/list-empty-failure.test.tsx > 기존 데이터 재조회 실패 복구 > 대화 목록: 새로고침 실패 시 기존 데이터와 수동 재시도를 표시한다
+Failed to load conversations: Error: 503
+    at /Volumes/WorkDrive/Develop/02_Ipjuhae/__tests__/mobile/list-empty-failure.test.tsx:409:67
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2015:60
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:1893:26
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2316:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2313:10)
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2295:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2262:10)
+
+stdout | __tests__/mobile/list-empty-failure.test.tsx > 기존 데이터 재조회 실패 복구 > 매칭: 새로고침 실패 시 기존 데이터와 수동 재시도를 표시한다
+Failed to load matches: Error: 503
+    at /Volumes/WorkDrive/Develop/02_Ipjuhae/__tests__/mobile/list-empty-failure.test.tsx:409:67
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2015:60
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:1893:26
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2316:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2313:10)
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2295:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2262:10)
+
+stdout | __tests__/mobile/list-empty-failure.test.tsx > 기존 데이터 재조회 실패 복구 > 대화방: 기존 메시지 재조회 실패를 수동 재시도로 복구한다
+Failed to load messages: Error: 503
+    at /Volumes/WorkDrive/Develop/02_Ipjuhae/__tests__/mobile/list-empty-failure.test.tsx:437:75
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2017:60
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:1893:26
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2316:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2313:10)
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2295:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2262:10)
+
+ ✓ __tests__/components/market-price-picker.test.tsx (10 tests) 1806ms
+   ✓ A→B 선택 후 B→A 응답이 와도 B의 매매 입력과 전세만 유지한다  504ms
+stdout | __tests__/mobile/list-empty-failure.test.tsx > 기존 데이터 재조회 실패 복구 > 대화방: 기존 메시지 재조회 실패를 polling로 복구한다
+Failed to load messages: Error: 503
+    at /Volumes/WorkDrive/Develop/02_Ipjuhae/__tests__/mobile/list-empty-failure.test.tsx:437:75
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2017:60
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:1893:26
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2316:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2313:10)
+    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2295:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2262:10)
+
+ ✓ __tests__/mobile/list-empty-failure.test.tsx (38 tests) 2091ms
+     ✓ 매물 둘러보기 실패를 빈 매물로 보여주지 않는다  312ms
+ ✓ __tests__/mobile/session-expiry.test.tsx (12 tests) 421ms
+ ✓ __tests__/mobile/analytics-runtime.test.ts (6 tests) 270ms
+stderr | __tests__/components/community-board-write-entry.test.tsx > 작성 실패는 alert이 아니라 toast로 알린다 > 성공하면 폼이 닫히고 선택한 게시판으로 전송된다
+Warning: An update to CommunityBoard inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at CommunityBoard (/Volumes/WorkDrive/Develop/02_Ipjuhae/components/community/community-board.tsx:39:68)
+Warning: An update to CommunityBoard inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at CommunityBoard (/Volumes/WorkDrive/Develop/02_Ipjuhae/components/community/community-board.tsx:39:68)
+Warning: An update to CommunityBoard inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at CommunityBoard (/Volumes/WorkDrive/Develop/02_Ipjuhae/components/community/community-board.tsx:39:68)
+Warning: An update to CommunityBoard inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at CommunityBoard (/Volumes/WorkDrive/Develop/02_Ipjuhae/components/community/community-board.tsx:39:68)
+Warning: An update to CommunityBoard inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at CommunityBoard (/Volumes/WorkDrive/Develop/02_Ipjuhae/components/community/community-board.tsx:39:68)
+
+ ✓ __tests__/components/community-board-write-entry.test.tsx (16 tests) 2374ms
+     ✓ 카드 안 "지금 막히는 게 무엇인가요" — 임대인이 all 탭에서 열면 임대인 게시판  500ms
+ ✓ __tests__/mobile/notification-permission-sync.test.ts (26 tests) 93ms
+ ✓ __tests__/components/saved-searches.test.tsx (12 tests) 794ms
+   ✓ 저장 실패 시 성공으로 표시하지 않고 다시 저장할 수 있다  300ms
+ ✓ __tests__/components/community-owner-independent.test.tsx (23 tests) 3509ms
+   ✓ 인증 상태 true에서 서버 본인 판정과 함께 관리 버튼을 제한한다  383ms
+ ✓ __tests__/components/properties-filter.test.tsx (2 tests) 727ms
+   ✓ 실제 Select로 필터를 열어도 화면이 깨지지 않는다  386ms
+   ✓ 월세와 관리비의 합계를 공과금 별도 표시와 함께 보여준다  338ms
+ ✓ __tests__/components/community-board-load-failure.test.tsx (8 tests) 514ms
+ ✓ __tests__/config/home-redirect.test.ts (3 tests) 2062ms
+     ✓ 저장소 어디에도 `/home`으로 가는 내부 링크가 남아 있지 않다  2058ms
+ ✓ __tests__/components/trust-empty-failure.test.tsx (6 tests) 394ms
+ ✓ __tests__/mobile/community-comments.test.tsx (9 tests) 523ms
+ ✓ __tests__/lib/auth.test.ts (16 tests) 791ms
+     ✓ 올바른 비밀번호 검증 성공  303ms
+ ↓ __tests__/api/community-owner-concurrency-independent.test.ts (4 tests | 4 skipped)
+stderr | __tests__/api/auth.test.ts > POST /api/auth/logout > clears auth cookie and returns success
+[ERROR] 로그아웃 토큰 무효화 실패 {
+  error: {
+    name: 'Error',
+    message: '[vitest] No "headers" export is defined on the "next/headers" mock. Did you forget to return it from "vi.mock"?\n' +
+      'If you need to partially mock a module, you can use "importOriginal" helper inside:\n',
+    stack: 'Error: [vitest] No "headers" export is defined on the "next/headers" mock. Did you forget to return it from "vi.mock"?\n' +
+      'If you need to partially mock a module, you can use "importOriginal" helper inside:\n' +
+      '\n' +
+      '    at VitestMocker.createError (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/vitest/dist/chunks/startVitestModuleRunner.bRl2_oI_.js:62:17)\n' +
+      '    at Object.get (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/vitest/dist/chunks/startVitestModuleRunner.bRl2_oI_.js:324:16)\n' +
+      '    at /Volumes/WorkDrive/Develop/02_Ipjuhae/lib/auth.ts:111:102\n' +
+      '    at getRequestToken (/Volumes/WorkDrive/Develop/02_Ipjuhae/lib/auth.ts:111:21)\n' +
+      '    at Module.POST (/Volumes/WorkDrive/Develop/02_Ipjuhae/app/api/auth/logout/route.ts:8:19)\n' +
+      '    at /Volumes/WorkDrive/Develop/02_Ipjuhae/__tests__/api/auth.test.ts:274:17\n' +
+      '    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:1893:20'
+  }
+}
+
+ ✓ __tests__/api/auth.test.ts (15 tests) 217ms
+ ✓ __tests__/components/social-login-recovery.test.tsx (5 tests) 318ms
+ ✓ __tests__/components/community-owner-controls.test.tsx (32 tests) 5768ms
+   ✓ 인증된 본인 글과 댓글만 관리 버튼 노출  401ms
+ ✓ __tests__/components/community-post-view.test.tsx (16 tests) 1029ms
+     ✓ 비로그인 사용자에게 그 글로 돌아오는 로그인 링크를 준다  349ms
+ ✓ __tests__/api/account-delete-atomicity.test.ts (7 tests) 66ms
+stdout | __tests__/lib/image.test.ts > 이미지 처리 모듈 > resizeImage > 이미지를 리사이징할 수 있다
+[INFO] 이미지 리사이징 완료 {
+  originalSize: 414,
+  newSize: 94,
+  width: 50,
+  height: 50,
+  format: 'webp'
+}
+
+ ↓ __tests__/api/community-owner-db-independent.test.ts (3 tests | 3 skipped)
+stdout | __tests__/lib/image.test.ts > 이미지 처리 모듈 > resizeImage > 다양한 포맷으로 변환할 수 있다
+[INFO] 이미지 리사이징 완료 {
+  originalSize: 414,
+  newSize: 361,
+  width: 100,
+  height: 100,
+  format: 'jpeg'
+}
+
+ ✓ __tests__/lib/date.test.ts (27 tests) 17ms
+stdout | __tests__/lib/image.test.ts > 이미지 처리 모듈 > resizeImage > 다양한 포맷으로 변환할 수 있다
+[INFO] 이미지 리사이징 완료 {
+  originalSize: 414,
+  newSize: 126,
+  width: 100,
+  height: 100,
+  format: 'png'
+}
+
+stdout | __tests__/lib/image.test.ts > 이미지 처리 모듈 > resizeImage > 다양한 포맷으로 변환할 수 있다
+[INFO] 이미지 리사이징 완료 {
+  originalSize: 414,
+  newSize: 110,
+  width: 100,
+  height: 100,
+  format: 'webp'
+}
+
+stderr | __tests__/lib/image.test.ts > 이미지 처리 모듈 > resizeImage > 잘못된 이미지는 실패한다
+[ERROR] 이미지 리사이징 오류 {
+  error: {
+    name: 'Error',
+    message: 'Input buffer contains unsupported image format',
+    stack: 'Error: Input buffer contains unsupported image format\n' +
+      '    at Sharp.toBuffer (/Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/sharp/lib/output.js:163:17)\n' +
+      '    at resizeImage (/Volumes/WorkDrive/Develop/02_Ipjuhae/lib/image.ts:67:35)\n' +
+      '    at /Volumes/WorkDrive/Develop/02_Ipjuhae/__tests__/lib/image.test.ts:71:28\n' +
+      '    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11\n' +
+      '    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:1893:26\n' +
+      '    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2316:20\n' +
+      '    at new Promise (<anonymous>)\n' +
+      '    at runWithCancel (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2313:10)\n' +
+      '    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2295:20\n' +
+      '    at new Promise (<anonymous>)'
+  }
+}
+
+stdout | __tests__/lib/image.test.ts > 이미지 처리 모듈 > resizeImage > 품질 설정이 적용된다
+[INFO] 이미지 리사이징 완료 {
+  originalSize: 414,
+  newSize: 362,
+  width: 100,
+  height: 100,
+  format: 'jpeg'
+}
+
+stdout | __tests__/lib/image.test.ts > 이미지 처리 모듈 > resizeImage > 품질 설정이 적용된다
+[INFO] 이미지 리사이징 완료 {
+  originalSize: 414,
+  newSize: 360,
+  width: 100,
+  height: 100,
+  format: 'jpeg'
+}
+
+stdout | __tests__/lib/image.test.ts > 이미지 처리 모듈 > optimizeProfileImage > 프로필 이미지를 400x400 WebP로 최적화한다
+[INFO] 이미지 리사이징 완료 {
+  originalSize: 414,
+  newSize: 376,
+  width: 400,
+  height: 400,
+  format: 'webp'
+}
+
+stdout | __tests__/lib/image.test.ts > 이미지 처리 모듈 > createThumbnail > 200x200 썸네일을 생성한다
+[INFO] 이미지 리사이징 완료 {
+  originalSize: 414,
+  newSize: 162,
+  width: 200,
+  height: 200,
+  format: 'webp'
+}
+
+stdout | __tests__/components/demo-network-isolation.test.tsx > 감시기 대조군 — network 관측이 실제로 동작하는지 먼저 증명한다 > 일반 경로에서 Providers를 마운트하면 analytics 호출이 관측된다
+[analytics] page_view {
+  path: '/check',
+  utm_source: null,
+  utm_medium: null,
+  utm_campaign: null,
+  referrer_host: null,
+  from: null
+}
+
+stderr | __tests__/components/demo-network-isolation.test.tsx > 감시기 대조군 — network 관측이 실제로 동작하는지 먼저 증명한다 > 일반 경로에서 PageContainer를 마운트하면 auth 조회가 관측된다 — fetch 감시기 확인
+Warning: An update to Header inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at Header (/Volumes/WorkDrive/Develop/02_Ipjuhae/components/layout/header.tsx:173:67)
+    at div
+    at PageContainer (/Volumes/WorkDrive/Develop/02_Ipjuhae/components/layout/page-container.tsx:10:26)
+
+stdout | __tests__/lib/image.test.ts > 이미지 처리 모듈 > optimizeDocumentImage > 서류 이미지를 JPEG로 최적화한다
+[INFO] 이미지 리사이징 완료 {
+  originalSize: 414,
+  newSize: 11130,
+  width: 1920,
+  height: 1920,
+  format: 'jpeg'
+}
+
+ ✓ __tests__/mobile/app-config-google-services.test.ts (5 tests) 6ms
+stderr | __tests__/components/demo-network-isolation.test.tsx > demo route 격리 — 실제 render에서 network 호출이 0건이어야 한다 > demo 경로에서 PageContainer를 마운트해도 auth 조회가 나가지 않는다
+Warning: An update to ForwardRef(LinkComponent) inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at LinkComponent (/Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/next/dist/client/link.js:138:19)
+    at div
+    at div
+    at header
+    at Header (/Volumes/WorkDrive/Develop/02_Ipjuhae/components/layout/header.tsx:173:67)
+    at div
+    at PageContainer (/Volumes/WorkDrive/Develop/02_Ipjuhae/components/layout/page-container.tsx:10:26)
+
+stderr | __tests__/components/demo-network-isolation.test.tsx > demo route 격리 — 실제 render에서 network 호출이 0건이어야 한다 > demo 하위 경로 전체에서 공통 shell이 auth 조회를 하지 않는다
+Warning: An update to ForwardRef(LinkComponent) inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at LinkComponent (/Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/next/dist/client/link.js:138:19)
+    at div
+    at div
+    at header
+    at Header (/Volumes/WorkDrive/Develop/02_Ipjuhae/components/layout/header.tsx:173:67)
+    at div
+    at PageContainer (/Volumes/WorkDrive/Develop/02_Ipjuhae/components/layout/page-container.tsx:10:26)
+
+stderr | __tests__/components/demo-network-isolation.test.tsx > demo route 격리 — 실제 render에서 network 호출이 0건이어야 한다 > demo 하위 경로 전체에서 공통 shell이 auth 조회를 하지 않는다
+Warning: An update to ForwardRef(LinkComponent) inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at LinkComponent (/Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/next/dist/client/link.js:138:19)
+    at div
+    at div
+    at header
+    at Header (/Volumes/WorkDrive/Develop/02_Ipjuhae/components/layout/header.tsx:173:67)
+    at div
+    at PageContainer (/Volumes/WorkDrive/Develop/02_Ipjuhae/components/layout/page-container.tsx:10:26)
+
+stderr | __tests__/components/demo-network-isolation.test.tsx > demo route 격리 — 실제 render에서 network 호출이 0건이어야 한다 > demo 하위 경로 전체에서 공통 shell이 auth 조회를 하지 않는다
+Warning: An update to ForwardRef(LinkComponent) inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at LinkComponent (/Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/next/dist/client/link.js:138:19)
+    at div
+    at div
+    at header
+    at Header (/Volumes/WorkDrive/Develop/02_Ipjuhae/components/layout/header.tsx:173:67)
+    at div
+    at PageContainer (/Volumes/WorkDrive/Develop/02_Ipjuhae/components/layout/page-container.tsx:10:26)
+
+stdout | __tests__/lib/image.test.ts > 이미지 처리 모듈 > optimizeDocumentImage > 큰 이미지를 1920px로 제한한다
+[INFO] 이미지 리사이징 완료 {
+  originalSize: 22247,
+  newSize: 7525,
+  width: 1920,
+  height: 1280,
+  format: 'jpeg'
+}
+
+ ✓ __tests__/lib/image.test.ts (17 tests) 251ms
+ ↓ __tests__/api/community-count-db.test.ts (1 test | 1 skipped)
+ ✓ __tests__/components/demo-network-isolation.test.tsx (9 tests) 323ms
+ ✓ __tests__/mobile/notification-foreground-resync.test.ts (5 tests) 105ms
+stderr | __tests__/api/auth-signup.test.ts > POST /api/auth/signup > DB insert 오류 → 500
+[ERROR] Signup error {
+  error: {
+    name: 'Error',
+    message: 'DB insert failed',
+    stack: 'Error: DB insert failed\n' +
+      '    at /Volumes/WorkDrive/Develop/02_Ipjuhae/__tests__/api/auth-signup.test.ts:232:40\n' +
+      '    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11\n' +
+      '    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:1893:26\n' +
+      '    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2316:20\n' +
+      '    at new Promise (<anonymous>)\n' +
+      '    at runWithCancel (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2313:10)\n' +
+      '    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2295:20\n' +
+      '    at new Promise (<anonymous>)\n' +
+      '    at runWithTimeout (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2262:10)\n' +
+      '    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2945:64'
+  }
+}
+
+ ✓ __tests__/api/auth-signup.test.ts (11 tests) 26ms
+ ✓ __tests__/api/contract-report-mutation-auth.test.ts (11 tests) 22ms
+ ✓ __tests__/mobile/community-rules-parity.test.ts (10 tests) 12ms
+ ✓ __tests__/api/external-requests-authorization.test.ts (6 tests) 20ms
+ ✓ __tests__/api/b2b-compliance-gates.test.ts (7 tests) 29ms
+ ✓ __tests__/components/properties-saved-search-url.test.tsx (4 tests) 6714ms
+   ✓ 저장 검색 'monthly_rent' 적용 후 URL·API·재진입 조건을 유지한다  2480ms
+   ✓ 저장 검색 'deposit' 적용 후 URL·API·재진입 조건을 유지한다  1391ms
+   ✓ 저장 검색 'created_at' 적용 후 URL·API·재진입 조건을 유지한다  1464ms
+   ✓ 저장 검색 'view_count' 적용 후 URL·API·재진입 조건을 유지한다  1376ms
+ ✓ __tests__/api/oauth-configuration.test.ts (28 tests) 56ms
+ ✓ __tests__/lib/contract-trust-mutation-authorization.test.ts (18 tests) 9ms
+ ✓ __tests__/api/community-comment-rate-limit.test.ts (6 tests) 22ms
+ ✓ __tests__/api/public-profile-consent.test.ts (12 tests) 17ms
+ ✓ __tests__/components/matches-recovery.test.tsx (5 tests) 444ms
+stderr | __tests__/api/saved-searches.test.ts > cron dispatches only while enabled and reports failure instead of success
+[ERROR] 저장 검색 알림 처리 실패 {
+  error: {
+    name: 'Error',
+    message: 'DB unavailable',
+    stack: 'Error: DB unavailable\n' +
+      '    at /Volumes/WorkDrive/Develop/02_Ipjuhae/__tests__/api/saved-searches.test.ts:51:58\n' +
+      '    at processTicksAndRejections (node:internal/process/task_queues:103:5)'
+  }
+}
+
+ ✓ __tests__/api/saved-searches.test.ts (5 tests) 38ms
+ ✓ __tests__/ops/deadman.test.ts (13 tests | 10 skipped) 32ms
+ ✓ __tests__/api/analytics-event-anonymity.test.ts (9 tests) 17ms
+stderr | __tests__/api/community-comments-read.test.ts > 댓글 조회 실패는 빈 성공 목록 대신 500을 반환한다
+[ERROR] 댓글 조회 오류 {
+  error: {
+    name: 'Error',
+    message: '검증용 DB 오류',
+    stack: 'Error: 검증용 DB 오류\n' +
+      '    at /Volumes/WorkDrive/Develop/02_Ipjuhae/__tests__/api/community-comments-read.test.ts:31:38\n' +
+      '    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11\n' +
+      '    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:1893:26\n' +
+      '    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2316:20\n' +
+      '    at new Promise (<anonymous>)\n' +
+      '    at runWithCancel (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2313:10)\n' +
+      '    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2295:20\n' +
+      '    at new Promise (<anonymous>)\n' +
+      '    at runWithTimeout (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2262:10)\n' +
+      '    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2945:64'
+  }
+}
+
+ ✓ __tests__/api/community-comments-read.test.ts (6 tests) 16ms
+ ✓ __tests__/api/consent.test.ts (16 tests) 15ms
+ ✓ __tests__/api/compliance-gates.test.ts (4 tests) 9ms
+stderr | __tests__/api/access-logs.test.ts > GET /api/access-logs > DB 오류 → 500 ACCESS_LOGS_FAILED
+[ERROR] Get access logs error {
+  error: {
+    name: 'Error',
+    message: 'boom',
+    stack: 'Error: boom\n' +
+      '    at /Volumes/WorkDrive/Develop/02_Ipjuhae/__tests__/api/access-logs.test.ts:127:43\n' +
+      '    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11\n' +
+      '    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:1893:26\n' +
+      '    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2316:20\n' +
+      '    at new Promise (<anonymous>)\n' +
+      '    at runWithCancel (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2313:10)\n' +
+      '    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2295:20\n' +
+      '    at new Promise (<anonymous>)\n' +
+      '    at runWithTimeout (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2262:10)\n' +
+      '    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2945:64'
+  }
+}
+
+ ✓ __tests__/api/access-logs.test.ts (8 tests) 12ms
+ ✓ __tests__/lib/oauth.test.ts (10 tests) 6ms
+stderr | __tests__/api/login-redirect-return.test.ts > 소셜 오류 복구 — 목적지 보존과 쿠키 정리 > oauth_failed 오류에도 검증된 목적지를 이메일 로그인에 전달한다
+[ERROR] OAuth callback error {
+  error: {
+    name: 'Error',
+    message: 'fixture',
+    stack: 'Error: fixture\n' +
+      '    at /Volumes/WorkDrive/Develop/02_Ipjuhae/__tests__/api/login-redirect-return.test.ts:208:81\n' +
+      '    at processTicksAndRejections (node:internal/process/task_queues:103:5)\n' +
+      '    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:1893:20'
+  }
+}
+
+ ✓ __tests__/api/login-redirect-return.test.ts (16 tests) 26ms
+ ✓ __tests__/lib/idempotency.test.ts (6 tests) 12ms
+stdout | __tests__/api/references.test.ts > POST /api/references > 레퍼런스 요청 성공 — SMS 발송
+[INFO] 이메일 발송 (Mock) { to: 'p***@example.com', subject: '[입주해] 김민수님이 레퍼런스를 요청했습니다' }
+
+ ✓ __tests__/api/references.test.ts (7 tests) 16ms
+ ✓ __tests__/api/landlord-profile-consent.test.ts (15 tests) 13ms
+stderr | __tests__/api/community-owner-mutations.test.ts > 댓글 소유권과 공개 수 > DB 오류는 500
+[ERROR] 커뮤니티 댓글 삭제 오류 {
+  error: {
+    name: 'Error',
+    message: 'synthetic',
+    stack: 'Error: synthetic\n' +
+      '    at /Volumes/WorkDrive/Develop/02_Ipjuhae/__tests__/api/community-owner-mutations.test.ts:99:40\n' +
+      '    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11\n' +
+      '    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:1893:26\n' +
+      '    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2316:20\n' +
+      '    at new Promise (<anonymous>)\n' +
+      '    at runWithCancel (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2313:10)\n' +
+      '    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2295:20\n' +
+      '    at new Promise (<anonymous>)\n' +
+      '    at runWithTimeout (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2262:10)\n' +
+      '    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2945:64'
+  }
+}
+
+ ✓ __tests__/api/community-owner-mutations.test.ts (25 tests) 35ms
+ ✓ __tests__/lib/trust-engine-security.test.ts (4 tests) 11ms
+ ✓ __tests__/api/community-owner-independent.test.ts (11 tests) 11ms
+ ✓ __tests__/api/push-token.test.ts (4 tests) 8ms
+ ✓ __tests__/api/reference-disputes.test.ts (18 tests) 17ms
+ ✓ __tests__/lib/validations.test.ts (38 tests) 11ms
+stderr | __tests__/api/auth-login.test.ts > POST /api/auth/login > DB 오류 → 500
+[ERROR] Login error {
+  error: {
+    name: 'Error',
+    message: 'DB connection failed',
+    stack: 'Error: DB connection failed\n' +
+      '    at /Volumes/WorkDrive/Develop/02_Ipjuhae/__tests__/api/auth-login.test.ts:121:43\n' +
+      '    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11\n' +
+      '    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:1893:26\n' +
+      '    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2316:20\n' +
+      '    at new Promise (<anonymous>)\n' +
+      '    at runWithCancel (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2313:10)\n' +
+      '    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2295:20\n' +
+      '    at new Promise (<anonymous>)\n' +
+      '    at runWithTimeout (file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2262:10)\n' +
+      '    at file:///Volumes/WorkDrive/Develop/02_Ipjuhae/node_modules/@vitest/runner/dist/chunk-artifact.js:2945:64'
+  }
+}
+
+ ✓ __tests__/api/properties.test.ts (11 tests) 17ms
+ ✓ __tests__/api/auth-login.test.ts (7 tests) 21ms
+ ✓ __tests__/lib/rate-limit.test.ts (12 tests) 21ms
+ ✓ __tests__/api/rental-risk-brief.test.ts (2 tests) 37ms
+ ✓ __tests__/components/home-content-state.test.tsx (4 tests) 22ms
+ ✓ __tests__/lib/logger.test.ts (2 tests) 4ms
+ ✓ __tests__/lib/trust-score.test.ts (33 tests) 6ms
+ ✓ __tests__/lib/rental-risk.test.ts (4 tests) 4ms
+ ✓ __tests__/middleware.test.ts (7 tests) 11ms
+ ✓ __tests__/lib/trust-outbox.test.ts (3 tests) 3ms
+ ✓ __tests__/api/messages-conversations.test.ts (3 tests) 5ms
+ ✓ __tests__/api/profile.test.ts (7 tests) 7ms
+ ✓ __tests__/lib/verification-compliance.test.ts (2 tests) 93ms
+ ✓ __tests__/api/mvp-smoke.test.ts (3 tests) 18ms
+ ✓ __tests__/lib/matching.test.ts (14 tests) 6ms
+ ✓ __tests__/lib/compliance-gates.test.ts (11 tests) 8ms
+ ✓ __tests__/lib/analytics-events.test.ts (22 tests) 8ms
+ ✓ lib/__tests__/observability.test.ts (5 tests) 9ms
+ ✓ __tests__/api/verification-process.test.ts (3 tests) 11ms
+ ✓ __tests__/lib/db-ssl.test.ts (31 tests) 7ms
+ ✓ __tests__/api/community-anonymity.test.ts (15 tests) 14ms
+ ✓ __tests__/api/messages-socket-token.test.ts (5 tests) 19ms
+ ✓ __tests__/lib/base-url.test.ts (15 tests) 12ms
+ ✓ __tests__/lib/trust-engine-compliance.test.ts (9 tests) 10ms
+ ✓ __tests__/scripts/launch-smoke-exit.test.ts (21 tests) 8ms
+ ✓ __tests__/lib/attribution.test.ts (9 tests) 8ms
+ ✓ __tests__/api/landlord-tenants.test.ts (2 tests) 4ms
+ ✓ __tests__/api/feature-requests.test.ts (7 tests) 10ms
+ ✓ __tests__/lib/public-mock-demo-boundary.test.ts (6 tests) 9ms
+ ✓ __tests__/api/account-delete.test.ts (2 tests) 9ms
+ ✓ lib/__tests__/matching.test.ts (5 tests) 3ms
+ ✓ __tests__/lib/sanitize.test.ts (16 tests) 5ms
+ ✓ __tests__/lib/policy-news-filter.test.ts (12 tests) 16ms
+ ✓ __tests__/lib/contract-trust-compliance.test.ts (8 tests) 8ms
+ ✓ __tests__/lib/migration-safety.test.ts (14 tests) 6ms
+ ✓ __tests__/lib/analytics.test.ts (2 tests) 7ms
+ ✓ __tests__/lib/safe-redirect.test.ts (6 tests) 4ms
+ ✓ __tests__/ops/dow1269-pr-gate-rehearsal.test.ts (1 test) 2ms
+ ✓ __tests__/lib/consent-fail-closed.test.ts (13 tests) 7ms
+ ✓ lib/__tests__/trust-policy.test.ts (4 tests) 3ms
+ ✓ __tests__/lib/home-content-author-role.test.ts (3 tests) 2ms
+ ✓ __tests__/mobile/analytics-csrf.test.ts (4 tests) 2ms
+ ↓ __tests__/db/saved-searches-real-db.test.ts (6 tests | 6 skipped)
+ ✓ __tests__/lib/socket-auth.test.ts (6 tests) 16ms
+ ✓ __tests__/api/magic-link-route.test.ts (2 tests) 13ms
+ ✓ lib/__tests__/ai-matching.test.ts (22 tests) 5ms
+stderr | __tests__/db/trust-routes-real-db.test.ts
+DATABASE_URL이 없어 실제 Postgres route smoke suite를 건너뜁니다. 로컬 검증은 docs/LOCAL_DB_SETUP.md를 참고하세요.
+
+ ↓ __tests__/db/trust-routes-real-db.test.ts (7 tests | 7 skipped)
+ ✓ __tests__/lib/verification.test.ts (25 tests) 13617ms
+     ✓ 회사명으로 재직 인증 성공  515ms
+     ✓ 회사명이 결과 데이터에 포함됨  515ms
+     ✓ 입사일 정보가 포함됨  504ms
+     ✓ userIdentity 없어도 mock에서는 성공  502ms
+     ✓ 소득 범위로 소득 인증 성공  502ms
+     ✓ 소득 범위가 결과에 포함됨  503ms
+     ✓ userIdentity 없어도 mock에서는 성공  502ms
+     ✓ 다양한 소득 범위에 대해 성공  2009ms
+     ✓ 신용 인증 성공  507ms
+     ✓ 신용 등급이 숫자로 반환됨  504ms
+     ✓ 등급 레이블이 포함됨  507ms
+     ✓ userIdentity 없어도 mock에서는 성공  502ms
+     ✓ 본인 인증 성공  503ms
+     ✓ 이름이 결과에 포함됨  501ms
+     ✓ 생년월일이 결과에 포함됨  503ms
+     ✓ 전화번호가 결과에 포함됨  501ms
+     ✓ CI와 DI가 생성됨  503ms
+     ✓ 성별 정보가 포함됨  501ms
+     ✓ 성공 결과는 success: true와 data를 포함  502ms
+     ✓ userIdentity 객체를 선택적으로 전달 가능  503ms
+     ✓ 성공 결과는 success: true와 data를 포함  503ms
+     ✓ userIdentity 객체를 선택적으로 전달 가능  503ms
+     ✓ 성공 결과는 success: true와 data를 포함  503ms
+     ✓ userIdentity 객체를 선택적으로 전달 가능  503ms
+
+ Test Files  101 passed | 5 skipped (106)
+      Tests  1091 passed | 31 skipped (1122)
+   Start at  11:33:23
+   Duration  14.07s (transform 8.70s, setup 5.21s, import 30.72s, tests 48.39s, environment 9.49s)
+
+JSON report written to /var/folders/gw/bfdh7cq54nn0tq9352ss079m0000gn/T/rentme-test-health-lWGYU9/report.json
+
+실측 테스트 1122개 / 파일 106개 / 죽은 스위트 0개 (하한 606)

@@ -409,7 +409,7 @@ interface ConversationRow {
   last_message_at: string;
   other_user_name: string | null;
   other_user_id: string;
-  other_user_type: 'landlord' | 'tenant';
+  other_user_type: User['userType'];
   last_message: string | null;
   unread_count: number;
 }

@@ -1,0 +1,5 @@
+4ae7da0d feat: preserve community owner controls and service recovery coverage
+05f994dc test: document push token account switch boundaries
+765150c6 docs(qa): 2026-10-13 일일 제품/품질 증거 기록
+31113118 fix: recover rate-limited OAuth browser navigation
+bd9bc509 fix: 소셜 로그인 차단 후 이메일 복구 경로 제공

@@ -4,6 +4,7 @@ import { Ratelimit } from '@upstash/ratelimit'
 import { Redis } from '@upstash/redis/cloudflare'
 import { contractTalkReturnPath } from '@/lib/safe-redirect'
 import { getRequestContext } from '@/lib/request-context'
+import { safeRedirectPath } from '@/lib/safe-redirect'
 
 /**
  * Edge Runtime에서는 jsonwebtoken을 사용할 수 없으므로
@@ -158,6 +159,9 @@ function checkCsrf(request: NextRequest): boolean {
   const isMutation = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)
   if (!isMutation) return true
 
+  // 서버 간 핑은 별도 Bearer secret만 인증한다. 쿠키 인증을 사용하지 않는다.
+  if (method === 'POST' && request.nextUrl.pathname === '/api/ops/heartbeat') return true
+
   // 모바일 앱(커스텀 헤더 사용) API 요청은 CSRF 검증 우회
   if (request.headers.get('x-mobile-client') === 'true') {
     return true
@@ -223,6 +227,23 @@ export async function middleware(request: NextRequest) {
   if (pathname.startsWith('/api/auth')) {
     const { allowed, retryAfter } = await checkRateLimit(`auth:${ip}`, true)
     if (!allowed) {
+      // 한도 검사는 OAuth 시작에도 적용한다. 브라우저만 지속 안내로 복구한다.
+      const isOAuthNavigation = request.method === 'GET'
+        && /^\/api\/auth\/social\/(kakao|naver|google)$/.test(pathname)
+        && request.headers.get('accept')?.split(',').some((type) => type.trim().split(';')[0] === 'text/html')
+      if (isOAuthNavigation) {
+        const login = new URL('/login', request.url)
+        login.searchParams.set('error', 'oauth_unavailable')
+        const redirectTo = safeRedirectPath(request.nextUrl.searchParams.get('redirect'))
+        if (redirectTo) login.searchParams.set('redirect', redirectTo)
+        const response = NextResponse.redirect(login, 303)
+        response.headers.set('Retry-After', String(retryAfter ?? 60))
+        response.headers.set('Vary', 'Accept')
+        response.headers.set('Cache-Control', 'no-store')
+        response.headers.set('x-request-id', requestId)
+        response.headers.set('x-trace-id', traceId)
+        return response
+      }
       const response = NextResponse.json(
         {
           error: '요청 한도 초과',

@@ -2,7 +2,7 @@
 // 모바일 화면은 로드 실패를 "비어 있음"으로 감추지 않는다.
 // 실패 / 빈 결과 / 로딩이 서로 다른 렌더 결과여야 하고, 실패에는 재시도 경로가 있어야 한다.
 import React from 'react'
-import { render, screen, cleanup, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, cleanup, fireEvent, waitFor, act } from '@testing-library/react'
 import { beforeAll, afterAll, afterEach, beforeEach, describe, it, expect, vi } from 'vitest'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -56,17 +56,19 @@ beforeAll(async () => {
   writeFileSync(native, `import React from 'react';
 const flatten = s => Array.isArray(s) ? Object.assign({}, ...s.filter(Boolean).map(flatten)) : (s || {});
 const element = tag => ({children, style, onPress}) => React.createElement(tag, {style: flatten(style), onClick:onPress}, children);
-export const View=element('div'), Text=element('span'), TouchableOpacity=element('button');
+export const View=element('div'), Text=element('span'), TouchableOpacity=element('button'), Pressable=element('button');
 export const Image=({source, style})=>React.createElement('img',{src:source?.uri||'', style:flatten(style), alt:''});
 export const ActivityIndicator=()=>React.createElement('progress');
-export const RefreshControl=()=>null;
-export const FlatList=({data, renderItem, keyExtractor, ListEmptyComponent})=>React.createElement('div',{}, data?.length ? data.map((item,index)=>React.createElement(React.Fragment,{key:keyExtractor?.(item,index)||index}, renderItem({item,index}))) : ListEmptyComponent);
+export const RefreshControl=({onRefresh})=>React.createElement('button',{onClick:onRefresh},'새로고침');
+export const FlatList=({data, renderItem, keyExtractor, ListEmptyComponent, refreshControl})=>React.createElement('div',{}, refreshControl, data?.length ? data.map((item,index)=>React.createElement(React.Fragment,{key:keyExtractor?.(item,index)||index}, renderItem({item,index}))) : ListEmptyComponent);
 export const ScrollView=element('div');
 export const TextInput=({value, onChangeText, placeholder})=>React.createElement('input',{value:value||'', placeholder, onChange:e=>onChangeText?.(e.target.value)});
 export const KeyboardAvoidingView=element('div');
 export const Platform={OS:'ios', select:o=>o.ios};
 export const StyleSheet={create:s=>s}; export const Alert={alert:()=>{}}; export const Linking={openURL:()=>{}};
 `)
+  const safeArea = join(dir, 'safe-area.js')
+  writeFileSync(safeArea, `import React from 'react'; export const SafeAreaView=({children, style, edges})=>React.createElement('div', {style, 'data-safe-area-edges':edges.join(',')}, children);`)
   const navigation = join(dir, 'navigation.js')
   writeFileSync(navigation, `import React from 'react'; export const useFocusEffect = fn => React.useEffect(() => fn(), [fn]);`)
   const constants = join(dir, 'constants.js')
@@ -99,6 +101,7 @@ export default { pickImage, takePhoto };`)
     name: 'mobile-list-qa',
     setup(b: any) {
       b.onResolve({ filter: /^react-native$/ }, () => ({ path: native }))
+      b.onResolve({ filter: /^react-native-safe-area-context$/ }, () => ({ path: safeArea }))
       b.onResolve({ filter: /^@react-navigation\/native$/ }, () => ({ path: navigation }))
       b.onResolve({ filter: /^expo-constants$/ }, () => ({ path: constants }))
       b.onResolve({ filter: /^\.\.\/services\/api$/ }, () => ({ path: apiClient }))
@@ -395,5 +398,73 @@ describe('공인중개사 가입과 역할별 화면', () => {
     render(<SettingsScreen navigation={{ navigate }} />)
     expect(screen.getByText('푸시 알림 설정')).toBeVisible()
     expect(screen.queryByText('프로필 편집')).toBeNull()
+  })
+})
+
+
+describe('기존 데이터 재조회 실패 복구', () => {
+  const cases = [
+    ['대화 목록', () => MessagesScreen, 'fetchConversations', [{ id: 'c1', otherUser: { name: '기존 상대', userType: 'tenant' }, lastMessage: '기존 대화', unreadCount: 0 }], '기존 대화', '대화를 불러오지 못했습니다'],
+    ['매칭', () => MatchesScreen, 'fetchMatches', [{ id: 'l1', title: '기존 매칭', address: '서울', deposit: 100, monthlyRent: 10 }], '기존 매칭', '매칭 결과를 불러오지 못했습니다'],
+  ] as const
+
+  it.each(cases)('%s: 새로고침 실패 시 기존 데이터와 수동 재시도를 표시한다', async (_name, component, method, data, text, errorTitle) => {
+    api[method].mockResolvedValueOnce(data).mockRejectedValueOnce(new Error('503')).mockRejectedValueOnce(new Error('503 retry')).mockResolvedValueOnce(data)
+    const Component = component()
+    render(<Component navigation={{ navigate: vi.fn() }} />)
+    await screen.findByText(text)
+    if (_name === '대화 목록') expect(screen.getByText(text).closest('[data-safe-area-edges]')).toHaveAttribute('data-safe-area-edges', 'top')
+    fireEvent.click(screen.getByText('새로고침'))
+    expect(await screen.findByText(errorTitle)).toBeVisible()
+    expect(screen.getByText(text)).toBeVisible()
+    fireEvent.click(screen.getByText('다시 시도'))
+    await waitFor(() => expect(api[method]).toHaveBeenCalledTimes(3))
+    expect(screen.getByText(errorTitle)).toBeVisible()
+    expect(screen.getByText('다시 시도')).toBeVisible()
+    expect(screen.getByText(text)).toBeVisible()
+    fireEvent.click(screen.getByText('다시 시도'))
+    await waitFor(() => expect(screen.queryByText(errorTitle)).toBeNull())
+    expect(api[method]).toHaveBeenCalledTimes(4)
+    expect(screen.queryByText('다시 시도')).toBeNull()
+    expect(screen.getByText(text)).toBeVisible()
+  })
+
+  it.each(['수동 재시도', 'polling'])('대화방: 기존 메시지 재조회 실패를 %s로 복구한다', async recovery => {
+    const data = [{ id: 'm1', content: '기존 메시지', createdAt: '2026-10-12T12:00:00Z', isMine: false }]
+    let poll!: () => Promise<void>
+    const originalInterval = globalThis.setInterval
+    const interval = vi.spyOn(globalThis, 'setInterval').mockImplementation(((callback: () => Promise<void>, delay: number) => {
+      if (delay !== 5000) return originalInterval(callback, delay)
+      poll = callback
+      return 123
+    }) as any)
+    const originalClear = globalThis.clearInterval
+    const clear = vi.spyOn(globalThis, 'clearInterval').mockImplementation(id => {
+      if (id !== 123) originalClear(id)
+    })
+    try {
+      api.fetchMessages.mockResolvedValueOnce(data).mockRejectedValueOnce(new Error('503')).mockResolvedValueOnce(data)
+      render(<ChatRoomScreen route={{ params: { conversationId: 'c1' } }} />)
+      await screen.findByText('기존 메시지')
+      expect(interval).toHaveBeenCalledWith(expect.any(Function), 5000)
+      await act(async () => { await poll() })
+      expect(screen.getByText('대화 내용을 불러오지 못했습니다')).toBeVisible()
+      expect(screen.getByText('기존 메시지')).toBeVisible()
+      expect(screen.getByText('다시 시도')).toBeVisible()
+      if (recovery === '수동 재시도') {
+        fireEvent.click(screen.getByText('다시 시도'))
+      } else {
+        await act(async () => { await poll() })
+      }
+      await waitFor(() => expect(screen.queryByText('대화 내용을 불러오지 못했습니다')).toBeNull())
+      expect(api.fetchMessages).toHaveBeenCalledTimes(3)
+      expect(screen.queryByText('다시 시도')).toBeNull()
+      expect(screen.getByText('기존 메시지')).toBeVisible()
+      cleanup()
+      expect(clear).toHaveBeenCalledWith(123)
+    } finally {
+      interval.mockRestore()
+      clear.mockRestore()
+    }
   })
 })

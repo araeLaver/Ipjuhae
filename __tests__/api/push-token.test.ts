@@ -77,4 +77,29 @@ describe('/api/notifications/push-token', () => {
       [userId, expoToken],
     )
   })
+
+  it('인증되지 않은 사용자는 알고 있는 token도 삭제하지 못한다', async () => {
+    vi.mocked(verifyTokenAllowed).mockResolvedValue(null)
+    const response = await DELETE(request('DELETE'))
+    expect(response.status).toBe(401)
+    expect(query).not.toHaveBeenCalled()
+  })
+
+  it('token 없는 삭제는 DB 접근 전에 거부한다', async () => {
+    const response = await DELETE(new Request('http://localhost:3000/api/notifications/push-token', { method: 'DELETE' }))
+    expect(response.status).toBe(400)
+    expect(query).not.toHaveBeenCalled()
+  })
+
+  it('동일 token을 새 계정이 등록하면 conflict 갱신도 새 소유자를 사용한다', async () => {
+    const nextUserId = '22222222-2222-4222-8222-222222222222'
+    await PUT(request('PUT', { token: expoToken, platform: 'ios' }))
+    vi.mocked(verifyTokenAllowed).mockResolvedValue({ userId: nextUserId } as never)
+    await PUT(request('PUT', { token: expoToken, platform: 'ios' }))
+    expect(query).toHaveBeenLastCalledWith(
+      expect.stringMatching(/ON CONFLICT \(token\)\s+DO UPDATE SET user_id = \$1/),
+      [nextUserId, expoToken, 'ios'],
+    )
+  })
+
 })

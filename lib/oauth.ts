@@ -12,24 +12,24 @@ interface OAuthConfig {
 
 const providers: Record<AuthProvider, () => OAuthConfig> = {
   kakao: () => ({
-    clientId: process.env.KAKAO_CLIENT_ID || '',
-    clientSecret: process.env.KAKAO_CLIENT_SECRET || '',
+    clientId: requireCredential('kakao', 'CLIENT_ID'),
+    clientSecret: requireCredential('kakao', 'CLIENT_SECRET'),
     authorizeUrl: 'https://kauth.kakao.com/oauth/authorize',
     tokenUrl: 'https://kauth.kakao.com/oauth/token',
     profileUrl: 'https://kapi.kakao.com/v2/user/me',
     scope: 'profile_nickname profile_image account_email',
   }),
   naver: () => ({
-    clientId: process.env.NAVER_CLIENT_ID || '',
-    clientSecret: process.env.NAVER_CLIENT_SECRET || '',
+    clientId: requireCredential('naver', 'CLIENT_ID'),
+    clientSecret: requireCredential('naver', 'CLIENT_SECRET'),
     authorizeUrl: 'https://nid.naver.com/oauth2.0/authorize',
     tokenUrl: 'https://nid.naver.com/oauth2.0/token',
     profileUrl: 'https://openapi.naver.com/v1/nid/me',
     scope: '',
   }),
   google: () => ({
-    clientId: process.env.GOOGLE_CLIENT_ID || '',
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+    clientId: requireCredential('google', 'CLIENT_ID'),
+    clientSecret: requireCredential('google', 'CLIENT_SECRET'),
     authorizeUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
     tokenUrl: 'https://oauth2.googleapis.com/token',
     profileUrl: 'https://www.googleapis.com/oauth2/v2/userinfo',
@@ -41,9 +41,23 @@ export function getOAuthConfig(provider: AuthProvider): OAuthConfig {
   return providers[provider]()
 }
 
-/** A provider is usable only if its client id is configured. */
+export function getProviderConfiguration(provider: AuthProvider) {
+  return {
+    clientIdPresent: Boolean(process.env[`${provider.toUpperCase()}_CLIENT_ID`]?.trim()),
+    clientSecretPresent: Boolean(process.env[`${provider.toUpperCase()}_CLIENT_SECRET`]?.trim()),
+  }
+}
+
+function requireCredential(provider: AuthProvider, key: 'CLIENT_ID' | 'CLIENT_SECRET'): string {
+  const value = process.env[`${provider.toUpperCase()}_${key}`]?.trim()
+  if (!value) throw new Error(`OAuth configuration missing: ${provider} ${key}`)
+  return value
+}
+
+/** UI exposure and OAuth execution require both credentials. */
 export function isProviderEnabled(provider: AuthProvider): boolean {
-  return Boolean(getOAuthConfig(provider).clientId)
+  const config = getProviderConfiguration(provider)
+  return config.clientIdPresent && config.clientSecretPresent
 }
 
 export function getEnabledProviders(): AuthProvider[] {

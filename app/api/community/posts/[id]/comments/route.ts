@@ -21,6 +21,7 @@ interface CommentRow {
   body: string
   created_at: string
   cursor_time: string
+  is_author: boolean
   /**
    * 운영자 여부만. `admin` 아니면 전부 `member`다 — 비로그인 익명 댓글도 `member`로
    * 나간다(예전 `guest`를 남기면 로그인 여부가 드러난다).
@@ -64,6 +65,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   try {
     const rows = await query<CommentRow>(
       `SELECT c.id, c.body, c.created_at, c.created_at::text AS cursor_time,
+              COALESCE(c.author_id = $4::uuid, false) AS is_author,
               CASE WHEN u.user_type = 'admin' THEN 'admin' ELSE 'member' END AS author_role
          FROM community_comments c
          LEFT JOIN users u ON u.id = c.author_id
@@ -71,7 +73,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
           AND ($2::timestamptz IS NULL OR (c.created_at, c.id) > ($2::timestamptz, $3::uuid))
         ORDER BY c.created_at ASC, c.id ASC
         LIMIT 201`,
-      [id, cursor?.time ?? null, cursor?.id ?? null]
+      [id, cursor?.time ?? null, cursor?.id ?? null, user?.id ?? null]
     )
     const count = await queryOne<{ total: string }>(
       `SELECT COUNT(*) AS total FROM community_comments

@@ -79,6 +79,8 @@ describe('OAuth redirect_uri — 소셜 로그인이 걸린 지점', () => {
     const { getAuthorizeUrl } = await import('@/lib/oauth')
     // authorize URL의 query에서 redirect_uri를 되읽는다. 내부 함수가 아니라
     // 실제로 provider에 보내지는 값을 본다.
+    vi.stubEnv(`${provider.toUpperCase()}_CLIENT_ID`, 'test-client')
+    vi.stubEnv(`${provider.toUpperCase()}_CLIENT_SECRET`, 'test-secret')
     const url = new URL(getAuthorizeUrl(provider, 'state-123'))
     return url.searchParams.get('redirect_uri')
   }
