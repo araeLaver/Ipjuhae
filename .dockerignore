@@ -34,6 +34,7 @@ playwright.config.*
 docs
 marketing
 scripts/*
+!scripts/build-ops-deadman.mjs
 !scripts/build-policy-news.mjs
 !scripts/migrate-policy-news.cjs
 migrations
