@@ -20,7 +20,7 @@ it('조회 SQL은 삭제·숨김을 제외하고 운영자 역할을 반환한�
   expect(sql).toMatch(/c\.deleted_at IS NULL/)
   expect(sql).toMatch(/c\.hidden_at IS NULL/)
   expect(sql).toMatch(/AS author_role/)
-  expect(args).toEqual(['p1',null,null])
+  expect(args).toEqual(['p1',null,null,null])
 })
 it('없는 게시글에는 404를 반환하고 댓글을 조회하지 않는다',async()=>{
   vi.mocked(queryOne).mockResolvedValue(null)
@@ -50,7 +50,7 @@ it('201번째 댓글은 다음 커서로 조회하고 전체 공개 개수를 �
   const second = await (await GET(new Request(`http://localhost/comments?cursor=${first.nextCursor}`),{params:Promise.resolve({id:'p1'})})).json()
   expect(second.comments.map((c: {id:string})=>c.id)).toEqual([rows[200].id])
   expect(second.nextCursor).toBeNull()
-  expect(vi.mocked(query).mock.calls[1][1]).toEqual(['p1',time,rows[199].id])
+  expect(vi.mocked(query).mock.calls[1][1]).toEqual(['p1',time,rows[199].id,null])
   expect(vi.mocked(query).mock.calls[1][0]).toContain('ORDER BY c.created_at ASC, c.id ASC')
   expect(vi.mocked(queryOne).mock.calls[1][0]).toMatch(/deleted_at IS NULL AND hidden_at IS NULL/)
 })
@@ -58,4 +58,14 @@ it('잘못된 커서는 DB 댓글 조회 전에 400으로 거절한다', async (
   const response=await GET(new Request('http://localhost/comments?cursor=invalid'),{params:Promise.resolve({id:'p1'})})
   expect(response.status).toBe(400)
   expect(query).not.toHaveBeenCalled()
+})
+
+it('본인 판정만 반환하고 작성자 ID를 SELECT 응답 필드로 내보내지 않는다', async () => {
+  vi.mocked(getCurrentUser).mockResolvedValue({id:'u1',user_type:'tenant'} as never)
+  vi.mocked(query).mockResolvedValue([{id:'c1',body:'합성 댓글',is_author:true,author_role:'member'}])
+  const data = await (await read()).json()
+  expect(data.comments[0].is_author).toBe(true)
+  expect(data.comments[0]).not.toHaveProperty('author_id')
+  expect(vi.mocked(query).mock.calls[0][1]).toEqual(['p1',null,null,'u1'])
+  expect(vi.mocked(query).mock.calls[0][0]).toContain('COALESCE(c.author_id = $4::uuid, false) AS is_author')
 })

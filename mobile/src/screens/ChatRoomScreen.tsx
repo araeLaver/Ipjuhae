@@ -136,6 +136,15 @@ const ChatRoomScreen: React.FC<Props> = ({ route }) => {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
+      {loadError && (
+        <View style={styles.errorContainer}>
+          <Text style={styles.emptyTitle}>대화 내용을 불러오지 못했습니다</Text>
+          <Text style={styles.emptySubtitle}>메시지가 없는 상태가 아니라 조회에 실패했습니다.</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={loadMessages}>
+            <Text style={styles.retryText}>다시 시도</Text>
+          </TouchableOpacity>
+        </View>
+      )}
       <FlatList
         ref={flatListRef}
         data={messages}
@@ -143,22 +152,12 @@ const ChatRoomScreen: React.FC<Props> = ({ route }) => {
         renderItem={renderMessage}
         contentContainerStyle={styles.messageList}
         onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
-        ListEmptyComponent={
-          loadError ? (
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyTitle}>대화 내용을 불러오지 못했습니다</Text>
-              <Text style={styles.emptySubtitle}>메시지가 없는 상태가 아니라 조회에 실패했습니다.</Text>
-              <TouchableOpacity style={styles.retryButton} onPress={loadMessages}>
-                <Text style={styles.retryText}>다시 시도</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyIcon}>💬</Text>
-              <Text style={styles.emptyText}>대화를 시작해보세요</Text>
-            </View>
-          )
-        }
+        ListEmptyComponent={loadError ? null : (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyIcon}>💬</Text>
+            <Text style={styles.emptyText}>대화를 시작해보세요</Text>
+          </View>
+        )}
       />
       <View style={styles.inputContainer}>
         <TextInput
@@ -205,6 +204,7 @@ const styles = StyleSheet.create({
   sendButton: { marginLeft: 8, paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#F0663F', borderRadius: 20 },
   sendButtonDisabled: { backgroundColor: '#F4977B' },
   sendButtonText: { fontSize: 14, fontWeight: '600', color: '#fff' },
+  errorContainer: { alignItems: 'center', paddingHorizontal: 24, paddingVertical: 16 },
   emptyContainer: { alignItems: 'center', paddingTop: 80 },
   emptyIcon: { fontSize: 48, marginBottom: 12 },
   emptyText: { fontSize: 16, color: '#9A8F87' },

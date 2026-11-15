@@ -21,10 +21,14 @@ function error(message) {
 }
 
 try {
+  const nodeOptions = [
+    process.env.NODE_OPTIONS,
+    process.allowedNodeEnvironmentFlags?.has('--no-experimental-webstorage') ? '--no-experimental-webstorage' : '',
+  ].filter(Boolean).join(' ')
   const vitest = spawnSync(process.execPath, [
     './node_modules/vitest/vitest.mjs', 'run', ...process.argv.slice(2),
     '--reporter=default', '--reporter=json', `--outputFile.json=${reportPath}`,
-  ], { stdio: 'inherit' })
+  ], { stdio: 'inherit', env: { ...process.env, ...(nodeOptions ? { NODE_OPTIONS: nodeOptions } : {}) } })
   if (vitest.error) throw vitest.error
   const report = JSON.parse(readFileSync(reportPath, 'utf8'))
   if (!Number.isInteger(report.numTotalTests) || !Array.isArray(report.testResults)) {

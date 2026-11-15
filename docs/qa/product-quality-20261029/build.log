@@ -1,0 +1,334 @@
+
+> rentme@1.0.0 build
+> node scripts/build-ops-deadman.mjs && NODE_ENV=production next build
+
+   ▲ Next.js 15.5.20
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 5.6s
+   Linting and checking validity of types ...
+
+./app/admin/disputes/page.tsx
+131:6  Warning: React Hook useEffect has a missing dependency: 'loadDisputes'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./app/landlord/favorites/page.tsx
+43:6  Warning: React Hook useEffect has a missing dependency: 'fetchFavorites'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./app/landlord/page.tsx
+77:6  Warning: React Hook useEffect has a missing dependency: 'loadDashboard'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./app/landlord/profile/page.tsx
+31:6  Warning: React Hook useEffect has a missing dependency: 'fetchProfile'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./app/landlord/properties/[id]/page.tsx
+34:6  Warning: React Hook useEffect has a missing dependency: 'fetchProperty'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+327:23  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./app/landlord/properties/page.tsx
+77:6  Warning: React Hook useEffect has a missing dependency: 'fetchProperties'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+175:27  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./app/landlord/stats/page.tsx
+46:6  Warning: React Hook useEffect has a missing dependency: 'fetchStats'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./app/landlord/subscription/page.tsx
+77:6  Warning: React Hook useEffect has missing dependencies: 'fetchSubscription' and 'searchParams'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+
+./app/landlord/tenants/[id]/page.tsx
+42:6  Warning: React Hook useEffect has a missing dependency: 'fetchTenantDetail'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./app/profile/access-logs/page.tsx
+111:6  Warning: React Hook useEffect has a missing dependency: 'fetchLogs'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+132:6  Warning: React Hook useEffect has missing dependencies: 'fetchLogs' and 'total'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+
+./app/profile/consent/events/page.tsx
+132:6  Warning: React Hook useEffect has a missing dependency: 'fetchEvents'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+137:6  Warning: React Hook useEffect has missing dependencies: 'fetchEvents' and 'filters.offset'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+156:6  Warning: React Hook useEffect has a missing dependency: 'fetchEvents'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./app/profile/consent/page.tsx
+89:6  Warning: React Hook useEffect has a missing dependency: 'loadConsents'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./app/profile/reference/[id]/page.tsx
+91:6  Warning: React Hook useEffect has a missing dependency: 'fetchDetail'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./app/profile/reference/page.tsx
+24:6  Warning: React Hook useEffect has a missing dependency: 'fetchReferences'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./app/profile/verification/page.tsx
+22:6  Warning: React Hook useEffect has a missing dependency: 'fetchVerification'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./app/properties/[id]/page.tsx
+82:6  Warning: React Hook useEffect has a missing dependency: 'fetchProperty'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+172:15  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+219:17  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+329:23  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./app/properties/page.tsx
+298:25  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./components/landlord/favorite-button.tsx
+27:6  Warning: React Hook useEffect has a missing dependency: 'checkFavoriteStatus'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./components/landlord/property-form.tsx
+280:19  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./components/messages/conversation-list.tsx
+37:6  Warning: React Hook useEffect has a missing dependency: 'fetchConversations'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+   Collecting page data ...
+   Generating static pages (0/166) ...
+   Generating static pages (41/166) 
+   Generating static pages (82/166) 
+   Generating static pages (124/166) 
+ ✓ Generating static pages (166/166)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                            Size  First Load JS  Revalidate  Expire
+┌ ƒ /                                               2.79 kB         130 kB
+├ ○ /_not-found                                       528 B         103 kB
+├ ○ /404                                              177 B         106 kB
+├ ○ /about                                          10.3 kB         112 kB          1m      1y
+├ ƒ /admin                                          1.22 kB         103 kB
+├ ƒ /admin/access-logs                                179 B         131 kB
+├ ƒ /admin/analytics                                  528 B         103 kB
+├ ƒ /admin/disputes                                 2.64 kB         130 kB
+├ ƒ /admin/documents                                2.03 kB         104 kB
+├ ƒ /admin/patents                                  1.65 kB         104 kB
+├ ƒ /admin/trust                                    2.16 kB         104 kB
+├ ƒ /admin/trust/operations                         6.62 kB         109 kB
+├ ƒ /admin/trust/product                            3.51 kB         109 kB
+├ ƒ /admin/users                                    1.83 kB         107 kB
+├ ƒ /admin/users/[id]                                 878 B         106 kB
+├ ƒ /api/access-logs                                  528 B         103 kB
+├ ƒ /api/account/delete                               528 B         103 kB
+├ ƒ /api/account/export                               528 B         103 kB
+├ ƒ /api/admin/disputes                               528 B         103 kB
+├ ƒ /api/admin/documents                              528 B         103 kB
+├ ƒ /api/admin/documents/[id]                         528 B         103 kB
+├ ƒ /api/admin/feature-requests                       528 B         103 kB
+├ ƒ /api/admin/patent-documents                       528 B         103 kB
+├ ƒ /api/admin/patent-documents/download              528 B         103 kB
+├ ƒ /api/admin/stats                                  528 B         103 kB
+├ ƒ /api/admin/stats/today                            528 B         103 kB
+├ ƒ /api/admin/users                                  528 B         103 kB
+├ ƒ /api/admin/users/[id]                             528 B         103 kB
+├ ƒ /api/admin/users/[id]/trust-score                 528 B         103 kB
+├ ƒ /api/admin/waitlist                               528 B         103 kB
+├ ƒ /api/admin/waitlist/invite                        528 B         103 kB
+├ ƒ /api/analytics/event                              528 B         103 kB
+├ ƒ /api/auth/login                                   528 B         103 kB
+├ ƒ /api/auth/logout                                  528 B         103 kB
+├ ƒ /api/auth/magic-link                              528 B         103 kB
+├ ƒ /api/auth/me                                      528 B         103 kB
+├ ƒ /api/auth/phone/send                              528 B         103 kB
+├ ƒ /api/auth/phone/verify                            528 B         103 kB
+├ ƒ /api/auth/providers                               528 B         103 kB
+├ ƒ /api/auth/signup                                  528 B         103 kB
+├ ƒ /api/auth/signup/social                           528 B         103 kB
+├ ƒ /api/auth/social/[provider]                       528 B         103 kB
+├ ƒ /api/auth/social/[provider]/callback              528 B         103 kB
+├ ƒ /api/community/posts                              528 B         103 kB
+├ ƒ /api/community/posts/[id]                         528 B         103 kB
+├ ƒ /api/community/posts/[id]/comments                528 B         103 kB
+├ ƒ /api/community/posts/[id]/comments/[commentId]    528 B         103 kB
+├ ƒ /api/community/reports                            528 B         103 kB
+├ ƒ /api/consent                                      528 B         103 kB
+├ ƒ /api/consent/events                               528 B         103 kB
+├ ƒ /api/cron/cleanup                                 528 B         103 kB
+├ ƒ /api/cron/references                              528 B         103 kB
+├ ƒ /api/cron/saved-searches                          528 B         103 kB
+├ ƒ /api/cron/trust-maintenance                       528 B         103 kB
+├ ƒ /api/cron/trust-outbox                            528 B         103 kB
+├ ƒ /api/early-access                                 528 B         103 kB
+├ ƒ /api/favorites                                    528 B         103 kB
+├ ƒ /api/favorites/check                              528 B         103 kB
+├ ƒ /api/feature-requests                             528 B         103 kB
+├ ƒ /api/health                                       528 B         103 kB
+├ ƒ /api/invite/[token]                               528 B         103 kB
+├ ƒ /api/landlord/profile                             528 B         103 kB
+├ ƒ /api/landlord/properties                          528 B         103 kB
+├ ƒ /api/landlord/properties/[id]                     528 B         103 kB
+├ ƒ /api/landlord/properties/[id]/feature             528 B         103 kB
+├ ƒ /api/landlord/properties/[id]/images              528 B         103 kB
+├ ƒ /api/landlord/properties/images                   528 B         103 kB
+├ ƒ /api/landlord/stats                               528 B         103 kB
+├ ƒ /api/landlord/subscription                        528 B         103 kB
+├ ƒ /api/landlord/subscription/checkout               528 B         103 kB
+├ ƒ /api/landlord/tenants                             528 B         103 kB
+├ ƒ /api/landlord/tenants/[id]                        528 B         103 kB
+├ ƒ /api/launch/smoke                                 528 B         103 kB
+├ ƒ /api/listings                                     528 B         103 kB
+├ ƒ /api/listings/[id]                                528 B         103 kB
+├ ƒ /api/listings/upload                              528 B         103 kB
+├ ƒ /api/market-price                                 528 B         103 kB
+├ ƒ /api/matches                                      528 B         103 kB
+├ ƒ /api/messages/conversations                       528 B         103 kB
+├ ƒ /api/messages/conversations/[id]                  528 B         103 kB
+├ ƒ /api/messages/conversations/[id]/stream           528 B         103 kB
+├ ƒ /api/messages/socket-token                        528 B         103 kB
+├ ƒ /api/messages/unread                              528 B         103 kB
+├ ƒ /api/notifications                                528 B         103 kB
+├ ƒ /api/notifications/[id]/read                      528 B         103 kB
+├ ƒ /api/notifications/preferences                    528 B         103 kB
+├ ƒ /api/notifications/push-token                     528 B         103 kB
+├ ƒ /api/notifications/read-all                       528 B         103 kB
+├ ƒ /api/ops/heartbeat                                528 B         103 kB
+├ ƒ /api/profile                                      528 B         103 kB
+├ ƒ /api/profile/[id]                                 528 B         103 kB
+├ ƒ /api/profile/generate-intro                       528 B         103 kB
+├ ƒ /api/profile/image                                528 B         103 kB
+├ ƒ /api/properties                                   528 B         103 kB
+├ ƒ /api/properties/[id]                              528 B         103 kB
+├ ƒ /api/references                                   528 B         103 kB
+├ ƒ /api/references/[id]                              528 B         103 kB
+├ ƒ /api/references/[id]/disputes                     528 B         103 kB
+├ ƒ /api/references/[id]/resend                       528 B         103 kB
+├ ƒ /api/references/verify/[token]                    528 B         103 kB
+├ ƒ /api/rental-risk/brief                            528 B         103 kB
+├ ƒ /api/reviews                                      528 B         103 kB
+├ ƒ /api/reviews/user/[userId]                        528 B         103 kB
+├ ƒ /api/saved-searches                               528 B         103 kB
+├ ƒ /api/tenant/profile                               528 B         103 kB
+├ ƒ /api/v1/admin/disputes                            528 B         103 kB
+├ ƒ /api/v1/admin/trust-extractions                   528 B         103 kB
+├ ƒ /api/v1/admin/trust-extractions/[id]              528 B         103 kB
+├ ƒ /api/v1/admin/trust-overview                      528 B         103 kB
+├ ƒ /api/v1/admin/trust-product                       528 B         103 kB
+├ ƒ /api/v1/admin/trust-reviews                       528 B         103 kB
+├ ƒ /api/v1/admin/trust-sources                       528 B         103 kB
+├ ƒ /api/v1/ai-processing-runs                        528 B         103 kB
+├ ƒ /api/v1/audit/me/views                            528 B         103 kB
+├ ƒ /api/v1/consent                                   528 B         103 kB
+├ ƒ /api/v1/consents                                  528 B         103 kB
+├ ƒ /api/v1/consents/events                           528 B         103 kB
+├ ƒ /api/v1/contract-reports                          528 B         103 kB
+├ ƒ /api/v1/contract-reports/[id]                     528 B         103 kB
+├ ƒ /api/v1/contract-reports/[id]/items/[itemId]      528 B         103 kB
+├ ƒ /api/v1/contract-reports/[id]/print               528 B         103 kB
+├ ƒ /api/v1/data-score                                528 B         103 kB
+├ ƒ /api/v1/disclosures/[id]                          528 B         103 kB
+├ ƒ /api/v1/disclosures/decide                        528 B         103 kB
+├ ƒ /api/v1/document-intakes                          528 B         103 kB
+├ ƒ /api/v1/documents/extractions                     528 B         103 kB
+├ ƒ /api/v1/evidence                                  528 B         103 kB
+├ ƒ /api/v1/external-requests                         528 B         103 kB
+├ ƒ /api/v1/organizations                             528 B         103 kB
+├ ƒ /api/v1/organizations/[id]/members                528 B         103 kB
+├ ƒ /api/v1/public/reference/[token]                  528 B         103 kB
+├ ƒ /api/v1/public/trust-cards/[token]                528 B         103 kB
+├ ƒ /api/v1/recommendations/[transactionId]           528 B         103 kB
+├ ƒ /api/v1/reference-requests                        528 B         103 kB
+├ ƒ /api/v1/reference-requests/[id]                   528 B         103 kB
+├ ƒ /api/v1/reference-requests/[id]/disputes          528 B         103 kB
+├ ƒ /api/v1/scores/[subjectType]/[subjectId]          528 B         103 kB
+├ ƒ /api/v1/transactions                              528 B         103 kB
+├ ƒ /api/v1/transactions/[id]                         528 B         103 kB
+├ ƒ /api/v1/transactions/[id]/outcomes                528 B         103 kB
+├ ƒ /api/v1/transactions/[id]/references              528 B         103 kB
+├ ƒ /api/v1/trust-cards                               528 B         103 kB
+├ ƒ /api/v1/trust-cards/[id]                          528 B         103 kB
+├ ƒ /api/v1/trust/change-events                       528 B         103 kB
+├ ƒ /api/v1/trust/report                              528 B         103 kB
+├ ƒ /api/v1/verification-paths/recommend              528 B         103 kB
+├ ƒ /api/verifications                                528 B         103 kB
+├ ƒ /api/verifications/credit                         528 B         103 kB
+├ ƒ /api/verifications/documents                      528 B         103 kB
+├ ƒ /api/verifications/documents/[id]                 528 B         103 kB
+├ ƒ /api/verifications/employment                     528 B         103 kB
+├ ƒ /api/verifications/identity                       528 B         103 kB
+├ ƒ /api/verifications/income                         528 B         103 kB
+├ ƒ /api/verifications/process                        528 B         103 kB
+├ ƒ /api/waitlist                                     528 B         103 kB
+├ ƒ /api/webhooks/stripe                              528 B         103 kB
+├ ƒ /auth/callback                                    528 B         103 kB
+├ ○ /auth/login                                     3.37 kB         117 kB
+├ ○ /auth/verify                                    2.72 kB         117 kB
+├ ○ /check                                          10.1 kB         124 kB
+├ ○ /community                                      6.07 kB         143 kB
+├ ƒ /community/[id]                                 8.09 kB         159 kB
+├ ƒ /demo/public-mock/listings                        528 B         103 kB
+├ ○ /icon.svg                                           0 B            0 B
+├ ○ /install                                        2.18 kB         116 kB
+├ ƒ /invite/[token]                                 1.25 kB         107 kB
+├ ○ /landlord                                        3.5 kB         140 kB
+├ ○ /landlord/favorites                             4.46 kB         141 kB
+├ ○ /landlord/listings/new                            528 B         103 kB
+├ ○ /landlord/messages                                409 B         141 kB
+├ ƒ /landlord/messages/[id]                           373 B         155 kB
+├ ○ /landlord/onboarding                            4.21 kB         118 kB
+├ ○ /landlord/profile                               4.03 kB         141 kB
+├ ○ /landlord/properties                            4.37 kB         141 kB
+├ ƒ /landlord/properties/[id]                       3.54 kB         177 kB
+├ ƒ /landlord/properties/[id]/edit                  1.04 kB         174 kB
+├ ○ /landlord/properties/new                          598 B         174 kB
+├ ○ /landlord/stats                                 3.43 kB         140 kB
+├ ○ /landlord/subscription                          4.44 kB         141 kB
+├ ○ /landlord/tenants                                9.5 kB         172 kB
+├ ƒ /landlord/tenants/[id]                          3.58 kB         145 kB
+├ ○ /listings                                         528 B         103 kB
+├ ƒ /listings/[id]                                    528 B         103 kB
+├ ○ /listings/new                                   5.04 kB         133 kB
+├ ○ /login                                          65.9 kB         203 kB
+├ ○ /manifest.webmanifest                             528 B         103 kB
+├ ○ /matches                                        7.26 kB         144 kB
+├ ○ /messages                                         401 B         141 kB
+├ ƒ /messages/[id]                                    366 B         155 kB
+├ ○ /offline                                          528 B         103 kB
+├ ○ /onboarding/basic                               4.35 kB         115 kB
+├ ○ /onboarding/complete                            4.56 kB         124 kB
+├ ○ /onboarding/lifestyle                           4.36 kB         115 kB
+├ ƒ /opengraph-image                                  528 B         103 kB
+├ ○ /policy                                           187 B         128 kB
+├ ○ /preview                                        6.99 kB         113 kB
+├ ○ /privacy                                          182 B         128 kB
+├ ○ /profile                                        6.03 kB         152 kB
+├ ƒ /profile/[id]                                      4 kB         141 kB
+├ ○ /profile/access-logs                              177 B         131 kB
+├ ○ /profile/consent                                4.27 kB         141 kB
+├ ○ /profile/consent/events                         3.84 kB         141 kB
+├ ○ /profile/edit                                   7.21 kB         160 kB
+├ ○ /profile/reference                              6.06 kB         157 kB
+├ ƒ /profile/reference/[id]                         4.05 kB         141 kB
+├ ○ /profile/setup                                    622 B         169 kB
+├ ○ /profile/tenant                                 1.01 kB         170 kB
+├ ○ /profile/verification                            6.8 kB         172 kB
+├ ○ /properties                                     7.49 kB         198 kB
+├ ƒ /properties/[id]                                4.78 kB         142 kB
+├ ƒ /reference/survey/[token]                       4.67 kB         150 kB
+├ ○ /risk                                           3.63 kB         109 kB
+├ ○ /robots.txt                                       528 B         103 kB
+├ ○ /signup                                         5.18 kB         151 kB
+├ ○ /signup/social                                  3.34 kB         149 kB
+├ ○ /sitemap.xml                                      528 B         103 kB          1h      1y
+├ ○ /tenant/profile                                 4.83 kB         142 kB
+├ ○ /terms                                            182 B         128 kB
+├ ○ /tester                                         3.07 kB         109 kB
+├ ○ /trust-center                                   5.89 kB         133 kB
+├ ƒ /trust/card/[token]                             1.64 kB         104 kB
+├ ○ /trust/cards                                    1.84 kB         107 kB
+├ ○ /trust/evidence                                 3.28 kB         131 kB
+├ ○ /trust/reports                                  2.93 kB         108 kB
+├ ƒ /trust/reports/[id]                             3.47 kB         109 kB
+├ ○ /trust/transactions                             3.95 kB         131 kB
+├ ƒ /trust/transactions/[id]                        3.24 kB         131 kB
+└ ○ /verify-phone                                   3.05 kB         140 kB
++ First Load JS shared by all                        102 kB
+  ├ chunks/1255-ab54a41c275880be.js                   46 kB
+  ├ chunks/4bd1b696-100b9d70ed4e49c1.js             54.2 kB
+  └ other shared chunks (total)                     1.93 kB
+
+
+ƒ Middleware                                        63.1 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+{"level":"warn","message":"[stripe] STRIPE_SECRET_KEY is not set — Stripe features will return 503","timestamp":"2026-10-29T07:46:50.539Z"}
+{"level":"warn","message":"[stripe] STRIPE_SECRET_KEY is not set — Stripe features will return 503","timestamp":"2026-10-29T07:46:50.553Z"}
+ ⚠ Using edge runtime on a page currently disables static generation for that page
+{"level":"warn","message":"[stripe] STRIPE_SECRET_KEY is not set — Stripe features will return 503","timestamp":"2026-10-29T07:46:52.880Z"}
+{"level":"warn","message":"[stripe] STRIPE_SECRET_KEY is not set — Stripe features will return 503","timestamp":"2026-10-29T07:46:55.243Z"}

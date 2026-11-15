@@ -24,6 +24,9 @@ interface EmailOptions {
   subject: string
   html: string
   text?: string
+  from?: string
+  idempotencyKey?: string
+  timeoutMs?: number
 }
 
 type EmailProvider = 'mock' | 'resend' | 'sendgrid'
@@ -55,7 +58,7 @@ async function sendMockEmail(options: EmailOptions): Promise<EmailResult> {
  * Resend 이메일 발송
  * 문서: https://resend.com/docs/api-reference/emails/send-email
  */
-async function sendResendEmail(options: EmailOptions): Promise<EmailResult> {
+export async function sendResendEmail(options: EmailOptions): Promise<EmailResult> {
   const apiKey = process.env.RESEND_API_KEY
 
   if (!apiKey) {
@@ -69,9 +72,11 @@ async function sendResendEmail(options: EmailOptions): Promise<EmailResult> {
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
+        ...(options.idempotencyKey ? { 'Idempotency-Key': options.idempotencyKey } : {}),
       },
+      signal: AbortSignal.timeout(options.timeoutMs ?? 15_000),
       body: JSON.stringify({
-        from: EMAIL_FROM,
+        from: options.from || EMAIL_FROM,
         to: options.to,
         subject: options.subject,
         html: options.html,
@@ -81,7 +86,7 @@ async function sendResendEmail(options: EmailOptions): Promise<EmailResult> {
 
     const data = await response.json()
 
-    if (data.id) {
+    if (response.ok && data.id) {
       logger.info('Resend 이메일 발송 성공', { to: options.to, messageId: data.id })
       return {
         success: true,

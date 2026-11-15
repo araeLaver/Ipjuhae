@@ -13,6 +13,7 @@ import {
   RefreshControl,
   ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { CompositeNavigationProp, useFocusEffect } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -127,28 +128,27 @@ const MessagesScreen: React.FC<Props> = ({ navigation }) => {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
+      {loadError && (
+        <View style={styles.errorContainer}>
+          <Text style={styles.emptyTitle}>대화를 불러오지 못했습니다</Text>
+          <Text style={styles.emptySubtitle}>대화가 없는 상태가 아니라 조회에 실패했습니다.</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={loadConversations}>
+            <Text style={styles.retryText}>다시 시도</Text>
+          </TouchableOpacity>
+        </View>
+      )}
       <FlatList
         data={conversations}
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderConversation}
         contentContainerStyle={styles.listContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        ListEmptyComponent={
-          loadError ? (
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyTitle}>대화를 불러오지 못했습니다</Text>
-              <Text style={styles.emptySubtitle}>대화가 없는 상태가 아니라 조회에 실패했습니다.</Text>
-              <TouchableOpacity style={styles.retryButton} onPress={loadConversations}>
-                <Text style={styles.retryText}>다시 시도</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <Text style={styles.emptyText}>아직 대화가 없습니다</Text>
-          )
-        }
+        ListEmptyComponent={loadError ? null : (
+          <Text style={styles.emptyText}>아직 대화가 없습니다</Text>
+        )}
       />
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -193,6 +193,7 @@ const styles = StyleSheet.create({
   },
   unreadText: { fontSize: 11, fontWeight: 'bold', color: '#fff' },
   emptyText: { textAlign: 'center', color: '#9A8F87', fontSize: 14, marginTop: 60 },
+  errorContainer: { alignItems: 'center', paddingHorizontal: 24, paddingVertical: 16 },
   emptyContainer: { alignItems: 'center', marginTop: 60, paddingHorizontal: 24 },
   emptyTitle: { fontSize: 16, fontWeight: '600', color: '#4A423C' },
   emptySubtitle: { fontSize: 14, color: '#9A8F87', marginTop: 4, textAlign: 'center' },

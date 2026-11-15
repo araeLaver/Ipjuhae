@@ -640,3 +640,21 @@ describe('토큰 수명주기 — 401로 정리에 실패한 뒤 재시도 (DOW-
     expect(captured.filter((c) => c.init.method === 'PUT')).toHaveLength(1)
   })
 })
+
+
+describe('독립 QA — 계정 전환 후 미동의 경계', () => {
+  it('세션 정리 후 새 계정이 알림을 켜지 않으면 서버 정리 요청이 없어 잔여 행을 해소하지 못한다', async () => {
+    globalThis.__notifShim.storage[TOKEN_KEY] = 'ExponentPushToken[test]'
+    globalThis.__notifShim.storage[PREFERENCE_KEY] = 'false'
+    globalThis.__notifShim.permission = 'granted'
+    await apiClient.clearTokens()
+    captured.length = 0
+
+    const state = await initializeNotifications(true)
+
+    expect(state).toMatchObject({ enabled: false, tokenRegistered: false, error: null })
+    expect(captured).toHaveLength(0)
+    expect(globalThis.__notifShim.unregisterCount).toBe(0)
+    expect(globalThis.__notifShim.storage[TOKEN_KEY]).toBeUndefined()
+  })
+})

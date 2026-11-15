@@ -19,6 +19,8 @@ interface ConversationRow {
   created_at: string
   landlord_name: string
   tenant_name: string
+  landlord_type: UserType
+  tenant_type: UserType
 }
 
 interface MessageRow {
@@ -33,6 +35,15 @@ interface MessageRow {
 
 interface CountRow {
   total: string
+}
+
+type UserType = 'tenant' | 'landlord' | 'broker' | 'admin'
+
+const ROLE_FALLBACK_NAMES: Record<UserType, string> = {
+  tenant: '임차인',
+  landlord: '임대인',
+  broker: '공인중개사',
+  admin: '운영자',
 }
 
 // GET /api/messages/conversations/[id] - 대화방 메시지 조회
@@ -58,10 +69,14 @@ export async function GET(
     const conversationResult = await query<ConversationRow>(
       `SELECT c.*,
         lp.name as landlord_name,
-        tp.name as tenant_name
+        tp.name as tenant_name,
+        lu.user_type as landlord_type,
+        tu.user_type as tenant_type
        FROM conversations c
        LEFT JOIN profiles lp ON c.landlord_id = lp.user_id
        LEFT JOIN profiles tp ON c.tenant_id = tp.user_id
+       LEFT JOIN users lu ON c.landlord_id = lu.id
+       LEFT JOIN users tu ON c.tenant_id = tu.id
        WHERE c.id = $1 AND (c.landlord_id = $2 OR c.tenant_id = $2)`,
       [conversationId, payload.userId]
     )
@@ -115,7 +130,7 @@ export async function GET(
     const otherUser = {
       id: isLandlord ? conversation.tenant_id : conversation.landlord_id,
       name: isLandlord ? conversation.tenant_name : conversation.landlord_name,
-      type: isLandlord ? 'tenant' : 'landlord',
+      type: isLandlord ? conversation.tenant_type : conversation.landlord_type,
     }
 
     return NextResponse.json({
@@ -159,10 +174,16 @@ export async function POST(
 
     // 대화방 접근 권한 확인 + 상대방 정보
     const conversationResult = await query<ConversationRow>(
-      `SELECT c.*, lp.name as landlord_name, tp.name as tenant_name
+      `SELECT c.*,
+        lp.name as landlord_name,
+        tp.name as tenant_name,
+        lu.user_type as landlord_type,
+        tu.user_type as tenant_type
        FROM conversations c
        LEFT JOIN profiles lp ON c.landlord_id = lp.user_id
        LEFT JOIN profiles tp ON c.tenant_id = tp.user_id
+       LEFT JOIN users lu ON c.landlord_id = lu.id
+       LEFT JOIN users tu ON c.tenant_id = tu.id
        WHERE c.id = $1 AND (c.landlord_id = $2 OR c.tenant_id = $2)`,
       [conversationId, payload.userId]
     )
@@ -204,7 +225,10 @@ export async function POST(
     // 상대방에게 알림 발송 (비동기)
     const isLandlord = conversation.landlord_id === payload.userId
     const recipientId = isLandlord ? conversation.tenant_id : conversation.landlord_id
-    const senderName = isLandlord ? (conversation.landlord_name || '집주인') : (conversation.tenant_name || '세입자')
+    const senderType = isLandlord ? conversation.landlord_type : conversation.tenant_type
+    const senderName = (
+      isLandlord ? conversation.landlord_name : conversation.tenant_name
+    ) || ROLE_FALLBACK_NAMES[senderType]
     notifyNewMessage({
       toUserId: recipientId,
       fromName: senderName,

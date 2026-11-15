@@ -1,5 +1,13 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { generateState, getAuthorizeUrl, getProfile } from '@/lib/oauth'
+
+beforeEach(() => {
+  for (const provider of ['KAKAO', 'NAVER', 'GOOGLE']) {
+    vi.stubEnv(`${provider}_CLIENT_ID`, `${provider.toLowerCase()}-test-id`)
+    vi.stubEnv(`${provider}_CLIENT_SECRET`, 'test-secret')
+  }
+})
+afterEach(() => vi.unstubAllEnvs())
 
 describe('generateState', () => {
   it('UUID 형태의 문자열을 반환한다', () => {
@@ -19,7 +27,7 @@ describe('getAuthorizeUrl', () => {
   const state = 'test-state-uuid'
 
   it('카카오 authorize URL에 client_id와 state가 포함된다', () => {
-    process.env.KAKAO_CLIENT_ID = 'kakao-test-id'
+    vi.stubEnv('KAKAO_CLIENT_ID', 'kakao-test-id')
     const url = new URL(getAuthorizeUrl('kakao', state))
     expect(url.origin + url.pathname).toBe('https://kauth.kakao.com/oauth/authorize')
     expect(url.searchParams.get('client_id')).toBe('kakao-test-id')
@@ -28,7 +36,7 @@ describe('getAuthorizeUrl', () => {
   })
 
   it('네이버 authorize URL에 client_id와 state가 포함된다', () => {
-    process.env.NAVER_CLIENT_ID = 'naver-test-id'
+    vi.stubEnv('NAVER_CLIENT_ID', 'naver-test-id')
     const url = new URL(getAuthorizeUrl('naver', state))
     expect(url.origin + url.pathname).toBe('https://nid.naver.com/oauth2.0/authorize')
     expect(url.searchParams.get('client_id')).toBe('naver-test-id')

@@ -14,8 +14,10 @@ import { isDemoIsolatedPath } from '@/lib/demo-isolation'
 
 import type { HeaderUser } from './header-user'
 
+// 테스터 모집은 회원 역할과 무관한 공개 참여 경로다. 모든 메뉴에서 공유한다.
+const recruitmentLinks = [{ href: '/tester?from=header', label: '앱 테스터 참여' }]
+
 const tenantLinks = [
-  { href: '/tester?from=header', label: '앱 테스터 참여' },
   { href: '/profile', label: '프로필' },
   { href: '/profile/verification', label: '인증' },
   { href: '/profile/reference', label: '레퍼런스' },
@@ -113,12 +115,11 @@ export function Header({ user: providedUser }: HeaderProps = {}) {
 
   const publicLinks = [
     { href: '/check', label: '보증금 점검' },
-    { href: '/tester?from=header', label: '앱 테스터 참여' },
     { href: '/policy/news', label: '정책소식' },
     { href: '/community', label: '질문 게시판' },
     { href: '/policy', label: '전세 제도' },
   ]
-  const navLinks = user ? linksByRole[user.userType] ?? [] : publicLinks
+  const navLinks = [...recruitmentLinks, ...(user ? linksByRole[user.userType] ?? [] : publicLinks)]
 
   return (
     <>

@@ -1,0 +1,9 @@
+{
+  "apiStatus": 503,
+  "browserRecovery": true,
+  "keyboardEmailFocus": true,
+  "mobile360NoOverflow": true,
+  "passwordLoginRedirect": "/community/abc?tab=latest",
+  "loginResponse": "mock",
+  "screenReader": "role=status 확인; 실제 음성 검수는 QA 필요"
+}
