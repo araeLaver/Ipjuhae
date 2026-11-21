@@ -15,23 +15,24 @@ import { useEffect } from 'react'
 import { track } from '@/lib/analytics-client'
 import { getAttribution } from '@/lib/attribution'
 
+const GROUP_URL = 'https://groups.google.com/g/ipjuhae-testers'
 const TESTING_URL = 'https://play.google.com/apps/testing/com.ipjuhae.app'
 
 const STEPS = [
   {
     n: 1,
-    title: '아래 버튼을 눌러 "테스터 되기"를 누릅니다',
-    body: '안드로이드 폰에서 열어주세요. 폰에 로그인된 구글 계정으로 참여됩니다. 여기까지가 저희에게 꼭 필요한 부분입니다.',
+    title: '먼저 "구글 그룹 참여하기"를 눌러 그룹에 가입합니다',
+    body: '열린 화면에서 "그룹 가입"을 한 번만 누르면 별도로 이메일을 보내주지 않으셔도 바로 테스터 자격이 생깁니다.',
   },
   {
     n: 2,
-    title: '같은 화면의 "Google Play에서 다운로드"로 설치합니다',
-    body: '몇 분 뒤에 열려 보이기도 합니다. 바로 안 되면 잠시 후 다시 눌러주세요.',
+    title: '돌아와서 "테스터로 참여하기"를 눌러 "테스터 되기"를 누릅니다',
+    body: '안드로이드 폰에서 그룹에 가입한 같은 구글 계정으로 참여됩니다. 여기까지가 저희에게 꼭 필요한 부분입니다.',
   },
   {
     n: 3,
-    title: '앱을 한 번 열어 숫자를 넣어봅니다',
-    body: '구글이 정식 출시를 심사할 때 테스터가 실제로 써봤는지를 봅니다. 한 번만 써보셔도 충분합니다.',
+    title: '같은 화면의 "Google Play에서 다운로드"로 설치하고 한 번 열어봅니다',
+    body: '구글이 정식 출시를 심사할 때 테스터가 실제로 써봤는지를 봅니다. 앱을 한 번 열어 숫자를 넣어보시면 충분합니다.',
   },
   {
     n: 4,
@@ -49,22 +50,38 @@ export function TesterSteps() {
 
   return (
     <section className="space-y-5">
-      <a
-        href={TESTING_URL}
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={() =>
-          track('tester_invite_clicked', {
-            properties: { surface: 'tester_page', ...getAttribution() },
-          })
-        }
-        className="flex w-full items-center justify-center rounded-xl bg-primary px-6 py-4 text-base font-bold text-primary-foreground transition-opacity hover:opacity-90"
-      >
-        테스터로 참여하기
-      </a>
+      <div className="space-y-2.5">
+        <a
+          href={GROUP_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() =>
+            track('tester_invite_clicked', {
+              properties: { surface: 'tester_page_group', ...getAttribution() },
+            })
+          }
+          className="flex w-full items-center justify-center rounded-xl border-2 border-primary bg-background px-6 py-4 text-base font-bold text-primary transition-colors hover:bg-primary/5"
+        >
+          1단계: 구글 그룹 참여하기
+        </a>
+
+        <a
+          href={TESTING_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() =>
+            track('tester_invite_clicked', {
+              properties: { surface: 'tester_page', ...getAttribution() },
+            })
+          }
+          className="flex w-full items-center justify-center rounded-xl bg-primary px-6 py-4 text-base font-bold text-primary-foreground transition-opacity hover:opacity-90"
+        >
+          2단계: 테스터로 참여하기
+        </a>
+      </div>
 
       <p className="text-center text-xs text-muted-foreground">
-        안드로이드 폰과 구글 계정이 필요합니다
+        안드로이드 폰과 구글 계정이 필요합니다 (1단계와 2단계 모두 같은 구글 계정으로 진행해 주세요)
       </p>
 
       <ol className="space-y-4">
@@ -82,8 +99,9 @@ export function TesterSteps() {
       </ol>
 
       <p className="rounded-lg bg-muted/50 px-4 py-3 text-xs leading-relaxed text-muted-foreground">
-        링크를 눌렀는데 &ldquo;테스터가 아닙니다&rdquo;가 뜨면, 폰에 로그인된 구글 계정이 다른
-        경우입니다. 쓰시는 계정 주소를 알려주시면 등록해 드리겠습니다.
+        2단계에서 &ldquo;앱을 사용할 수 없음&rdquo; 또는 &ldquo;테스터가 아닙니다&rdquo;가 뜨면,
+        1단계 구글 그룹에 가입한 계정과 Google Play에 로그인된 계정이 다른 경우입니다. 같은
+        구글 계정으로 다시 열어주세요.
       </p>
     </section>
   )
