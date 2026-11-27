@@ -64,6 +64,7 @@ const migrations = [
   'migration-045-ops-deadman.sql',
   'migration-046-saved-searches.sql',
   'migration-047-policy-news.sql',
+  'migration-048-patent-v2-epochs-barriers.sql',
 ] as const
 
 const args = process.argv.slice(2)

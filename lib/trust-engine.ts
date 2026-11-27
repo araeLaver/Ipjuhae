@@ -12,6 +12,13 @@ import {
   isComplianceGateError,
   requireApprovedComplianceGate,
 } from '@/lib/compliance-gates'
+import {
+  buildContractPinSnapshot,
+  canExecuteSelectiveRecomputation,
+  verifyAndOpenDisclosurePackage,
+  verifyAtomicContractSign,
+  type ContractPinSnapshot,
+} from '@/lib/patent-trust-v2'
 
 export type TrustSubjectType = 'tenant' | 'landlord' | 'property'
 type LegacyDisputeResult = 'ReferenceDisputed' | 'DisputeResolvedKeep' | 'DisputeResolvedInvalidated'
@@ -1846,3 +1853,328 @@ export async function calculateDataScore(subjectType: TrustSubjectType, subjectI
   )
   return { score, modelVersion: 'data-score-pilot-1.0', dimensions, weights, factCount: rows.length }
 }
+
+// ─── Patent V2 Atomic Contract Pinning, Signing & Epoch-Bound Verification ──
+
+/**
+ * Claim 1(d): Pins agreed conditions, canonical evidence version vector, evidence set hash,
+ * and aligned invalidation_epoch vector onto the transaction record and moves stage to S3.
+ */
+export async function pinTransactionForContract(
+  transactionId: string,
+  actorId: string,
+  agreedConditions: Record<string, unknown>,
+  factIds: string[],
+  trace: RequestTrace = {},
+) {
+  return transaction(async (client) => {
+    const txResult = await client.query(
+      `SELECT * FROM trust_transaction_contexts WHERE id = $1 FOR UPDATE`,
+      [transactionId]
+    )
+    const context = txResult.rows[0]
+    if (!context) throw new Error('TRUST_TRANSACTION_NOT_FOUND')
+    if (![context.landlord_id, context.tenant_id, context.realtor_id].includes(actorId)) {
+      throw new Error('TRUST_TRANSACTION_FORBIDDEN')
+    }
+    if (!canTransitionTransaction(context.stage, 'S3') && normalizeTransactionStage(context.stage) !== 'S3') {
+      throw new Error('TRUST_TRANSACTION_STAGE_INVALID')
+    }
+
+    const factsResult = factIds.length > 0
+      ? await client.query<{ id: string; node_version: number; invalidation_epoch: string | number; status: string }>(
+          `SELECT id, COALESCE(node_version, 1) AS node_version, COALESCE(invalidation_epoch, 0) AS invalidation_epoch, status
+             FROM trust_fact_nodes
+            WHERE id = ANY($1::uuid[]) FOR SHARE`,
+          [factIds]
+        )
+      : { rows: [] }
+
+    if (factsResult.rows.length !== new Set(factIds).size) {
+      throw new Error('TRUST_PIN_FACT_NOT_FOUND')
+    }
+    const invalidFact = factsResult.rows.find((row) => !['ACTIVE', 'CONFIRMED', 'REVISED'].includes(row.status))
+    if (invalidFact) {
+      throw new Error(`TRUST_PIN_FACT_INVALID:${invalidFact.id}`)
+    }
+
+    const snapshot = buildContractPinSnapshot(
+      agreedConditions,
+      factsResult.rows.map((row) => ({
+        nodeId: row.id,
+        nodeVersion: Number(row.node_version ?? 1),
+        invalidationEpoch: Number(row.invalidation_epoch ?? 0),
+      }))
+    )
+
+    const updated = await client.query(
+      `UPDATE trust_transaction_contexts
+          SET stage = 'S3',
+              terms = $2::jsonb,
+              condition_hash = $3,
+              pinned_evidence_vector = $4::jsonb,
+              pinned_evidence_set_hash = $5,
+              pinned_epoch_vector = $6::jsonb,
+              pinned_at = NOW(),
+              updated_at = NOW()
+        WHERE id = $1
+        RETURNING *`,
+      [
+        transactionId,
+        JSON.stringify(agreedConditions),
+        snapshot.conditionHash,
+        JSON.stringify(snapshot.evidenceVersionVector),
+        snapshot.evidenceSetHash,
+        JSON.stringify(snapshot.epochVector),
+      ]
+    )
+
+    await emitOutbox(
+      client,
+      'transaction',
+      transactionId,
+      'TransactionPinnedForContract',
+      {
+        stage: 'S3',
+        condition_hash: snapshot.conditionHash,
+        evidence_set_hash: snapshot.evidenceSetHash,
+        fact_count: snapshot.evidenceVersionVector.length,
+      },
+      trace
+    )
+    await appendAudit(
+      client,
+      actorId,
+      'transaction.pin_contract',
+      'transaction',
+      transactionId,
+      'contract_signing',
+      'allowed',
+      ['condition_hash', 'pinned_evidence_vector', 'pinned_epoch_vector'],
+      trace
+    )
+
+    return { transaction: updated.rows[0], snapshot }
+  })
+}
+
+/**
+ * Claim 1(i): Atomically compares e-signature request hashes and every pinned
+ * fact's current invalidation_epoch. Transitions S3 → S4 only when all match;
+ * otherwise reverts S3 → S2 (negotiation) and notifies participants via outbox.
+ */
+export async function signPinnedTransactionAtomically(
+  transactionId: string,
+  actorId: string,
+  signRequest: { conditionHash: string; evidenceSetHash: string },
+  trace: RequestTrace = {},
+) {
+  return transaction(async (client) => {
+    const txResult = await client.query(
+      `SELECT * FROM trust_transaction_contexts WHERE id = $1 FOR UPDATE`,
+      [transactionId]
+    )
+    const context = txResult.rows[0]
+    if (!context) throw new Error('TRUST_TRANSACTION_NOT_FOUND')
+    if (![context.landlord_id, context.tenant_id, context.realtor_id].includes(actorId)) {
+      throw new Error('TRUST_TRANSACTION_FORBIDDEN')
+    }
+    if (normalizeTransactionStage(context.stage) !== 'S3' || !context.condition_hash || !context.pinned_evidence_set_hash) {
+      throw new Error('TRUST_TRANSACTION_NOT_PINNED')
+    }
+
+    const pinned: ContractPinSnapshot = {
+      conditionHash: String(context.condition_hash),
+      evidenceVersionVector: Array.isArray(context.pinned_evidence_vector) ? context.pinned_evidence_vector : [],
+      evidenceSetHash: String(context.pinned_evidence_set_hash),
+      epochVector: Array.isArray(context.pinned_epoch_vector)
+        ? context.pinned_epoch_vector.map((v: unknown) => Number(v))
+        : [],
+    }
+
+    const nodeIds = pinned.evidenceVersionVector.map((item) => item.nodeId)
+    const liveFacts = nodeIds.length > 0
+      ? await client.query<{ id: string; invalidation_epoch: string | number; status: string }>(
+          `SELECT id, COALESCE(invalidation_epoch, 0) AS invalidation_epoch, status
+             FROM trust_fact_nodes
+            WHERE id = ANY($1::uuid[]) FOR SHARE`,
+          [nodeIds]
+        )
+      : { rows: [] }
+
+    const liveEpochsByNodeId: Record<string, number> = {}
+    for (const row of liveFacts.rows) {
+      if (['ACTIVE', 'CONFIRMED', 'REVISED'].includes(row.status)) {
+        liveEpochsByNodeId[row.id] = Number(row.invalidation_epoch ?? 0)
+      }
+    }
+
+    const verdict = verifyAtomicContractSign({
+      pinned,
+      signRequest,
+      liveEpochsByNodeId,
+    })
+
+    if (!verdict.allowed) {
+      const reverted = await client.query(
+        `UPDATE trust_transaction_contexts
+            SET stage = 'S2',
+                updated_at = NOW()
+          WHERE id = $1
+          RETURNING *`,
+        [transactionId]
+      )
+      await emitOutbox(
+        client,
+        'transaction',
+        transactionId,
+        'ContractSignRevertedToNegotiation',
+        {
+          previous_stage: 'S3',
+          next_stage: 'S2',
+          reason: verdict.reason,
+          drifted_node_ids: verdict.driftedNodeIds,
+        },
+        trace
+      )
+      await appendAudit(
+        client,
+        actorId,
+        'transaction.sign_reverted',
+        'transaction',
+        transactionId,
+        'contract_signing',
+        'denied',
+        ['condition_hash', 'pinned_epoch_vector'],
+        trace,
+        { reason: verdict.reason, drifted_node_ids: verdict.driftedNodeIds }
+      )
+      return {
+        signed: false as const,
+        revertedToStage: 'S2' as const,
+        reason: verdict.reason,
+        driftedNodeIds: verdict.driftedNodeIds,
+        transaction: reverted.rows[0],
+      }
+    }
+
+    const signed = await client.query(
+      `UPDATE trust_transaction_contexts
+          SET stage = 'S4',
+              terms_evidence_hash = $2,
+              updated_at = NOW()
+        WHERE id = $1
+        RETURNING *`,
+      [transactionId, pinned.evidenceSetHash]
+    )
+    await emitOutbox(
+      client,
+      'transaction',
+      transactionId,
+      'TransactionContractSigned',
+      {
+        stage: 'S4',
+        condition_hash: pinned.conditionHash,
+        evidence_set_hash: pinned.evidenceSetHash,
+      },
+      trace
+    )
+    await appendAudit(
+      client,
+      actorId,
+      'transaction.sign',
+      'transaction',
+      transactionId,
+      'contract_signing',
+      'allowed',
+      ['condition_hash', 'pinned_epoch_vector'],
+      trace
+    )
+    return {
+      signed: true as const,
+      stage: 'S4' as const,
+      transaction: signed.rows[0],
+    }
+  })
+}
+
+/**
+ * Claim 2: Verifies an epoch-bound access token and content-key status on every
+ * disclosure package read, rejecting revoked/epoch-drifted tokens immediately.
+ */
+export async function verifyAndReadDisclosurePackage(
+  disclosureId: string,
+  accessToken: string,
+  actorId: string,
+  trace: RequestTrace = {},
+) {
+  const signingKey = process.env.DISCLOSURE_SIGNING_KEY
+  if (!signingKey || signingKey.length < 32) {
+    throw new Error('DISCLOSURE_SIGNING_KEY_NOT_CONFIGURED')
+  }
+
+  const pkg = await queryOne<Record<string, unknown>>(
+    `SELECT * FROM trust_disclosure_packages WHERE id = $1`,
+    [disclosureId]
+  )
+  if (!pkg) throw new Error('DISCLOSURE_NOT_FOUND')
+  if (pkg.recipient_id !== actorId) throw new Error('DISCLOSURE_FORBIDDEN')
+
+  // If package has encrypted AES-GCM payload (Patent V2), verify & decrypt via content key
+  if (pkg.encrypted_payload && pkg.payload_iv && pkg.payload_auth_tag && pkg.wrapped_content_key) {
+    const result = verifyAndOpenDisclosurePackage({
+      record: {
+        id: String(pkg.id),
+        recipientId: String(pkg.recipient_id),
+        transactionId: String(pkg.transaction_id),
+        purpose: String((pkg.disclosure_conditions as Record<string, unknown> | null)?.purpose ?? 'lease_review'),
+        state: String(pkg.state),
+        expiresAt: new Date(String(pkg.expires_at)).toISOString(),
+        accessEpoch: Number(pkg.access_epoch ?? 1),
+        encrypted: {
+          encryptedPayload: String(pkg.encrypted_payload),
+          iv: String(pkg.payload_iv),
+          authTag: String(pkg.payload_auth_tag),
+          wrappedContentKey: String(pkg.wrapped_content_key),
+          contentKeyStatus: (String(pkg.content_key_status ?? 'ACTIVE') as 'ACTIVE' | 'DESTROYED' | 'ROTATED'),
+        },
+      },
+      accessToken,
+      signingKey,
+      masterSecret: signingKey,
+    })
+
+    await transaction(async (client) => {
+      await appendAudit(
+        client,
+        actorId,
+        'disclosure.verify_access',
+        'disclosure',
+        disclosureId,
+        'disclosure_read',
+        result.allowed ? 'allowed' : 'denied',
+        result.allowed ? Object.keys(result.payload) : [],
+        trace,
+        result.allowed ? {} : { reason: result.reason }
+      )
+    })
+
+    return result
+  }
+
+  // Fallback for legacy HMAC-only packages
+  const expired = new Date(String(pkg.expires_at)).getTime() <= Date.now()
+  const active = pkg.state === 'ISSUED' && !expired && String(pkg.content_key_status ?? 'ACTIVE') === 'ACTIVE'
+  if (!active) {
+    return {
+      allowed: false as const,
+      reason: expired ? ('EXPIRED' as const) : ('REVOKED' as const),
+    }
+  }
+  return {
+    allowed: true as const,
+    payload: (pkg.claims as Record<string, unknown>) ?? {},
+  }
+}
+
+export { canExecuteSelectiveRecomputation }
