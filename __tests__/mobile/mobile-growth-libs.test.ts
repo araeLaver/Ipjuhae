@@ -1,10 +1,42 @@
-import { describe, it, expect } from 'vitest'
+import { beforeAll, afterAll, describe, it, expect } from 'vitest'
+import { mkdtempSync, rmSync } from 'node:fs'
+import { join } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { parseRegistryText as webParseRegistry } from '@/lib/registry-parser'
-import { parseRegistryText as mobileParseRegistry } from '@/mobile/src/lib/registryParser'
 import { calculateHugEligibility as webHug } from '@/lib/hug-check'
-import { calculateHugEligibility as mobileHug } from '@/mobile/src/lib/hugCheck'
 import { buildSpecialTerms as webTerms } from '@/lib/special-terms'
-import { buildSpecialTerms as mobileTerms } from '@/mobile/src/lib/specialTerms'
+
+let dir: string
+let mobileParseRegistry: typeof webParseRegistry
+let mobileHug: typeof webHug
+let mobileTerms: typeof webTerms
+
+beforeAll(async () => {
+  const { build } = await import('esbuild')
+  dir = mkdtempSync(join(process.cwd(), 'node_modules/.qa-mobile-growth-'))
+
+  await build({
+    entryPoints: [
+      'mobile/src/lib/registryParser.ts',
+      'mobile/src/lib/hugCheck.ts',
+      'mobile/src/lib/specialTerms.ts',
+    ],
+    bundle: true,
+    format: 'esm',
+    outdir: dir,
+  })
+
+  const regMod = await import(pathToFileURL(join(dir, 'registryParser.js')).href)
+  const hugMod = await import(pathToFileURL(join(dir, 'hugCheck.js')).href)
+  const termsMod = await import(pathToFileURL(join(dir, 'specialTerms.js')).href)
+  mobileParseRegistry = regMod.parseRegistryText
+  mobileHug = hugMod.calculateHugEligibility
+  mobileTerms = termsMod.buildSpecialTerms
+})
+
+afterAll(() => {
+  rmSync(dir, { recursive: true, force: true })
+})
 
 describe('Mobile growth tools parity with web', () => {
   it('parses registry mortgage & risk flags identically to web', () => {
