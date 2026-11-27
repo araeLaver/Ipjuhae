@@ -27,7 +27,11 @@ export const metadata: Metadata = {
 export default function CheckPage() {
   return (
     <main className="min-h-screen bg-background px-4 py-10 sm:py-14">
-      <div className="mx-auto mb-4 max-w-xl"><a href="#candidates" className="text-sm font-semibold text-primary underline">저장한 후보 집 보기</a></div>
+      <div className="mx-auto mb-4 flex max-w-xl flex-wrap items-center gap-4 text-sm">
+        <a href="#candidates" className="font-semibold text-primary underline">저장한 후보 집 보기</a>
+        <Link href="/tools/hug-check" className="text-muted-foreground underline underline-offset-4 hover:text-primary">HUG 126% 보증보험 계산기</Link>
+        <Link href="/tools/special-terms" className="text-muted-foreground underline underline-offset-4 hover:text-primary">전세 필수 특약 생성기</Link>
+      </div>
       <DepositRiskCheck />
 
       <div className="mx-auto mt-10 w-full max-w-xl border-t pt-6">

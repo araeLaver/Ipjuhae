@@ -19,9 +19,12 @@ import { CheckNextActions } from '@/components/check-next-actions'
 import { checkQuestionHref } from '@/lib/check-next-actions'
 import { CheckCandidates } from '@/components/check-candidates'
 import { MarketPricePicker } from '@/components/market-price-picker'
+import { RegistryQuickImport } from '@/components/registry-quick-import'
+import { ResultShareCard } from '@/components/result-share-card'
 import { track } from '@/lib/analytics-client'
 import { depositGuidePath } from '@/lib/check-activation'
 import { getAttribution } from '@/lib/attribution'
+import type { RegistryFlag } from '@/lib/registry-parser'
 import {
   calculateDepositRisk,
   cushionLabel,
@@ -76,6 +79,7 @@ export function DepositRiskCheck() {
   const [mortgage, setMortgage] = useState('')
   const [prior, setPrior] = useState('')
   const [result, setResult] = useState<DepositRiskResult | null>(null)
+  const [registryFlags, setRegistryFlags] = useState<RegistryFlag[]>([])
 
   const started = useRef(false)
   function update(setter: (value: string) => void, value: string) {
@@ -124,6 +128,7 @@ export function DepositRiskCheck() {
     setMortgage('')
     setPrior('')
     setResult(null)
+    setRegistryFlags([])
   }
 
   return (
@@ -138,6 +143,10 @@ export function DepositRiskCheck() {
       </header>
 
       <Card className="space-y-5 p-5 sm:p-6">
+        <RegistryQuickImport
+          onApplyMortgage={(value) => update(setMortgage, String(value))}
+          onFlagsDetected={(parsed) => setRegistryFlags(parsed.flags)}
+        />
         <Field
           id="price"
           label="매매 시세"
@@ -221,6 +230,13 @@ export function DepositRiskCheck() {
           </dl>
 
           <CheckNextActions level={result.level} />
+
+          <ResultShareCard
+            result={result}
+            mortgageMaxManwon={Number(mortgage || 0)}
+            priorDepositsManwon={Number(prior || 0)}
+            registryFlags={registryFlags}
+          />
 
           <section className="space-y-3">
             <h3 className="text-sm font-bold">다음으로 확인하기</h3>
