@@ -173,7 +173,8 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
 
       {/* Menu */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>설정</Text>
+        <Text style={styles.sectionTitle}>신뢰 · 설정</Text>
+        <MenuItem icon="🛡️" label="신뢰센터 · Trust Card · 열람기록" onPress={() => navigation.navigate('TrustCenter')} />
         <MenuItem icon="🔔" label="알림 설정" onPress={() => navigation.navigate('NotificationSettings')} />
         <MenuItem icon="⚙️" label="앱 설정" onPress={() => navigation.navigate('Settings')} />
       </View>

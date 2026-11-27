@@ -139,3 +139,61 @@ export interface DashboardStats {
   totalFavorites: number;
   unreadMessages: number;
 }
+
+export interface DataScoreDimensions {
+  clarity: number;
+  completeness: number;
+  recency: number;
+  consistency: number;
+  verifiability: number;
+}
+
+export interface DataScore {
+  score: number;
+  modelVersion: string;
+  dimensions: DataScoreDimensions;
+  factCount: number;
+}
+
+export interface TrustCardItem {
+  id: string;
+  title: string;
+  reportTitle: string;
+  audienceRole: string;
+  purpose: string;
+  status: string;
+  tokenPrefix: string;
+  allowedViews: number;
+  expiresAt: string;
+  createdAt: string;
+}
+
+export interface TrustFactItem {
+  id: string;
+  fieldName: string;
+  status: string;
+  quality: number;
+  validUntil: string | null;
+}
+
+export interface TrustDisclosureItem {
+  id: string;
+  policyVersion: string;
+  claimKeys: string[];
+  state: string;
+  expiresAt: string;
+}
+
+export interface TrustReportSummary {
+  facts: TrustFactItem[];
+  disclosures: TrustDisclosureItem[];
+  scoringDeferred: boolean;
+}
+
+export interface AccessViewLogItem {
+  id: string;
+  targetType: string;
+  purpose: string;
+  granted: boolean;
+  createdAt: string;
+}
