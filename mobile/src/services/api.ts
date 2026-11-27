@@ -12,12 +12,16 @@
 
 import { apiClient } from './apiClient';
 import {
+  AccessViewLogItem,
   Conversation,
   DashboardStats,
+  DataScore,
   Listing,
   Message,
   PropertyImage,
   TenantProfile,
+  TrustCardItem,
+  TrustReportSummary,
   User,
   VerificationStatus,
 } from '../types';
@@ -648,4 +652,132 @@ export async function createCommunityPost(input: {
  */
 export async function reportCommunityPost(postId: string, reason: string): Promise<{ hidden: boolean }> {
   return apiClient.post<{ ok: boolean; hidden: boolean }>('/community/reports', { postId, reason })
+}
+
+// ─── Patent Trust Center (DATA SCORE · Trust Card · Audit Logs) ──────────────
+
+interface TrustCardRow {
+  id: string;
+  title: string;
+  report_title?: string | null;
+  audience_role: string;
+  purpose: string;
+  status: string;
+  token_prefix?: string | null;
+  allowed_views?: number | null;
+  expires_at: string;
+  created_at: string;
+}
+
+interface TrustReportRow {
+  facts?: Array<{
+    id: string;
+    field_name: string;
+    status: string;
+    quality: number | string;
+    valid_until: string | null;
+  }>;
+  disclosures?: Array<{
+    id: string;
+    policy_version: string;
+    claims?: Record<string, unknown> | null;
+    state: string;
+    expires_at: string;
+  }>;
+  scoringDeferred?: boolean;
+}
+
+interface AccessAuditLogRow {
+  id: string;
+  target_type?: string | null;
+  purpose?: string | null;
+  granted?: boolean | null;
+  access_granted?: boolean | null;
+  created_at: string;
+}
+
+/** GET /api/v1/data-score — evidence quality score over 5 dimensions */
+export async function fetchDataScore(): Promise<DataScore> {
+  const res = await apiClient.get<{
+    score: number;
+    modelVersion: string;
+    dimensions: {
+      clarity: number;
+      completeness: number;
+      recency: number;
+      consistency: number;
+      verifiability: number;
+    };
+    factCount: number;
+  }>('/v1/data-score');
+  return {
+    score: Number(res.score ?? 0),
+    modelVersion: res.modelVersion ?? 'data-score-pilot-1.0',
+    dimensions: {
+      clarity: Number(res.dimensions?.clarity ?? 0),
+      completeness: Number(res.dimensions?.completeness ?? 0),
+      recency: Number(res.dimensions?.recency ?? 0),
+      consistency: Number(res.dimensions?.consistency ?? 0),
+      verifiability: Number(res.dimensions?.verifiability ?? 0),
+    },
+    factCount: Number(res.factCount ?? 0),
+  };
+}
+
+/** GET /api/v1/trust-cards — caller's purpose-bound Trust Cards */
+export async function fetchTrustCards(): Promise<TrustCardItem[]> {
+  const res = await apiClient.get<{ cards?: TrustCardRow[] }>('/v1/trust-cards');
+  return (res.cards ?? []).map((card) => ({
+    id: card.id,
+    title: card.title,
+    reportTitle: card.report_title ?? '',
+    audienceRole: card.audience_role,
+    purpose: card.purpose,
+    status: card.status,
+    tokenPrefix: card.token_prefix ?? '',
+    allowedViews: Number(card.allowed_views ?? 0),
+    expiresAt: card.expires_at,
+    createdAt: card.created_at,
+  }));
+}
+
+/** PATCH /api/v1/trust-cards/[id] — instant revocation of an issued Trust Card */
+export async function revokeTrustCard(cardId: string): Promise<void> {
+  await apiClient.patch(`/v1/trust-cards/${cardId}`);
+}
+
+/** GET /api/v1/trust/report — evidence facts & purpose-bound disclosure packages */
+export async function fetchTrustReport(): Promise<TrustReportSummary> {
+  const res = await apiClient.get<TrustReportRow>('/v1/trust/report');
+  return {
+    facts: (res.facts ?? []).map((fact) => ({
+      id: fact.id,
+      fieldName: fact.field_name,
+      status: fact.status,
+      quality: Number(fact.quality ?? 0),
+      validUntil: fact.valid_until ?? null,
+    })),
+    disclosures: (res.disclosures ?? []).map((item) => ({
+      id: item.id,
+      policyVersion: item.policy_version,
+      claimKeys: item.claims ? Object.keys(item.claims) : [],
+      state: item.state,
+      expiresAt: item.expires_at,
+    })),
+    scoringDeferred: Boolean(res.scoringDeferred),
+  };
+}
+
+/** GET /api/v1/audit/me/views — access audit trail of who viewed my data */
+export async function fetchMyViewAuditLogs(limit = 20): Promise<AccessViewLogItem[]> {
+  const res = await apiClient.get<{ logs?: AccessAuditLogRow[] }>(
+    `/v1/audit/me/views?limit=${limit}`
+  );
+  return (res.logs ?? []).map((log) => ({
+    id: log.id,
+    targetType: log.target_type ?? 'profile',
+    purpose: log.purpose ?? '열람',
+    granted: log.granted ?? log.access_granted ?? true,
+    createdAt: log.created_at,
+  }));
 }

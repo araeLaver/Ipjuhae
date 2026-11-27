@@ -29,10 +29,12 @@ import CommunityScreen from '../screens/CommunityScreen';
 import CommunityPostScreen from '../screens/CommunityPostScreen';
 import DepositCheckScreen from '../screens/DepositCheckScreen';
 import NotificationSettingsScreen from '../screens/NotificationSettingsScreen';
+import TrustCenterScreen from '../screens/TrustCenterScreen';
 
 // Types
 export type RootStackParamList = {
   ContractTalk: undefined;
+  TrustCenter: undefined;
   Auth: undefined;
   Main: undefined;
   ListingDetail: { listingId: string };
@@ -171,6 +173,16 @@ const AppNavigator = () => {
         {isAuthenticated ? (
           <>
             <Stack.Screen name="Main" component={MainTabNavigator} /><Stack.Screen name="ContractTalk" component={ContractTalkScreen} options={{headerShown:true,headerTitle:'계약 전 대화'}} />
+            <Stack.Screen
+              name="TrustCenter"
+              component={TrustCenterScreen}
+              options={{
+                headerShown: true,
+                headerTitle: '신뢰센터 · Trust Card',
+                headerBackTitle: '뒤로',
+                headerTintColor: '#C2451F',
+              }}
+            />
             <Stack.Screen
               name="ListingDetail"
               component={ListingDetailScreen}

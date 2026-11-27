@@ -131,6 +131,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
               : '커뮤니티와 프로필을 이용해 보세요'}
         </Text>
         <TouchableOpacity accessibilityRole="button" accessibilityLabel="계약 전 대화 · 보낸/받은 요청" style={[styles.retryButton,{marginTop:16,borderWidth:1,borderColor:'#fff'}]} onPress={()=>navigation.navigate('ContractTalk')}><Text style={styles.retryText}>계약 전 대화 · 보낸/받은 요청</Text></TouchableOpacity>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="신뢰센터 · Trust Card · DATA SCORE" style={[styles.retryButton,{marginTop:8,backgroundColor:'#18342E',borderWidth:1,borderColor:'#7BA396'}]} onPress={()=>navigation.navigate('TrustCenter')}><Text style={styles.retryText}>🛡️ 신뢰센터 · Trust Card · DATA SCORE</Text></TouchableOpacity>
       </View>
 
       {/* Tenant: Trust Score */}

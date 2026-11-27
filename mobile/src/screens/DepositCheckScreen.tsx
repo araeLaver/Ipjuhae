@@ -1,9 +1,8 @@
 /**
- * 보증금 위험 점검.
+ * 보증금 위험 점검 + 등기부 텍스트 10초 자동 채우기 + HUG 126% 판정 + 맞춤 특약 공유.
  *
- * 로그인 없이 쓴다. 숫자는 전부 사용자가 등기부와 시세에서 직접 읽어 넣는다.
- * 우리가 시세를 추정해서 채우지 않는다. 틀린 시세로 "안전합니다"라고 말하면
- * 이 화면은 도움이 아니라 위험이 된다.
+ * 로그인 없이 쓴다. 숫자와 붙여넣은 등기부 텍스트는 전부 이 기기 로컬에서만
+ * 계산·파싱되며 서버로 전송하지 않는다.
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
@@ -16,6 +15,7 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
+  Share,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
@@ -27,6 +27,14 @@ import {
   DepositRiskResult,
   RiskLevel,
 } from '../lib/depositRisk';
+import { parseRegistryText, RegistryParseResult } from '../lib/registryParser';
+import {
+  calculateHugEligibility,
+  HugVerdict,
+  RegionType,
+  ValuationBasis,
+} from '../lib/hugCheck';
+import { buildSpecialTerms } from '../lib/specialTerms';
 import * as api from '../services/api';
 import { trackAnonymous } from '../services/analytics';
 import TesterInvite from '../components/TesterInvite';
@@ -40,6 +48,12 @@ const LEVEL_STYLE: Record<RiskLevel, { bg: string; fg: string; label: string }> 
   caution: { bg: colors.warningTint, fg: colors.warning, label: '주의' },
   danger: { bg: colors.dangerTint, fg: colors.danger, label: '위험' },
   critical: { bg: colors.dangerTint, fg: colors.danger, label: '매우 위험' },
+};
+
+const HUG_STYLE: Record<HugVerdict, { bg: string; fg: string; label: string }> = {
+  likely: { bg: colors.successTint, fg: colors.success, label: '한도 안쪽' },
+  caution: { bg: colors.warningTint, fg: colors.warning, label: '조건 확인 필요' },
+  ineligible: { bg: colors.dangerTint, fg: colors.danger, label: '한도 초과' },
 };
 
 interface FieldProps {
@@ -77,6 +91,15 @@ const DepositCheckScreen: React.FC<Props> = ({ navigation }) => {
   const [prior, setPrior] = useState('');
   const [result, setResult] = useState<DepositRiskResult | null>(null);
 
+  // 등기부 텍스트 10초 자동 채우기 (100% 기기 로컬)
+  const [showRegistryBox, setShowRegistryBox] = useState(false);
+  const [registryText, setRegistryText] = useState('');
+  const [registryParsed, setRegistryParsed] = useState<RegistryParseResult | null>(null);
+
+  // HUG 보증보험 간편 판정 옵션
+  const [hugBasis, setHugBasis] = useState<ValuationBasis>('market_price');
+  const [hugRegion, setHugRegion] = useState<RegionType>('metro');
+
   const ready = price.length > 0 && deposit.length > 0 && Number(price) > 0;
 
   const input = useMemo(
@@ -88,6 +111,29 @@ const DepositCheckScreen: React.FC<Props> = ({ navigation }) => {
     }),
     [price, deposit, mortgage, prior]
   );
+
+  const hugResult = useMemo(() => {
+    if (!result) return null;
+    return calculateHugEligibility({
+      basis: hugBasis,
+      basePriceManwon: input.marketPriceManwon,
+      depositManwon: input.depositManwon,
+      seniorDebtManwon: input.mortgageMaxManwon + input.priorDepositsManwon,
+      region: hugRegion,
+    });
+  }, [result, hugBasis, hugRegion, input]);
+
+  const specialTerms = useMemo(() => {
+    if (!result) return null;
+    return buildSpecialTerms({
+      hasMortgage: input.mortgageMaxManwon > 0,
+      hasPriorTenants: input.priorDepositsManwon > 0,
+      needsJeonseLoan: true,
+      needsInsurance: true,
+      hasPet: false,
+      needsRepairCheck: true,
+    });
+  }, [result, input.mortgageMaxManwon, input.priorDepositsManwon]);
 
   /**
    * 결과가 화면에 그려진 순간을 익명으로 센다.
@@ -110,6 +156,24 @@ const DepositCheckScreen: React.FC<Props> = ({ navigation }) => {
     setMortgage('');
     setPrior('');
     setResult(null);
+    setRegistryText('');
+    setRegistryParsed(null);
+  }
+
+  function handleParseRegistry() {
+    const parsed = parseRegistryText(registryText);
+    setRegistryParsed(parsed);
+    if (parsed.mortgageMaxManwon > 0) {
+      setMortgage(String(parsed.mortgageMaxManwon));
+    }
+  }
+
+  async function shareText(title: string, message: string) {
+    try {
+      await Share.share({ title, message });
+    } catch {
+      // 사용자가 공유 시트를 닫은 경우 무시한다.
+    }
   }
 
   /** 관련 글을 제목으로 찾아 연다. 목록 API에 제목이 있으니 그걸로 맞춘다. */
@@ -131,14 +195,76 @@ const DepositCheckScreen: React.FC<Props> = ({ navigation }) => {
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         <Text style={styles.title}>보증금, 돌려받을 수 있는 집인가</Text>
         <Text style={styles.lead}>
-          등기부와 시세에서 읽은 숫자를 넣으면 계산해 드립니다. 넣으신 숫자는 이 기기를 벗어나지
-          않습니다.
+          등기부와 시세에서 읽은 숫자를 넣으면 계산해 드립니다. 넣으신 숫자와 등기부 텍스트는 이
+          기기를 벗어나지 않습니다.
         </Text>
+
+        {/* 등기부 텍스트 10초 자동 채우기 */}
+        <View style={styles.card}>
+          <TouchableOpacity
+            style={styles.quickToggleRow}
+            onPress={() => setShowRegistryBox((prev) => !prev)}
+          >
+            <View style={styles.flexOne}>
+              <Text style={styles.quickKicker}>10초 자동 입력 · 기기 로컬 분석</Text>
+              <Text style={styles.quickTitle}>등기부 텍스트 붙여넣기 (근저당·위험신호 자동 추출)</Text>
+            </View>
+            <Text style={styles.quickChevron}>{showRegistryBox ? '접기' : '열기'}</Text>
+          </TouchableOpacity>
+
+          {showRegistryBox ? (
+            <View style={styles.registryBody}>
+              <Text style={styles.fieldHint}>
+                인터넷등기소에서 복사한 갑구·을구 텍스트를 붙여넣으면 근저당 채권최고액 합계와 6대
+                위험 신호(경매·신탁·압류·가압류·임차권등기·가등기)를 기기 안에서 바로 뽑아줍니다.
+              </Text>
+              <TextInput
+                style={styles.registryInput}
+                value={registryText}
+                onChangeText={setRegistryText}
+                placeholder="예: 을구 1번 근저당권설정 채권최고액 금 120,000,000원..."
+                placeholderTextColor={colors.faint}
+                multiline
+                textAlignVertical="top"
+              />
+              <TouchableOpacity
+                style={[styles.secondaryActionBtn, !registryText.trim() && styles.buttonOff]}
+                onPress={handleParseRegistry}
+                disabled={!registryText.trim()}
+              >
+                <Text style={styles.secondaryActionText}>채권최고액 · 위험신호 추출</Text>
+              </TouchableOpacity>
+
+              {registryParsed ? (
+                <View style={styles.parsedSummary}>
+                  {registryParsed.flags.length > 0 ? (
+                    <View style={styles.flagList}>
+                      <Text style={styles.flagHeading}>
+                        ⚠️ 위험 신호 {registryParsed.flags.length}건 감지
+                      </Text>
+                      {registryParsed.flags.map((flag) => (
+                        <View key={flag.code} style={styles.flagBox}>
+                          <Text style={styles.flagLabel}>{flag.label}</Text>
+                          <Text style={styles.flagDesc}>{flag.summary}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  ) : null}
+                  {registryParsed.notes.map((note, idx) => (
+                    <Text key={idx} style={styles.parsedNote}>
+                      • {note}
+                    </Text>
+                  ))}
+                </View>
+              ) : null}
+            </View>
+          ) : null}
+        </View>
 
         <View style={styles.card}>
           <Field
-            label="매매 시세"
-            hint="네이버 부동산이나 실거래가에서 본 값"
+            label="매매 시세 (또는 공시가격)"
+            hint="네이버 부동산·실거래가 또는 공동주택 공시가격"
             value={price}
             onChange={setPrice}
             placeholder="40000"
@@ -217,6 +343,118 @@ const DepositCheckScreen: React.FC<Props> = ({ navigation }) => {
               </View>
             </View>
 
+            {/* HUG 126% / 시세 90% 보증보험 간편 판정 */}
+            {hugResult ? (
+              <View style={styles.subPanel}>
+                <View style={styles.subPanelHeader}>
+                  <Text style={styles.subPanelTitle}>HUG 전세보증보험 한도 판정</Text>
+                  <View style={[styles.badge, { backgroundColor: HUG_STYLE[hugResult.verdict].bg }]}>
+                    <Text style={[styles.badgeText, { color: HUG_STYLE[hugResult.verdict].fg }]}>
+                      {HUG_STYLE[hugResult.verdict].label}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.pillRow}>
+                  <TouchableOpacity
+                    style={[styles.togglePill, hugBasis === 'market_price' && styles.togglePillOn]}
+                    onPress={() => setHugBasis('market_price')}
+                  >
+                    <Text
+                      style={[
+                        styles.togglePillText,
+                        hugBasis === 'market_price' && styles.togglePillTextOn,
+                      ]}
+                    >
+                      시세 90%
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.togglePill, hugBasis === 'official_price' && styles.togglePillOn]}
+                    onPress={() => setHugBasis('official_price')}
+                  >
+                    <Text
+                      style={[
+                        styles.togglePillText,
+                        hugBasis === 'official_price' && styles.togglePillTextOn,
+                      ]}
+                    >
+                      공시가격 126%
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.togglePill, hugRegion === 'metro' && styles.togglePillOn]}
+                    onPress={() => setHugRegion('metro')}
+                  >
+                    <Text
+                      style={[
+                        styles.togglePillText,
+                        hugRegion === 'metro' && styles.togglePillTextOn,
+                      ]}
+                    >
+                      수도권(7억)
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.togglePill, hugRegion === 'non_metro' && styles.togglePillOn]}
+                    onPress={() => setHugRegion('non_metro')}
+                  >
+                    <Text
+                      style={[
+                        styles.togglePillText,
+                        hugRegion === 'non_metro' && styles.togglePillTextOn,
+                      ]}
+                    >
+                      비수도권(5억)
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                <Text style={styles.hugHeadline}>{hugResult.headline}</Text>
+                <Text style={styles.hugMeta}>
+                  최대 가입 가능 보증금: {manwon(hugResult.maxEligibleDepositManwon)}
+                  {hugResult.officialPriceMultiple !== null
+                    ? ` · 공시가 대비 ${Math.round(hugResult.officialPriceMultiple * 100)}%`
+                    : ` · 주택가 대비 ${Math.round(hugResult.ltvRatio * 100)}%`}
+                </Text>
+                {hugResult.reasons[0] ? (
+                  <Text style={styles.hugReason}>{hugResult.reasons[0]}</Text>
+                ) : null}
+              </View>
+            ) : null}
+
+            {/* 이 집 맞춤 필수 특약 + 중개사 카톡 요청 문자 */}
+            {specialTerms ? (
+              <View style={styles.subPanel}>
+                <Text style={styles.subPanelTitle}>
+                  이 집 맞춤 필수 특약 ({specialTerms.items.length}개)
+                </Text>
+                <Text style={styles.hugMeta}>
+                  근저당·선순위 입력값에 맞춰 계약서에 꼭 넣어야 할 특약과 중개사 요청 문자를
+                  준비했습니다.
+                </Text>
+                {specialTerms.items.slice(0, 4).map((item, idx) => (
+                  <Text key={item.id} style={styles.termPreview}>
+                    {idx + 1}. {item.title}
+                  </Text>
+                ))}
+                <View style={styles.shareBtnRow}>
+                  <TouchableOpacity
+                    style={styles.sharePrimaryBtn}
+                    onPress={() => shareText('중개사 특약 요청 문자', specialTerms.politeMessage)}
+                  >
+                    <Text style={styles.sharePrimaryText}>중개사 카톡 문자 공유</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.shareSecondaryBtn}
+                    onPress={() => shareText('계약서 필수 특약 문구', specialTerms.contractText)}
+                  >
+                    <Text style={styles.shareSecondaryText}>특약 전문 공유</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : null}
+
             <Text style={styles.sectionTitle}>지금 하실 일</Text>
             {result.actions.map((a, i) => (
               <View key={i} style={styles.actionRow}>
@@ -252,6 +490,7 @@ const DepositCheckScreen: React.FC<Props> = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.background },
+  flexOne: { flex: 1 },
   container: { flex: 1, backgroundColor: colors.background },
   content: { padding: 20, paddingBottom: 48 },
 
@@ -266,6 +505,42 @@ const styles = StyleSheet.create({
     padding: 18,
     marginBottom: 16,
   },
+
+  quickToggleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  quickKicker: { fontSize: 11, fontWeight: '700', color: colors.primaryInk },
+  quickTitle: { fontSize: 14, fontWeight: '700', color: colors.ink, marginTop: 2 },
+  quickChevron: { fontSize: 13, fontWeight: '700', color: colors.primaryInk },
+  registryBody: { marginTop: 12 },
+  registryInput: {
+    marginTop: 10,
+    minHeight: 96,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.sunken,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 13,
+    color: colors.ink,
+  },
+  secondaryActionBtn: {
+    marginTop: 10,
+    backgroundColor: '#18342E',
+    borderRadius: 9,
+    paddingVertical: 11,
+    alignItems: 'center',
+  },
+  secondaryActionText: { color: colors.white, fontSize: 14, fontWeight: '700' },
+  parsedSummary: { marginTop: 12, gap: 6 },
+  flagList: { gap: 6, marginBottom: 4 },
+  flagHeading: { fontSize: 13, fontWeight: '700', color: colors.danger },
+  flagBox: {
+    backgroundColor: colors.dangerTint,
+    borderRadius: 8,
+    padding: 10,
+  },
+  flagLabel: { fontSize: 13, fontWeight: '700', color: colors.danger },
+  flagDesc: { fontSize: 12, color: colors.ink, marginTop: 2, lineHeight: 18 },
+  parsedNote: { fontSize: 12, color: colors.muted, lineHeight: 18 },
 
   field: { marginBottom: 18 },
   fieldLabel: { fontSize: 14, fontWeight: '600', color: colors.ink },
@@ -312,6 +587,57 @@ const styles = StyleSheet.create({
   numberLabel: { fontSize: 13, color: colors.muted },
   numberValue: { fontSize: 14, fontWeight: '600', color: colors.ink },
   numberBad: { color: colors.danger },
+
+  subPanel: {
+    marginTop: 16,
+    padding: 14,
+    borderRadius: 12,
+    backgroundColor: colors.sunken,
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
+  subPanelHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 8,
+  },
+  subPanelTitle: { fontSize: 14, fontWeight: '700', color: colors.ink },
+  pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 },
+  togglePill: {
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 14,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
+  togglePillOn: { backgroundColor: colors.primary, borderColor: colors.primary },
+  togglePillText: { fontSize: 11, fontWeight: '600', color: colors.muted },
+  togglePillTextOn: { color: colors.white },
+  hugHeadline: { fontSize: 14, fontWeight: '700', color: colors.ink, marginTop: 10 },
+  hugMeta: { fontSize: 12, color: colors.muted, marginTop: 4, lineHeight: 18 },
+  hugReason: { fontSize: 12, color: colors.ink, marginTop: 6, lineHeight: 18 },
+  termPreview: { fontSize: 12, color: colors.ink, marginTop: 5, fontWeight: '500' },
+  shareBtnRow: { flexDirection: 'row', gap: 8, marginTop: 12 },
+  sharePrimaryBtn: {
+    flex: 1,
+    backgroundColor: colors.primary,
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  sharePrimaryText: { color: colors.white, fontSize: 12, fontWeight: '700' },
+  shareSecondaryBtn: {
+    flex: 1,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  shareSecondaryText: { color: colors.primaryInk, fontSize: 12, fontWeight: '700' },
 
   sectionTitle: {
     fontSize: 14,
