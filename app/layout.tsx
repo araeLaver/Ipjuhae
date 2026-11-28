@@ -4,7 +4,9 @@ import { ServiceWorkerRegistrar } from '@/components/service-worker-registrar'
 import './globals.css'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://www.ipjuhae.com'
-const GOOGLE_SITE_VERIFICATION = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
+const GOOGLE_SITE_VERIFICATION =
+  process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION ||
+  'Qdk3tZ8Y-_nQPFGetKceRmKQpUo8mgeoxYZgFEDB_Nw'
 const NAVER_SITE_VERIFICATION = process.env.NEXT_PUBLIC_NAVER_SITE_VERIFICATION
 
 export const metadata: Metadata = {
