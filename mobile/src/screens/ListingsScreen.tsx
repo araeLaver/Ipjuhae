@@ -13,6 +13,7 @@ import {
   RefreshControl,
   ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { CompositeNavigationProp } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -105,7 +106,7 @@ const ListingsScreen: React.FC<Props> = ({ navigation }) => {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <FlatList
         data={listings}
         keyExtractor={(item) => item.id.toString()}
@@ -126,7 +127,7 @@ const ListingsScreen: React.FC<Props> = ({ navigation }) => {
           )
         }
       />
-    </View>
+    </SafeAreaView>
   );
 };
 

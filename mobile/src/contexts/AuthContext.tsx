@@ -3,7 +3,9 @@
  */
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiClient, SESSION_EXPIRED_MESSAGE } from '../services/apiClient';
+import { LOCAL_USER_NAME_KEY } from '../services/storageKeys';
 import * as api from '../services/api';
 import { disableNotifications } from '../services/notificationService';
 import { User } from '../types';
@@ -55,7 +57,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       // /api/auth/me wraps the user: { user: { id, email, name, userType } }
       const userData = await api.fetchMe();
-      setUser(userData);
+      const localName = await AsyncStorage.getItem(LOCAL_USER_NAME_KEY).catch(() => null);
+      setUser({
+        ...userData,
+        name: userData.name || localName || undefined,
+      });
     } catch {
       setUser(null);
       await apiClient.clearTokens();
@@ -78,12 +84,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setSessionExpiredMessage(null);
   };
 
-  const register = async (email: string, password: string, _name: string, userType: string) => {
-    // /api/auth/signup only accepts email/password/userType (name is set later
-    // via the profile flow) and returns { success, userId, token, userType }.
+  const register = async (email: string, password: string, name: string, userType: string) => {
+    const trimmedName = name.trim();
     const token = await api.signup(email, password, userType);
     await apiClient.setTokens(token);
-    setUser(await api.fetchMe());
+    if (trimmedName) {
+      await AsyncStorage.setItem(LOCAL_USER_NAME_KEY, trimmedName).catch(() => undefined);
+    }
+    const me = await api.fetchMe();
+    setUser({
+      ...me,
+      name: me.name || trimmedName || undefined,
+    });
     setSessionExpiredMessage(null);
   };
 

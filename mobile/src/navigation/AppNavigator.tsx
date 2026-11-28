@@ -7,6 +7,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, Text, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
 import SessionExpiredBanner from '../components/SessionExpiredBanner';
 
@@ -92,16 +93,19 @@ const AuthNavigator = () => (
   </AuthStack.Navigator>
 );
 
-const MainTabNavigator = () => (
+const MainTabNavigator = () => {
+  const insets = useSafeAreaInsets();
+  const bottomPad = Math.max(8, insets.bottom);
+  return (
   <Tab.Navigator
     screenOptions={({ route }) => ({
       headerShown: false,
       tabBarActiveTintColor: '#C2451F',
       tabBarInactiveTintColor: '#9A8F87',
       tabBarStyle: {
-        paddingBottom: 8,
+        paddingBottom: bottomPad,
         paddingTop: 8,
-        height: 60,
+        height: 54 + bottomPad,
         backgroundColor: '#fff',
         borderTopWidth: 1,
         borderTopColor: '#E7DFD4',
@@ -117,7 +121,8 @@ const MainTabNavigator = () => (
     <Tab.Screen name="Messages" component={MessagesScreen} options={{ tabBarLabel: '메시지' }} />
     <Tab.Screen name="Profile" component={ProfileScreen} options={{ tabBarLabel: '프로필' }} />
   </Tab.Navigator>
-);
+  );
+};
 
 /**
  * 로그인 전 화면.
@@ -125,7 +130,10 @@ const MainTabNavigator = () => (
  * 커뮤니티 하나만 열어두니 받은 사람이 게시판 앱 하나를 받은 걸로 봤다.
  * 가입 없이도 직접 돌려볼 게 있어야 한 번은 쓴다. 보증금 점검을 첫 탭으로 둔다.
  */
-const GuestNavigator = () => (
+const GuestNavigator = () => {
+  const insets = useSafeAreaInsets();
+  const bottomPad = Math.max(8, insets.bottom);
+  return (
   <GuestTab.Navigator
     initialRouteName="DepositCheck"
     screenOptions={({ route }) => ({
@@ -133,9 +141,9 @@ const GuestNavigator = () => (
       tabBarActiveTintColor: '#C2451F',
       tabBarInactiveTintColor: '#9A8F87',
       tabBarStyle: {
-        paddingBottom: 8,
+        paddingBottom: bottomPad,
         paddingTop: 8,
-        height: 60,
+        height: 54 + bottomPad,
         backgroundColor: '#fff',
         borderTopWidth: 1,
         borderTopColor: '#E7DFD4',
@@ -152,7 +160,8 @@ const GuestNavigator = () => (
     <GuestTab.Screen name="Community" component={CommunityScreen} options={{ tabBarLabel: '커뮤니티' }} />
     <GuestTab.Screen name="Auth" component={AuthNavigator} options={{ tabBarLabel: '로그인 / 회원가입' }} />
   </GuestTab.Navigator>
-);
+  );
+};
 
 const AppNavigator = () => {
   const { isAuthenticated, isLoading } = useAuth();
