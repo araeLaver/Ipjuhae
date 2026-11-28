@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Header } from '@/components/layout/header'
 import { SpecialTermsGenerator } from '@/components/tools/special-terms-generator'
+import { SPECIAL_TERMS_JSONLD } from '@/lib/seo-jsonld'
 
 export const metadata: Metadata = {
   title: '전세 계약 필수 특약 생성기 — 근저당·보증보험·전세대출 특약 모음',
@@ -21,6 +22,10 @@ export const metadata: Metadata = {
 export default function SpecialTermsPage() {
   return (
     <div className="min-h-screen bg-background">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(SPECIAL_TERMS_JSONLD) }}
+      />
       <Header />
       <main className="px-4 py-10 sm:py-14">
         <SpecialTermsGenerator />

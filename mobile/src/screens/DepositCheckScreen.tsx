@@ -50,6 +50,12 @@ const LEVEL_STYLE: Record<RiskLevel, { bg: string; fg: string; label: string }> 
   critical: { bg: colors.dangerTint, fg: colors.danger, label: '매우 위험' },
 };
 
+const SAMPLE_REGISTRY_TEXT = [
+  '【갑구】 3번 가압류 (청구금액 금 35,000,000원)',
+  '【을구】 1번 근저당권설정 채권최고액 금 120,000,000원 근저당권자 ○○은행',
+  '【을구】 2번 근저당권말소 채권최고액 금 40,000,000원 (말소됨)',
+].join('\n');
+
 const HUG_STYLE: Record<HugVerdict, { bg: string; fg: string; label: string }> = {
   likely: { bg: colors.successTint, fg: colors.success, label: '한도 안쪽' },
   caution: { bg: colors.warningTint, fg: colors.warning, label: '조건 확인 필요' },
@@ -160,9 +166,20 @@ const DepositCheckScreen: React.FC<Props> = ({ navigation }) => {
     setRegistryParsed(null);
   }
 
-  function handleParseRegistry() {
-    const parsed = parseRegistryText(registryText);
+  function handleParseRegistry(sourceText = registryText) {
+    const parsed = parseRegistryText(sourceText);
     setRegistryParsed(parsed);
+    if (parsed.mortgageMaxManwon > 0) {
+      setMortgage(String(parsed.mortgageMaxManwon));
+    }
+  }
+
+  function handleTrySample() {
+    setRegistryText(SAMPLE_REGISTRY_TEXT);
+    const parsed = parseRegistryText(SAMPLE_REGISTRY_TEXT);
+    setRegistryParsed(parsed);
+    if (!price) setPrice('30000');
+    if (!deposit) setDeposit('22000');
     if (parsed.mortgageMaxManwon > 0) {
       setMortgage(String(parsed.mortgageMaxManwon));
     }
@@ -227,13 +244,21 @@ const DepositCheckScreen: React.FC<Props> = ({ navigation }) => {
                 multiline
                 textAlignVertical="top"
               />
-              <TouchableOpacity
-                style={[styles.secondaryActionBtn, !registryText.trim() && styles.buttonOff]}
-                onPress={handleParseRegistry}
-                disabled={!registryText.trim()}
-              >
-                <Text style={styles.secondaryActionText}>채권최고액 · 위험신호 추출</Text>
-              </TouchableOpacity>
+              <View style={styles.shareBtnRow}>
+                <TouchableOpacity
+                  style={[styles.secondaryActionBtn, styles.flexOne, !registryText.trim() && styles.buttonOff]}
+                  onPress={() => handleParseRegistry()}
+                  disabled={!registryText.trim()}
+                >
+                  <Text style={styles.secondaryActionText}>채권최고액 · 위험 추출</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.sampleBtn}
+                  onPress={handleTrySample}
+                >
+                  <Text style={styles.sampleBtnText}>예시 3초 체험</Text>
+                </TouchableOpacity>
+              </View>
 
               {registryParsed ? (
                 <View style={styles.parsedSummary}>
@@ -523,13 +548,23 @@ const styles = StyleSheet.create({
     color: colors.ink,
   },
   secondaryActionBtn: {
-    marginTop: 10,
     backgroundColor: '#18342E',
     borderRadius: 9,
     paddingVertical: 11,
     alignItems: 'center',
   },
-  secondaryActionText: { color: colors.white, fontSize: 14, fontWeight: '700' },
+  secondaryActionText: { color: colors.white, fontSize: 13, fontWeight: '700' },
+  sampleBtn: {
+    borderWidth: 1,
+    borderColor: colors.primary,
+    backgroundColor: colors.tint,
+    borderRadius: 9,
+    paddingVertical: 11,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sampleBtnText: { color: colors.primaryInk, fontSize: 13, fontWeight: '700' },
   parsedSummary: { marginTop: 12, gap: 6 },
   flagList: { gap: 6, marginBottom: 4 },
   flagHeading: { fontSize: 13, fontWeight: '700', color: colors.danger },

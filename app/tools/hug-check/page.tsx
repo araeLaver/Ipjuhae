@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Header } from '@/components/layout/header'
 import { HugCheckCalculator } from '@/components/tools/hug-check-calculator'
+import { HUG_TOOL_JSONLD } from '@/lib/seo-jsonld'
 
 export const metadata: Metadata = {
   title: 'HUG 전세보증보험 126% 계산기 — 가입 가능 한도 10초 확인',
@@ -21,6 +22,10 @@ export const metadata: Metadata = {
 export default function HugCheckPage() {
   return (
     <div className="min-h-screen bg-background">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(HUG_TOOL_JSONLD) }}
+      />
       <Header />
       <main className="px-4 py-10 sm:py-14">
         <HugCheckCalculator />

@@ -14,6 +14,12 @@ interface RegistryQuickImportProps {
   onFlagsDetected?: (result: RegistryParseResult) => void
 }
 
+const SAMPLE_REGISTRY_TEXT = [
+  '【갑구】 3번 가압류 (채권자 ○○캐피탈, 청구금액 금 35,000,000원)',
+  '【을구】 1번 근저당권설정 채권최고액 금 120,000,000원 근저당권자 ○○은행',
+  '【을구】 2번 근저당권말소 채권최고액 금 40,000,000원 (말소됨)',
+].join('\n')
+
 export function RegistryQuickImport({
   onApplyMortgage,
   onFlagsDetected,
@@ -26,14 +32,19 @@ export function RegistryQuickImport({
   const [error, setError] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
 
-  function handleParseText() {
+  function handleParseText(sourceText = rawText) {
     setError('')
-    const result = parseRegistryText(rawText)
+    const result = parseRegistryText(sourceText)
     setParsed(result)
     onFlagsDetected?.(result)
     if (result.mortgageMaxManwon > 0) {
       onApplyMortgage(result.mortgageMaxManwon)
     }
+  }
+
+  function handleTrySample() {
+    setRawText(SAMPLE_REGISTRY_TEXT)
+    handleParseText(SAMPLE_REGISTRY_TEXT)
   }
 
   async function handleImageUpload(file: File | undefined) {
@@ -133,14 +144,24 @@ export function RegistryQuickImport({
                 onChange={(e) => setRawText(e.target.value)}
                 placeholder="예: 1 근저당권설정 채권최고액 금 180,000,000원 근저당권자 ○○은행"
               />
-              <Button
-                type="button"
-                size="sm"
-                disabled={!rawText.trim()}
-                onClick={handleParseText}
-              >
-                채권최고액·위험신호 추출하기
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={!rawText.trim()}
+                  onClick={() => handleParseText()}
+                >
+                  채권최고액·위험신호 추출하기
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={handleTrySample}
+                >
+                  예시 등기부로 3초 체험
+                </Button>
+              </div>
             </div>
           ) : (
             <div className="space-y-2">

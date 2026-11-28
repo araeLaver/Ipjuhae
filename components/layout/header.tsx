@@ -115,6 +115,8 @@ export function Header({ user: providedUser }: HeaderProps = {}) {
 
   const publicLinks = [
     { href: '/check', label: '보증금 점검' },
+    { href: '/tools/hug-check', label: 'HUG 126%' },
+    { href: '/tools/special-terms', label: '특약 생성기' },
     { href: '/policy/news', label: '정책소식' },
     { href: '/community', label: '질문 게시판' },
     { href: '/policy', label: '전세 제도' },
