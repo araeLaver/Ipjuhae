@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { buildSpecialTerms, type SpecialTermsInput } from '@/lib/special-terms'
+import { RegistryAlertCta } from '@/components/tools/registry-alert-cta'
 
 const TOGGLE_ITEMS: Array<{ key: keyof SpecialTermsInput; label: string; hint: string }> = [
   {
@@ -158,6 +159,8 @@ export function SpecialTermsGenerator() {
           {notice}
         </p>
       ) : null}
+
+      <RegistryAlertCta sourceTag="special_terms" />
 
       <div className="flex flex-wrap gap-3 text-sm">
         <Link

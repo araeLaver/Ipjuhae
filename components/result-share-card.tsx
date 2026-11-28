@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { cushionLabel, manwon, type DepositRiskResult, type RiskLevel } from '@/lib/deposit-risk'
 import { buildSpecialTerms } from '@/lib/special-terms'
 import type { RegistryFlag } from '@/lib/registry-parser'
+import { RegistryAlertCta } from '@/components/tools/registry-alert-cta'
 
 interface ResultShareCardProps {
   result: DepositRiskResult
@@ -310,6 +311,8 @@ export function ResultShareCard({
           {notice}
         </p>
       ) : null}
+
+      <RegistryAlertCta sourceTag="check_result" />
     </section>
   )
 }
