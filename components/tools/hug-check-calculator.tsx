@@ -13,6 +13,7 @@ import {
   type ValuationBasis,
 } from '@/lib/hug-check'
 import { manwon } from '@/lib/deposit-risk'
+import { RegistryAlertCta } from '@/components/tools/registry-alert-cta'
 
 const VERDICT_BADGE: Record<HugCheckResult['verdict'], { label: string; className: string }> = {
   likely: { label: '한도 안쪽 (가입 가능성 높음)', className: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
@@ -258,6 +259,8 @@ export function HugCheckCalculator() {
           </div>
         </Card>
       ) : null}
+
+      {result ? <RegistryAlertCta sourceTag="hug_check" /> : null}
 
       <p className="text-xs leading-relaxed text-muted-foreground">
         본 계산은 HUG 전세보증금반환보증의 일반 금액 기준(공시가격 126%, 시세 90%, 선순위 60%)을

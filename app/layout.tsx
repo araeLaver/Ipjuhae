@@ -4,9 +4,19 @@ import { ServiceWorkerRegistrar } from '@/components/service-worker-registrar'
 import './globals.css'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://www.ipjuhae.com'
+const GOOGLE_SITE_VERIFICATION =
+  process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION ||
+  'Qdk3tZ8Y-_nQPFGetKceRmKQpUo8mgeoxYZgFEDB_Nw'
+const NAVER_SITE_VERIFICATION = process.env.NEXT_PUBLIC_NAVER_SITE_VERIFICATION
 
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
+  verification: {
+    ...(GOOGLE_SITE_VERIFICATION ? { google: GOOGLE_SITE_VERIFICATION } : {}),
+    ...(NAVER_SITE_VERIFICATION
+      ? { other: { 'naver-site-verification': NAVER_SITE_VERIFICATION } }
+      : {}),
+  },
   title: {
     default: '입주해 | 계약 전에 물어보는 곳',
     template: '%s | 입주해',
