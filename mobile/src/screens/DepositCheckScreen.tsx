@@ -17,8 +17,11 @@ import {
   Platform,
   Share,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import { useAuth } from '../contexts/AuthContext';
 import { colors } from '../theme';
 import {
   calculateDepositRisk,
@@ -35,9 +38,17 @@ import {
   ValuationBasis,
 } from '../lib/hugCheck';
 import { buildSpecialTerms } from '../lib/specialTerms';
+import {
+  addDepositCandidate,
+  MAX_SAVED_CANDIDATES,
+  parseSavedCandidates,
+  pickSafestCandidate,
+  removeDepositCandidate,
+  SavedDepositCandidate,
+} from '../lib/depositCandidates';
+import { DEPOSIT_CANDIDATES_KEY } from '../services/storageKeys';
 import * as api from '../services/api';
 import { trackAnonymous } from '../services/analytics';
-import TesterInvite from '../components/TesterInvite';
 
 interface Props {
   navigation: NativeStackNavigationProp<RootStackParamList>;
@@ -91,11 +102,17 @@ const Field: React.FC<FieldProps> = ({ label, hint, value, onChange, placeholder
 );
 
 const DepositCheckScreen: React.FC<Props> = ({ navigation }) => {
+  const { isAuthenticated } = useAuth();
   const [price, setPrice] = useState('');
   const [deposit, setDeposit] = useState('');
   const [mortgage, setMortgage] = useState('');
   const [prior, setPrior] = useState('');
   const [result, setResult] = useState<DepositRiskResult | null>(null);
+
+  // 기기 로컬 후보 집 저장 · 비교함 (최대 5곳)
+  const [candidates, setCandidates] = useState<SavedDepositCandidate[]>([]);
+  const [candidateLabel, setCandidateLabel] = useState('');
+  const [savedNotice, setSavedNotice] = useState<string | null>(null);
 
   // 등기부 텍스트 10초 자동 채우기 (100% 기기 로컬)
   const [showRegistryBox, setShowRegistryBox] = useState(false);
@@ -105,6 +122,14 @@ const DepositCheckScreen: React.FC<Props> = ({ navigation }) => {
   // HUG 보증보험 간편 판정 옵션
   const [hugBasis, setHugBasis] = useState<ValuationBasis>('market_price');
   const [hugRegion, setHugRegion] = useState<RegionType>('metro');
+
+  useEffect(() => {
+    AsyncStorage.getItem(DEPOSIT_CANDIDATES_KEY)
+      .then((raw) => setCandidates(parseSavedCandidates(raw)))
+      .catch(() => undefined);
+  }, []);
+
+  const safestCandidate = useMemo(() => pickSafestCandidate(candidates), [candidates]);
 
   const ready = price.length > 0 && deposit.length > 0 && Number(price) > 0;
 
@@ -153,7 +178,51 @@ const DepositCheckScreen: React.FC<Props> = ({ navigation }) => {
 
   function run() {
     if (!ready) return;
+    setSavedNotice(null);
     setResult(calculateDepositRisk(input));
+  }
+
+  function persistCandidates(next: SavedDepositCandidate[]) {
+    setCandidates(next);
+    AsyncStorage.setItem(DEPOSIT_CANDIDATES_KEY, JSON.stringify(next)).catch(() => undefined);
+  }
+
+  function handleSaveCandidate() {
+    if (!result) return;
+    const next = addDepositCandidate(candidates, {
+      label: candidateLabel,
+      marketPriceManwon: input.marketPriceManwon,
+      depositManwon: input.depositManwon,
+      mortgageMaxManwon: input.mortgageMaxManwon,
+      priorDepositsManwon: input.priorDepositsManwon,
+      level: result.level,
+      burdenRatio: result.burdenRatio,
+      auctionCushionManwon: result.auctionCushionManwon,
+    });
+    persistCandidates(next);
+    setCandidateLabel('');
+    setSavedNotice(`"${next[0].label}" 후보 함에 저장했습니다. 아래에서 다른 집과 비교해 보세요.`);
+  }
+
+  function handleLoadCandidate(item: SavedDepositCandidate) {
+    setPrice(String(item.marketPriceManwon));
+    setDeposit(String(item.depositManwon));
+    setMortgage(item.mortgageMaxManwon ? String(item.mortgageMaxManwon) : '');
+    setPrior(item.priorDepositsManwon ? String(item.priorDepositsManwon) : '');
+    setCandidateLabel(item.label);
+    setSavedNotice(null);
+    setResult(
+      calculateDepositRisk({
+        marketPriceManwon: item.marketPriceManwon,
+        depositManwon: item.depositManwon,
+        mortgageMaxManwon: item.mortgageMaxManwon,
+        priorDepositsManwon: item.priorDepositsManwon,
+      })
+    );
+  }
+
+  function handleDeleteCandidate(id: string) {
+    persistCandidates(removeDepositCandidate(candidates, id));
   }
 
   function reset() {
@@ -164,6 +233,8 @@ const DepositCheckScreen: React.FC<Props> = ({ navigation }) => {
     setResult(null);
     setRegistryText('');
     setRegistryParsed(null);
+    setCandidateLabel('');
+    setSavedNotice(null);
   }
 
   function handleParseRegistry(sourceText = registryText) {
@@ -205,10 +276,11 @@ const DepositCheckScreen: React.FC<Props> = ({ navigation }) => {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.flex}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
+    <SafeAreaView style={styles.flex} edges={['top']}>
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         <Text style={styles.title}>보증금, 돌려받을 수 있는 집인가</Text>
         <Text style={styles.lead}>
@@ -495,21 +567,119 @@ const DepositCheckScreen: React.FC<Props> = ({ navigation }) => {
               </TouchableOpacity>
             ))}
 
+            {/* 후보 집 비교함에 저장 */}
+            <View style={styles.subPanel}>
+              <Text style={styles.subPanelTitle}>
+                이 집 후보에 저장해 비교하기 ({candidates.length}/{MAX_SAVED_CANDIDATES})
+              </Text>
+              <Text style={styles.hugMeta}>
+                부동산에서 본 집을 최대 {MAX_SAVED_CANDIDATES}곳까지 기기에 저장해 안전도를 비교할 수 있습니다.
+              </Text>
+              <View style={styles.saveCandidateRow}>
+                <TextInput
+                  style={styles.candidateInput}
+                  value={candidateLabel}
+                  onChangeText={setCandidateLabel}
+                  placeholder="메모 (예: 역삼동 투룸 3층)"
+                  placeholderTextColor={colors.faint}
+                  maxLength={40}
+                />
+                <TouchableOpacity style={styles.saveCandidateBtn} onPress={handleSaveCandidate}>
+                  <Text style={styles.saveCandidateBtnText}>후보 저장</Text>
+                </TouchableOpacity>
+              </View>
+              {savedNotice ? <Text style={styles.savedNotice}>{savedNotice}</Text> : null}
+            </View>
+
             <TouchableOpacity onPress={reset} style={styles.reset}>
               <Text style={styles.resetText}>다시 넣기</Text>
             </TouchableOpacity>
           </View>
         ) : null}
 
-        {/* 결과를 본 뒤에만 보여준다. 들어오자마자 권하면 아무도 안 누른다. */}
-        {result ? <TesterInvite /> : null}
+        {/* 저장한 후보 집 비교 섹션 */}
+        {candidates.length > 0 ? (
+          <View style={styles.card}>
+            <View style={styles.subPanelHeader}>
+              <Text style={styles.quickTitle}>
+                저장한 후보 집 비교 ({candidates.length}/{MAX_SAVED_CANDIDATES})
+              </Text>
+              {candidates.length >= 2 && safestCandidate ? (
+                <View style={styles.safestPill}>
+                  <Text style={styles.safestPillText}>가장 안전: {safestCandidate.label}</Text>
+                </View>
+              ) : null}
+            </View>
+            <Text style={styles.hugMeta}>이 목록은 기기 로컬에만 저장되며 서버로 전송되지 않습니다.</Text>
+            {candidates.map((item) => {
+              const meta = LEVEL_STYLE[item.level];
+              return (
+                <View key={item.id} style={styles.candidateCard}>
+                  <View style={styles.subPanelHeader}>
+                    <Text style={styles.candidateTitle} numberOfLines={1}>
+                      {item.label}
+                    </Text>
+                    <View style={[styles.badge, { backgroundColor: meta.bg }]}>
+                      <Text style={[styles.badgeText, { color: meta.fg }]}>{meta.label}</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.candidateStats}>
+                    시세 {manwon(item.marketPriceManwon)} · 보증금 {manwon(item.depositManwon)} · 경매 시{' '}
+                    {cushionLabel(item.auctionCushionManwon)}
+                  </Text>
+                  <View style={styles.candidateActions}>
+                    <TouchableOpacity
+                      style={styles.candidateLoadBtn}
+                      onPress={() => handleLoadCandidate(item)}
+                    >
+                      <Text style={styles.candidateLoadText}>다시 보기</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.candidateDeleteBtn}
+                      onPress={() => handleDeleteCandidate(item.id)}
+                    >
+                      <Text style={styles.candidateDeleteText}>삭제</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        ) : null}
+
+        {/* 특허 신뢰센터 / 무료 가입 전환 브리지 (결과 확인 직후 노출) */}
+        {result ? (
+          <View style={styles.trustBridgeCard}>
+            <Text style={styles.trustBridgeKicker}>PATENT TRUST ENGINE · 입주해 신뢰센터</Text>
+            <Text style={styles.trustBridgeTitle}>
+              {isAuthenticated
+                ? '특허 Trust Card로 계약 전 신뢰를 안전하게 공유하세요'
+                : '무료 회원가입하면 Trust Card · 열람기록까지 바로 쓸 수 있어요'}
+            </Text>
+            <Text style={styles.trustBridgeBody}>
+              원본 서류를 통째로 넘기지 않고 최소 사실만 검증카드로 공유하며, 원할 때 원탭으로 즉시
+              회수할 수 있습니다.
+            </Text>
+            <TouchableOpacity
+              style={styles.trustBridgeBtn}
+              onPress={() =>
+                navigation.navigate((isAuthenticated ? 'TrustCenter' : 'Auth') as any)
+              }
+            >
+              <Text style={styles.trustBridgeBtnText}>
+                {isAuthenticated ? '신뢰센터 · Trust Card 열기' : '무료로 시작하기 (로그인 / 회원가입)'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
 
         <Text style={styles.disclaimer}>
           이 계산은 넣으신 숫자만 가지고 하는 것입니다. 등기부에 적히지 않는 위험도 있으니 계약
           전에는 등기부를 직접 떼어 확인하세요. 판단이 서지 않으면 커뮤니티에 물어보셔도 됩니다.
         </Text>
       </ScrollView>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
@@ -703,6 +873,83 @@ const styles = StyleSheet.create({
 
   reset: { alignSelf: 'center', marginTop: 18 },
   resetText: { fontSize: 13, color: colors.muted, textDecorationLine: 'underline' },
+
+  saveCandidateRow: { flexDirection: 'row', gap: 8, marginTop: 10 },
+  candidateInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.surface,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    fontSize: 13,
+    color: colors.ink,
+  },
+  saveCandidateBtn: {
+    backgroundColor: '#18342E',
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  saveCandidateBtnText: { color: colors.white, fontSize: 12, fontWeight: '700' },
+  savedNotice: { fontSize: 12, color: colors.success, fontWeight: '600', marginTop: 8 },
+
+  safestPill: {
+    backgroundColor: colors.successTint,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+  },
+  safestPillText: { fontSize: 11, fontWeight: '700', color: colors.success },
+  candidateCard: {
+    marginTop: 10,
+    padding: 12,
+    borderRadius: 10,
+    backgroundColor: colors.sunken,
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
+  candidateTitle: { flex: 1, fontSize: 14, fontWeight: '700', color: colors.ink },
+  candidateStats: { fontSize: 12, color: colors.muted, marginTop: 6, lineHeight: 18 },
+  candidateActions: { flexDirection: 'row', gap: 8, marginTop: 10 },
+  candidateLoadBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  candidateLoadText: { fontSize: 12, fontWeight: '700', color: colors.primaryInk },
+  candidateDeleteBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
+  candidateDeleteText: { fontSize: 12, fontWeight: '600', color: colors.muted },
+
+  trustBridgeCard: {
+    backgroundColor: '#18342E',
+    borderRadius: 14,
+    padding: 18,
+    marginBottom: 16,
+  },
+  trustBridgeKicker: { fontSize: 11, fontWeight: '700', color: '#F4977B', letterSpacing: 0.6 },
+  trustBridgeTitle: { fontSize: 16, fontWeight: 'bold', color: colors.white, marginTop: 6, lineHeight: 23 },
+  trustBridgeBody: { fontSize: 13, color: '#D9E6E0', lineHeight: 20, marginTop: 6 },
+  trustBridgeBtn: {
+    marginTop: 14,
+    backgroundColor: colors.primary,
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  trustBridgeBtnText: { color: colors.white, fontSize: 14, fontWeight: 'bold' },
 
   disclaimer: { fontSize: 12, color: colors.faint, lineHeight: 20 },
 });

@@ -30,3 +30,9 @@ export const PUSH_PREFERENCE_KEY = 'push_notifications_enabled';
  * 정리만 여기를 보고, 등록은 보지 않는다.
  */
 export const PUSH_PENDING_REVOKE_KEY = 'expo_push_token_pending_revoke';
+
+/** 회원가입 시 입력한 표시 이름(서버 프로필 완성 전 홈·프로필 폴백용). 로그아웃 시 정리. */
+export const LOCAL_USER_NAME_KEY = 'local_user_display_name';
+
+/** 기기 로컬에만 저장하는 보증금 점검 후보 집 목록(최대 5곳). 서버로 전송하지 않는다. */
+export const DEPOSIT_CANDIDATES_KEY = 'deposit_check_candidates_v1';

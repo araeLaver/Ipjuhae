@@ -4,16 +4,25 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
-import { AUTH_TOKEN_KEY, PUSH_TOKEN_KEY, REFRESH_TOKEN_KEY } from './storageKeys';
+import {
+  AUTH_TOKEN_KEY,
+  LOCAL_USER_NAME_KEY,
+  PUSH_TOKEN_KEY,
+  REFRESH_TOKEN_KEY,
+} from './storageKeys';
 
 /**
  * 기본은 프로덕션이다. 로컬 서버로 붙여 확인할 때만
- * EXPO_PUBLIC_API_BASE_URL 이나 app.json의 expo.extra.apiBaseUrl 로 덮는다.
+ * EXPO_PUBLIC_API_BASE_URL 이나 app.json의 expo.extra.apiBaseUrl / apiUrl 로 덮는다.
  * (안드로이드 에뮬레이터에서 호스트 주소는 10.0.2.2다.)
  */
+const extraConfig = Constants.expoConfig?.extra as
+  | { apiBaseUrl?: string; apiUrl?: string }
+  | undefined;
 const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_BASE_URL ??
-  (Constants.expoConfig?.extra as { apiBaseUrl?: string } | undefined)?.apiBaseUrl ??
+  extraConfig?.apiBaseUrl ??
+  extraConfig?.apiUrl ??
   'https://www.ipjuhae.com/api';
 
 const TOKEN_KEY = AUTH_TOKEN_KEY;
@@ -182,7 +191,12 @@ class ApiClient {
    * 결과적으로 이 기기가 이전 계정의 발송 대상으로 남는다.
    */
   async clearTokens(): Promise<void> {
-    await AsyncStorage.multiRemove([TOKEN_KEY, REFRESH_TOKEN_KEY, PUSH_TOKEN_KEY]);
+    await AsyncStorage.multiRemove([
+      TOKEN_KEY,
+      REFRESH_TOKEN_KEY,
+      PUSH_TOKEN_KEY,
+      LOCAL_USER_NAME_KEY,
+    ]);
   }
 
   private async request<T>(
