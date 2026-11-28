@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { DepositRiskCheck } from '@/components/deposit-risk-check'
+import { CHECK_TOOL_JSONLD } from '@/lib/seo-jsonld'
 
 /**
  * SNS에서 들어오는 사람이 처음 닿는 곳.
@@ -27,6 +28,10 @@ export const metadata: Metadata = {
 export default function CheckPage() {
   return (
     <main className="min-h-screen bg-background px-4 py-10 sm:py-14">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(CHECK_TOOL_JSONLD) }}
+      />
       <div className="mx-auto mb-4 flex max-w-xl flex-wrap items-center gap-4 text-sm">
         <a href="#candidates" className="font-semibold text-primary underline">저장한 후보 집 보기</a>
         <Link href="/tools/hug-check" className="text-muted-foreground underline underline-offset-4 hover:text-primary">HUG 126% 보증보험 계산기</Link>

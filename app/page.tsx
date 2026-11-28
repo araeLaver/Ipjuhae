@@ -143,6 +143,44 @@ export default async function HomePage() {
           <TesterBanner />
         </section>
 
+        <section
+          aria-label="계약 전 무료 안전 도구"
+          className="mx-auto max-w-5xl px-4 pt-6"
+        >
+          <div className="grid gap-3 sm:grid-cols-3">
+            <Link
+              href="/tools/hug-check"
+              className="rounded-xl border bg-background p-4 transition-colors hover:border-primary/50 hover:bg-primary/5"
+            >
+              <span className="text-[11px] font-bold text-primary">무료 계산기</span>
+              <h2 className="mt-1 text-sm font-bold">HUG 보증보험 126% 판정</h2>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                공시가격 126% · 시세 90% 기준으로 내 보증금 가입 한도를 10초 만에 확인하세요.
+              </p>
+            </Link>
+            <Link
+              href="/tools/special-terms"
+              className="rounded-xl border bg-background p-4 transition-colors hover:border-primary/50 hover:bg-primary/5"
+            >
+              <span className="text-[11px] font-bold text-primary">바로 복사</span>
+              <h2 className="mt-1 text-sm font-bold">전월세 필수 특약 · 요청 문자</h2>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                근저당·보증보험·대출 조건별 특약과 중개사 카톡 초안을 자동으로 만듭니다.
+              </p>
+            </Link>
+            <Link
+              href="/trust-center"
+              className="rounded-xl border bg-background p-4 transition-colors hover:border-primary/50 hover:bg-primary/5"
+            >
+              <span className="text-[11px] font-bold text-primary">특허 검증 엔진</span>
+              <h2 className="mt-1 text-sm font-bold">신뢰센터 · Trust Card</h2>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                원본 대신 필요한 최소 사실만 검증카드로 공유하고 언제든 즉시 회수하세요.
+              </p>
+            </Link>
+          </div>
+        </section>
+
         <PolicyNews compact />
 
         <section
