@@ -7,7 +7,9 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://www.ipjuhae.com'
 const GOOGLE_SITE_VERIFICATION =
   process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION ||
   'Qdk3tZ8Y-_nQPFGetKceRmKQpUo8mgeoxYZgFEDB_Nw'
-const NAVER_SITE_VERIFICATION = process.env.NEXT_PUBLIC_NAVER_SITE_VERIFICATION
+const NAVER_SITE_VERIFICATION =
+  process.env.NEXT_PUBLIC_NAVER_SITE_VERIFICATION ||
+  '93290231d845d6941a093da11f7b50a4261ce6ca'
 
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
